@@ -1,0 +1,39 @@
+
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.watcherExclude": {
+            "**/target": true
+        },
+		"python.terminal.executeInFileDir": true,//run时可以读取其他目录文件
+        //"python.pythonPath": "${workspaceFolder}\\python_env\\python.exe",
+    },
+	
+    "launch": {
+        "version": "0.2.0",
+        
+        "configurations": [
+            
+            {
+                "name": "量化test",
+                "type": "python",
+                "request": "launch",
+                "program": "${file}",
+                "console": "integratedTerminal",
+//==================================================================================
+                //下面两行很重要
+				"args": [
+					//"deit_small","./Data","--quant","--ptf","--lis","--quant-method","minmax"
+					"deit_small","/home/dy/VitWorkspace/Vit量化方案2/FQ-ViT-main/Fish_Data","--quant","--ptf","--lis","--quant-method","minmax"
+				],
+                
+                "cwd": "${workspaceFolder}"//debug时可以读取其他目录文件
+//==================================================================================
+            }
+        ]
+    }
+}
