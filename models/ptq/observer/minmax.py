@@ -13,7 +13,7 @@ class MinmaxObserver(BaseObserver):
 
     def update(self, v):
         v = self.reshape_tensor(v)
-        cur_max = v.max(axis=1).values
+        cur_max = v.max(axis=1).values#第一个维度是通道，第二个维度代表对应通道的数据
         if self.max_val is None:
             self.max_val = cur_max
         else:

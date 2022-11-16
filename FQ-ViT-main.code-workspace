@@ -19,7 +19,7 @@
         "configurations": [
             
             {
-                "name": "量化test",
+                "name": "集群量化Debug",
                 "type": "python",
                 "request": "launch",
                 "program": "${file}",
@@ -32,8 +32,27 @@
 				],
                 
                 "cwd": "${workspaceFolder}"//debug时可以读取其他目录文件
+//================================================s==================================
+            },
+            {
+                "name": "本地量化Debug",
+                "type": "python",
+                "request": "launch",
+                "program": "${file}",
+                "console": "integratedTerminal",
 //==================================================================================
-            }
+                //下面两行很重要
+				"args": [
+					//"deit_small","./Data","--quant","--ptf","--lis","--quant-method","minmax"
+					"deit_small","E:/Transformer/DataSets/imagenet/imagenet2012mini","--quant","--ptf","--lis","--quant-method","minmax"
+				],
+                
+                "cwd": "${workspaceFolder}"//debug时可以读取其他目录文件
+//==================================================================================
+            },
+
         ]
-    }
+    },
+    
+
 }

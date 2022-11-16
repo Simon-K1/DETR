@@ -93,7 +93,7 @@ class Attention(nn.Module):
             quantizer_str=cfg.QUANTIZER_S)
 
     def forward(self, x):
-        B, N, C = x.shape
+        B, N, C = x.shape#获取维度
         x = self.qkv(x)
         x = self.qact1(x)
         qkv = x.reshape(B, N, 3, self.num_heads,
@@ -178,10 +178,10 @@ class Block(nn.Module):
                           quantizer_str=cfg.QUANTIZER_A_LN)
 
     def forward(self, x, last_quantizer=None):
-        x = self.qact2(x + self.drop_path(
-            self.attn(
-                self.qact1(self.norm1(x, last_quantizer,
-                                      self.qact1.quantizer)))))
+        Norm_Out=self.norm1(x, last_quantizer,self.qact1.quantizer)
+        Attn_Out=self.attn(self.qact1(Norm_Out))
+        x=x + self.drop_path(Attn_Out)
+        x = self.qact2(x)
         x = self.qact4(x + self.drop_path(
             self.mlp(
                 self.qact3(
@@ -394,7 +394,7 @@ class VisionTransformer(nn.Module):
         x = x + self.qact_pos(self.pos_embed)
         x = self.qact1(x)
 
-        x = self.pos_drop(x)
+        x = self.pos_drop(x)#drop rate=0
 
         for i, blk in enumerate(self.blocks):
             last_quantizer = self.qact1.quantizer if i == 0 else self.blocks[

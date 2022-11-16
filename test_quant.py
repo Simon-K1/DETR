@@ -28,12 +28,12 @@ parser.add_argument('--quant-method',
                     default='minmax',
                     choices=['minmax', 'ema', 'omse', 'percentile'])
 parser.add_argument('--calib-batchsize',
-                    default=100,
+                    default=1,
                     type=int,
                     help='batchsize of calibration set')
-parser.add_argument('--calib-iter', default=10, type=int)
+parser.add_argument('--calib-iter', default=100, type=int)
 parser.add_argument('--val-batchsize',
-                    default=100,
+                    default=16,
                     type=int,
                     help='batchsize of validation set')
 parser.add_argument('--num-workers',
@@ -42,7 +42,7 @@ parser.add_argument('--num-workers',
                     help='number of data loading workers (default: 16)')
 parser.add_argument('--device', default='cuda', type=str, help='device')
 parser.add_argument('--print-freq',
-                    default=100,
+                    default=1,
                     type=int,
                     help='print frequency')
 parser.add_argument('--seed', default=0, type=int, help='seed')
@@ -150,6 +150,7 @@ def main():
         model.model_open_calibrate()
         with torch.no_grad():
             for i, image in enumerate(image_list):
+                print("Calibrited:",i)
                 if i == len(image_list) - 1:
                     # This is used for OMSE method to
                     # calculate minimum quantization error
