@@ -16,7 +16,7 @@ class UniformQuantizer(BaseQuantizer):
         self.scale, self.zero_point = self.observer.get_quantization_params(
             *args, **kwargs)
 
-    def quant(self, inputs, scale=None, zero_point=None):
+    def quant(self, inputs, scale=None, zero_point=None):#在base中调用前向传播，也就是先quant，再dequant
         if scale is None:
             scale = self.scale
         if zero_point is None:
@@ -30,7 +30,7 @@ class UniformQuantizer(BaseQuantizer):
         return outputs
 
     def dequantize(self, inputs, scale=None, zero_point=None):
-        if scale is None:
+        if scale is None:#dequant模拟量化前向推理，也就是先量化，将浮点变成定点，再用同样的scale和zeropoint反量化回去，将定点变成浮点方便下一层计算，酱紫
             scale = self.scale
         if zero_point is None:
             zero_point = self.zero_point

@@ -392,7 +392,7 @@ class VisionTransformer(nn.Module):
         x = torch.cat((cls_tokens, x), dim=1)
         x = self.qact_embed(x)
         x = x + self.qact_pos(self.pos_embed)
-        x = self.qact1(x)
+        x = self.qact1(x)#这里用的是layernorm观察者
 
         x = self.pos_drop(x)#drop rate=0
 

@@ -28,7 +28,7 @@ class PtfObserver(BaseObserver):
             self.max_val = self.max_val.max()
             self.min_val = self.min_val.min()
 
-    def get_quantization_params(self, inputs, *args, **kwargs):
+    def get_quantization_params(self, inputs, *args, **kwargs):#进layernorm的数据逐通道量化
         max_val = self.max_val
         min_val = self.min_val
 
@@ -46,10 +46,10 @@ class PtfObserver(BaseObserver):
         zero_point = qmin - torch.round(min_val_t / scale8)
         zero_point.clamp_(qmin, qmax)
         scale_mask = torch.ones_like(max_val)
-        for j in range(inputs.shape[2]):
+        for j in range(inputs.shape[2]):#获取列（也就是最后一个通道），输入数据就是3维[b,h,w]
             data = inputs[..., j].unsqueeze(-1)
             data_q1 = ((data / scale1 + zero_point).round().clamp(qmin, qmax) -
-                       zero_point) * scale1
+                       zero_point) * scale1#注意这里先拿到输入数据的量化因子，是先量化再反量化回去计算\alpha
             data_q2 = ((data / scale2 + zero_point).round().clamp(qmin, qmax) -
                        zero_point) * scale2
             data_q4 = ((data / scale4 + zero_point).round().clamp(qmin, qmax) -
@@ -61,6 +61,6 @@ class PtfObserver(BaseObserver):
             score4 = lp_loss(data, data_q4, p=2.0, reduction='all')
             score8 = lp_loss(data, data_q8, p=2.0, reduction='all')
             score = [score1, score2, score4, score8]
-            scale_mask[j] *= 2**score.index(min(score))
-        scale = scale1 * scale_mask
+            scale_mask[j] *= 2**score.index(min(score))#就是2^0,2^1,2^2,2^3
+        scale = scale1 * scale_mask#这个地方要仔细想想
         return scale, zero_point

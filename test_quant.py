@@ -37,7 +37,7 @@ parser.add_argument('--val-batchsize',
                     type=int,
                     help='batchsize of validation set')
 parser.add_argument('--num-workers',
-                    default=16,
+                    default=8,
                     type=int,
                     help='number of data loading workers (default: 16)')
 parser.add_argument('--device', default='cuda', type=str, help='device')
