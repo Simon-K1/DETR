@@ -180,11 +180,11 @@ class QIntLayerNorm(nn.LayerNorm):
             channel_nums = x.shape[-1]
             in_scale = in_scale.reshape(1, 1, -1)
             out_scale = out_scale.reshape(1, 1, -1)
-            x_q = (x / in_scale).round()
+            x_q = (x / in_scale).round()#注意：Matlab的round(10.5)=11,二pytorch则为10，
             in_scale1 = in_scale.min()
             in_scale_mask = (in_scale / in_scale1).round()
 
-            x_q = x_q * in_scale_mask
+            x_q = x_q * in_scale_mask#最后一个维度的对应元素相乘，不相加
 
             mean_x_q = x_q.mean(dim=-1) * in_scale1
             std_x_q = (in_scale1 / channel_nums) * torch.sqrt(

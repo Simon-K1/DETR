@@ -42,7 +42,7 @@ parser.add_argument('--num-workers',
                     help='number of data loading workers (default: 16)')
 parser.add_argument('--device', default='cuda', type=str, help='device')
 parser.add_argument('--print-freq',
-                    default=1,
+                    default=4,
                     type=int,
                     help='print frequency')
 parser.add_argument('--seed', default=0, type=int, help='seed')
