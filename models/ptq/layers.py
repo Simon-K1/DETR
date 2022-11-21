@@ -170,7 +170,7 @@ class QIntLayerNorm(nn.LayerNorm):
         if self.mode == 'ln':
             x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias,
                              self.eps)
-        elif self.mode == 'int':
+        elif self.mode == 'int':#
             in_scale = in_quantizer.scale
             if in_scale_expand != 1:
                 in_scale = in_scale.unsqueeze(-1).expand(
@@ -180,19 +180,19 @@ class QIntLayerNorm(nn.LayerNorm):
             channel_nums = x.shape[-1]
             in_scale = in_scale.reshape(1, 1, -1)
             out_scale = out_scale.reshape(1, 1, -1)
-            x_q = (x / in_scale).round()#注意：Matlab的round(10.5)=11,二pytorch则为10，
+            x_q = (x / in_scale).round()#注意：Matlab的round(10.5)=11,二pytorch则为10，获取整形
             in_scale1 = in_scale.min()
             in_scale_mask = (in_scale / in_scale1).round()
 
             x_q = x_q * in_scale_mask#最后一个维度的对应元素相乘，不相加
 
             mean_x_q = x_q.mean(dim=-1) * in_scale1
-            std_x_q = (in_scale1 / channel_nums) * torch.sqrt(
-                channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2)
-
+            std_x_q = (in_scale1 / channel_nums) * torch.sqrt(#std标准差也就是加入alpha后每一行的标准差，
+                channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2)#[B,197]
+            #所以这里的in_scale1可以被约掉。。。。
             A = (in_scale1 / std_x_q).unsqueeze(-1) * \
-                self.weight.reshape(1, 1, -1) / out_scale
-            A_sign = A.sign()
+                self.weight.reshape(1, 1, -1) / out_scale#weight就是每个通道的gama，下面还要加一个bias，就是beta
+            A_sign = A.sign()#每一行算标准差，每一通道都有一个gama和beta，所以A是一个[197,384]维的矩阵
             M, N = self.get_MN(A.abs())
             B = ((self.bias.reshape(1, 1, -1) -
                   (mean_x_q / std_x_q).unsqueeze(-1) *
