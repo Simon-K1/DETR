@@ -177,30 +177,47 @@ class QIntLayerNorm(nn.LayerNorm):
                     -1, in_scale_expand).T.reshape(-1)
             out_scale = out_quantizer.scale
             assert in_scale is not None and out_scale is not None
-            channel_nums = x.shape[-1]
-            in_scale = in_scale.reshape(1, 1, -1)
+            channel_nums = x.shape[-1]#获取通道数
+            in_scale = in_scale.reshape(1, 1, -1)#将inscale数放到最后一个维度，对应通道数
             out_scale = out_scale.reshape(1, 1, -1)
             x_q = (x / in_scale).round()#注意：Matlab的round(10.5)=11,二pytorch则为10，获取整形
             in_scale1 = in_scale.min()
             in_scale_mask = (in_scale / in_scale1).round()
 
             x_q = x_q * in_scale_mask#最后一个维度的对应元素相乘，不相加
-
-            mean_x_q = x_q.mean(dim=-1) * in_scale1
-            std_x_q = (in_scale1 / channel_nums) * torch.sqrt(#std标准差也就是加入alpha后每一行的标准差，
+            M1=x_q.sum(dim=-1)#按行求和[16,197]
+            std_x_q = torch.sqrt(#std标准差也就是加入alpha后每一行的标准差，
                 channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2)#[B,197]
-            #所以这里的in_scale1可以被约掉。。。。
-            A = (in_scale1 / std_x_q).unsqueeze(-1) * \
-                self.weight.reshape(1, 1, -1) / out_scale#weight就是每个通道的gama，下面还要加一个bias，就是beta
-            A_sign = A.sign()#每一行算标准差，每一通道都有一个gama和beta，所以A是一个[197,384]维的矩阵
-            M, N = self.get_MN(A.abs())
-            B = ((self.bias.reshape(1, 1, -1) -
-                  (mean_x_q / std_x_q).unsqueeze(-1) *
-                  self.weight.reshape(1, 1, -1)) / out_scale *
-                 torch.pow(2, N)).round()
+            batch=x_q.shape[0]
+            for i in range(M1.shape[-1]):#对于每一行来说，都是[16,384]维，对于M1的每一行来说，都是[16]维
+                x_q[:,i,:]=(channel_nums*x_q[:,i,:]-M1[:,i].reshape(batch,-1))/std_x_q[:,i].reshape(batch,-1)
+            Gama=self.weight.reshape(1, 1, -1)/out_scale
+            Beta=self.bias.reshape(1,1,-1)/out_scale
 
-            x_q = ((A_sign * M * x_q + B) / torch.pow(2, N)).round()
+            for i in range(x_q.shape[1]):#对于每一行来说
+                x_q[:,i,:]=(x_q[:,i,:]*Gama+Beta).round()
             x = x_q * out_scale
+            # mean_x_q = x_q.mean(dim=-1) * in_scale1
+            # std_x_q = (in_scale1 / channel_nums) * torch.sqrt(#std标准差也就是加入alpha后每一行的标准差，
+            #     channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2)#[B,197]
+            # # for i in range(std_x_q.shape[1]):
+            # #     if(std_x_q[0][i]==0):
+            # #         print("detected")
+            # #所以这里的in_scale1可以被约掉。。。。
+            # A = (in_scale1 / std_x_q).unsqueeze(-1) * \
+            #     self.weight.reshape(1, 1, -1) / out_scale#weight就是每个通道的gama，下面还要加一个bias，就是beta
+            # #A=torch.floor(torch.floor(A*1024)/1024),很奇怪，随便动一下精度就没了
+            # A_sign = A.sign()#每一行算标准差，每一通道都有一个gama和beta，所以A是一个[197,384]维的矩阵
+            # M, N = self.get_MN(A.abs())
+            # # N=torch.tensor(32)
+            # # M=torch.floor(A.abs() * torch.pow(2, N))
+            # B = ((self.bias.reshape(1, 1, -1) -
+            #       (mean_x_q / std_x_q).unsqueeze(-1) *
+            #       self.weight.reshape(1, 1, -1)) / out_scale *
+            #      torch.pow(2, N)).round()
+
+            # x_q = ((A_sign * M * x_q + B) / torch.pow(2, N)).round()
+            # x = x_q * out_scale
         else:
             raise NotImplementedError
         return x

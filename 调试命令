@@ -1,2 +1,2 @@
 python test_quant.py deit_small E:/Transformer/DataSets/imagenet/imagenet2012mini --quant --ptf --lis  --quant-method minmax  
-
+python test_quant.py deit_small E:/Transformer/DataSets/imagenet/imagenet2012mini  --ptf --lis  --quant-method minmax 
