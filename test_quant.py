@@ -174,7 +174,7 @@ def validate(args, val_loader, model, criterion, device):
     model.eval()
 
     val_start_time = end = time.time()
-    for i, (data, target) in enumerate(val_loader):
+    for i, (data, target) in enumerate(val_loader):#一次验证一个batch，每个target就有batch的维度
         data = data.to(device)
         target = target.to(device)
 
@@ -183,7 +183,7 @@ def validate(args, val_loader, model, criterion, device):
         loss = criterion(output, target)
 
         # measure accuracy and record loss
-        prec1, prec5 = accuracy(output.data, target, topk=(1, 5))
+        prec1, prec5 = accuracy(output.data, target, topk=(1, 5))#output输出1000个值
         losses.update(loss.data.item(), data.size(0))
         top1.update(prec1.data.item(), data.size(0))
         top5.update(prec5.data.item(), data.size(0))
@@ -202,7 +202,7 @@ def validate(args, val_loader, model, criterion, device):
                       len(val_loader),
                       batch_time=batch_time,
                       loss=losses,
-                      top1=top1,
+                      top1=top1,#前面是验证损失，当前bacth的验证精度，后面是平均精度
                       top5=top5,
                   ))
     val_end_time = time.time()
@@ -238,10 +238,10 @@ def accuracy(output, target, topk=(1, )):
 
     _, pred = output.topk(maxk, 1, True, True)
     pred = pred.t()
-    correct = pred.eq(target.reshape(1, -1).expand_as(pred))
-
+    correct = pred.eq(target.reshape(1, -1).expand_as(pred))#target只有16个值，1维
+    #correct:[5,16]
     res = []
-    for k in topk:
+    for k in topk:#然后遍历这五个结果
         correct_k = correct[:k].reshape(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res

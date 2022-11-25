@@ -4,6 +4,7 @@
 This repo contains the official implementation of **["FQ-ViT: Post-Training Quantization for Fully Quantized Vision Transformer"](http://arxiv.org/abs/2111.13824).**
 
 $\sqrt {x+10/x}*x$
+$\gama$
 
 ## Table of Contents
   - [Introduction](#introduction)
