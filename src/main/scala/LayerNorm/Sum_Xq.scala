@@ -2,10 +2,66 @@ package LayerNorm
 import spinal.core._
 import spinal.lib._
 import utils._
+import spinal.lib.Delay
 //实现8并行度的累加计算
 object SUM_XQ_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, LOAD_FIRST_ROW,ACCUMU = newElement
     //LOAD_FIRTS_ROW:加载第一行，这时候计算第一行的累加和和C*X_Q
+}
+
+// class Xq2C_1 extends BlackBox{
+//     //XQ2C=cM2计算
+//     //Dsp48 macro有一个A*B+P还有一个A*B+C，这个是A*B+C的
+//     val Config=TopConfig()
+//     val io=new Bundle{
+//         val CLK=in Bool()
+//         val A=in UInt(Config.XQ2C_A_WIDTH bits)
+//         val B=in UInt(Config.XQ2C_B_WIDTH bits)
+//         val C=in UInt(Config.XQ2C_C_WIDTH bits)
+//         val P=out UInt(Config.XQ2C_P_WIDTH bits)
+//     }
+//     noIoPrefix()
+//     mapClockDomain(clock=io.CLK)
+// }
+// class Xq2C_2 extends BlackBox{
+//     //XQ2C=cM2计算
+//     //Dsp48 macro有一个A*B+P还有一个A*B+C，这个是A*B+P的（最后测试发现这个P初始化有问题....,不太会用)
+//     val Config=TopConfig()
+//     val io=new Bundle{
+//         val CLK=in Bool()
+//         val A=in UInt(Config.XQ2C_A_WIDTH bits)
+//         val B=in UInt(Config.XQ2C_B_WIDTH bits)
+//         // val C=in UInt(Config.XQ2C_C_WIDTH bits)
+//         val P=out UInt(Config.XQ2C_P_WIDTH bits)
+//     }
+//     noIoPrefix()
+//     mapClockDomain(clock=io.CLK)
+// }
+class XqC extends BlackBox{
+    //XQC=C*X_q计算
+    //注意Dsp48使用的是补码输入，所以如果输入的是无符号8bit，需要设置输入位宽为9，MSB永远设置为0，
+    //所以这地方暂时使Multiplier Ip
+    val Config=TopConfig()
+    val io=new Bundle{
+        val CLK=in Bool()
+        val A=in UInt(Config.XQC_A_WIDTH bits)
+        val B=in UInt(Config.XQC_B_WIDTH bits)
+        val P=out UInt(Config.XQC_P_WIDTH bits)
+    }
+    noIoPrefix()
+    mapClockDomain(clock=io.CLK)
+}
+class Xq2C extends BlackBox{
+    //XQC=C*X_q计算
+    val Config=TopConfig()
+    val io=new Bundle{
+        val CLK=in Bool()
+        val A=in UInt(Config.XQ2C_A_WIDTH bits)
+        val B=in UInt(Config.XQ2C_B_WIDTH bits)
+        val P=out UInt(Config.XQ2C_P_WIDTH bits)
+    }
+    noIoPrefix()
+    mapClockDomain(clock=io.CLK)
 }
 case class SUM_XQ_FSM(start:Bool)extends Area{
     val currentState = Reg(SUM_XQ_ENUM()) init SUM_XQ_ENUM.IDLE
@@ -52,6 +108,8 @@ class Sum_Xq extends Component{
     val io=new Bundle{
         val sData=slave Stream( UInt(Config.IN_DATA_WIDTH bits))//输入数据64bit，一次进8行，每行一个点（8bit)
         val start=in Bool()//计算启动信号
+
+        val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
     }
     noIoPrefix()
 
@@ -80,10 +138,48 @@ class Sum_Xq extends Component{
         //之前想的是单独为读数据创建一个计数器，当读出多少数据后才开始写入新的数据，感觉有点麻烦
         //现在的策略就是来一个数据，先读再写，写慢读一拍
 
+
+    //第二步骤，设计乘法流水线（需要大量调用xilinx的IP核)=============================================================================================
+    
+    //①计算x_q*c
+    val XqC_Module=new XqC
+    // val Xq2C_ABCP=new Xq2C_1
+    val Xq2C_Module=new Xq2C
+    
+    XqC_Module.io.A:=io.sData.payload(7 downto 0)
+    XqC_Module.io.B:=io.Channel_Nums
+    val XqC_Valid=Delay(io.sData.fire,Config.XQC_PIPELINE)
+
+    val Xq_Sum=Reg(UInt(20 bits))init(0)
+    val Xq_Sum_Clear=Col_Cnt.valid//累加和清零
+
+    when(Xq_Sum_Clear){
+        Xq_Sum.clearAll()
+    }elsewhen(io.sData.fire){
+        Xq_Sum:=Xq_Sum+io.sData.payload(7 downto 0)
+    }
+    //累加和计算=============================================================
+    Xq2C_Module.io.A:=XqC_Module.io.P
+    Xq2C_Module.io.B:=Delay(io.sData.payload(7 downto 0),Config.XQC_PIPELINE)
+    
+
+    //平方和计算=============================================================
+    val Xq2C_Sum=Reg(UInt(Config.XQ2C_SUM_WIDTH bits))init(0)//累加和32bit位宽可能不够，。。。。
+    val Xq2C_Valid=Delay(XqC_Valid,Config.XQ2C_PIPELINE)
+    val Xq2C_Sum_Clear_Valid=Delay(Col_Cnt.valid,Config.XQ2C_PIPELINE+Config.XQC_PIPELINE)//Xq进来，valid拉高，计算累加和，Xq然后和C计算，延迟XqC_Pipeline拍，出来的结果继续和Xq计算，延迟Xq2c_Pipeline拍
+    //当最后一个点进来，col_valid拉高
+    when(Xq2C_Sum_Clear_Valid){//一列入完了，就清零
+        Xq2C_Sum.clearAll()
+    }elsewhen(Xq2C_Valid){
+        Xq2C_Sum:=Xq2C_Sum+Xq2C_Module.io.P.resized//Xq2C_Valid决定是否累加，正确得结果在Xq2C_Valid的下一拍输出
+    }
+    
+    // Xq2C_ABCP.io.B:=XqC_Module.io.A
+
     //设计思路：
         //由于A=C*X_q-M1,所以可以在加载一行的同时进行累加和计算，加载完一行后，累加和M1也就算完了
         //同时在加载的时候还能同时进行C*X_q的计算，这样一行加载完，每个点的C*X_q-M1的值也就知道了
-        //之后再加载下一行，腹泻上一行的Bram，以此类推
+        //之后再加载下一行，复写上一行的Bram，以此类推
 }
 object Sum_Xq_Gen extends App { 
     val verilog_path="./testcode_gen" 
