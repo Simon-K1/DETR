@@ -110,6 +110,9 @@ class Sum_Xq extends Component{
         val start=in Bool()//计算启动信号
 
         val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
+
+        val Scale=in UInt(8 bits)
+        val Bias=in UInt(8 bits)//不知道8bit够不够用，，planB就是之后将8bit改为32bit
     }
     noIoPrefix()
 
@@ -121,7 +124,7 @@ class Sum_Xq extends Component{
     
     
     Fsm.Init_End:=Init_Count.valid
-    Fsm.Load_Firts_Row_End:=Row_Cnt.count>=1//当行计数器为1时，说明刚好进完了一列，所以这个的判断条件是行计数器大于等于1
+    Fsm.Load_Firts_Row_End:=(Row_Cnt.count===0)&&Col_Cnt.valid//当行计数为0时，说明处于第一行，当列计数拉高时，说明第一行加载完了
     Fsm.Accumu_End:=Row_Cnt.valid//当行计数器valid拉高，也就是说说明一个完整的矩阵数据已经进来了。
 
     io.sData.ready:=(Fsm.currentState=/=SUM_XQ_ENUM.IDLE)&&(Fsm.currentState=/=SUM_XQ_ENUM.INIT)//暂时只考虑到这么多，只要不处于这两个状态应该都能接受数据吧
@@ -130,7 +133,8 @@ class Sum_Xq extends Component{
     
 
     val Read_Row_Mem_Data=Row_Mem.readSync(Col_Cnt.count,io.sData.fire)//这里采用的就是：来一个数读一下
-    val Write_Row_Mem_Data=RegNext(io.sData.payload)
+    
+    val Write_Row_Mem_Data=RegNext(io.sData.payload)//要写入的数据应该是XqC这个数据
     val Write_Row_Mem_Valid=RegNext(io.sData.fire)
     val Write_Row_Mem_Addr=RegNext(Col_Cnt.count)
     Row_Mem.write(Write_Row_Mem_Addr,Write_Row_Mem_Data,Write_Row_Mem_Valid)//使用读优先策略，要求先读再写，先读出旧的Xq再写入新的Xq
@@ -142,23 +146,31 @@ class Sum_Xq extends Component{
     //第二步骤，设计乘法流水线（需要大量调用xilinx的IP核)=============================================================================================
     
     //①计算x_q*c
+    val Read_Row_Mem_Data_Valid=RegNext(io.sData.fire&&Fsm.currentState===SUM_XQ_ENUM.ACCUMU)//因为只有进入ACCUMU状态才开始计算上一层累加和之后的数据
+    //sData.fire拉高，说明可以从Mem中读取数据，需要一个时钟，所以RegNext一下-->数据进来一个，sData.fire拉高，这时从Mem中读出一个数，在下一周期才有效
+
     val XqC_Module=new XqC
     // val Xq2C_ABCP=new Xq2C_1
     val Xq2C_Module=new Xq2C
     
-    XqC_Module.io.A:=io.sData.payload(7 downto 0)
+    XqC_Module.io.A:=io.sData.payload(7 downto 0)//读出上一行的数据参与计算
     XqC_Module.io.B:=io.Channel_Nums
     val XqC_Valid=Delay(io.sData.fire,Config.XQC_PIPELINE)
-
-    val Xq_Sum=Reg(UInt(20 bits))init(0)
-    val Xq_Sum_Clear=Col_Cnt.valid//累加和清零
-
-    when(Xq_Sum_Clear){
-        Xq_Sum.clearAll()
-    }elsewhen(io.sData.fire){
-        Xq_Sum:=Xq_Sum+io.sData.payload(7 downto 0)
-    }
+    
     //累加和计算=============================================================
+    val Xq_Sum=Reg(UInt(20 bits))init(0)
+    val Xq_Sum_Clear=RegNext(Col_Cnt.valid)//累加和清零,延一拍
+
+
+    when(io.sData.fire){//如果当前数据有效，需要判断是继续累加还是重新开始累加
+        when(Xq_Sum_Clear){
+            Xq_Sum:=io.sData.payload(7 downto 0).resized
+        }otherwise{
+            Xq_Sum:=Xq_Sum+io.sData.payload(7 downto 0).resized
+        }
+    }
+    
+    //Xq2C计算==============================================================
     Xq2C_Module.io.A:=XqC_Module.io.P
     Xq2C_Module.io.B:=Delay(io.sData.payload(7 downto 0),Config.XQC_PIPELINE)
     
@@ -166,14 +178,15 @@ class Sum_Xq extends Component{
     //平方和计算=============================================================
     val Xq2C_Sum=Reg(UInt(Config.XQ2C_SUM_WIDTH bits))init(0)//累加和32bit位宽可能不够，。。。。
     val Xq2C_Valid=Delay(XqC_Valid,Config.XQ2C_PIPELINE)
-    val Xq2C_Sum_Clear_Valid=Delay(Col_Cnt.valid,Config.XQ2C_PIPELINE+Config.XQC_PIPELINE)//Xq进来，valid拉高，计算累加和，Xq然后和C计算，延迟XqC_Pipeline拍，出来的结果继续和Xq计算，延迟Xq2c_Pipeline拍
-    //当最后一个点进来，col_valid拉高
-    when(Xq2C_Sum_Clear_Valid){//一列入完了，就清零
-        Xq2C_Sum.clearAll()
-    }elsewhen(Xq2C_Valid){
-        Xq2C_Sum:=Xq2C_Sum+Xq2C_Module.io.P.resized//Xq2C_Valid决定是否累加，正确得结果在Xq2C_Valid的下一拍输出
+    val Xq2C_Sum_Clear_Valid=Delay(Xq_Sum_Clear,Config.XQ2C_PIPELINE+Config.XQC_PIPELINE)//Xq进来，valid拉高，计算累加和，Xq然后和C计算，延迟XqC_Pipeline拍，出来的结果继续和Xq计算，延迟Xq2c_Pipeline拍
+
+    when(Xq2C_Valid){//如果当前数据有效，需要判断是继续累加还是重新开始累加
+        when(Xq2C_Sum_Clear_Valid){
+            Xq2C_Sum:=Xq2C_Module.io.P.resized
+        }otherwise{
+            Xq2C_Sum:=Xq2C_Sum+Xq2C_Module.io.P.resized
+        }
     }
-    
     // Xq2C_ABCP.io.B:=XqC_Module.io.A
 
     //设计思路：
