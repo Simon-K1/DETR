@@ -74,6 +74,37 @@ class Xq_Sum_Pow extends BlackBox{
     noIoPrefix()
     mapClockDomain(clock=io.CLK)
 }
+
+class Fi32_to_Single extends  BlackBox{//定点32转单精度
+    val s_axis_a=new Bundle{
+        val tdata=in UInt(32 bits)
+        val tready=out Bool()
+        val tvalid=in Bool()
+    }
+    val aclk=in Bool()
+    val m_axis_result=new Bundle{
+        val tdata=out UInt(32 bits)
+        val tready=in Bool()
+        val tvalid=out Bool()
+    }
+    noIoPrefix()
+    mapClockDomain(clock=aclk)
+}
+class Reciprocal_Sqrt extends BlackBox{
+    val s_axis_a=new Bundle{
+        val tdata=in UInt(32 bits)
+        val tready=out Bool()
+        val tvalid=in Bool()
+    }
+    val aclk=in Bool()
+    val m_axis_result=new Bundle{
+        val tdata=out UInt(32 bits)
+        val tready=in Bool()
+        val tvalid=out Bool()
+    }
+    noIoPrefix()
+    mapClockDomain(clock=aclk)
+}
 case class SUM_XQ_FSM(start:Bool)extends Area{
     val currentState = Reg(SUM_XQ_ENUM()) init SUM_XQ_ENUM.IDLE
     val nextState = SUM_XQ_ENUM()
@@ -111,6 +142,94 @@ case class SUM_XQ_FSM(start:Bool)extends Area{
             }otherwise{
                 nextState:=SUM_XQ_ENUM.ACCUMU
             }//可以百分百确定的是，最后一个点进完之后，平方，根号这些计算一定还没有算完，所以对于平方，根号的结果valid需要延时
+        }
+    }
+}
+object SQRT_COMPUTE_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
+    val WAIT, COMPUTE0, COMPUTE1,COMPUTE2,COMPUTE3,COMPUTE4,COMPUTE5,COMPUTE6,COMPUTE7 = newElement
+    //WAIT:等待进Sqrt的有效数据
+    //COMPUTE0:计算第一个并行度的sqrt，分8次计算，没必要要为了8并行度消耗8*9=72个DSP
+}
+case class SQRT_COMPUTE_FSM()extends Area{
+    val currentState = Reg(SQRT_COMPUTE_ENUM()) init SQRT_COMPUTE_ENUM.WAIT
+    val nextState = SQRT_COMPUTE_ENUM()
+    currentState := nextState
+
+    val Send0_Data=Bool()
+    val Send1_Data=Bool()
+    val Send2_Data=Bool()
+    val Send3_Data=Bool()
+    val Send4_Data=Bool()
+    val Send5_Data=Bool()
+    val Send6_Data=Bool()
+    val Send7_Data=Bool()
+    val Data_Sended=Bool()
+
+
+
+    switch(currentState){
+        is(SQRT_COMPUTE_ENUM.WAIT){
+            when(Send0_Data){
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE0
+            }otherwise{
+                nextState:=SQRT_COMPUTE_ENUM.WAIT
+            }
+        }
+        is(SQRT_COMPUTE_ENUM.COMPUTE0){
+            when(Send1_Data){
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE1
+            }otherwise{
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE0
+            }
+        }
+        is(SQRT_COMPUTE_ENUM.COMPUTE1){
+            when(Send2_Data){
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE2
+            }otherwise{
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE1
+            }
+        }
+        is(SQRT_COMPUTE_ENUM.COMPUTE2){
+            when(Send3_Data){
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE3
+            }otherwise{
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE2
+            }
+        }
+        is(SQRT_COMPUTE_ENUM.COMPUTE3){
+            when(Send4_Data){
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE4
+            }otherwise{
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE3
+            }
+        }
+        is(SQRT_COMPUTE_ENUM.COMPUTE4){
+            when(Send5_Data){
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE5
+            }otherwise{
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE4
+            }
+        }
+        is(SQRT_COMPUTE_ENUM.COMPUTE5){
+            when(Send6_Data){
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE6
+            }otherwise{
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE5
+            }
+        }
+        is(SQRT_COMPUTE_ENUM.COMPUTE6){
+            when(Send7_Data){
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE7
+            }otherwise{
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE6
+            }
+        }
+        is(SQRT_COMPUTE_ENUM.COMPUTE7){
+            when(Data_Sended){
+                nextState:=SQRT_COMPUTE_ENUM.WAIT
+            }otherwise{
+                nextState:=SQRT_COMPUTE_ENUM.COMPUTE7
+            }
         }
     }
 }
@@ -225,12 +344,47 @@ class Sum_Xq extends Component{
     val Sqrt_In_Valid=RegNext(Xq2C_Sum_Clear)
     val Sqrt_In=RegNextWhen(Xq2C_Sum-XqSum_Pow.io.P,Xq2C_Sum_Clear)init(0)//这样写会出来毛刺，，，，，，
     //分析发现Xq2C的结果是最后出来的，所以当Xq2C最后被算出来，CXq-M2,Xq_Sum,Xq_Sum_Pow都被算出来了
+    val Sqrt_In_Truncated=Sqrt_In(31 downto 0)
+    val Truncated_Success=Sqrt_In===Sqrt_In_Truncated
 
-    val A=Delay(Xq_Substract_M2,6)
+
 
     
+//开始计算根号下分之一，先转单精度再计算
+    val Fi32_2_Single=new Fi32_to_Single
+    val Reci_Sqrt=new Reciprocal_Sqrt
+    Fi32_2_Single.m_axis_result<>Reci_Sqrt.s_axis_a
+
+    Reci_Sqrt.m_axis_result.tready:=True
+    
+
+
+    //理论上来说8个点是同步的，所以需要对8个点的入fifo冲突进行处理
+    //考虑到之后多并行度需要共用一个根号分之一模块,从而能节省72-9个DSP
+    //先算进第一个点
+    val Sqrt_Compute_Fsm=new SQRT_COMPUTE_FSM
+    Sqrt_Compute_Fsm.Send0_Data:=Sqrt_In_Valid
+    Sqrt_Compute_Fsm.Send1_Data:=Fi32_2_Single.s_axis_a.tready
+    Sqrt_Compute_Fsm.Send2_Data:=Fi32_2_Single.s_axis_a.tready
+    Sqrt_Compute_Fsm.Send3_Data:=Fi32_2_Single.s_axis_a.tready
+    Sqrt_Compute_Fsm.Send4_Data:=Fi32_2_Single.s_axis_a.tready
+    Sqrt_Compute_Fsm.Send5_Data:=Fi32_2_Single.s_axis_a.tready
+    Sqrt_Compute_Fsm.Send6_Data:=Fi32_2_Single.s_axis_a.tready
+    Sqrt_Compute_Fsm.Send7_Data:=Fi32_2_Single.s_axis_a.tready
+    Sqrt_Compute_Fsm.Data_Sended:=Fi32_2_Single.s_axis_a.tready
+    switch(Sqrt_Compute_Fsm.currentState){
+        is(SQRT_COMPUTE_ENUM.COMPUTE0){
+            Fi32_2_Single.s_axis_a.tdata:=Sqrt_In_Truncated
+            Fi32_2_Single.s_axis_a.tvalid:=True//只会拉高一个周期
+        }
+        default{
+            Fi32_2_Single.s_axis_a.tdata:=1
+            Fi32_2_Single.s_axis_a.tvalid:=False
+        }
+    }
+
 }
 object Sum_Xq_Gen extends App { 
     val verilog_path="./testcode_gen" 
-   SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Sum_Xq)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Sum_Xq)
 }
