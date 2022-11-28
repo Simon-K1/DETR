@@ -217,14 +217,18 @@ class Sum_Xq extends Component{
         //M1^2(这地方可以给乘法器加一个时钟使能，以后再说)
     val XqSum_Pow=new Xq_Sum_Pow
     XqSum_Pow.io.A:=Xq_Sum_Old
-    XqSum_Pow.io.B:=Xq_Sum_Old
-    val Xq_Sum_Pow_Valid=Delay(Xq_Sum_Clear,Config.XQ_SUM_POW_PIPELINE)//40bit
+    XqSum_Pow.io.B:=Xq_Sum_Old//Xq_Sum_Old慢Xq_Sum一拍，这样的话下面Xq_Sum_Pow_Valid要多打一拍，
+    val Xq_Sum_Pow_Valid=Delay(Xq_Sum_Clear,Config.XQ_SUM_POW_PIPELINE+1)//40bit
         //获取上一行的C*M2
-    val Xq2C_Sum_Last=RegNextWhen(Xq2C_Sum,Xq2C_Sum_Clear)init(0)
+    //val Xq2C_Sum_Last=RegNextWhen(Xq2C_Sum,Xq2C_Sum_Clear)init(0)
         //计算上一行数据CM2-M1^2作为根号输入
-    val Sqrt_In=Xq2C_Sum_Last-XqSum_Pow.io.P//这样写会出来毛刺，，，，，，
-    
+    val Sqrt_In_Valid=RegNext(Xq2C_Sum_Clear)
+    val Sqrt_In=RegNextWhen(Xq2C_Sum-XqSum_Pow.io.P,Xq2C_Sum_Clear)init(0)//这样写会出来毛刺，，，，，，
+    //分析发现Xq2C的结果是最后出来的，所以当Xq2C最后被算出来，CXq-M2,Xq_Sum,Xq_Sum_Pow都被算出来了
 
+    val A=Delay(Xq_Substract_M2,6)
+
+    
 }
 object Sum_Xq_Gen extends App { 
     val verilog_path="./testcode_gen" 
