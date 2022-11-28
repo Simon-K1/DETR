@@ -20,7 +20,7 @@ case class TopConfig(){
     assert(XQC_P_WIDTH<=48)//如果使用Dsp48的话，输出位宽需要小于48
     
 
-        //XQ2C--P=A*B+C
+        //XQ2C--P=A*B+C==================
     val XQ2C_A_WIDTH=XQC_P_WIDTH//20
     val XQ2C_B_WIDTH=XQC_A_WIDTH//8
     val XQ2C_P_WIDTH=XQC_P_WIDTH+XQC_A_WIDTH//28,只做乘法，在外面累加
@@ -29,6 +29,13 @@ case class TopConfig(){
     assert(XQ2C_P_WIDTH<=48)//如果使用Dsp48的话，输出位宽需要小于48
     
     val XQ2C_SUM_WIDTH=48//之前选的是32bit,但是32bit的位宽存在不用的可能
-        //SUMXQ
+
+    
+        //SUMXQ累加和位宽===========================
+    val XQ_SUM_WIDTH=20//M2=sum(Xq)---20bit，与XqC位宽一样
+
+
+        //Xq_Sum_Pow----M2=Sum(Xq)========
+    val XQ_SUM_POW_PIPELINE=4//乘法器流水线级数
 
 }
