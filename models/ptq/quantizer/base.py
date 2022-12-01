@@ -41,5 +41,5 @@ class BaseQuantizer(nn.Module):
 
     def forward(self, inputs):
         outputs = self.quant(inputs)
-        outputs = self.dequantize(outputs)
+        outputs = self.dequantize(outputs)#反量化回去，作为下一层的标准输入，而不是Uint8整形输入
         return outputs

@@ -186,17 +186,34 @@ class QIntLayerNorm(nn.LayerNorm):
 
             x_q = x_q * in_scale_mask#最后一个维度的对应元素相乘，不相加
             M1=x_q.sum(dim=-1)#按行求和[16,197]
-            std_x_q = torch.sqrt(#std标准差也就是加入alpha后每一行的标准差，
-                channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2)#[B,197]
+            Sqrt_In=channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2
+            
+            std_x_q = torch.sqrt(Sqrt_In)#[B,197]#std标准差也就是加入alpha后每一行的标准差，
+            # print('std_x_q dtype is',std_x_q.dtype)
+            # std_x_q.dtype=torch.float32
             batch=x_q.shape[0]
-            std_x_q_round=((1/std_x_q)*torch.pow(2, torch.tensor(32))).round()#(((1/std_x_q)*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32)))
+            Shift_Num=23
+            std_x_q_round=((1/std_x_q)*torch.pow(2, torch.tensor(Shift_Num))).round()#(((1/std_x_q)*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32)))
             for i in range(M1.shape[-1]):#对于每一行来说，都是[16,384]维，对于M1的每一行来说，都是[16]维
                 x_q[:,i,:]=(channel_nums*x_q[:,i,:]-M1[:,i].reshape(batch,-1))*(std_x_q_round[:,i].reshape(batch,-1))
             Gama=((self.weight.reshape(1, 1, -1)/out_scale*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32))).round()
             Beta=((self.bias.reshape(1,1,-1)/out_scale*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32))).round()
-
+            # with open ('Scale_Bias.txt','a') as ff:
+            #     for i in range(Gama.shape[-1]):
+            #         ff.write('%02x%02x'%(int(Gama[0,0,i].item())&0xff,int(Beta[0,0,i].item())&0xff))
+            #         ff.write("\n")
+            # ff.close()
+            
+            # 验证Scale和Bias的位宽
+            for i in Gama[0,0,:]:
+                if i>127 or i<-128:
+                    print("Gama is",i,":>255")
+            for i in Beta[0,0,:]:
+                if i>127 or i<-128:
+                    print("Beta is",i,":>255")               
+            
             for i in range(x_q.shape[1]):#对于每一行来说
-                x_q[:,i,:]=(((x_q[:,i,:]*Gama)/torch.pow(2, torch.tensor(32))).round()+Beta).round()# (((.round()))+Beta).round()#使用放大2^32倍的1/sqrt计算
+                x_q[:,i,:]=(((x_q[:,i,:]*Gama)/torch.pow(2, torch.tensor(Shift_Num))).round()+Beta).round()# (((.round()))+Beta).round()#使用放大2^32倍的1/sqrt计算
             x = x_q * out_scale
             # mean_x_q = x_q.mean(dim=-1) * in_scale1
             # std_x_q = (in_scale1 / channel_nums) * torch.sqrt(#std标准差也就是加入alpha后每一行的标准差，
