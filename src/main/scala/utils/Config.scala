@@ -28,7 +28,7 @@ case class TopConfig(){
 
     assert(XQ2C_P_WIDTH<=48)//如果使用Dsp48的话，输出位宽需要小于48
     
-    val XQ2C_SUM_WIDTH=48//之前选的是32bit,但是32bit的位宽存在不用的可能
+    val XQ2C_SUM_WIDTH=48//之前选的是32bit,但是32bit的位宽存在不用的可能，其实48bit已经够用了
 
     
         //SUMXQ累加和位宽
@@ -42,4 +42,9 @@ case class TopConfig(){
     val FI32_2_SINGLE_PIPELINE=6
         //根号下分支一延时
     val RECIPROCAL_SQRT_PIPELINE=33
+//Scale*A计算
+    val XQ_SUBSTRACT_M2_WIDTH=32//有符号20bit
+    val SCALE_WIDTH=8//直接取整变成8bit输入
+    val SCALE_A_PIPELINE=4//乘法器流水线级数
+    
 }

@@ -9,34 +9,6 @@ object SUM_XQ_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取�
     //LOAD_FIRTS_ROW:加载第一行，这时候计算第一行的累加和和C*X_Q
 }
 
-// class Xq2C_1 extends BlackBox{
-//     //XQ2C=cM2计算
-//     //Dsp48 macro有一个A*B+P还有一个A*B+C，这个是A*B+C的
-//     val Config=TopConfig()
-//     val io=new Bundle{
-//         val CLK=in Bool()
-//         val A=in UInt(Config.XQ2C_A_WIDTH bits)
-//         val B=in UInt(Config.XQ2C_B_WIDTH bits)
-//         val C=in UInt(Config.XQ2C_C_WIDTH bits)
-//         val P=out UInt(Config.XQ2C_P_WIDTH bits)
-//     }
-//     noIoPrefix()
-//     mapClockDomain(clock=io.CLK)
-// }
-// class Xq2C_2 extends BlackBox{
-//     //XQ2C=cM2计算
-//     //Dsp48 macro有一个A*B+P还有一个A*B+C，这个是A*B+P的（最后测试发现这个P初始化有问题....,不太会用)
-//     val Config=TopConfig()
-//     val io=new Bundle{
-//         val CLK=in Bool()
-//         val A=in UInt(Config.XQ2C_A_WIDTH bits)
-//         val B=in UInt(Config.XQ2C_B_WIDTH bits)
-//         // val C=in UInt(Config.XQ2C_C_WIDTH bits)
-//         val P=out UInt(Config.XQ2C_P_WIDTH bits)
-//     }
-//     noIoPrefix()
-//     mapClockDomain(clock=io.CLK)
-// }
 class XqC extends BlackBox{
     //XQC=C*X_q计算
     //注意Dsp48使用的是补码输入，所以如果输入的是无符号8bit，需要设置输入位宽为9，MSB永远设置为0，
@@ -44,9 +16,9 @@ class XqC extends BlackBox{
     val Config=TopConfig()
     val io=new Bundle{
         val CLK=in Bool()
-        val A=in UInt(Config.XQC_A_WIDTH bits)
-        val B=in UInt(Config.XQC_B_WIDTH bits)
-        val P=out UInt(Config.XQC_P_WIDTH bits)
+        val A=in SInt(Config.XQC_A_WIDTH bits)//xq-zp  sint
+        val B=in UInt(Config.XQC_B_WIDTH bits)//C--uint
+        val P=out SInt(Config.XQC_P_WIDTH bits)
     }
     noIoPrefix()
     mapClockDomain(clock=io.CLK)
@@ -56,8 +28,8 @@ class Xq2C extends BlackBox{
     val Config=TopConfig()
     val io=new Bundle{
         val CLK=in Bool()
-        val A=in UInt(Config.XQ2C_A_WIDTH bits)
-        val B=in UInt(Config.XQ2C_B_WIDTH bits)
+        val A=in SInt(Config.XQ2C_A_WIDTH bits)//sint 20bit--(xq-zp)*C
+        val B=in SInt(Config.XQ2C_B_WIDTH bits)//sint 8bit  xq
         val P=out UInt(Config.XQ2C_P_WIDTH bits)
     }
     noIoPrefix()
@@ -67,14 +39,26 @@ class Xq_Sum_Pow extends BlackBox{
     val Config=TopConfig()
     val io=new Bundle{
         val CLK=in Bool()
-        val A=in UInt(Config.XQ_SUM_WIDTH bits)//20
-        val B=in UInt(Config.XQ_SUM_WIDTH bits)//20
+        val A=in SInt(Config.XQ_SUM_WIDTH bits)//20
+        val B=in SInt(Config.XQ_SUM_WIDTH bits)//20
         val P=out UInt(2*Config.XQ_SUM_WIDTH bits)//40
     }
     noIoPrefix()
     mapClockDomain(clock=io.CLK)
 }
 
+class Scale_Multiply_A extends BlackBox{
+    //在计算根号下分之一得同时计算Scale*（CX_q-Sum(Xq))=A
+    val Config=TopConfig()
+    val io=new Bundle{
+        val CLK=in Bool()
+        val A=in SInt(Config.XQ_SUBSTRACT_M2_WIDTH bits)//20
+        val B=in SInt(Config.SCALE_WIDTH bits)//8
+        val P=out SInt(Config.SCALE_WIDTH+Config.XQ_SUBSTRACT_M2_WIDTH bits)//40
+    }
+    noIoPrefix()
+    mapClockDomain(clock=io.CLK)
+}
 class Fi32_to_Single extends  BlackBox{//定点32转单精度
     val s_axis_a=new Bundle{
         val tdata=in UInt(32 bits)
@@ -236,13 +220,14 @@ case class SQRT_COMPUTE_FSM()extends Area{
 class Sum_Xq extends Component{
     val Config=TopConfig()
     val io=new Bundle{
-        val sData=slave Stream( UInt(Config.IN_DATA_WIDTH bits))//输入数据64bit，一次进8行，每行一个点（8bit)
+        val sData=slave Stream( SInt(Config.IN_DATA_WIDTH bits))//输入数据64bit，一次进8行，每行一个点（8bit),进来的数据为Xq-Zeropoint的值，所以是有符号数据
         val start=in Bool()//计算启动信号
 
         val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
 
-        val Scale=in UInt(8 bits)
-        val Bias=in UInt(8 bits)//不知道8bit够不够用，，planB就是之后将8bit改为32bit
+        val Col_Cnt_Out=out UInt(log2Up(Config.CHANNEL_NUMS) bits)
+        val Scale=in SInt(8 bits)//暂时让Scale和Bias作为输入
+        val Bias=in SInt(8 bits)//不知道8bit够不够用，，planB就是之后将8bit改为32bit
     }
     noIoPrefix()
 
@@ -259,7 +244,7 @@ class Sum_Xq extends Component{
 
     io.sData.ready:=(Fsm.currentState=/=SUM_XQ_ENUM.IDLE)&&(Fsm.currentState=/=SUM_XQ_ENUM.INIT)//暂时只考虑到这么多，只要不处于这两个状态应该都能接受数据吧
     //创建一个mem用于缓存8行数据，因为A需要计算完均值再做减法===============================================================
-    val Row_Mem=new Mem(UInt(Config.XQC_P_WIDTH bits),Config.CHANNEL_NUMS)//64位宽，384深度
+    val Row_Mem=new Mem(SInt(Config.XQC_P_WIDTH bits),Config.CHANNEL_NUMS)//64位宽，384深度，用于存储sint的Xq*C
     
 
     val Read_Row_Mem_Data=Row_Mem.readSync(Col_Cnt.count,io.sData.fire)//这里采用的就是：来一个数读一下
@@ -289,7 +274,7 @@ class Sum_Xq extends Component{
     val Write_Row_Mem_Addr=Delay(Col_Cnt.count,Config.XQC_PIPELINE)
     Row_Mem.write(Write_Row_Mem_Addr,Write_Row_Mem_Data,Write_Row_Mem_Valid)//使用读优先策略，要求先读再写，先读出旧的Xq再写入新的Xq
     //累加和计算=============================================================
-    val Xq_Sum=Reg(UInt(Config.XQ_SUM_WIDTH bits))init(0)
+    val Xq_Sum=Reg(SInt(Config.XQ_SUM_WIDTH bits))init(0)
     val Xq_Sum_Clear=RegNext(Col_Cnt.valid)//累加和清零,延一拍
 
 
@@ -331,7 +316,8 @@ class Sum_Xq extends Component{
     val Xq_Sum_Old= RegNextWhen(Xq_Sum, Xq_Sum_Clear)init(0)
     //当最后一个点进来，col_valid拉高，然后，第二个个周期Xq_Sum_Clear拉高，这时，上一行累加和计算完成，同时Mem的读地址变为0即在第三个周期读出
     //上一行的Xq,另外，在第三个周期的上一行累加和Xq_Sum_Old也被确定
-    val Xq_Substract_M2=Read_Row_Mem_Data-Xq_Sum_Old//⭐应该是有符号类型，补码表示
+    val XqC_Substract_M2=(Read_Row_Mem_Data.resize(Config.XQ_SUBSTRACT_M2_WIDTH)-Xq_Sum_Old.resize(Config.XQ_SUBSTRACT_M2_WIDTH))//⭐应该是有符号类型，补码表示，他智能//需要单独为其设置位宽，先拿32bit来试试
+    //这里由于XqC是有符号数，M2也是有符号数，两数相减存在位宽扩大的情况，所以需要在做减法之前提前符号位扩展
     //计算C*M2-M1^2==========================================================================
         //M1^2(这地方可以给乘法器加一个时钟使能，以后再说)
     val XqSum_Pow=new Xq_Sum_Pow
@@ -382,9 +368,35 @@ class Sum_Xq extends Component{
             Fi32_2_Single.s_axis_a.tvalid:=False
         }
     }
+//在算根号分之一的时候计算算S*A===============================================
+    val Scale_Mul_A=new Scale_Multiply_A
+    Scale_Mul_A.io.A:=XqC_Substract_M2
+    Scale_Mul_A.io.B:=io.Scale
+    io.Col_Cnt_Out:=Col_Cnt.count//目前认为Scale和Bias从外面输入，也就是说Scale和Bias已经在外面存好了，现在只要给外面的存储模块一个读地址就能将对应的Scale和Bias读进来
+    
+    
 
 }
+
+
+
+class Dynamic_Shift extends Component{
+    //动态移位测试，之前写的移位都是固定位数的移位，但是现在平方根出来的是一个单精度，带了动态移位参数，需要考虑进去
+    val io=new Bundle{
+        val Shift_Num=in UInt(8 bits)//需要动态移位的参数
+        val Data_To_Shift=in UInt(32 bits)
+        val Data_Shited=out UInt(32 bits)
+    }
+    noIoPrefix()
+    //如果是bit类型，单纯使用逻辑移位，如果是Uint或SInt，则使用算术移位
+    io.Data_Shited:=io.Data_To_Shift>>io.Shift_Num
+    val aaa=io.Data_To_Shift>>io.Shift_Num
+}
+
+
+
 object Sum_Xq_Gen extends App { 
     val verilog_path="./testcode_gen" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Sum_Xq)
+    //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }
