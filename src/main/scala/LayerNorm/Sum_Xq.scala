@@ -217,10 +217,32 @@ case class SQRT_COMPUTE_FSM()extends Area{
         }
     }
 }
+class Ptf_Module extends Component{
+    val io=new Bundle{
+        val DataIn=in SInt(8 bits)//减去zeropoint后的数据
+        val DataOut=out SInt(11 bits)//移位后的值
+        val Ptf=in UInt(2 bits)
+    }
+    val sData_Ptf=SInt(11 bits)//88bit
+    switch(io.Ptf){//这里执行的是算术移位，移位是有符号数，由补码表示
+        is(0){
+            sData_Ptf:=io.DataIn.resized
+        }
+        is(1){
+            sData_Ptf:=(io.DataIn<<1).resized
+        }
+        is(2){
+            sData_Ptf:=(io.DataIn<<2).resized
+        }
+        is(3){
+            sData_Ptf:=io.DataIn<<3
+        }//由于是动态移位，但是动态移位的位数又是有限的，就用一个switch来处理了
+    }
+}
 class Sum_Xq extends Component{
     val Config=TopConfig()
     val io=new Bundle{
-        val sData=slave Stream( SInt(Config.IN_DATA_WIDTH bits))//输入数据64bit，一次进8行，每行一个点（8bit),进来的数据为Xq-Zeropoint的值，所以是有符号数据
+        val sData=slave Stream( SInt(Config.IN_DATA_WIDTH bits))//输入数据88bit，一次进8行，每行一个点（8bit),进来的数据为Xq-Zeropoint的值，所以是有符号数据
         val start=in Bool()//计算启动信号
 
         val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
@@ -228,26 +250,9 @@ class Sum_Xq extends Component{
         val Col_Cnt_Out=out UInt(log2Up(Config.CHANNEL_NUMS) bits)
         val Scale=in SInt(8 bits)//暂时让Scale和Bias作为输入
         val Bias=in SInt(8 bits)//不知道8bit够不够用，，planB就是之后将8bit改为32bit
-
-        val Ptf=in UInt(2 bits)//Ptf量化因子，暂时从外面接进来，以后再整合
     }
     noIoPrefix()
     //使用Ptf量化因子，对输入的8bit进行移位操作，变成11bit定点
-    val sData_Ptf=SInt(11 bits)//88bit
-    switch(io.Ptf){//这里执行的是算术移位，移位是有符号数，由补码表示
-        is(0){
-            sData_Ptf:=io.sData.payload(7 downto 0).resized
-        }
-        is(1){
-            sData_Ptf:=(io.sData.payload(7 downto 0)<<1).resized
-        }
-        is(2){
-            sData_Ptf:=(io.sData.payload(7 downto 0)<<2).resized
-        }
-        is(3){
-            sData_Ptf:=io.sData.payload(7 downto 0)<<3
-        }//由于是动态移位，但是动态移位的位数又是有限的，就用一个switch来处理了
-    }
 
 
     
@@ -284,7 +289,7 @@ class Sum_Xq extends Component{
     // val Xq2C_ABCP=new Xq2C_1
     val Xq2C_Module=new Xq2C
     
-    XqC_Module.io.A:=sData_Ptf(Config.XQ_DATA_WIDTH-1 downto 0)//读出上一行的数据参与计算
+    XqC_Module.io.A:=io.sData.payload(Config.XQ_DATA_WIDTH-1 downto 0)//读出上一行的数据参与计算
     XqC_Module.io.B:=io.Channel_Nums
     //XqC计算结果写回=======================================================
     val XqC_Valid=Delay(io.sData.fire,Config.XQC_PIPELINE)
@@ -299,15 +304,15 @@ class Sum_Xq extends Component{
 
     when(io.sData.fire){//如果当前数据有效，需要判断是继续累加还是重新开始累加
         when(Xq_Sum_Clear){
-            Xq_Sum:=sData_Ptf(Config.XQ_DATA_WIDTH-1 downto 0).resized
+            Xq_Sum:=io.sData.payload(Config.XQ_DATA_WIDTH-1 downto 0).resized
         }otherwise{
-            Xq_Sum:=Xq_Sum+sData_Ptf(Config.XQ_DATA_WIDTH-1 downto 0).resized
+            Xq_Sum:=Xq_Sum+io.sData.payload(Config.XQ_DATA_WIDTH-1 downto 0).resized
         }
     }
     
     //Xq2C计算==============================================================
     Xq2C_Module.io.A:=XqC_Module.io.P
-    Xq2C_Module.io.B:=Delay(sData_Ptf(Config.XQ_DATA_WIDTH-1 downto 0),Config.XQC_PIPELINE)
+    Xq2C_Module.io.B:=Delay(io.sData.payload(Config.XQ_DATA_WIDTH-1 downto 0),Config.XQC_PIPELINE)
     
 
     //平方和计算=============================================================
@@ -412,7 +417,10 @@ class Dynamic_Shift extends Component{
     val aaa=io.Data_To_Shift>>io.Shift_Num
 }
 
-
+// class LayerNorm_Quan extends Component{
+//     val Quan=new Sum_Xq
+//     val Ptf=new Ptf_Module
+// }//以后再整合叭
 
 object Sum_Xq_Gen extends App { 
     val verilog_path="./testcode_gen" 

@@ -7,9 +7,8 @@ case class TopConfig(){
     val TOKEN_NUMS=197//token 数
     val PIPELINE=8//8并行度
 
-
-    val IN_DATA_WIDTH=64//输入数据位宽64bit,上层输入的是8bit定点，之后才使用PTF因子进行移位操作变成11bit然后参与接下来的计算
     val XQ_DATA_WIDTH=11//Xq即量化后的数据，也就是处理了Ptf之后的数，因为数据需要移位0，1，2，3，8bit<<3-->所以最终的量化数据位宽是11bit
+    val IN_DATA_WIDTH=PIPELINE*XQ_DATA_WIDTH//输入数据位宽64bit,上层输入的是8bit定点，之后才使用PTF因子进行移位操作变成11bit然后参与接下来的计算
 
     //乘法器相关配置
         //Xq*C--P=A*B
