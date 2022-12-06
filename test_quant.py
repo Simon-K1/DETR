@@ -28,7 +28,7 @@ parser.add_argument('--quant-method',
                     default='minmax',
                     choices=['minmax', 'ema', 'omse', 'percentile'])
 parser.add_argument('--calib-batchsize',
-                    default=1,
+                    default=4,
                     type=int,
                     help='batchsize of calibration set')
 parser.add_argument('--calib-iter', default=100, type=int)

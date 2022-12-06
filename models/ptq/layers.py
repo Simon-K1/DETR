@@ -184,10 +184,25 @@ class QIntLayerNorm(nn.LayerNorm):
             in_scale1 = in_scale.min()
             in_scale_mask = (in_scale / in_scale1).round()
 
-            x_q = x_q * in_scale_mask#最后一个维度的对应元素相乘，不相加
+            #行优先生成xq，8bit=================================================================
+            # with open ('Xq_LayerNorm.txt','a') as ff:
+            #     for i in range(x_q.shape[-2]):
+            #         for j in range(x_q.shape[-1]):
+            #             ff.write('%02x'%(int(x_q[0,i,j].item())&0xff))
+            #             ff.write("\n")
+            # ff.close()
+            #=================================================================================
+            x_q = x_q * in_scale_mask#最后一个维度的对应元素相乘，不相加,这个Xq就是上一层量化后的整形（xq-zeropint），in_scale_mask即Ptf量化因子
             M1=x_q.sum(dim=-1)#按行求和[16,197]
             Sqrt_In=channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2
-            
+            #行优先生成xq,乘了掩码mask的，12bit=================================================================
+            with open ('Xq_LayerNorm.txt','w') as ff:
+                for i in range(x_q.shape[-2]):
+                    for j in range(x_q.shape[-1]):
+                        ff.write('%04x'%(int(x_q[0,i,j].item())&0xffff))
+                        ff.write("\n")
+            ff.close()
+            # #=================================================================================
             std_x_q = torch.sqrt(Sqrt_In)#[B,197]#std标准差也就是加入alpha后每一行的标准差，
             # print('std_x_q dtype is',std_x_q.dtype)
             # std_x_q.dtype=torch.float32
@@ -203,17 +218,20 @@ class QIntLayerNorm(nn.LayerNorm):
             #         ff.write('%02x%02x'%(int(Gama[0,0,i].item())&0xff,int(Beta[0,0,i].item())&0xff))
             #         ff.write("\n")
             # ff.close()
+
+
+
             
             # 验证Scale和Bias的位宽
-            for i in Gama[0,0,:]:
-                if i>127 or i<-128:
-                    print("Gama is",i,":>255")
-            for i in Beta[0,0,:]:
-                if i>127 or i<-128:
-                    print("Beta is",i,":>255")               
+            # for i in Gama[0,0,:]:
+            #     if i>127 or i<-128:
+            #         print("Gama is",i,":>255")
+            # for i in Beta[0,0,:]:
+            #     if i>127 or i<-128:
+            #         print("Beta is",i,":>255")               
             
             for i in range(x_q.shape[1]):#对于每一行来说
-                x_q[:,i,:]=(((x_q[:,i,:]*Gama)/torch.pow(2, torch.tensor(Shift_Num))).round()+Beta).round()# (((.round()))+Beta).round()#使用放大2^32倍的1/sqrt计算
+                x_q[:,i,:]=(((x_q[:,i,:]*Gama*in_scale_mask)/torch.pow(2, torch.tensor(Shift_Num))).round()+Beta).round()# (((.round()))+Beta).round()#使用放大2^32倍的1/sqrt计算
             x = x_q * out_scale
             # mean_x_q = x_q.mean(dim=-1) * in_scale1
             # std_x_q = (in_scale1 / channel_nums) * torch.sqrt(#std标准差也就是加入alpha后每一行的标准差，
