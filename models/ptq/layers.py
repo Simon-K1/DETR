@@ -208,7 +208,7 @@ class QIntLayerNorm(nn.LayerNorm):
             # std_x_q.dtype=torch.float32
             batch=x_q.shape[0]
             Shift_Num=32
-            std_x_q_round=((1/std_x_q)*torch.pow(2, torch.tensor(Shift_Num))).round()#(((1/std_x_q)*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32)))
+            std_x_q_round=((1/std_x_q)*torch.pow(2, torch.tensor(Shift_Num))).floor()#(((1/std_x_q)*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32)))
             for i in range(M1.shape[-1]):#对于每一行来说，都是[16,384]维，对于M1的每一行来说，都是[16]维
                 x_q[:,i,:]=(channel_nums*x_q[:,i,:]-M1[:,i].reshape(batch,-1))#A
             Gama=((self.weight.reshape(1, 1, -1)/out_scale*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32))).round()
