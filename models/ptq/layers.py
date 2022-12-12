@@ -213,11 +213,11 @@ class QIntLayerNorm(nn.LayerNorm):
                 x_q[:,i,:]=(channel_nums*x_q[:,i,:]-M1[:,i].reshape(batch,-1))#A
             Gama=((self.weight.reshape(1, 1, -1)/out_scale*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32))).round()
             Beta=((self.bias.reshape(1,1,-1)/out_scale*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32))).round()
-            with open ('Scale_Bias.txt','a') as ff:
-                for i in range(Gama.shape[-1]):
-                    ff.write('%02x%02x'%(int(Gama[0,0,i].item())&0xff,int(Beta[0,0,i].item())&0xff))
-                    ff.write("\n")
-            ff.close()
+            # with open ('Scale_Bias.txt','a') as ff:
+            #     for i in range(Gama.shape[-1]):
+            #         ff.write('%02x%02x'%(int(Gama[0,0,i].item())&0xff,int(Beta[0,0,i].item())&0xff))
+            #         ff.write("\n")
+            # ff.close()
 
 
 
@@ -233,7 +233,7 @@ class QIntLayerNorm(nn.LayerNorm):
             for i in range(x_q.shape[1]):#对于每一行来说
                 x_q[:,i,:]=(((x_q[:,i,:]*Gama)))#+Beta).round()# (((.round()))+Beta).round()#使用放大2^32倍的1/sqrt计算
             for i in range(M1.shape[-1]):#对于每一行来说，都是[16,384]维，对于M1的每一行来说，都是[16]维
-                x_q[:,i,:]=((x_q[:,i,:]*(std_x_q_round[:,i].reshape(batch,-1))/torch.pow(2, torch.tensor(Shift_Num))).round()+Beta).round()
+                x_q[:,i,:]=((x_q[:,i,:]*(std_x_q_round[:,i].reshape(batch,-1))/torch.pow(2, torch.tensor(Shift_Num))).floor()+Beta).floor()
             
             #二进制模拟硬件截位计算
             Recipro_Std_Xq=1/std_x_q
