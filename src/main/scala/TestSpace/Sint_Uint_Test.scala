@@ -1,6 +1,7 @@
 package TestSpace
 import spinal.core._
 import utils.TopConfig
+import spinal.lib.StreamFifo
 class Xq2C extends BlackBox{
     //XQC=C*X_q计算
     val Config=TopConfig()
@@ -20,8 +21,12 @@ class Test extends Component{
     hh.io.A:=a
     hh.io.B:=b
 }
+class Scale_A_Fifo(dataType:spinal.core.Bits,depth: Int) extends StreamFifo(dataType,depth)
+class ExtendsTest extends Component{
+    val A=new Scale_A_Fifo(UInt(32 bits).asBits,32)
+}
 object TestGen extends App { 
     val verilog_path="./testcode_gen" 
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Test)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ExtendsTest)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

@@ -3,6 +3,7 @@ import spinal.core._
 import spinal.lib._
 import utils._
 import spinal.lib.Delay
+import spinal.lib.StreamFifo
 //实现8并行度的累加计算
 object SUM_XQ_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, LOAD_FIRST_ROW,ACCUMU = newElement
@@ -89,6 +90,31 @@ class Reciprocal_Sqrt extends BlackBox{
     noIoPrefix()
     mapClockDomain(clock=aclk)
 }
+class Scale_A_ReciproSqrt extends BlackBox{
+    val Config=TopConfig()
+    val io=new Bundle{
+        val CLK=in Bool()
+        val A=in SInt(Config.SCALE_A_RECIPROSQRT_Aport_WIDTH bits)//40
+        val B=in UInt(Config.SCALE_A_RECIPROSQRT_Bport_WIDTH bits)//24
+        val P=out SInt(Config.SCALE_A_RECIPROSQRT_Pport_WIDTH bits)//64
+    }
+    noIoPrefix()
+    mapClockDomain(clock=io.CLK)
+}
+
+class Dynamic_Shift extends Component{//动态移位，上板测试过了，，，居然真的能过
+    //动态移位测试，之前写的移位都是固定位数的移位，但是现在平方根出来的是一个单精度，带了动态移位参数，需要考虑进去
+    val io=new Bundle{
+        val Shift_Num=in UInt(8 bits)//需要动态移位的参数
+        val Data_To_Shift=in UInt(32 bits)
+        val Data_Shited=out UInt(32 bits)
+    }
+    noIoPrefix()
+    //如果是bit类型，单纯使用逻辑移位，如果是Uint或SInt，则使用算术移位
+    io.Data_Shited:=io.Data_To_Shift>>io.Shift_Num
+    val aaa=io.Data_To_Shift>>io.Shift_Num
+}
+class Scale_A_Fifo(dataType:SInt,depth: Int) extends StreamFifo(dataType,depth)
 case class SUM_XQ_FSM(start:Bool)extends Area{
     val currentState = Reg(SUM_XQ_ENUM()) init SUM_XQ_ENUM.IDLE
     val nextState = SUM_XQ_ENUM()
@@ -217,6 +243,32 @@ case class SQRT_COMPUTE_FSM()extends Area{
         }
     }
 }
+object SCALEA_MUL_RESQRT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
+    val IDLE, RESQRT_VALID= newElement
+}
+case class ScaleA_Mul_Resqrt_Fsm(start:Bool) extends Area{
+    val currentState = Reg(SCALEA_MUL_RESQRT_ENUM()) init SCALEA_MUL_RESQRT_ENUM.IDLE
+    val nextState = SCALEA_MUL_RESQRT_ENUM()
+    currentState := nextState
+
+    val ScaleA_Mul_ReSqrt_End=Bool()
+    switch(currentState){
+        is(SCALEA_MUL_RESQRT_ENUM.IDLE){
+            when(start){
+                nextState:=SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID
+            }otherwise{
+                nextState:=SCALEA_MUL_RESQRT_ENUM.IDLE
+            }
+        }
+        is(SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID){
+            when(ScaleA_Mul_ReSqrt_End){
+                nextState:=SCALEA_MUL_RESQRT_ENUM.IDLE
+            }otherwise{
+                nextState:=SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID
+            }
+        }
+    }
+}
 class Ptf_Module extends Component{
     val io=new Bundle{
         val DataIn=in SInt(8 bits)//减去zeropoint后的数据
@@ -247,7 +299,8 @@ class Sum_Xq extends Component{
 
         val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
 
-        val Col_Cnt_Out=out UInt(log2Up(Config.CHANNEL_NUMS) bits)
+        val Bias_Read_Addr=out UInt(log2Up(Config.CHANNEL_NUMS) bits)
+        val Scale_Read_Addr=out UInt(log2Up(Config.CHANNEL_NUMS) bits)
         val Scale=in SInt(8 bits)//暂时让Scale和Bias作为输入
         val Bias=in SInt(8 bits)//不知道8bit够不够用，，planB就是之后将8bit改为32bit
     }
@@ -373,7 +426,7 @@ class Sum_Xq extends Component{
     //考虑到之后多并行度需要共用一个根号分之一模块,从而能节省72-9个DSP
     //先算进第一个点
     val Sqrt_Compute_Fsm=new SQRT_COMPUTE_FSM
-    Sqrt_Compute_Fsm.Send0_Data:=Sqrt_In_Valid
+    Sqrt_Compute_Fsm.Send0_Data:=Sqrt_In_Valid//意思是：发送第0个数据进行根号分之1计算，
     Sqrt_Compute_Fsm.Send1_Data:=Fi32_2_Single.s_axis_a.tready
     Sqrt_Compute_Fsm.Send2_Data:=Fi32_2_Single.s_axis_a.tready
     Sqrt_Compute_Fsm.Send3_Data:=Fi32_2_Single.s_axis_a.tready
@@ -384,7 +437,7 @@ class Sum_Xq extends Component{
     Sqrt_Compute_Fsm.Data_Sended:=Fi32_2_Single.s_axis_a.tready
     switch(Sqrt_Compute_Fsm.currentState){
         is(SQRT_COMPUTE_ENUM.COMPUTE0){
-            Fi32_2_Single.s_axis_a.tdata:=Sqrt_In_Truncated
+            Fi32_2_Single.s_axis_a.tdata:=Sqrt_In_Truncated//有一种可能Fi32_2_Single还没准备好但是累加和已经计算好了这种可能，，，
             Fi32_2_Single.s_axis_a.tvalid:=True//只会拉高一个周期
         }
         default{
@@ -396,31 +449,42 @@ class Sum_Xq extends Component{
     val Scale_Mul_A=new Scale_Multiply_A
     Scale_Mul_A.io.A:=XqC_Substract_M2
     Scale_Mul_A.io.B:=io.Scale
-    io.Col_Cnt_Out:=Col_Cnt.count//目前认为Scale和Bias从外面输入，也就是说Scale和Bias已经在外面存好了，现在只要给外面的存储模块一个读地址就能将对应的Scale和Bias读进来
-    
+    io.Scale_Read_Addr:=Col_Cnt.count//目前认为Scale和Bias从外面输入，也就是说Scale和Bias已经在外面存好了，现在只要给外面的存储模块一个读地址就能将对应的Scale和Bias读进来
+    val Scale_Mul_A_Valid=Delay(Read_Row_Mem_Data_Valid,Config.SCALE_A_PIPELINE)//Scale*A 的valid标志，读出来的XqC直接进Scale*A计算模块计算，所以Scale*A的结果valid需要延迟一下
+//计算Scale*A*B=============================================================
+    //由于Recipro_Sqrt出来的有效结果只会保持一个周期，所以得缓存一下
+    val Recipro_Pointer=WaCounter(Reci_Sqrt.m_axis_result.tvalid,Config.PIPELINE,log2Up(Config.PIPELINE))
+    val Recipro_Sqrt_Result0_Latch=UInt(24 bits)//23bit尾数加1bit
+    val Exp_Part=UInt(8 bits)
+    Recipro_Sqrt_Result0_Latch:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===0))?(U"1'b1"@@Reci_Sqrt.m_axis_result.tdata(22 downto 0))|RegNext(Recipro_Sqrt_Result0_Latch)
+    Exp_Part:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===0))?(Reci_Sqrt.m_axis_result.tdata(30 downto 23))|RegNext(Exp_Part)
+    val SAB_Fsm=ScaleA_Mul_Resqrt_Fsm(Reci_Sqrt.m_axis_result.tvalid)//SAB即Scale*A*B
+    val Recipro_Sqrt_Result0_Valid=SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID
+
+    //有一种可能，Scale*A算完了，ReciproSqrt还没算完，需要Scale*A的数据进行缓存一下
+    val ScaleMulA_Fifo=new Scale_A_Fifo(SInt(Config.SCALE_WIDTH+Config.XQ_SUBSTRACT_M2_WIDTH bits),128)
+    ScaleMulA_Fifo.io.push.payload:=Scale_Mul_A.io.P//缓存一下Scale*A的值
+    ScaleMulA_Fifo.io.push.valid:=Scale_Mul_A_Valid
+    ScaleMulA_Fifo.io.pop.ready:=Recipro_Sqrt_Result0_Valid
+    val SAB_Cnt=WaCounter(ScaleMulA_Fifo.io.pop.fire,log2Up(Config.CHANNEL_NUMS),Config.CHANNEL_NUMS-1)
+    SAB_Fsm.ScaleA_Mul_ReSqrt_End:=SAB_Cnt.valid
+
+    val ScaleA_Mul_ReSqrt=new Scale_A_ReciproSqrt
+    ScaleA_Mul_ReSqrt.io.A:=ScaleMulA_Fifo.io.pop.payload
+    ScaleA_Mul_ReSqrt.io.B:=Recipro_Sqrt_Result0_Latch
+    val ScaleA_Mul_ReSqrt_Result_Valid=Delay(Recipro_Sqrt_Result0_Valid&&Recipro_Sqrt_Result0_Valid,Config.SCALE_A_RECIPROSQRT_PIPELINE)
     
 
+    //拿到结果后执行动态移位再加上Bias
+    //由于Scale不能和Bias同时进来，所以需要对Bias的读取额外处理一下
+    io.Bias_Read_Addr:=Delay(SAB_Cnt.count,Config.SCALE_A_RECIPROSQRT_PIPELINE-1)//减一的原因：外部读取Bias需要一个周期
+    val Right_Shift_Num0=150-Exp_Part
+    val SAB_Shifted=ScaleA_Mul_ReSqrt.io.P>>Right_Shift_Num0
+    val SAB_Add_Bias=SAB_Shifted+io.Bias
+    val SAB_Add_Bias_Truncated=SAB_Add_Bias(7 downto 0)
 }
 
 
-
-class Dynamic_Shift extends Component{
-    //动态移位测试，之前写的移位都是固定位数的移位，但是现在平方根出来的是一个单精度，带了动态移位参数，需要考虑进去
-    val io=new Bundle{
-        val Shift_Num=in UInt(8 bits)//需要动态移位的参数
-        val Data_To_Shift=in UInt(32 bits)
-        val Data_Shited=out UInt(32 bits)
-    }
-    noIoPrefix()
-    //如果是bit类型，单纯使用逻辑移位，如果是Uint或SInt，则使用算术移位
-    io.Data_Shited:=io.Data_To_Shift>>io.Shift_Num
-    val aaa=io.Data_To_Shift>>io.Shift_Num
-}
-
-// class LayerNorm_Quan extends Component{
-//     val Quan=new Sum_Xq
-//     val Ptf=new Ptf_Module
-// }//以后再整合叭
 
 object Sum_Xq_Gen extends App { 
     val verilog_path="./testcode_gen" 

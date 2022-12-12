@@ -46,5 +46,12 @@ case class TopConfig(){
     val XQ_SUBSTRACT_M2_WIDTH=32//有符号20bit
     val SCALE_WIDTH=8//直接取整变成8bit输入
     val SCALE_A_PIPELINE=4//乘法器流水线级数
+
+//Scale*A*Recipro_Sqrt,Scale_A_ReciproSqrt==========最后Scale*A*B的计算===============
+    val SCALE_A_RECIPROSQRT_Aport_WIDTH=40//XQ_SUBSTRACT_M2_WIDTH+SCALE_WIDTH
+    val SCALE_A_RECIPROSQRT_Bport_WIDTH=24//23+1
+    val SCALE_A_RECIPROSQRT_Pport_WIDTH=SCALE_A_RECIPROSQRT_Aport_WIDTH+SCALE_A_RECIPROSQRT_Bport_WIDTH
+    val SCALE_A_RECIPROSQRT_PIPELINE=5
+    
     
 }
