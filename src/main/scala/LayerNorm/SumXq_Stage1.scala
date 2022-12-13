@@ -156,93 +156,39 @@ case class SUM_XQ_FSM(start:Bool)extends Area{
     }
 }
 object SQRT_COMPUTE_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val WAIT, COMPUTE0, COMPUTE1,COMPUTE2,COMPUTE3,COMPUTE4,COMPUTE5,COMPUTE6,COMPUTE7 = newElement
+    val COMPUTE =Array.tabulate(8+1)(i=>{
+        val COMPUTE=newElement
+        COMPUTE
+    })
+    //可以认为Compute0是之前的WAIT
     //WAIT:等待进Sqrt的有效数据
     //COMPUTE0:计算第一个并行度的sqrt，分8次计算，没必要要为了8并行度消耗8*9=72个DSP
 }
 case class SQRT_COMPUTE_FSM()extends Area{
-    val currentState = Reg(SQRT_COMPUTE_ENUM()) init SQRT_COMPUTE_ENUM.WAIT
+    val currentState = Reg(SQRT_COMPUTE_ENUM()) init SQRT_COMPUTE_ENUM.COMPUTE(0)
     val nextState = SQRT_COMPUTE_ENUM()
     currentState := nextState
 
-    val Send0_Data=Bool()
-    val Send1_Data=Bool()
-    val Send2_Data=Bool()
-    val Send3_Data=Bool()
-    val Send4_Data=Bool()
-    val Send5_Data=Bool()
-    val Send6_Data=Bool()
-    val Send7_Data=Bool()
     val Data_Sended=Bool()
-
-
-
+    val Send_Data=Vec(Bool(),9)//Send_Data(0)
     switch(currentState){
-        is(SQRT_COMPUTE_ENUM.WAIT){
-            when(Send0_Data){
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE0
-            }otherwise{
-                nextState:=SQRT_COMPUTE_ENUM.WAIT
-            }
-        }
-        is(SQRT_COMPUTE_ENUM.COMPUTE0){
-            when(Send1_Data){
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE1
-            }otherwise{
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE0
-            }
-        }
-        is(SQRT_COMPUTE_ENUM.COMPUTE1){
-            when(Send2_Data){
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE2
-            }otherwise{
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE1
-            }
-        }
-        is(SQRT_COMPUTE_ENUM.COMPUTE2){
-            when(Send3_Data){
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE3
-            }otherwise{
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE2
-            }
-        }
-        is(SQRT_COMPUTE_ENUM.COMPUTE3){
-            when(Send4_Data){
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE4
-            }otherwise{
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE3
-            }
-        }
-        is(SQRT_COMPUTE_ENUM.COMPUTE4){
-            when(Send5_Data){
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE5
-            }otherwise{
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE4
-            }
-        }
-        is(SQRT_COMPUTE_ENUM.COMPUTE5){
-            when(Send6_Data){
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE6
-            }otherwise{
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE5
-            }
-        }
-        is(SQRT_COMPUTE_ENUM.COMPUTE6){
-            when(Send7_Data){
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE7
-            }otherwise{
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE6
-            }
-        }
-        is(SQRT_COMPUTE_ENUM.COMPUTE7){
-            when(Data_Sended){
-                nextState:=SQRT_COMPUTE_ENUM.WAIT
-            }otherwise{
-                nextState:=SQRT_COMPUTE_ENUM.COMPUTE7
+        for(i<-0 to 8){
+            is(SQRT_COMPUTE_ENUM.COMPUTE(i)){
+                when(Send_Data(i)){
+                    if(i==8){
+                        nextState:=SQRT_COMPUTE_ENUM.COMPUTE(0)//到了最后一个，也就是Send_Data(8)来了，那么下一个周期就是WAIT（Send_Data(0))
+                    }else{
+                        nextState:=SQRT_COMPUTE_ENUM.COMPUTE(i+1)
+                    }
+                }otherwise{
+                    nextState:=SQRT_COMPUTE_ENUM.COMPUTE(i)
+                }
             }
         }
     }
 }
+
+
 object SCALEA_MUL_RESQRT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, RESQRT_VALID= newElement
 }
@@ -454,29 +400,13 @@ class Sum_Xq extends Component{
 class Reci_Sqrt_Compute extends Component{
     val Config=TopConfig()
     val io=new Bundle{
-        val Sqrt_In_Valid=in Bool()
-        val Sqrt_In_Truncated=in UInt(32 bits)
+        val Sqrt_In_Valid=in Vec(Bool(),8)
+        val Sqrt_In_Truncated=in Vec(UInt(32 bits),Config.PIPELINE)
         val ScaleA_Fifo_Popfire=in Bool()
 
-        val Recipro_Sqrt_Result0_Latch=out UInt(32 bits)
-        val Recipro_Sqrt_Result1_Latch=out UInt(32 bits)
-        val Recipro_Sqrt_Result2_Latch=out UInt(32 bits)
-        val Recipro_Sqrt_Result3_Latch=out UInt(32 bits)
-        val Recipro_Sqrt_Result4_Latch=out UInt(32 bits)
-        val Recipro_Sqrt_Result5_Latch=out UInt(32 bits)
-        val Recipro_Sqrt_Result6_Latch=out UInt(32 bits)
-        val Recipro_Sqrt_Result7_Latch=out UInt(32 bits)
-
+        val Recipro_Sqrt_Result_Latch=out Vec(UInt(32 bits),Config.PIPELINE)
+        val Recipro_Sqrt_Result_Valid=out Vec(Bool(),Config.PIPELINE)
         val Bias_Read_Addr=out UInt(log2Up(Config.CHANNEL_NUMS) bits)
-
-        val Recipro_Sqrt_Result0_Valid=out Bool()
-        val Recipro_Sqrt_Result1_Valid=out Bool()
-        val Recipro_Sqrt_Result2_Valid=out Bool()
-        val Recipro_Sqrt_Result3_Valid=out Bool()
-        val Recipro_Sqrt_Result4_Valid=out Bool()
-        val Recipro_Sqrt_Result5_Valid=out Bool()
-        val Recipro_Sqrt_Result6_Valid=out Bool()
-        val Recipro_Sqrt_Result7_Valid=out Bool()
 
     }
     noIoPrefix()
@@ -493,74 +423,54 @@ class Reci_Sqrt_Compute extends Component{
     //考虑到之后多并行度需要共用一个根号分之一模块,从而能节省72-9个DSP
     //先算进第一个点
     val Sqrt_Compute_Fsm=new SQRT_COMPUTE_FSM
-    Sqrt_Compute_Fsm.Send0_Data:=io.Sqrt_In_Valid//意思是：发送第0个数据进行根号分之1计算，
-    Sqrt_Compute_Fsm.Send1_Data:=Fi32_2_Single.s_axis_a.tready
-    Sqrt_Compute_Fsm.Send2_Data:=Fi32_2_Single.s_axis_a.tready
-    Sqrt_Compute_Fsm.Send3_Data:=Fi32_2_Single.s_axis_a.tready
-    Sqrt_Compute_Fsm.Send4_Data:=Fi32_2_Single.s_axis_a.tready
-    Sqrt_Compute_Fsm.Send5_Data:=Fi32_2_Single.s_axis_a.tready
-    Sqrt_Compute_Fsm.Send6_Data:=Fi32_2_Single.s_axis_a.tready
-    Sqrt_Compute_Fsm.Send7_Data:=Fi32_2_Single.s_axis_a.tready
-    Sqrt_Compute_Fsm.Data_Sended:=Fi32_2_Single.s_axis_a.tready
-    switch(Sqrt_Compute_Fsm.currentState){
-        is(SQRT_COMPUTE_ENUM.COMPUTE0){
-            Fi32_2_Single.s_axis_a.tdata:=io.Sqrt_In_Truncated//有一种可能Fi32_2_Single还没准备好但是累加和已经计算好了这种可能，，，
-            Fi32_2_Single.s_axis_a.tvalid:=True//只会拉高一个周期
-        }
-        default{
-            Fi32_2_Single.s_axis_a.tdata:=1
-            Fi32_2_Single.s_axis_a.tvalid:=False
-        }
+    Sqrt_Compute_Fsm.Send_Data(0):=io.Sqrt_In_Valid//意思是：发送第0个数据进行根号分之1计算，
+    // Sqrt_Compute_Fsm.Send0_Data:=io.Sqrt_In_Valid//意思是：发送第0个数据进行根号分之1计算，
+    for(i<-1 to 8){
+        Sqrt_Compute_Fsm.Send_Data(i):=Fi32_2_Single.s_axis_a.tready
     }
-
 //计算Scale*A*B=============================================================
     //由于Recipro_Sqrt出来的有效结果只会保持一个周期，所以得缓存一下
     val Recipro_Pointer=WaCounter(Reci_Sqrt.m_axis_result.tvalid,log2Up(Config.PIPELINE),Config.PIPELINE-1)
-    val Recipro_Sqrt_Result0_Latch=UInt(32 bits)
-    val Recipro_Sqrt_Result1_Latch=UInt(32 bits)
-    val Recipro_Sqrt_Result2_Latch=UInt(32 bits)
-    val Recipro_Sqrt_Result3_Latch=UInt(32 bits)
-    val Recipro_Sqrt_Result4_Latch=UInt(32 bits)
-    val Recipro_Sqrt_Result5_Latch=UInt(32 bits)
-    val Recipro_Sqrt_Result6_Latch=UInt(32 bits)
-    val Recipro_Sqrt_Result7_Latch=UInt(32 bits)
-    // val Exp_Part=UInt(8 bits)
-    // Recipro_Sqrt_Result0_Latch:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===0))?(U"1'b1"@@Reci_Sqrt.m_axis_result.tdata(22 downto 0))|RegNext(Recipro_Sqrt_Result0_Latch)
-    Recipro_Sqrt_Result0_Latch:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===0))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result0_Latch)
-    Recipro_Sqrt_Result1_Latch:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===1))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result1_Latch)
-    Recipro_Sqrt_Result2_Latch:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===2))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result2_Latch)
-    Recipro_Sqrt_Result3_Latch:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===3))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result3_Latch)
-    Recipro_Sqrt_Result4_Latch:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===4))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result4_Latch)
-    Recipro_Sqrt_Result5_Latch:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===5))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result5_Latch)
-    Recipro_Sqrt_Result6_Latch:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===6))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result6_Latch)
-    Recipro_Sqrt_Result7_Latch:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===7))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result7_Latch)
+
+    val Recipro_Sqrt_Result_Latch=out Vec(UInt(32 bits),Config.PIPELINE)
+    for(i<-0 to Config.PIPELINE-1){
+        Recipro_Sqrt_Result_Latch(i):=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===i))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result_Latch(i))
+        io.Recipro_Sqrt_Result_Latch(i):=Recipro_Sqrt_Result_Latch(i)
+    }
+
     // Exp_Part:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===0))?(Reci_Sqrt.m_axis_result.tdata(30 downto 23))|RegNext(Exp_Part)
     val SAB_Fsm=ScaleA_Mul_Resqrt_Fsm(Reci_Sqrt.m_axis_result.tvalid)//SAB即Scale*A*B
-
-
     val SAB_Cnt=WaCounter(io.ScaleA_Fifo_Popfire,log2Up(Config.CHANNEL_NUMS),Config.CHANNEL_NUMS-1)
     SAB_Fsm.ScaleA_Mul_ReSqrt_End:=SAB_Cnt.valid
 
-    io.Recipro_Sqrt_Result0_Latch:=Recipro_Sqrt_Result0_Latch
-    io.Recipro_Sqrt_Result1_Latch:=Recipro_Sqrt_Result1_Latch
-    io.Recipro_Sqrt_Result2_Latch:=Recipro_Sqrt_Result2_Latch
-    io.Recipro_Sqrt_Result3_Latch:=Recipro_Sqrt_Result3_Latch
-    io.Recipro_Sqrt_Result4_Latch:=Recipro_Sqrt_Result4_Latch
-    io.Recipro_Sqrt_Result5_Latch:=Recipro_Sqrt_Result5_Latch
-    io.Recipro_Sqrt_Result6_Latch:=Recipro_Sqrt_Result6_Latch
-    io.Recipro_Sqrt_Result7_Latch:=Recipro_Sqrt_Result7_Latch
 
-    io.Recipro_Sqrt_Result0_Valid:=SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID
-    io.Recipro_Sqrt_Result1_Valid:=SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID
-    //io.Recipro_Sqrt_Result0_Valid:=Recipro_Sqrt_Result0_Valid
+    val Recipro_Sqrt_Result_Valid=out Vec(Bool(),Config.PIPELINE)
+    for(i<-0 to Config.PIPELINE-1){
+        Recipro_Sqrt_Result_Valid(i):=Delay(SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID,i)
+        io.Recipro_Sqrt_Result_Valid(i):=Recipro_Sqrt_Result_Valid(i)
+    }
 
     io.Bias_Read_Addr:=Delay(SAB_Cnt.count,Config.SCALE_A_RECIPROSQRT_PIPELINE-1)//减一的原因：外部读取Bias需要一个周期
+
+
+    switch(Sqrt_Compute_Fsm.currentState){
+        for(i <-1 to Config.PIPELINE){
+            is(SQRT_COMPUTE_ENUM.COMPUTE(i)){
+                //Fi32_2_Single.s_axis_a.tdata:=io.Sqrt_In_Truncated(i)//有一种可能Fi32_2_Single还没准备好但是累加和已经计算好了这种可能，，，
+                Fi32_2_Single.s_axis_a.tvalid:=True//只会拉高一个周期
+            }
+        }
+        default{
+            Fi32_2_Single.s_axis_a.tvalid:=False
+        }   
+    }
+    Fi32_2_Single.s_axis_a.tdata:= Recipro_Pointer.count.muxListDc(for(i <- 0 until Config.PIPELINE-1) yield (i, io.Sqrt_In_Truncated(i)))
 }
 
 class LayerNorm_Module extends Component{
     val Config=TopConfig()
     val io=new Bundle{
-        val sData=slave Stream( SInt(11 bits))//输入数据88bit，一次进8行，每行一个点（8bit),进来的数据为Xq-Zeropoint的值，所以是有符号数据
+        val sData=slave Stream( SInt(88 bits))//输入数据88bit，一次进8行，每行一个点（8bit),进来的数据为Xq-Zeropoint的值，所以是有符号数据
         val start=in Bool()//计算启动信号
 
         val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
@@ -571,24 +481,33 @@ class LayerNorm_Module extends Component{
         val Bias=in SInt(8 bits)//不知道8bit够不够用，，planB就是之后将8bit改为32bit
     }
     noIoPrefix()
-    val Stage1=new Sum_Xq
-    val Stage2=new Reci_Sqrt_Compute
 
-    
-    //Stage1与顶层Io接口连接===============================
-    Stage1.io.sData<>io.sData
-    Stage1.io.start:=io.start
-    Stage1.io.Channel_Nums:=io.Channel_Nums
-    Stage1.io.Scale:=io.Scale
-    Stage1.io.Bias:=io.Bias
-    Stage1.io.Scale_Read_Addr<>io.Scale_Read_Addr
+    val Stage2=new Reci_Sqrt_Compute//一个模块用于计算根号分之一
+    val Stage1=Array.tabulate(8)(i=>{
+        def gen():Sum_Xq={
+            val Stage1=new Sum_Xq
+            //Stage1与顶层Io接口连接=============================
+            Stage1.io.sData.payload<>io.sData.payload((Config.XQ_DATA_WIDTH)*(i+1)-1 downto Config.XQ_DATA_WIDTH*i)
 
-    //Stage1和Stage2之间的连接===========================
-    Stage1.io.Sqrt_In_Truncated<>Stage2.io.Sqrt_In_Truncated
-    Stage1.io.Sqrt_In_Valid<>Stage2.io.Sqrt_In_Valid
-    Stage1.io.ScaleA_Fifo_Popfire<>Stage2.io.ScaleA_Fifo_Popfire
-    Stage1.io.Recipro_Sqrt_Result<>Stage2.io.Recipro_Sqrt_Result0_Latch
-    Stage1.io.Recipro_Sqrt_Result_Valid<>Stage2.io.Recipro_Sqrt_Result0_Valid
+            Stage1.io.sData.valid<>io.sData.valid
+
+            Stage1.io.start:=io.start
+            Stage1.io.Channel_Nums:=io.Channel_Nums
+            Stage1.io.Scale:=io.Scale
+            Stage1.io.Bias:=io.Bias
+            
+            //Stage1和Stage2之间的连接===========================
+            Stage1.io.Sqrt_In_Truncated<>Stage2.io.Sqrt_In_Truncated(i)
+            Stage1.io.Sqrt_In_Valid<>Stage2.io.Sqrt_In_Valid
+            Stage1.io.ScaleA_Fifo_Popfire<>Stage2.io.ScaleA_Fifo_Popfire
+            Stage1.io.Recipro_Sqrt_Result<>Stage2.io.Recipro_Sqrt_Result_Latch(i)
+            Stage1.io.Recipro_Sqrt_Result_Valid<>Stage2.io.Recipro_Sqrt_Result_Valid(i)
+            Stage1
+        }
+        gen()
+    })
+    Stage1(0).io.sData.ready<>io.sData.ready
+    Stage1(0).io.Scale_Read_Addr<>io.Scale_Read_Addr
     //根号分之一与顶层接口连接============================
     Stage2.io.Bias_Read_Addr<>io.Bias_Read_Addr
 
