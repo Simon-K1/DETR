@@ -4,7 +4,7 @@ case class TopConfig(){
 //layernorm config============================================================
     val CHANNEL_NUMS=384//通道数
     val CHANNEL_NUMS_WIDTH=12
-    val TOKEN_NUMS=197//token 数
+    val TOKEN_NUMS=25//token 因为单并行度的话就是197，但是8并行度这里需要改为25，矩阵需要被补0
     val PIPELINE=8//8并行度
 
     val XQ_DATA_WIDTH=11//Xq即量化后的数据，也就是处理了Ptf之后的数，因为数据需要移位0，1，2，3，8bit<<3-->所以最终的量化数据位宽是11bit

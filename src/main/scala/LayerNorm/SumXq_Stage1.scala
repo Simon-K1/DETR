@@ -6,8 +6,9 @@ import spinal.lib.Delay
 import spinal.lib.StreamFifo
 //实现8并行度的累加计算
 object SUM_XQ_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val IDLE, INIT, LOAD_FIRST_ROW,ACCUMU = newElement
+    val IDLE, INIT, LOAD_FIRST_ROW,ACCUMU,FINISH_LAST_ROW = newElement
     //LOAD_FIRTS_ROW:加载第一行，这时候计算第一行的累加和和C*X_Q
+    //FINISH_LAST_ROW:处理完最后一行的计算
 }
 
 class XqC extends BlackBox{
@@ -122,7 +123,8 @@ case class SUM_XQ_FSM(start:Bool)extends Area{
 
     val Init_End=Bool()
     val Load_Firts_Row_End=Bool()//加载完第一行
-    val Accumu_End=Bool()//一个矩阵的所有点都进来后,结束累加进入Idle状态
+    val Accumu_End=Bool()//一个矩阵的所有点都进来后,结束累加进入Idle状态,所有行的累加和都被计算完成，包括最后一行的XqC也被计算完只是被缓存了
+    val Last_Row_Finished=Bool()
 
     switch(currentState){
         is(SUM_XQ_ENUM.IDLE){
@@ -148,10 +150,17 @@ case class SUM_XQ_FSM(start:Bool)extends Area{
         }
         is(SUM_XQ_ENUM.ACCUMU){
             when(Accumu_End){
-                nextState:=SUM_XQ_ENUM.IDLE
+                nextState:=SUM_XQ_ENUM.FINISH_LAST_ROW
             }otherwise{
                 nextState:=SUM_XQ_ENUM.ACCUMU
             }//可以百分百确定的是，最后一个点进完之后，平方，根号这些计算一定还没有算完，所以对于平方，根号的结果valid需要延时
+        }
+        is(SUM_XQ_ENUM.FINISH_LAST_ROW){
+            when(Last_Row_Finished){
+                nextState:=SUM_XQ_ENUM.IDLE
+            }otherwise{
+                nextState:=SUM_XQ_ENUM.FINISH_LAST_ROW
+            }
         }
     }
 }
@@ -190,7 +199,12 @@ case class SQRT_COMPUTE_FSM()extends Area{
 
 
 object SCALEA_MUL_RESQRT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val IDLE, RESQRT_VALID= newElement
+    val IDLE, RESQRT_VALID,RESQRT_VALID_AGAIN= newElement
+    //RESQRT_VALID代表Resqrt数据有效，可以进行Scale*A*B的计算，但是有一种可能：就是上层算得比较快（中间sValid一直拉高），
+        //在计算上一轮Scale*A*B*（也就是上一轮的Scale*A*B还没算完，下一轮的Resqrt又算好了）
+        //那么这轮的RESQRT_VALID状态结束后不用进入IDLE状态而是继续计算
+        //分析：
+            //如果上层累加和模块不停，也就是一直流，那么上层稳定后384周期处理一轮，下层也是384周期处理一轮，这样就会产生前面说的问题
 }
 case class ScaleA_Mul_Resqrt_Fsm(start:Bool) extends Area{
     val currentState = Reg(SCALEA_MUL_RESQRT_ENUM()) init SCALEA_MUL_RESQRT_ENUM.IDLE
@@ -198,6 +212,7 @@ case class ScaleA_Mul_Resqrt_Fsm(start:Bool) extends Area{
     currentState := nextState
 
     val ScaleA_Mul_ReSqrt_End=Bool()
+    val Row_All_Computed=Bool()//全部行都算完了
     switch(currentState){
         is(SCALEA_MUL_RESQRT_ENUM.IDLE){
             when(start){
@@ -207,10 +222,26 @@ case class ScaleA_Mul_Resqrt_Fsm(start:Bool) extends Area{
             }
         }
         is(SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID){
-            when(ScaleA_Mul_ReSqrt_End){
+            when(Row_All_Computed){
+                nextState:=SCALEA_MUL_RESQRT_ENUM.IDLE
+            }elsewhen(start&&ScaleA_Mul_ReSqrt_End){//加一个这个判断是因为：碰到一种很奇葩的可能：
+                        //如果start和SAB_count同时拉高，，，，那么下一个状态应该还是RESQRT_VALID
+                nextState:=SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID
+            }elsewhen(start){//如果1/Sqrt先算完
+                nextState:=SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID_AGAIN
+            }elsewhen(ScaleA_Mul_ReSqrt_End){
                 nextState:=SCALEA_MUL_RESQRT_ENUM.IDLE
             }otherwise{
                 nextState:=SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID
+            }
+        }
+        is(SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID_AGAIN){
+            when(Row_All_Computed){
+                nextState:=SCALEA_MUL_RESQRT_ENUM.IDLE
+            }elsewhen(ScaleA_Mul_ReSqrt_End){
+                nextState:=SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID
+            }otherwise{
+                nextState:=SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID_AGAIN
             }
         }
     }
@@ -264,13 +295,14 @@ class Sum_Xq extends Component{
     
     val Fsm=SUM_XQ_FSM(io.start&&(!RegNext(io.start)))
     val Init_Count=WaCounter(Fsm.currentState===SUM_XQ_ENUM.INIT,log2Up(5),5)//初始化数5下
-    val Col_Cnt=WaCounter(io.sData.valid&&io.sData.ready, log2Up(Config.CHANNEL_NUMS), Config.CHANNEL_NUMS-1)//创建输入数据的列计数器
-    val Row_Cnt=WaCounter(Col_Cnt.valid, log2Up(Config.TOKEN_NUMS), Config.TOKEN_NUMS-1)//创建输入数据行计数器
-    
-    
+    val Col_Cnt=WaCounter(io.sData.valid&&io.sData.ready||Fsm.currentState===SUM_XQ_ENUM.FINISH_LAST_ROW, log2Up(Config.CHANNEL_NUMS), Config.CHANNEL_NUMS-1)//创建输入数据的列计数器
+    val Row_Cnt=WaCounter(Col_Cnt.valid, log2Up(Config.TOKEN_NUMS), Config.TOKEN_NUMS)//创建输入数据行计数器                                                            
+                                                                //Row_Cnt的值对应的是当前正在处理的行数，所以这里不该减一
     Fsm.Init_End:=Init_Count.valid
+    
     Fsm.Load_Firts_Row_End:=(Row_Cnt.count===0)&&Col_Cnt.valid//当行计数为0时，说明处于第一行，当列计数拉高时，说明第一行加载完了
     Fsm.Accumu_End:=Row_Cnt.valid//当行计数器valid拉高，也就是说说明一个完整的矩阵数据已经进来了。
+    Fsm.Last_Row_Finished:=Col_Cnt.valid//因为最后一行了，只要将缓存的XqC全部取出即可进行状态跳转
 
     io.sData.ready:=(Fsm.currentState=/=SUM_XQ_ENUM.IDLE)&&(Fsm.currentState=/=SUM_XQ_ENUM.INIT)//暂时只考虑到这么多，只要不处于这两个状态应该都能接受数据吧
     //创建一个mem用于缓存8行数据，因为A需要计算完均值再做减法===============================================================
@@ -288,7 +320,7 @@ class Sum_Xq extends Component{
     //第二步骤，设计乘法流水线（需要大量调用xilinx的IP核)=============================================================================================
     
     //①计算x_q*c
-    val Read_Row_Mem_Data_Valid=RegNext(io.sData.fire&&Fsm.currentState===SUM_XQ_ENUM.ACCUMU)//因为只有进入ACCUMU状态才开始计算上一层累加和之后的数据
+    val Read_Row_Mem_Data_Valid=RegNext(io.sData.fire&&Fsm.currentState===SUM_XQ_ENUM.ACCUMU||(Fsm.currentState===SUM_XQ_ENUM.FINISH_LAST_ROW))//因为只有进入ACCUMU状态才开始计算上一层累加和之后的数据
     //sData.fire拉高，说明可以从Mem中读取数据，需要一个时钟，所以RegNext一下-->数据进来一个，sData.fire拉高，这时从Mem中读出一个数，在下一周期才有效
 
     val XqC_Module=new XqC
@@ -382,14 +414,14 @@ class Sum_Xq extends Component{
     val ScaleA_Mul_ReSqrt=new Scale_A_ReciproSqrt
     ScaleA_Mul_ReSqrt.io.A:=ScaleMulA_Fifo.io.pop.payload
     ScaleA_Mul_ReSqrt.io.B:=U"1'b1"@@(io.Recipro_Sqrt_Result(22 downto 0))
-    val ScaleA_Mul_ReSqrt_Result_Valid=Delay(io.Recipro_Sqrt_Result_Valid,Config.SCALE_A_RECIPROSQRT_PIPELINE)
+    val ScaleA_Mul_ReSqrt_Result_Valid=Delay(ScaleMulA_Fifo.io.pop.fire,Config.SCALE_A_RECIPROSQRT_PIPELINE)
     
 
     //拿到结果后执行动态移位再加上Bias
     //由于Scale不能和Bias同时进来，所以需要对Bias的读取额外处理一下
     val Exp_Part=io.Recipro_Sqrt_Result(30 downto 23)
     val Right_Shift_Num0=150-Exp_Part
-    val SAB_Shifted=ScaleA_Mul_ReSqrt.io.P>>Right_Shift_Num0
+    val SAB_Shifted=ScaleA_Mul_ReSqrt.io.P>>Delay(Right_Shift_Num0,Config.SCALE_A_RECIPROSQRT_PIPELINE)
     val SAB_Add_Bias=SAB_Shifted+io.Bias
     val SAB_Add_Bias_Truncated=SAB_Add_Bias(7 downto 0)
 
@@ -422,9 +454,9 @@ class Reci_Sqrt_Compute extends Component{
     //理论上来说8个点是同步的，所以需要对8个点的入fifo冲突进行处理
     //考虑到之后多并行度需要共用一个根号分之一模块,从而能节省72-9个DSP
     //先算进第一个点
-    val Sqrt_Compute_Fsm=new SQRT_COMPUTE_FSM
+    val Sqrt_Compute_Fsm=new SQRT_COMPUTE_FSM//Sqrt_Compute_Fsm由Sqrt_In_valid控制，下面的SAB状态则算完根号分之一后启动
     Sqrt_Compute_Fsm.Send_Data(0):=io.Sqrt_In_Valid(0)&&Fi32_2_Single.s_axis_a.tready//意思是：发送第0个数据进行根号分之1计算，
-    //实际上Compute1~9才开始发送Sqrt
+    //实际上Compute1~8才开始发送Sqrt
     for(i<-1 to 8){
         Sqrt_Compute_Fsm.Send_Data(i):=Fi32_2_Single.s_axis_a.tready//只用tready的原因：以为上层模块只要有一个模块的sqrt_valid拉高，那么说明其他模块的Sqrt_out都算完了
     }
@@ -433,19 +465,21 @@ class Reci_Sqrt_Compute extends Component{
     val Recipro_Pointer_Result=WaCounter(Reci_Sqrt.m_axis_result.tvalid,log2Up(Config.PIPELINE),Config.PIPELINE-1)
     //这个Pointer是用来标识计算完的根号分之一结果的
     val Recipro_Sqrt_Result_Latch=out Vec(UInt(32 bits),Config.PIPELINE)//由于Recipro_Sqrt出来的有效结果只会保持一个周期，所以得缓存一下
-    for(i<-0 to Config.PIPELINE-1){
-        Recipro_Sqrt_Result_Latch(i):=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer_Result.count===i))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result_Latch(i))
-        io.Recipro_Sqrt_Result_Latch(i):=Recipro_Sqrt_Result_Latch(i)
-    }
+
 
     // Exp_Part:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===0))?(Reci_Sqrt.m_axis_result.tdata(30 downto 23))|RegNext(Exp_Part)
     val SAB_Fsm=ScaleA_Mul_Resqrt_Fsm(Recipro_Pointer_Result.count===Config.PIPELINE-1)//最后还是决定等8个sqrt都算完了才启动后面的计算，因为后面还得读取Bias，8个sqrt对齐后读取bias就会变得方便一些
-    val SAB_Cnt=WaCounter(io.ScaleA_Fifo_Popfire,log2Up(Config.CHANNEL_NUMS),Config.CHANNEL_NUMS-1)
+    val SAB_Cnt=WaCounter(io.ScaleA_Fifo_Popfire,log2Up(Config.CHANNEL_NUMS),Config.CHANNEL_NUMS-1)//当Fifo除了384个点后，一行就算完了
     SAB_Fsm.ScaleA_Mul_ReSqrt_End:=SAB_Cnt.valid
 
-    io.Recipro_Sqrt_Result_Valid:=SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID
+    io.Recipro_Sqrt_Result_Valid:=(SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID)||(SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID_AGAIN)
     io.Bias_Read_Addr:=WaCounter(SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID,log2Up(Config.CHANNEL_NUMS),Config.CHANNEL_NUMS-1).count//Delay(SAB_Cnt.count,Config.SCALE_A_RECIPROSQRT_PIPELINE-1)//减一的原因：外部读取Bias需要一个周期
-
+    for(i<-0 to Config.PIPELINE-1){
+        Recipro_Sqrt_Result_Latch(i):=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer_Result.count===i))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result_Latch(i))
+        io.Recipro_Sqrt_Result_Latch(i):=((RegNext(SAB_Cnt.valid)&&SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID)||SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.IDLE)?Recipro_Sqrt_Result_Latch(i)|RegNext(io.Recipro_Sqrt_Result_Latch(i))
+//如果下层还在计算SAB，也就是下层比上层慢，只有当SAB计算完才能切换ReciSqrt
+//如果下层处于idle状态，也就是下层算得比上层快，在等ReciSqrt，那么这时只要ResqrtValid来了即可切换Resqrt
+    }
 
 
 
@@ -464,6 +498,9 @@ class Reci_Sqrt_Compute extends Component{
     val Recipro_Pointer_DataIn=WaCounter(Fi32_2_Single.s_axis_a.tvalid&&Fi32_2_Single.s_axis_a.tready,log2Up(Config.PIPELINE),Config.PIPELINE-1)
     Fi32_2_Single.s_axis_a.tdata:= Recipro_Pointer_DataIn.count.muxList(for(i <- 0 until Config.PIPELINE) yield (i, io.Sqrt_In_Truncated(i)))
                                                                 //这里改成muxListDc也行，需要研究研究
+    val Row_Cnt=WaCounter(SAB_Cnt.valid,log2Up(Config.TOKEN_NUMS),Config.TOKEN_NUMS-1)//加一个这个是为了最后计算完了状态跳转
+                                                                                      //这里也是得减一                                                                        
+    SAB_Fsm.Row_All_Computed:=Row_Cnt.valid&&SAB_Cnt.valid//当处于最后一行并且最后一列算完了
 }
 
 class LayerNorm_Module extends Component{
@@ -494,7 +531,7 @@ class LayerNorm_Module extends Component{
             Stage1.io.start:=io.start
             Stage1.io.Channel_Nums:=io.Channel_Nums
             Stage1.io.Scale:=io.Scale
-            Stage1.io.Bias:=io.Bias
+            Stage1.io.Bias:=Delay(io.Bias,Config.SCALE_A_RECIPROSQRT_PIPELINE-1)//减一的原因：待更新
             //Stage1和Stage2之间的连接===========================
             Stage1.io.Sqrt_In_Truncated<>Stage2.io.Sqrt_In_Truncated(i)
             Stage1.io.Sqrt_Out_Valid<>Stage2.io.Sqrt_In_Valid(i)
