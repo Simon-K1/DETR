@@ -304,12 +304,12 @@ class Sum_Xq extends Component{
     Fsm.Accumu_End:=Row_Cnt.valid//当行计数器valid拉高，也就是说说明一个完整的矩阵数据已经进来了。
     Fsm.Last_Row_Finished:=Col_Cnt.valid//因为最后一行了，只要将缓存的XqC全部取出即可进行状态跳转
 
-    io.sData.ready:=(Fsm.currentState=/=SUM_XQ_ENUM.IDLE)&&(Fsm.currentState=/=SUM_XQ_ENUM.INIT)//暂时只考虑到这么多，只要不处于这两个状态应该都能接受数据吧
+    io.sData.ready:=(Fsm.currentState=/=SUM_XQ_ENUM.IDLE)&&(Fsm.currentState=/=SUM_XQ_ENUM.INIT)&&(Fsm.currentState=/=SUM_XQ_ENUM.FINISH_LAST_ROW)//暂时只考虑到这么多，只要不处于这两个状态应该都能接受数据吧
     //创建一个mem用于缓存8行数据，因为A需要计算完均值再做减法===============================================================
     val Row_Mem=new Mem(SInt(Config.XQC_P_WIDTH bits),Config.CHANNEL_NUMS)//64位宽，384深度，用于存储sint的Xq*C
     
 
-    val Read_Row_Mem_Data=Row_Mem.readSync(Col_Cnt.count,io.sData.fire)//这里采用的就是：来一个数读一下
+    val Read_Row_Mem_Data=Row_Mem.readSync(Col_Cnt.count,io.sData.fire||Fsm.currentState===SUM_XQ_ENUM.FINISH_LAST_ROW)//这里采用的就是：来一个数读一下
     
     
     //这里直接用最简单的本办法，让写入数据慢读出数据一拍，错开就不会有冲突了
@@ -322,7 +322,7 @@ class Sum_Xq extends Component{
     //①计算x_q*c
     val Read_Row_Mem_Data_Valid=RegNext(io.sData.fire&&Fsm.currentState===SUM_XQ_ENUM.ACCUMU||(Fsm.currentState===SUM_XQ_ENUM.FINISH_LAST_ROW))//因为只有进入ACCUMU状态才开始计算上一层累加和之后的数据
     //sData.fire拉高，说明可以从Mem中读取数据，需要一个时钟，所以RegNext一下-->数据进来一个，sData.fire拉高，这时从Mem中读出一个数，在下一周期才有效
-
+//只要位于FINISH_LAST_ROW状态，读出来的XqC数据都是有效的
     val XqC_Module=new XqC
     // val Xq2C_ABCP=new Xq2C_1
     val Xq2C_Module=new Xq2C
