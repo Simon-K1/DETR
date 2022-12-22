@@ -44,7 +44,8 @@
                 //下面两行很重要
 				"args": [
 					//"deit_small","./Data","--quant","--ptf","--lis","--quant-method","minmax"
-					"deit_small","E:/Transformer/DataSets/imagenet/imagenet2012mini","--val-batchsize","1","--quant","--ptf","--lis","--quant-method","minmax"
+					//"deit_small","E:/Transformer/DataSets/imagenet/imagenet2012mini","--val-batchsize","1","--quant","--ptf","--lis","--quant-method","minmax"
+					"swin_tiny","E:/Transformer/DataSets/imagenet/imagenet2012mini","--val-batchsize","1","--quant","--ptf","--lis","--quant-method","minmax"
 				],
                 
                 "cwd": "${workspaceFolder}"//debug时可以读取其他目录文件
