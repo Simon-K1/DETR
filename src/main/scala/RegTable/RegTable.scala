@@ -14,23 +14,14 @@ class RegTable extends Component{
 	//后面的内存映射也可以这样写：BusInterface(IO.regSData,(0x0000, 100 Byte)
 	//这个BusInterface是一个object
 	//这里的只读和只写对应的是master那边的只读和只写
-
     val LED_Reg  = bus.newReg(doc="PS Lights up Led ,test")
-
-    val Shift_Num_Reg=bus.newReg(doc="动态移位测试")
-    val Shift_Num=Shift_Num_Reg.field(Bits(8 bits),WO,doc="动态移位测试").asOutput()
-
-    val Shift_Data_Reg=bus.newReg(doc="要被移位的数据")
-    val Shift_Data=Shift_Data_Reg.field(Bits(32 bits),WO).asOutput()
-	
-    val Shifted_Data_Reg=bus.newReg(doc="移位后的数据")
-    val Shifted_Data=Shifted_Data_Reg.field(Bits(32 bits),RO).asInput()
-
     val LD0123=LED_Reg.field(Bits(4 bit),WO,doc="O:接外面的灯，测试").asOutput()
 	val LD4567=LED_Reg.field(Bits(4 bit),WO,doc="O:接外面的灯，测试").asOutput() 
 
-	bus.accept(HtmlGenerator("regif.html", "RegTable V1"))
 
+	val LayerNorm_Reg=bus.newReg(doc="LayerNorm")
+	val LayerNorm_Start=LayerNorm_Reg.field(Bits(1 bits),WO,doc="Ps Start LayerNorm(only for test)")
+	bus.accept(HtmlGenerator("regif.html", "RegTable V1"))
 }
 
 

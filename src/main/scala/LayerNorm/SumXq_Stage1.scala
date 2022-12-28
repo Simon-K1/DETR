@@ -287,6 +287,8 @@ class Sum_Xq extends Component{
         val ScaleA_Fifo_Popfire=out Bool()
         val Recipro_Sqrt_Result=in UInt(32 bits)
         val Recipro_Sqrt_Result_Valid=in Bool()
+
+        val mData=master Stream(SInt(8 bits))
     }
     noIoPrefix()
     //使用Ptf量化因子，对输入的8bit进行移位操作，变成11bit定点
@@ -425,7 +427,8 @@ class Sum_Xq extends Component{
     val SAB_Add_Bias=SAB_Shifted+io.Bias
     val SAB_Add_Bias_Truncated=SAB_Add_Bias(7 downto 0)
 
-
+    io.mData.payload:=SAB_Add_Bias_Truncated
+    io.mData.valid:=ScaleA_Mul_ReSqrt_Result_Valid
 }
 
 
@@ -515,6 +518,8 @@ class LayerNorm_Module extends Component{
         val Scale_Read_Addr=out UInt(log2Up(Config.CHANNEL_NUMS) bits)
         val Scale=in SInt(8 bits)//暂时让Scale和Bias作为输入
         val Bias=in SInt(8 bits)//不知道8bit够不够用，，planB就是之后将8bit改为32bit
+
+        val mData=master Stream(SInt(8*8 bits))
     }
     noIoPrefix()
 
@@ -538,6 +543,7 @@ class LayerNorm_Module extends Component{
             
             Stage1.io.Recipro_Sqrt_Result<>Stage2.io.Recipro_Sqrt_Result_Latch(i)
             Stage1.io.Recipro_Sqrt_Result_Valid<>Stage2.io.Recipro_Sqrt_Result_Valid
+            Stage1.io.mData.payload<>io.mData.payload(8*(i+1)-1 downto 8*i)
             Stage1
         }
         gen()
@@ -549,7 +555,40 @@ class LayerNorm_Module extends Component{
     Stage2.io.Bias_Read_Addr<>io.Bias_Read_Addr
 
 }
+// class LayerNorm_Top extends Component{
+//     val LN_Compute=new LayerNorm_Module
 
+//     val io=new Bundle{
+//         val m_axis_mm2s_tdata=out SInt(64 bits)
+//         val m_axis_mm2s_tkeep=out Bits(4 bits)
+//         val m_axis_mm2s_tlast=out Bool()
+//         val m_axis_mm2s_tready=in Bool()
+//         val m_axis_mm2s_tvalid=out Bool()
+
+//         val s_axis_s2mm_tdata=in SInt(128 bits)
+//         val s_axis_s2mm_tkeep=in Bits(4 bits)
+//         val s_axis_s2mm_tlast=in Bool()
+//         val s_axis_s2mm_tready=out Bool()
+//         val s_axis_s2mm_tvalid=in Bool()
+
+
+//         val start=in Bool()
+        
+//     }
+//     noIoPrefix()
+//     LN_Compute.io.mData.payload<>io.m_axis_mm2s_tdata
+//     LN_Compute.io.mData.ready<>io.m_axis_mm2s_tready
+//     LN_Compute.io.mData.valid<>io.m_axis_mm2s_tvalid
+//     LN_Compute.io.m_tlast<>io.m_axis_mm2s_tlast
+//     io.m_axis_mm2s_tkeep:=B"4'b1111"
+
+//     LN_Compute.io.sData.payload<>io.s_axis_s2mm_tdata
+//     LN_Compute.io.sData.ready<>io.s_axis_s2mm_tready
+//     LN_Compute.io.sData.valid<>io.s_axis_s2mm_tvalid
+
+//     Med_Sort.io.m_tlast<>io.m_tlast
+//     LN_Compute.io.start<>io.start
+// }
 object Sum_Xq_Gen extends App { 
     val verilog_path="./testcode_gen" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Sum_Xq)
