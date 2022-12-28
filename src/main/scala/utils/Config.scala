@@ -53,5 +53,15 @@ case class TopConfig(){
     val SCALE_A_RECIPROSQRT_Pport_WIDTH=SCALE_A_RECIPROSQRT_Aport_WIDTH+SCALE_A_RECIPROSQRT_Bport_WIDTH
     val SCALE_A_RECIPROSQRT_PIPELINE=5
     
+//================================================================================================
+    //Systolic Array部分
+    val PICTURE_SIZE=224//图片大小224*224
+    val PATCH_SIZE=16//Patch的大小，也就是卷积核的大小，16*16,用这个来指导图片Buff的创建
+    val EMBEDDING_DIm=384//也就是卷积核的输出通道数
+        //有关Bram的配置
+    val PATCH_BRAM_IN_WIDTH=64//Bram一下进64bit
+    val PATCH_BRAM_IN_DEPTH=1024//每个Bram的存储深度
+    val PATCH_BRAM_OUT_WIDTH=8
+    val PATCH_BRAM_OUT_DEPTH=PATCH_BRAM_IN_DEPTH*(PATCH_BRAM_IN_WIDTH/PATCH_BRAM_OUT_WIDTH)
     
 }
