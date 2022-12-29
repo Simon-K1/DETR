@@ -1,5 +1,7 @@
 package utils
 
+import spinal.core.log2Up
+
 case class TopConfig(){
 //layernorm config============================================================
     val CHANNEL_NUMS=384//通道数
@@ -37,31 +39,35 @@ case class TopConfig(){
 
         //Xq_Sum_Pow----M2=Sum(Xq)
     val XQ_SUM_POW_PIPELINE=4//乘法器流水线级数
-//根号下分之一计算====================================================================
+    //根号下分之一计算====================================================================
         //定点转浮点延时
     val FI32_2_SINGLE_PIPELINE=6
         //根号下分支一延时
     val RECIPROCAL_SQRT_PIPELINE=33
-//Scale*A计算，Scale_Multiply_A
+    //Scale*A计算，Scale_Multiply_A
     val XQ_SUBSTRACT_M2_WIDTH=32//有符号20bit
     val SCALE_WIDTH=8//直接取整变成8bit输入
     val SCALE_A_PIPELINE=4//乘法器流水线级数
 
-//Scale*A*Recipro_Sqrt,Scale_A_ReciproSqrt==========最后Scale*A*B的计算===============
+    //Scale*A*Recipro_Sqrt,Scale_A_ReciproSqrt==========最后Scale*A*B的计算===============
     val SCALE_A_RECIPROSQRT_Aport_WIDTH=40//XQ_SUBSTRACT_M2_WIDTH+SCALE_WIDTH
     val SCALE_A_RECIPROSQRT_Bport_WIDTH=24//23+1
     val SCALE_A_RECIPROSQRT_Pport_WIDTH=SCALE_A_RECIPROSQRT_Aport_WIDTH+SCALE_A_RECIPROSQRT_Bport_WIDTH
     val SCALE_A_RECIPROSQRT_PIPELINE=5
     
 //================================================================================================
-    //Systolic Array部分
+    //Embedding layer部分
+    val PICTURE_CHANNEL=3//3个输入通道
     val PICTURE_SIZE=224//图片大小224*224
     val PATCH_SIZE=16//Patch的大小，也就是卷积核的大小，16*16,用这个来指导图片Buff的创建
     val EMBEDDING_DIm=384//也就是卷积核的输出通道数
+    val PATCH_PARALLEL=8//并行度为8，1入8出
+    val PATCH_PIXEL_WIDTH=8//8bit的图片像素点
         //有关Bram的配置
+            //入位宽64bit对于dma 的axis的数据位宽，
     val PATCH_BRAM_IN_WIDTH=64//Bram一下进64bit
-    val PATCH_BRAM_IN_DEPTH=1024//每个Bram的存储深度
-    val PATCH_BRAM_OUT_WIDTH=8
-    val PATCH_BRAM_OUT_DEPTH=PATCH_BRAM_IN_DEPTH*(PATCH_BRAM_IN_WIDTH/PATCH_BRAM_OUT_WIDTH)
+    val PATCH_BRAM_OUT_WIDTH=PATCH_PIXEL_WIDTH//要求PATCH_BRAM_OUT_WIDTH与PATCH_BRAM_IN_WIDTH为8倍数关系
+    val PATCH_BRAM_OUT_DEPTH=PICTURE_CHANNEL*PICTURE_SIZE//每个Bram的存储一行的数据，需要考虑输入通道
+    val PATCH_BRAM_IN_DEPTH=PATCH_BRAM_OUT_DEPTH/(PATCH_BRAM_IN_WIDTH/PATCH_BRAM_OUT_WIDTH)
     
 }

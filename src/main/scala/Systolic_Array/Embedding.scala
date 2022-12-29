@@ -40,24 +40,30 @@ class Picture_Cache extends Component{
     val Config=TopConfig()
     val io=new Bundle{
         val start=in Bool()//启动信号
-        //缓存模块勇哥Fifo会不会好些？
-        val sData=slave Stream(UInt(8 bits))//stream流输入8bit图片数据
+
+        val sData=slave Stream(UInt(64 bits))//stream流输入8bit图片数据
     }
-    val In_Col_Cnt=WaCounter(io.sData.fire,log2Up(Config.PICTURE_SIZE)/8,Config.PICTURE_SIZE/8-1)//列计数器
-    val In_Row_Cnt=WaCounter(Col_Cnt.valid,log2Up(Config.PICTURE_SIZE),Config.PICTURE_SIZE-1)//行计数器
+    val In_Col_Cnt=WaCounter(io.sData.fire,log2Up(Config.PATCH_BRAM_IN_DEPTH),Config.PATCH_BRAM_IN_DEPTH-1)//列计数器
+    val In_Row_Cnt=WaCounter(In_Col_Cnt.valid,log2Up(Config.PICTURE_SIZE),Config.PICTURE_SIZE-1)//行计数器
     
-    //构建X个行缓存
-    val Row_Cache0=Array.tabulate(Config.PATCH_SIZE-1)(i=>{
+    //构建X个行缓存，但是这样的话资源消耗太浪费了，应该把Bram留给Weight用
+    val Row_Cache0=Array.tabulate(Config.PATCH_SIZE)(i=>{
         def gen():Patch_Bram={
             val Row_Cache0=new Patch_Bram
-            Row_Cache0.io.ena:=(Row_Cnt.count(log2Up(Config.PATCH_SIZE)-1 downto 0)===i)
-            Row_Cache0.io.addra:=Col_Cnt.count.resized//写地址
+            Row_Cache0.io.dina:=io.sData.payload//写数据
+            Row_Cache0.io.ena:=(In_Col_Cnt.count(log2Up(Config.PATCH_SIZE)-1 downto 0)===i)//写使能
+            Row_Cache0.io.addra:=In_Col_Cnt.count.resized//写地址
             Row_Cache0.io.wea:=True
+
+            Row_Cache0.io.addrb:=0
             Row_Cache0
         }
+        gen()
     })
-    
+    io.sData.ready:=True
     noIoPrefix()
+    println("PATCH_BRAM_IN_DEPTH:",Config.PATCH_BRAM_IN_DEPTH)
+    println("PATCH_BRAM_OUT_DEPTH:",Config.PATCH_BRAM_OUT_DEPTH)
 }
 
 object Sum_Xq_Gen extends App { 
