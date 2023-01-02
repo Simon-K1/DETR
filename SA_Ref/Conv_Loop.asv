@@ -1,0 +1,5 @@
+%卷积的img2col的循环
+
+  command = 'git branch';
+     [status,cmdout] = system(command)
+status=0;
