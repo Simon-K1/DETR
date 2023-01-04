@@ -1,6 +1,6 @@
 #include<iostream>
 using namespace std;
-void Fifo_Loop(int *){
+void Fifo_Update(int *){
     cout<<"Fifo loop over"<<endl;
 }
 int main(){
@@ -48,27 +48,20 @@ int main(){
     Stride=16;//步长为16
     int In_Feature_Size=224;//输入特征图大小（未padding)----我艹，还tm要padding
     int In_Feature_Size_Padded=224;//补零之后的特征图大小---暂时先不考虑补零
-    bool Row_Unroll=true;//卷积滑动窗口按行展开
+    const bool Row_Unroll=true;//卷积滑动窗口按行展开
+                                //这里很重要,需要确定滑动窗口是按行展开还是按列展开,因为需要和后面算卷积对应起来
+                                //按行展开叭
     for(int Out_Row=0;Out_Row<Out_Feature_Size;Out_Row++){//对于输出特征图的每一行来说,假如后面的数据已经被缓存了，直接执行img2col
-        
-        for(int Kernel_Addr=Row_Read_Index[0];Kernel_Addr<(In_Feature_Size-Kernel_Size)-1;Kernel_Addr+=Stride){//Kernel_Addr对于的是卷积滑动窗口top-left点的地址
-        //分析↑：比如一个3*3的卷积，如果步长是1，那么3*3的卷积top-left的点对应的列地址应该是从0到(224-3)-1
-        //分析↓：下面的两层循环用来控制卷积输出
-        //这里很重要,需要确定滑动窗口是按行展开还是按列展开,因为需要和后面算卷积对应起来
-            //按行展开叭
-            if(!Row_Unroll){//这是之前写的不知道按啥展开的展开,先留着
-                for(int Raddr=Kernel_Addr;Raddr<Kernel_Size-1;Raddr++){//Raddr控制列
-                    for(int Row=0;Row<Kernel_Size-1;Row++){//获取一列用于卷积的数据，Row控制行
-                        Data_Out=mem[Raddr+224];
-                    }
-                }
-            }else{//行展开,先获取一行中的3个卷积点
-                for(int Raddr=Kernel_Addr;Raddr<Kernel_Size-1;Raddr++){
+        for(int Kernel_Addr=0;Kernel_Addr<(In_Feature_Size-Kernel_Size)-1;Kernel_Addr+=Stride){
+            //Kernel_Addr对于的是卷积滑动窗口top-left点的相对地址(注意是相对地址,后面读写时相对地址加上地址偏移就是绝对地址)
+            for(int Window_Row=0;Window_Row<Kernel_Size;Window_Row++){//滑动窗口的行循环,比如kernel_size=16,需要循环16次
+                                                                        //剩下的内部循环用于行展开
+                for(int Raddr=Kernel_Addr+Row_Read_Index[0];Raddr<Kernel_Size-1;Raddr++){
                     Data_Out=mem[Raddr];
                 }
+                Fifo_Update(Row_Read_Index);//出完一行的3个点后,继续出下一行的三个点
+                                            //要出下一行的3个点,那么读地址要变,而读地址由Row_Read_Index控制                
             }
-            Fifo_Loop(Row_Read_Index);//出完一行的3个点后,继续出下一行的三个点
-                                        //要出下一行的3个点,那么读地址要变,而读地址由Row_Read_Index控制
         }
     }
 }
