@@ -1,7 +1,10 @@
 *
 #不太理解/*和*的区别
+
 !SA_Ref/
 !SA_Ref/**
+*.exe
+#这个还有顺序,比如这个*.exe放最前面就不行
 
 !Transformer_Txt_Gen/
 !Transformer_Txt_Gen/**
