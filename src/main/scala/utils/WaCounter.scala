@@ -2,11 +2,11 @@ package utils
 import spinal.core.{Area, Bool, False, IntToBuilder, Reg, True, UInt, when}
 
 object WaCounter {
-    def apply(en: Bool, width: Int, end: UInt) = new WaCounter(en, width, end)
-}
+    def apply(en: Bool, width: Int, end: UInt,Stride:UInt=1,InitData:UInt=0) = new WaCounter(en, width, end,Stride,InitData)
+}//在构建DataGenerate时添加参数：stride，默认值为1
 
-class WaCounter(en: Bool, width: Int, cnt: UInt) extends Area {
-    val count = Reg(UInt(width bits)) init 0
+class WaCounter(en: Bool, width: Int, cnt: UInt,Stride:UInt,InitData:UInt) extends Area {
+    val count = Reg(UInt(width bits)) init InitData
     val valid = Bool()
     when(count === cnt) {
         valid := True
@@ -14,7 +14,7 @@ class WaCounter(en: Bool, width: Int, cnt: UInt) extends Area {
         valid := False
     }
     when(en) {
-        count := count + 1
+        count := count + Stride
         when(valid) {
             count := 0
         }

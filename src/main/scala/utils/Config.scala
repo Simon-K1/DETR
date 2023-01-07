@@ -56,7 +56,7 @@ case class TopConfig(){
     val SCALE_A_RECIPROSQRT_PIPELINE=5
     
 //================================================================================================
-    //Embedding layer部分
+    //Embedding layer部分，仅供参考
     val PICTURE_CHANNEL=3//3个输入通道
     val PICTURE_SIZE=224//图片大小224*224
     val PATCH_SIZE=16//Patch的大小，也就是卷积核的大小，16*16,用这个来指导图片Buff的创建
@@ -69,5 +69,17 @@ case class TopConfig(){
     val PATCH_BRAM_OUT_WIDTH=PATCH_PIXEL_WIDTH//要求PATCH_BRAM_OUT_WIDTH与PATCH_BRAM_IN_WIDTH为8倍数关系
     val PATCH_BRAM_OUT_DEPTH=PICTURE_CHANNEL*PICTURE_SIZE//每个Bram的存储一行的数据，需要考虑输入通道
     val PATCH_BRAM_IN_DEPTH=PATCH_BRAM_OUT_DEPTH/(PATCH_BRAM_IN_WIDTH/PATCH_BRAM_OUT_WIDTH)
+//===================================================================================================
+    //Data_Generate 部分
+    val DATA_GENERATE_BRAM_IN_WIDTH=128//入128bit
+    val DATA_GENERATE_BRAM_OUT_WIDTH=64//出64bit
+    val DATA_GENERATE_BRAM_IN_ADDR_DEPTH=4096
+    val DATA_GENERATE_BRAM_OUT_ADDR_DEPTH=DATA_GENERATE_BRAM_IN_ADDR_DEPTH*(DATA_GENERATE_BRAM_IN_WIDTH/DATA_GENERATE_BRAM_OUT_WIDTH)
+    //Conv相关
+    //由于卷积核大小,步长都是可以在计算过程中动态配置,所以这里的配置只需要设置位宽大小即可
+    val DATA_GENERATE_CONV_STRIDE_WIDTH=8//8 bit的stride，可配置，通过axi lite配置
+    val DATA_GENERATE_CONV_KERNELSIZE_WIDTH=5//卷积核大小,最大可支持的卷积核大小为32,0代表pw卷积
+    val DATA_GENERATE_CONV_IN_CHANNEL_WIDTH=10//最大可支持的输入通道是1024,多了就得拆或者加大Bram的存储深度
+    val DATA_GENERATE_CONV_OUT_CHANNEL_WIDTH=10//输出通道同样也是1024
     
 }
