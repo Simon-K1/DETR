@@ -1,6 +1,6 @@
 #include<iostream>
 using namespace std;
-void Fifo_Update(int *){
+void Fifo_Update(int *,char*){
     cout<<"Fifo loop over"<<endl;
 }
 int main(){
@@ -56,12 +56,28 @@ int main(){
             //Kernel_Addr对于的是卷积滑动窗口top-left点的相对地址(注意是相对地址,后面读写时相对地址加上地址偏移就是绝对地址)
             for(int Window_Row=0;Window_Row<Kernel_Size;Window_Row++){//滑动窗口的行循环,比如kernel_size=16,需要循环16次
                                                                         //剩下的内部循环用于行展开
-                for(int Raddr=Kernel_Addr+Row_Read_Index[0];Raddr<Kernel_Size-1;Raddr++){
-                    Data_Out=mem[Raddr];
+                int Raddr=Kernel_Addr+Row_Read_Index[0];
+                for(int Window_Col=0;Window_Col<Kernel_Size;Window_Col++){
+                    Data_Out=mem[Raddr];    
+                    Raddr++;
                 }
-                Fifo_Update(Row_Read_Index);//出完一行的3个点后,继续出下一行的三个点
-                                            //要出下一行的3个点,那么读地址要变,而读地址由Row_Read_Index控制                
+                Fifo_Update(Row_Read_Index,"Read");//出完一行的3个点后,继续出下一行的三个点
+                                            //要出下一行的3个点,那么读地址要变,而读地址由Row_Read_Index控制          
+                //将来可以在HLS上实现      
             }
         }
+    }
+
+    //现在想想写数据怎么处理,最终实现读写并行
+    int Row_Write_OffSet[32];
+    for(int In_Row=0;In_Row<In_Feature_Size;In_Row++){
+        //入数据行计数器
+        int Waddr=Row_Write_OffSet[0];//循环写
+        for(int In_Col=0;In_Col<In_Feature_Size;In_Col++){
+            //入数据列计数器
+            mem[Waddr+In_Col]=Data_In;
+        }
+        Fifo_Update(Row_Write_OffSet,"Write");
+            
     }
 }
