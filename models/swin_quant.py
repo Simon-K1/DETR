@@ -29,7 +29,7 @@ def window_partition(x, window_size: int):
     x = x.view(B, H // window_size, window_size, W // window_size, window_size,
                C)
     windows = x.permute(0, 1, 3, 2, 4,
-                        5).contiguous().view(-1, window_size, window_size, C)
+                        5).contiguous().view(-1, window_size, window_size, C)#torch.contiguous()方法首先拷贝了一份张量在内存中的地址，然后将地址按照形状改变后的张量的语义进行排列。
     return windows
 
 
@@ -39,12 +39,12 @@ def window_reverse(windows, window_size: int, H: int, W: int):
         windows: (num_windows*B, window_size, window_size, C)
         window_size (int): Window size
         H (int): Height of image
-        W (int): Width of image
+        W (int): Width of image  实际上是特征图的宽和高,比如224的图片经过4*4的卷积(4步长)变成了56*56的图片
 
     Returns:
         x: (B, H, W, C)
     """
-    B = int(windows.shape[0] / (H * W / window_size / window_size))
+    B = int(windows.shape[0] / (H * W / window_size / window_size))#这里就是单纯在计算batch吧
     x = windows.view(B, H // window_size, W // window_size, window_size,
                      window_size, -1)
     x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, H, W, -1)
@@ -85,7 +85,7 @@ class WindowAttention(nn.Module):
         # define a parameter table of relative position bias
         self.relative_position_bias_table = nn.Parameter(
             torch.zeros((2 * window_size[0] - 1) * (2 * window_size[1] - 1),
-                        num_heads))  # 2*Wh-1 * 2*Ww-1, nH
+                        num_heads))  # 2*Wh-1 * 2*Ww-1, nH(num heads)
 
         # get pair-wise relative position index for each token inside the window
         coords_h = torch.arange(self.window_size[0])
@@ -191,7 +191,7 @@ class WindowAttention(nn.Module):
         q = q * self.scale
         attn = (q @ k.transpose(-2, -1))
         attn = self.qact_attn1(attn)
-        relative_position_bias_table_q = self.qact_table(
+        relative_position_bias_table_q = self.qact_table(#相对位置编码也是一个可学习的参数，初始化为0
             self.relative_position_bias_table)
         relative_position_bias = relative_position_bias_table_q[
             self.relative_position_index.view(-1)].view(
@@ -225,7 +225,7 @@ class SwinTransformerBlock(nn.Module):
     r""" Swin Transformer Block.
 
     Args:
-        dim (int): Number of input channels.
+        dim (int): Number of input chagvnnels.
         input_resolution (tuple[int]): Input resulotion.
         num_heads (int): Number of attention heads.
         window_size (int): Window size.

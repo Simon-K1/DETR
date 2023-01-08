@@ -8,7 +8,7 @@ import torch.nn as nn
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from PIL import Image
-
+from thop import profile#计算gops的
 from config import Config
 from models import *
 
@@ -89,7 +89,18 @@ def main():
     cfg = Config(args.ptf, args.lis, args.quant_method)
     model = str2model(args.model)(pretrained=True, cfg=cfg)
     model = model.to(device)
+    if not args.quant:
+        #python test_quant.py deit_small E:/Transformer/DataSets/imagenet/imagenet2012mini
+        #http://www.bryh.cn/a/47127.html，计算量解释
+        print(args.model," model 相关参数:================================")
+        total = sum([param.nelement() for param in model.parameters()])
+        print('  + Number of params: %.2fM' % (total / 1e6))
 
+        input = torch.randn(1, 3, 224, 224).to(device)
+        flops, params = profile(model, (input,))
+        print('flops: ', flops, 'params: ', params)
+
+        exit()
     # Note: Different models have different strategies of data preprocessing.
     model_type = args.model.split('_')[0]
     if model_type == 'deit':
