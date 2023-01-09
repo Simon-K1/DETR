@@ -350,17 +350,25 @@ class QIntSoftmax(nn.Module):
             deq_softmax[mask] = 0
             return deq_softmax
         else:
-            # x = x.softmax(dim=-1)
-            #按行来softmax，写一个2的指数幂的softmax看看啥情况
-            for batch in range(x.shape[0]):
-                #遍历所有batch
-                for head in range(x.shape[1]):
-                    #遍历每个头
-                    for row in range(x.shape[2]):
-                        #遍历每一行
-                        Row_Sum=(torch.pow(2,x[batch,head,row,:]-x[batch,head,row,:].max())).sum()#先算一下每一行的指数累加和作为分母
-                        #遍历每一列
-                        x[batch,head,row,:]=torch.pow(2,x[batch,head,row,:]-x[batch,head,row,:].max())/Row_Sum
+            Pow2=True
+            if not Pow2:
+                x = x.softmax(dim=-1)
+            else:
+                #按行来softmax，写一个2的指数幂的softmax看看啥情况
+                Row_Sum=(torch.pow(2,x-x.max(-1).values.unsqueeze(-1))).sum(-1).unsqueeze(-1)#先算一下每一行的指数累加和作为分母                
+                Row_Sum=Row_Sum.expand(Row_Sum.shape[0],Row_Sum.shape[1],Row_Sum.shape[2],x.shape[-1])
+                x=torch.pow(2,x-x.max(-1).values.unsqueeze(-1))/Row_Sum
+                # for batch in range(x.shape[0]):
+                #     #遍历所有batch
+                #     for head in range(x.shape[1]):
+                #         #遍历每个头
+                #         Row_Sum=(torch.pow(2,x[batch,head,:,:]-x[batch,head,:,:].max())).sum()#先算一下每一行的指数累加和作为分母
+                #         x[batch,head,:,:]=torch.pow(2,x[batch,head,:,:]-x[batch,head,:,:].max(-1))/Row_Sum
+                #         for row in range(x.shape[2]):
+                #             #遍历每一行
+                #             Row_Sum=(torch.pow(2,x[batch,head,row,:]-x[batch,head,row,:].max())).sum()#先算一下每一行的指数累加和作为分母
+                #             #遍历每一列
+                #             x[batch,head,row,:]=torch.pow(2,x[batch,head,row,:]-x[batch,head,row,:].max())/Row_Sum
                             
             if self.calibrate:
                 self.quantizer.observer.update(x)
@@ -368,5 +376,7 @@ class QIntSoftmax(nn.Module):
                     self.quantizer.update_quantization_params(x)
             if not self.quant:
                 return x
-            x = self.quantizer(x)
+            # x = self.quantizer(x)
+            #我们对softmax不量化,直接用2的指数幂进行输出试一下
+
             return x

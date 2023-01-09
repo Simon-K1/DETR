@@ -3,5 +3,8 @@ python test_quant.py deit_small E:/Transformer/DataSets/imagenet/imagenet2012min
 python test_quant.py deit_base E:/Transformer/DataSets/imageValfull --quant --ptf --lis  --quant-method minmax
 python test_quant.py deit_small E:/Transformer/DataSets/imageValfull --quant --ptf --lis  --quant-method minmax
 
+修改校准和验证BatchSize
+python test_quant.py deit_small E:/Transformer/DataSets/imagenet/imagenet2012mini --calib-batchsize 1 --calib-iter 400 --val-batchsize 1 --quant --ptf --lis  --quant-method minmax  --print-freq 1
+
 集群运行命令
 CUDA_VISIBLE_DEVICES=1 python test_quant.py deit_base /home/dy/VitWorkspace/Vit_Quantization/DataSets --quant --ptf --lis  --quant-method minmax
