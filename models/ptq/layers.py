@@ -340,21 +340,26 @@ class QIntSoftmax(nn.Module):
         return exp_int, exp_int_sum
 
     def forward(self, x, scale):
+        Pow2=True
         if self.log_i_softmax and scale is not None:
-            exp_int, exp_int_sum = self.int_softmax(x, scale)
-            softmax_out = torch.round(exp_int_sum / exp_int)
-            rounds = self.log_round(softmax_out)
-            mask = rounds >= 2**self.bit_type.bits
-            qlog = torch.clamp(rounds, 0, 2**self.bit_type.bits - 1)
-            deq_softmax = 2**(-qlog)
-            deq_softmax[mask] = 0
-            return deq_softmax
+            if not Pow2:
+                exp_int, exp_int_sum = self.int_softmax(x, scale)
+                softmax_out = torch.round(exp_int_sum / exp_int)
+                rounds = self.log_round(softmax_out)
+                mask = rounds >= 2**self.bit_type.bits
+                qlog = torch.clamp(rounds, 0, 2**self.bit_type.bits - 1)
+                deq_softmax = 2**(-qlog)
+                deq_softmax[mask] = 0
+                return deq_softmax#这里返回的也是反量化后的浮点值，下层模块拿到这些浮点值后再用一下量化就又变成定点了
+            else:
+                Row_Sum=(torch.pow(2,x-x.max(-1).values.unsqueeze(-1))).sum(-1).unsqueeze(-1)#先算一下每一行的指数累加和作为分母                
+                Row_Sum=Row_Sum.expand(Row_Sum.shape[0],Row_Sum.shape[1],Row_Sum.shape[2],x.shape[-1])
+                x=torch.pow(2,x-x.max(-1).values.unsqueeze(-1))/Row_Sum
+                return x                
         else:
-            Pow2=True
             if not Pow2:
                 x = x.softmax(dim=-1)
             else:
-                #按行来softmax，写一个2的指数幂的softmax看看啥情况
                 Row_Sum=(torch.pow(2,x-x.max(-1).values.unsqueeze(-1))).sum(-1).unsqueeze(-1)#先算一下每一行的指数累加和作为分母                
                 Row_Sum=Row_Sum.expand(Row_Sum.shape[0],Row_Sum.shape[1],Row_Sum.shape[2],x.shape[-1])
                 x=torch.pow(2,x-x.max(-1).values.unsqueeze(-1))/Row_Sum
