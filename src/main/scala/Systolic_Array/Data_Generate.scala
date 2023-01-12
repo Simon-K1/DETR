@@ -69,7 +69,7 @@ case class Data_GenerateFsm(start:Bool)extends Area{
         is(DATA_GENERATE_ENUM.SA_COMPUTE){
             when(All_Computed){
                 nextState:=DATA_GENERATE_ENUM.IDLE
-            }elsewhen(SA_Compute_End){
+            }elsewhen(SA_Compute_End){//这里的意思是脉动阵列处理完了一行数据
                 nextState:=DATA_GENERATE_ENUM.WAIT_ROWs_TO_CACHE
             }otherwise{
                 nextState:=DATA_GENERATE_ENUM.SA_COMPUTE
@@ -106,13 +106,12 @@ class Data_Generate extends Component{
         val InFeature_Channel=in UInt(32 bits)
 
     }
+    noIoPrefix()
 
 
 
 
 
-
-    io.sData.ready:=False
 
     
 
@@ -136,21 +135,31 @@ class Data_Generate extends Component{
     RaddrOffset:=FifoRd.io.pop.valid?FifoRd.io.pop.payload|0//Fifo Of Read Addr Offset
 
     //写数据缓存控制=====================================================================================================
-    val In_Channel_Cnt=WaCounter(io.sData.fire,32,io.InFeature_Channel-1)
-    val In_Col_Cnt=WaCounter(In_Channel_Cnt.valid&&RegNext(io.sData.fire),32,io.InFeature_Size-1)//需要边界控制,如果输入通道是1的话,那么In_Channel_Cnt.valid会一直拉高
-        //与上一个io.sData.fire就是为了防止一个通道的情况出现,为了后面算1*1卷积做准备
-        //Cnt1计数器在io.sData.fire的下一拍才会变化,如果Cnt1要数到255,那当Cnt1==254时,这时Cnt1.valid还没拉高,
-        //当io.sData.fire再次拉高的下一个周期Cnt1才变成255,
-        //这时Cnt1.valid才会拉高,然后Cnt2再数一下,加一个RegNext是为了防止当Cnt1变成255时io.sData.fire又拉低的这种情况
-    val In_Row_Cnt=WaCounter(In_Col_Cnt.valid,32,io.InFeature_Size-1)//嗯,,,,,谁闲着没事会算1个像素点的图片?现在默认图片大小至少是2*2
-    val WaddrOffset=UInt(32 bits)
-    val Waddr=In_Channel_Cnt.count+WaddrOffset
+        //t通道优先,先写第一个点的所有通道,第一个点的所有通道写完了,此时列计数器加加,再那么写下一个点的所有通道,也就是当前行第二列的数据
+    val In_Channel_Cnt=WaCounter(io.sData.fire,32,io.InFeature_Channel-1)//输入通道计数器
+    val In_Col_Cnt=WaCounter(In_Channel_Cnt.valid&&(~RegNext(In_Channel_Cnt.valid)),32,io.InFeature_Size-1)//需要边界控制,如果输入通道是1的话,那么In_Channel_Cnt.valid会一直拉高
+        //RegNext是为了防止当In_Channel_Cnt==223时fire拉低,In_Channel_Cnt.valid就一直拉高的情况
+        //当然也可以让In_Channel_Cnt数完一轮后自动归零(还没试过)
+            //嗯,,,,好像不能自动归零,因为写地址的地址偏移还有一段In_Channel_Cnt时间要用到In_Col_Cnt...
+    val In_Row_Cnt=WaCounter(In_Col_Cnt.valid&&(~RegNext(In_Col_Cnt.valid)),32,io.InFeature_Size-1)//嗯,,,,,谁闲着没事会算1个像素点的图片?现在默认图片大小至少是2*2
+    val WaddrOffset=Reg(UInt(32 bits))init(0)
 
+    val Waddr=In_Channel_Cnt.count+WaddrOffset
+    val Waddr_To_Push_Valid=In_Row_Cnt.count<io.Kernel_Size+io.Stride
+        //比如3*3步长为1的卷积,我们需要4行数据缓存
+        //而16*16,步长为16的卷积我们需要32行的数据缓存
     val FifoWr=new WaddrOffset_Fifo//Fifo Of Write Addr offset
-    FifoWr.io.push.payload:=0
-    FifoWr.io.push.valid:=False
-    FifoWr.io.pop.ready:=In_Col_Cnt.valid
-    WaddrOffset:=FifoWr.io.pop.valid?FifoWr.io.pop.payload|0
+    FifoWr.io.push.payload:=Waddr_To_Push_Valid?WaddrOffset|FifoWr.io.pop.payload
+        //比如16*16的卷积，步长为16，一开始我们不需要循环复用Bram地址空间，只需要一直往里面写0，1，2，3...行的起始地址即可
+        //存完32行数据后，就可以循环复用Bram地址空间了，这时Fifo出来的数据要重新写回fifo队列中
+    FifoWr.io.push.valid:=In_Col_Cnt.valid&&Waddr_To_Push_Valid
+    FifoWr.io.pop.ready:=(!Waddr_To_Push_Valid)&&In_Col_Cnt.valid
+        //当开始复用Bram地址空间并且数完一行数据后才Pop下一个地址偏移
+    WaddrOffset:=(Waddr_To_Push_Valid)?WaddrOffset|FifoWr.io.pop.payload
+        //前期不需要复用Bram地址空间，那么我们就一直往前面写就行了
+        //比如16*16的卷积，步长为16，当行计数器还没满16行时，那么前面32行数据的写地址直接从0一直到32行末尾
+        //存完32行数据后，我们才开始复用Bram地址空间，这时可以启动FIFO循环写地址。
+
 
 
 //Bram的读写策略采取写优先
@@ -167,9 +176,24 @@ class Data_Generate extends Component{
     Fsm.Init_End:=Init_Count.valid
     Fsm.Load_First_kROWs_End:=In_Row_Cnt.count===io.Kernel_Size-1//如果是1*1的卷积,就不用缓存了,直接进SA计算得了,,,
     //或者说1*1卷积再重新写一个配置？啊，1*1卷积真折磨人
+    // 1/12更新，其实1*1卷积就是一个点一个点算，没有重合，所以不需要用img2col展开，单独再开一条线就行了
+    //所以我们这里暂时先处理2*2及以上的卷积。
+    //当In_Row_Cnt=0时代表在加载第0行数据，当In_Row_Cnt=1时，代表第0行数据加载完了，正在加载第1行数据
+        //若卷积核大小时16*16，那么当In_Row_Cnt=15时代表正在加载第15行数据也就是第16行数据，
+        //由于只需要缓存前15行数据就能开始计算，所以这里的状态跳转标志应该没啥问题。
+    Fsm.SA_Compute_End:=False
+    Fsm.All_Computed:=False
+    Fsm.Row_Cached:=False
+    when(Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs){
+        io.sData.ready:=True
+    }otherwise{
+        io.sData.ready:=False
+    }
     
         
 }   
+
+
 object DGB_Gen extends App { 
     val verilog_path="./testcode_gen/Systolic_Array" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Data_Generate)
