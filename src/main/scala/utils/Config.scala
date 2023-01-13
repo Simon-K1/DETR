@@ -71,6 +71,7 @@ case class TopConfig(){
     val PATCH_BRAM_IN_DEPTH=PATCH_BRAM_OUT_DEPTH/(PATCH_BRAM_IN_WIDTH/PATCH_BRAM_OUT_WIDTH)
 //===================================================================================================
     //Data_Generate 部分
+    val DATA_GENERATE_IN_DATA_NUM=8//一下进8个点
     val DATA_GENERATE_BRAM_IN_WIDTH=64//入128bit
     val DATA_GENERATE_BRAM_OUT_WIDTH=64//出64bit
     val DATA_GENERATE_BRAM_IN_ADDR_DEPTH=4096
