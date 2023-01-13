@@ -84,8 +84,48 @@ case class Data_GenerateFsm(start:Bool)extends Area{
         }
     }
 }
+object LOAD_KROWS_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
+    val IDLE, LOAD_NEXT_KROWs,LOAD_LAST_KROWs= newElement
+//LOAD_NEXT_KROWs:当脉动阵列处理完一行数据后，我们就可以加载后面的k行数据了
+//LOAD_LAST_KROWs:加入这个状态是为了处理边界问题，比如当加载最后K行数据时，我们是不需要再往fifo中循环写回地址的，这时Fifo只需pop即可，
+    //当最后的K行被加载完了，fifo也被清空了。
+}
+case class Load_KRows_Fsm(start:Bool)extends Area{
+    val currentState = Reg(LOAD_KROWS_ENUM()) init LOAD_KROWS_ENUM.IDLE
+    val nextState = LOAD_KROWS_ENUM()
+    currentState := nextState
+    val Krows_Loaded=Bool()
+    val Load_Last_KRows=Bool()
+    switch(currentState){
+        is(LOAD_KROWS_ENUM.IDLE){
+            when(start){
+                nextState:=LOAD_KROWS_ENUM.LOAD_NEXT_KROWs
+            }otherwise{
+                nextState:=LOAD_KROWS_ENUM.IDLE
+            }
+        }
+        is(LOAD_KROWS_ENUM.LOAD_NEXT_KROWs){
+            when(Load_Last_KRows){
+                nextState:=LOAD_KROWS_ENUM.LOAD_LAST_KROWs
+            }elsewhen(Krows_Loaded){
+                nextState:=LOAD_KROWS_ENUM.IDLE//缓存完了就可以进入IDLE状态等计算计算接受结束
+            }otherwise{
+                nextState:=LOAD_KROWS_ENUM.LOAD_NEXT_KROWs
+            }
+        }
+        is(LOAD_KROWS_ENUM.LOAD_LAST_KROWs){
+            when(Krows_Loaded){
+                nextState:=LOAD_KROWS_ENUM.IDLE
+            }otherwise{
+                nextState:=LOAD_KROWS_ENUM.LOAD_LAST_KROWs
+            }           
+        }
+    }
+
+}
 class WaddrOffset_Fifo extends StreamFifo(UInt(32 bits),32)
 class RaddrOffset_Fifo extends StreamFifo(UInt(32 bits),32)
+//读写地址偏移的fifo需要被分开嘛？
 class Data_Generate extends Component{
     //数据生成模块,Bram的空间应该能
     val Config=TopConfig()
@@ -109,13 +149,6 @@ class Data_Generate extends Component{
     }
     noIoPrefix()
 
-
-
-
-
-
-    
-
     //读数据展开控制====================================================================================================
     //卷积窗口按行展开
     val Window_Col=WaCounter(True,32,io.Window_Size-1)//io.kernel_Size
@@ -126,7 +159,7 @@ class Data_Generate extends Component{
         //Kernel_Addr对应的是卷积滑动窗口top-left点的相对地址(注意是相对地址,后面读写时相对地址加上地址偏移就是绝对地址)
     val RaddrOffset=UInt(32 bits)//输出完滑动窗口的一行后才会更新成下一行的偏移地址
     val Raddr=Window_Col.count+Kernel_Addr.count+RaddrOffset
-    val OutFeature_Width=WaCounter(Kernel_Addr.valid,32,io.OutFeature_Size-1)
+    val OutFeature_Col_Cnt=WaCounter(Kernel_Addr.valid,32,io.OutFeature_Size-1)
 
     //地址偏移fifo
     val FifoRd=new RaddrOffset_Fifo//由于暂时只支持32的Conv,所以深度设置为32
@@ -178,7 +211,7 @@ class Data_Generate extends Component{
         }
     }
 
-//Bram的读写策略采取写优先
+//Bram的读写策略采取写优先=================================================================
     val DGB=new DataGen_Bram
     DGB.io.dina:=io.sData.payload
     DGB.io.addra:=Waddr.resized//写地址,由于For循环展开都是用32bit来计数的
@@ -190,7 +223,8 @@ class Data_Generate extends Component{
     val Fsm=Data_GenerateFsm(io.start)
     val Init_Count=WaCounter(Fsm.currentState===DATA_GENERATE_ENUM.INIT,3,5)//数5下进行初始化
     Fsm.Init_End:=Init_Count.valid
-    Fsm.Load_First_kROWs_End:=In_Row_Cnt.count===io.Kernel_Size+io.Stride//如果是1*1的卷积,就不用缓存了,直接进SA计算得了,,,
+    Fsm.Load_First_kROWs_End:=In_Col_Cnt.valid&&(In_Row_Cnt.count===io.Kernel_Size+io.Stride-1)//如果是1*1的卷积,就不用缓存了,直接进SA计算得了,,,
+    //加一个In_Col_Cnt.valid就不会在进完最后一个点后ready还拉高一个周期
     //或者说1*1卷积再重新写一个配置？啊，1*1卷积真折磨人
     // 1/12更新，其实1*1卷积就是一个点一个点算，没有重合，所以不需要用img2col展开，单独再开一条线就行了
     //所以我们这里暂时先处理2*2及以上的卷积。
@@ -209,6 +243,10 @@ class Data_Generate extends Component{
     }otherwise{
         io.sData.ready:=False
     }
+    val Data_Cache_Fsm=Load_KRows_Fsm(OutFeature_Col_Cnt.valid)//输出特征图一行处理完了，就可以启动下一次的数据缓存
+    val Load_KRows_Cnt=WaCounter(In_Col_Cnt.valid,32,io.Stride-1)//
+    Data_Cache_Fsm.Krows_Loaded:=Load_KRows_Cnt.valid&&In_Col_Cnt.valid//当第15行（从0开始）数据全部加载完即可
+    Data_Cache_Fsm.Load_Last_KRows:=In_Row_Cnt.count===io.InFeature_Size-(io.Stride)
 }   
 
 
