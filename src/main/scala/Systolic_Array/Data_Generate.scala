@@ -4,6 +4,7 @@ import spinal.lib._
 import utils._
 import spinal.lib.Delay
 import spinal.lib.StreamFifo
+import java.awt.image.Kernel
 class DataGen_Bram extends BlackBox{//黑盒，入32bit，出16 bit,Activation Bram，也就是SA左边挂的那块Bram
     val Config=TopConfig()
     val io=new Bundle{//component要求out有驱动，但是black box不要求out的驱动
@@ -140,38 +141,58 @@ class Data_Generate extends Component{
         val Stride=in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
         val Kernel_Size=in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
         val Window_Size=in UInt(32 bits)
-            //所谓WindowSize,比如一个5*5的卷积,那么一个滑动窗口的大小就是5,但是需要考虑输入通道,比如256的输入通道,那么这时输入的Window_Size就是5*256(对应的是滑动窗口一行数据点),只支持方形卷积
-        val OutFeature_Size=in UInt(32 bits)
+            //所谓WindowSize,比如一个16*16的卷积,那么一个滑动窗口的大小就是16,但是需要考虑输入通道,比如256的输入通道,那么这时输入的Window_Size就是16*256(对应的是滑动窗口一行数据点),只支持方形卷积
+            //除了考虑输入通道，还要考虑输入数据的并行度，比如如果一下进8个点，也就是8个通道，虽然实际我们进的是224*224*3的图片，
+            //但是我们不能简单的将Window_Size设置为16*3，应该还是设置为16，因为3通道不够，需要补零成8通道
+            //这时我们的WindowSize还是1，如果输入通道是9，那么我们的Window_Size就是16*2，9通道继续补零成16通道，有7个通道冗余
+            //总的来说Window_Size的实际计算公式应该是：KernelSize*InChannel/(Bram_Out_DataWidth/8)(向上取整)
+        
         val InFeature_Size=in UInt(32 bits)//
         val InFeature_Channel=in UInt(32 bits)
-
-        val InFeature_Size_Mul_Channel=in UInt(32 bits)//图片大小乘以通道数，比如224的图片，3通道，那么这里应该输入224*3
+        
+        val OutFeature_Channel=in UInt(32 bits)
+        val OutFeature_Channel_Count_Times=in UInt(32 bits)
+        val OutFeature_Size=in UInt(32 bits)
+        val OutCol_Count_Times=in UInt(32 bits)
+        val OutRow_Count_Times=in UInt(32 bits)
+        val InCol_Count_Times=in UInt(32 bits)//图片大小*ceil(通道数/8)，比如224的图片，3通道，但是一下子进8个通道，这三个通道补零成8通道，那么这里应该输入224*ceil(3/8)
     }
     noIoPrefix()
-
+    val Fsm=Data_GenerateFsm(io.start)
     //读数据展开控制====================================================================================================
     //卷积窗口按行展开
-    val Window_Col=WaCounter(True,32,io.Window_Size-1)//io.kernel_Size
-    val Window_Row=WaCounter(Window_Col.valid,32,io.Window_Size-1)//io.kernel_Size
-        //每输出完滑动窗口的一行行计数器就加一
-    val Kernel_Addr=WaCounter(Window_Row.valid,32,Config.PICTURE_SIZE-io.Kernel_Size-1,Stride=io.Stride)//默认卷积核的最右边一列最后可以到达输入特征图的最右边
+    val SA_Row_Cnt=ForLoopCounter(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE,3,8-1)//这个计数器对应的是脉动阵列的每一行
+    //这里的意思是：脉动阵列一共有8行，每一行处理一个滑动窗口，那么8行就处理8个滑动窗口，对应特征图的一行8个输出点
+    //以后这个地方需要修改为可配置的
+    val Window_Col_Cnt=ForLoopCounter(SA_Row_Cnt.valid,32,io.Window_Size-1)
+    //滑动窗口列计数器
+    val Window_Row_Cnt=ForLoopCounter(Window_Col_Cnt.valid,32,io.Kernel_Size-1)
+    //滑动窗口行计数器
+        //与上Window_Col_Cnt.valid的原因：当Window_Col_Cnt==15时会一直拉高，
+    val Out_Channel_Cnt=ForLoopCounter(Window_Row_Cnt.valid,32,io.OutFeature_Channel_Count_Times-1)//因为一下出8个通道，所以得除以8
+    //这里假设输出通道总是能被8整除，比如输出通道比较大，768个通道，一下处理8个通道，那么需要768/8=96个循环。
+    val Out_Col_Cnt=ForLoopCounter(Out_Channel_Cnt.valid,32,io.OutCol_Count_Times-1)//输出列计数器，比如输出特征图的大小是14列，但是我们的输出并行度是8，所以这里应该是ceil(14/8)=2
+    val Out_Row_Cnt=ForLoopCounter(Out_Col_Cnt.valid,32,io.OutRow_Count_Times-1)
+    
+
+    val Kernel_Addr=Reg(UInt(32 bits))init(0)//WaCounter(Window_Row.valid,32,Config.PICTURE_SIZE-io.Kernel_Size-1,Stride=io.Stride)//默认卷积核的最右边一列最后可以到达输入特征图的最右边
         //当输出完一个滑动窗口的所有点后,卷积核开始移动
         //Kernel_Addr对应的是卷积滑动窗口top-left点的相对地址(注意是相对地址,后面读写时相对地址加上地址偏移就是绝对地址)
-    val RaddrOffset=UInt(32 bits)//输出完滑动窗口的一行后才会更新成下一行的偏移地址
-    val Raddr=Window_Col.count+Kernel_Addr.count+RaddrOffset
-    val OutFeature_Col_Cnt=WaCounter(Kernel_Addr.valid,32,io.OutFeature_Size-1)
+    val Kernel_Base_Addr=Reg(UInt(32 bits))init(0)
+    val Row_Base_Addr=Reg(UInt(32 bits))init(0)
+    val Raddr=Kernel_Addr+Kernel_Base_Addr+Row_Base_Addr
 
     //地址偏移fifo
     val FifoRd=new RaddrOffset_Fifo//由于暂时只支持32的Conv,所以深度设置为32
     FifoRd.io.push.payload:=0
     FifoRd.io.push.valid:=False
-    FifoRd.io.pop.ready:=Window_Col.valid//处理完滑动窗口的一行就继续处理下一行,处理下一行的话行地址偏移需要更新
-    RaddrOffset:=FifoRd.io.pop.valid?FifoRd.io.pop.payload|0//Fifo Of Read Addr Offset
+    FifoRd.io.pop.ready:=False
+    
 
     //写数据缓存控制=====================================================================================================
-        //t通道优先,先写第一个点的所有通道,第一个点的所有通道写完了,此时列计数器加加,再那么写下一个点的所有通道,也就是当前行第二列的数据
+        //通道优先,先写第一个点的所有通道,第一个点的所有通道写完了,此时列计数器加加,再那么写下一个点的所有通道,也就是当前行第二列的数据
     // val In_Channel_Cnt=WaCounter(io.sData.fire,32,io.InFeature_Channel-1)//输入通道计数器
-    val In_Col_Cnt=WaCounter(io.sData.fire,32,io.InFeature_Size_Mul_Channel-1)//需要边界控制,如果输入通道是1的话,那么In_Channel_Cnt.valid会一直拉高
+    val In_Col_Cnt=WaCounter(io.sData.fire,32,io.InCol_Count_Times-1)//需要边界控制,如果输入通道是1的话,那么In_Channel_Cnt.valid会一直拉高
         //RegNext是为了防止当In_Channel_Cnt==223时fire拉低,In_Channel_Cnt.valid就一直拉高的情况
         //当然也可以让In_Channel_Cnt数完一轮后自动归零(还没试过)
             //嗯,,,,好像不能自动归零,因为写地址的地址偏移还有一段In_Channel_Cnt时间要用到In_Col_Cnt...
@@ -205,7 +226,7 @@ class Data_Generate extends Component{
 
     when(In_Col_Cnt.valid){
         when(Waddr_To_Push_State){
-            WaddrOffset:=WaddrOffset+io.InFeature_Size_Mul_Channel//变成下一行的起始地址
+            WaddrOffset:=WaddrOffset+io.InCol_Count_Times//变成下一行的起始地址
         }otherwise{
             WaddrOffset:=FifoWr.io.pop.payload//锁住，维持224个周期
         }
@@ -217,10 +238,10 @@ class Data_Generate extends Component{
     DGB.io.addra:=Waddr.resized//写地址,由于For循环展开都是用32bit来计数的
     DGB.io.ena:=False
     DGB.io.wea:=True
-    DGB.io.addrb:=Raddr.resized//读地址，循环读,还没有处理128入64出的情况,,,,
+    DGB.io.addrb:=0//读地址，循环读,还没有处理128入64出的情况,,,,
 
 //Fsm==========================================================================================================
-    val Fsm=Data_GenerateFsm(io.start)
+    
     val Init_Count=WaCounter(Fsm.currentState===DATA_GENERATE_ENUM.INIT,3,5)//数5下进行初始化
     Fsm.Init_End:=Init_Count.valid
     Fsm.Load_First_kROWs_End:=In_Col_Cnt.valid&&(In_Row_Cnt.count===io.Kernel_Size+io.Stride-1)//如果是1*1的卷积,就不用缓存了,直接进SA计算得了,,,
@@ -236,17 +257,18 @@ class Data_Generate extends Component{
     Fsm.SA_Compute_End:=False
     Fsm.All_Computed:=False
     Fsm.Row_Cached:=False
+
+    val Data_Cache_Fsm=Load_KRows_Fsm(Out_Col_Cnt.valid)//输出特征图一行处理完了，就可以启动下一次的数据缓存
+    val Load_KRows_Cnt=WaCounter(In_Col_Cnt.valid,32,io.Stride-1)//
+    Data_Cache_Fsm.Krows_Loaded:=Load_KRows_Cnt.valid&&In_Col_Cnt.valid//当第15行（从0开始）数据全部加载完即可
+    Data_Cache_Fsm.Load_Last_KRows:=In_Row_Cnt.count===io.InFeature_Size-(io.Stride)
     when(Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs){
         io.sData.ready:=True
     }elsewhen(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE){
         io.sData.ready:=False//计算状态时也是true，这里还需要加新的约束条件，比如入完多少数据后ready拉低
     }otherwise{
         io.sData.ready:=False
-    }
-    val Data_Cache_Fsm=Load_KRows_Fsm(OutFeature_Col_Cnt.valid)//输出特征图一行处理完了，就可以启动下一次的数据缓存
-    val Load_KRows_Cnt=WaCounter(In_Col_Cnt.valid,32,io.Stride-1)//
-    Data_Cache_Fsm.Krows_Loaded:=Load_KRows_Cnt.valid&&In_Col_Cnt.valid//当第15行（从0开始）数据全部加载完即可
-    Data_Cache_Fsm.Load_Last_KRows:=In_Row_Cnt.count===io.InFeature_Size-(io.Stride)
+    }    
 }   
 
 

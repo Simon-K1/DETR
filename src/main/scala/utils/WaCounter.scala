@@ -1,5 +1,7 @@
 package utils
 import spinal.core.{Area, Bool, False, IntToBuilder, Reg, True, UInt, when}
+import spinal.core.RegNext
+import java.awt.Component
 
 object WaCounter {
     def apply(en: Bool, width: Int, end: UInt,Stride:UInt=1,InitData:UInt=0) = new WaCounter(en, width, end,Stride)
@@ -17,6 +19,26 @@ class WaCounter(en: Bool, width: Int, cnt: UInt,Stride:UInt) extends Area {
         count := count + Stride
         when(valid) {
             count := 0
+        }
+    }
+    def clear = {
+        count := 0
+        valid := False
+    }
+}
+object ForLoopCounter{
+    //For循环累加器，相比于WaCounter，valid只会拉高一下
+    //适用场景：3个及以上的个For循环映射到硬件上（两个或两个以下还是WaCounter比较保守）
+    def apply(en:Bool,width:Int,end:UInt)=new ForLoopCounter(en, width, end)
+}
+class ForLoopCounter(en:Bool,width:Int,cnt:UInt)extends Area{
+    val count = Reg(UInt(width bits)) init 0
+    val valid =(count === cnt)&&en//Valid只拉高一下，用于for循环的控制
+    when(en) {
+        when(valid) {
+            count := 0
+        }otherwise{
+            count := count + 1
         }
     }
     def clear = {
