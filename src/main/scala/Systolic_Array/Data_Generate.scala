@@ -147,7 +147,7 @@ class Data_Generate extends Component{
             //这时我们的WindowSize还是1，如果输入通道是9，那么我们的Window_Size就是16*2，9通道继续补零成16通道，有7个通道冗余
             //总的来说Window_Size的实际计算公式应该是：KernelSize*InChannel/(Bram_Out_DataWidth/8)(向上取整)
         
-        val InFeature_Size=in UInt(32 bits)//
+        val InFeature_Size=in UInt(32 bits)//图片多大就输入多大的数据
         val InFeature_Channel=in UInt(32 bits)
         
         val OutFeature_Channel=in UInt(32 bits)
@@ -160,6 +160,8 @@ class Data_Generate extends Component{
     noIoPrefix()
     val Fsm=Data_GenerateFsm(io.start)
     //读数据展开控制====================================================================================================
+    
+    
     //卷积窗口按行展开
     val SA_Row_Cnt=ForLoopCounter(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE,3,8-1)//这个计数器对应的是脉动阵列的每一行
     //这里的意思是：脉动阵列一共有8行，每一行处理一个滑动窗口，那么8行就处理8个滑动窗口，对应特征图的一行8个输出点
@@ -173,8 +175,23 @@ class Data_Generate extends Component{
     //这里假设输出通道总是能被8整除，比如输出通道比较大，768个通道，一下处理8个通道，那么需要768/8=96个循环。
     val Out_Col_Cnt=ForLoopCounter(Out_Channel_Cnt.valid,32,io.OutCol_Count_Times-1)//输出列计数器，比如输出特征图的大小是14列，但是我们的输出并行度是8，所以这里应该是ceil(14/8)=2
     val Out_Row_Cnt=ForLoopCounter(Out_Col_Cnt.valid,32,io.OutRow_Count_Times-1)
-    
 
+
+    //冗余计算处理==============================================================================
+    val OutFeature_Col_Lefted=Reg(UInt(32 bits))init(0)//用来标记输出特征图一行还剩多少列没处理
+    when(Out_Col_Cnt.valid){
+        OutFeature_Col_Lefted:=io.OutFeature_Size//跑完一行后归位
+    }elsewhen(Out_Channel_Cnt.valid){
+        //当8个输入通道与所有卷积核计算完后得到输出特征图一行8个点的全部输出通道
+        //还没处理的输出特征图的列数减8更新
+        OutFeature_Col_Lefted:=OutFeature_Col_Lefted-8
+    }elsewhen(Fsm.currentState===DATA_GENERATE_ENUM.INIT){
+        OutFeature_Col_Lefted:=io.OutFeature_Size
+    }
+    when(SA_Row_Cnt.count===OutFeature_Col_Lefted){
+        SA_Row_Cnt.valid:=True
+        SA_Row_Cnt.count:=0
+    }
     val Kernel_Addr=Reg(UInt(32 bits))init(0)//WaCounter(Window_Row.valid,32,Config.PICTURE_SIZE-io.Kernel_Size-1,Stride=io.Stride)//默认卷积核的最右边一列最后可以到达输入特征图的最右边
         //当输出完一个滑动窗口的所有点后,卷积核开始移动
         //Kernel_Addr对应的是卷积滑动窗口top-left点的相对地址(注意是相对地址,后面读写时相对地址加上地址偏移就是绝对地址)
