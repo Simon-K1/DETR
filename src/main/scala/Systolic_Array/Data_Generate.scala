@@ -188,7 +188,7 @@ class Data_Generate extends Component{
     }elsewhen(Fsm.currentState===DATA_GENERATE_ENUM.INIT){
         OutFeature_Col_Lefted:=io.OutFeature_Size
     }
-    when(SA_Row_Cnt.count===OutFeature_Col_Lefted){
+    when(SA_Row_Cnt.count===OutFeature_Col_Lefted-1){//得减个1，看仿真看出来的，分析也好分析
         SA_Row_Cnt.valid:=True
         SA_Row_Cnt.count:=0
     }
