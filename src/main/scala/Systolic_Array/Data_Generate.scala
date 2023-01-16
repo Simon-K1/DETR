@@ -146,7 +146,7 @@ class Data_Generate extends Component{
             //但是我们不能简单的将Window_Size设置为16*3，应该还是设置为16，因为3通道不够，需要补零成8通道
             //这时我们的WindowSize还是1，如果输入通道是9，那么我们的Window_Size就是16*2，9通道继续补零成16通道，有7个通道冗余
             //总的来说Window_Size的实际计算公式应该是：KernelSize*InChannel/(Bram_Out_DataWidth/8)(向上取整)
-        
+
         val InFeature_Size=in UInt(32 bits)//图片多大就输入多大的数据
         val InFeature_Channel=in UInt(32 bits)
         
@@ -196,8 +196,23 @@ class Data_Generate extends Component{
         //当输出完一个滑动窗口的所有点后,卷积核开始移动
         //Kernel_Addr对应的是卷积滑动窗口top-left点的相对地址(注意是相对地址,后面读写时相对地址加上地址偏移就是绝对地址)
     val Kernel_Base_Addr=Reg(UInt(32 bits))init(0)
+    when(Out_Col_Cnt.valid){//每输出一行特征图，卷积核地址复位
+        Kernel_Base_Addr:=0
+    }elsewhen(Out_Channel_Cnt.valid){//每输出8个点对应的全部通道，也就是Out_Feature的一行的8个点，卷积核基地址后移8个滑动窗口位置
+        Kernel_Base_Addr:=Kernel_Base_Addr+(io.Window_Size<<3).resized//一个Window_Size对应一个滑动窗口的全部数据的地址长度,并行度是8,
+    }//一个Window_Size最大的大小就是:KernelSize*Compute_In_Channel,Compute_In_Channel最大是8
+    when(Out_Channel_Cnt.valid){
+        Kernel_Addr:=Kernel_Base_Addr//输出完一个
+    }elsewhen(Window_Row_Cnt.valid){
+        Kernel_Addr:=Kernel_Base_Addr
+    }elsewhen(SA_Row_Cnt.valid){//输完8个卷积核中的第一个点,然后再重新回来输第二个点,输完8个滑窗
+        Kernel_Addr:=Kernel_Base_Addr
+    }elsewhen(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE){
+        Kernel_Addr:=Kernel_Addr+io.Stride//每向SA输入一行数据,Kernel_Addr就加一个步长
+    }
     val Row_Base_Addr=Reg(UInt(32 bits))init(0)
-    val Raddr=Kernel_Addr+Kernel_Base_Addr+Row_Base_Addr
+
+    val Raddr=Kernel_Addr+Row_Base_Addr+Window_Col_Cnt.count
 
     //地址偏移fifo
     val FifoRd=new RaddrOffset_Fifo//由于暂时只支持32的Conv,所以深度设置为32
@@ -287,6 +302,7 @@ class Data_Generate extends Component{
         io.sData.ready:=False
     }    
 }   
+
 
 
 object DGB_Gen extends App { 
