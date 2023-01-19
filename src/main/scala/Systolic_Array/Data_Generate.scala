@@ -29,10 +29,10 @@ class DataGen_Bram extends BlackBox{//黑盒，入32bit，出16 bit,Activation B
 }
 object DATA_GENERATE_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, LOAD_FIRST_kROWs,SA_COMPUTE,WAIT_ROWs_TO_CACHE= newElement
-    //LOAD_FIRST_kROWs:加载前K行,有多少个卷积核就加载多少行(这里是加载K行还是k-1行呢?)
+    //LOAD_FIRST_kROWs:加载前K行,卷积核大小多大就加载多少行(这里是加载K行还是k-1行呢?)
         //可以是K-1行,这样又可以少一行的缓存时间
     //SA_COMPUTE:脉动阵列计算,8*8的脉动阵列输出64个点
-    //WAIT_ROWs_TO_CACHE:如果输入通道比较大,那么完全可以在计算期间加载后面的数据,比如步长为,则需要加载一行数据,16步长,就要加载16行数据
+    //WAIT_ROWs_TO_CACHE:如果输入通道比较大,那么完全可以在计算期间加载后面的数据,比如步长为1,则需要额外加载一行数据,16步长,就要加载16行数据
         //另外还存在一种情况,就是算完了数据还没缓存完,所以这里我们需要消耗一个周期来判断
 }
 case class Data_GenerateFsm(start:Bool)extends Area{
@@ -152,10 +152,12 @@ class Data_Generate extends Component{
         
         val OutFeature_Channel=in UInt(32 bits)
         val OutFeature_Channel_Count_Times=in UInt(32 bits)
-        val OutFeature_Size=in UInt(32 bits)
+        val OutFeature_Size=in UInt(32 bits)//输出特征图的大小
+                                            //用于计算的冗余处理，
         val OutCol_Count_Times=in UInt(32 bits)
         val OutRow_Count_Times=in UInt(32 bits)
         val InCol_Count_Times=in UInt(32 bits)//图片大小*ceil(通道数/8)，比如224的图片，3通道，但是一下子进8个通道，这三个通道补零成8通道，那么这里应该输入224*ceil(3/8)
+                                                //实际上就是输入图片一行（全部通道）的地址空间大小
     }
     noIoPrefix()
     val Fsm=Data_GenerateFsm(io.start)
@@ -211,16 +213,63 @@ class Data_Generate extends Component{
         Kernel_Addr:=Kernel_Addr+io.Stride//每向SA输入一行数据,Kernel_Addr就加一个步长
     }
     val Row_Base_Addr=Reg(UInt(32 bits))init(0)
-
     val Raddr=Kernel_Addr+Row_Base_Addr+Window_Col_Cnt.count
 
-    //地址偏移fifo
-    val FifoRd=new RaddrOffset_Fifo//由于暂时只支持32的Conv,所以深度设置为32
-    FifoRd.io.push.payload:=0
-    FifoRd.io.push.valid:=False
-    FifoRd.io.pop.ready:=False
-    
 
+    //Row_Base_Addr偏移控制
+    //首先，在一轮计算开始时，FifoRd是空的，一开始需要向Fifo中写入数据
+    //比如3*3步长为1的卷积,一开始需要向Fifo中写入0,1,2,3行的基地址
+    //这里的话是16*16,步长为16的卷积,那么需要向fifo中写入0,1,2,...31行的基地址
+    //同时还要考虑for循环中基地址更新的问题:
+        //比如要得到输出特征图的第一行,就需要导入处理0,1,2...15行的数据,并且循环读取这15行数据
+        //输出特征图的第一行被得到后,需要导入16,17..31行的数据
+        //如果只用一个fifo来循环读写会有问题,比如我们向fifo中写入了0,1,2...31行的基地址,很明显0,1,2,3...15行的基地址要被循环读取多次,在处理完前16行数据之前还不能读取第16行数据
+    //初步思路:
+        //第一步:在数据缓存阶段先向FifoRd写入需要循环读的Row_Base_Addr
+        //第二步:前32行(16行)数据被缓存完后,开始进入计算状态,在计算状态中读
+        //所以在数据缓存阶段,先向FifoRd0写入0~15行的基地址,FifoRd1中写入16~31行的基地址
+    val FifoRd0=new RaddrOffset_Fifo//由于暂时只支持32的Conv,所以深度设置为32
+    val FifoRd1=new RaddrOffset_Fifo
+    //两个fifo拼起来,具体逻辑见(待更新)
+    FifoRd0.io.push.payload:=0
+    FifoRd0.io.push.valid:=False
+    FifoRd0.io.pop.ready:=False
+
+    FifoRd1.io.push.payload:=0
+    FifoRd1.io.push.valid:=False
+    FifoRd1.io.pop.ready:=False
+    // when(Window_Col_Cnt.valid){
+    //     Row_Base_Addr:=FifoRd0.io.pop.payload//当8个滑窗的一行都被输出了,接下来换下一行,换下一行需要更新Row_Base_Addr
+    // }
+    //===========================FifoRd循环读写地址控制========================
+    val Update_FifoRd=(Out_Col_Cnt.count===io.OutCol_Count_Times-1)&&(Out_Channel_Cnt.count===io.OutFeature_Channel_Count_Times-1)
+        //首先8滑动窗口得滑倒当前16行的最后，然后输出通道的计算也应该是最后的8个输出通道
+    when(Fsm.Load_First_kROWs_End){
+        FifoRd0.io.pop.ready:=True
+        FifoRd0.io.push.payload:=FifoRd1.io.pop.payload//循环写回
+        FifoRd0.io.push.valid:=FifoRd1.io.pop.valid            
+    }
+    when(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE){
+        when(Update_FifoRd){
+            when(Window_Col_Cnt.valid){
+                FifoRd0.io.pop.ready:=True
+                FifoRd0.io.push.payload:=FifoRd1.io.pop.payload//循环写回
+                FifoRd0.io.push.valid:=FifoRd1.io.pop.valid            
+                
+                FifoRd1.io.pop.ready:=True
+                FifoRd1.io.push.payload:=FifoRd0.io.pop.payload//循环写回
+                FifoRd1.io.push.valid:=FifoRd0.io.pop.valid    
+            }
+        }elsewhen(Window_Col_Cnt.valid){
+            //滑动窗口的一行输出完后，就开始处理滑动窗口的下一行数据，这是Row_Base_Addr需要被更新
+            FifoRd0.io.pop.ready:=True
+            FifoRd0.io.push.payload:=FifoRd0.io.pop.payload//循环写回
+            FifoRd0.io.push.valid:=FifoRd0.io.pop.valid
+        }
+    }
+    when(FifoRd0.io.pop.fire){
+        Row_Base_Addr:=FifoRd0.io.pop.payload//更新行基地址
+    }
     //写数据缓存控制=====================================================================================================
         //通道优先,先写第一个点的所有通道,第一个点的所有通道写完了,此时列计数器加加,再那么写下一个点的所有通道,也就是当前行第二列的数据
     // val In_Channel_Cnt=WaCounter(io.sData.fire,32,io.InFeature_Channel-1)//输入通道计数器
@@ -264,6 +313,28 @@ class Data_Generate extends Component{
         }
     }
 
+    when(Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs){
+        //当处于缓存前K行数据状态时,更新读地址fifo,只向FifoRd1中写入即可
+        when(In_Row_Cnt.count<io.Kernel_Size){
+            FifoRd0.io.push.payload:=WaddrOffset
+            FifoRd0.io.push.valid:=In_Col_Cnt.valid//在缓存前32行数据的(之后应该修改为只缓存16行数据)这一段时间内和写地址fifo同步
+            
+        }otherwise{
+            FifoRd0.io.push.payload:=0
+            FifoRd0.io.push.valid:=False//在缓存前32行数据的(之后应该修改为只缓存16行数据)这一段时间内和写地址fifo同步
+            
+        }
+        when(In_Row_Cnt.count>=io.Kernel_Size){
+            FifoRd1.io.push.payload:=WaddrOffset
+            FifoRd1.io.push.valid:=In_Col_Cnt.valid//在缓存前32行数据的(之后应该修改为只缓存16行数据)这一段时间内和写地址fifo同步
+            // FifoRd1.io.pop.ready:=(In_Row_Cnt.count<io.Kernel_Size)//前16个点还是继续pop给FIfoRd0
+        }otherwise{
+            FifoRd1.io.push.payload:=0
+            FifoRd1.io.push.valid:=False//在缓存前32行数据的(之后应该修改为只缓存16行数据)这一段时间内和写地址fifo同步
+            // FifoRd1.io.pop.ready:=(In_Row_Cnt.count<io.Kernel_Size)//前16个点还是继续pop给FIfoRd0            
+        }
+    }
+
 //Bram的读写策略采取写优先=================================================================
     val DGB=new DataGen_Bram
     DGB.io.dina:=io.sData.payload
@@ -302,7 +373,6 @@ class Data_Generate extends Component{
         io.sData.ready:=False
     }    
 }   
-
 
 
 object DGB_Gen extends App { 

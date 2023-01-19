@@ -2,3 +2,5 @@
 !/src/
 !.gitignore
 !build.sbt
+!*.ipynb
+!*.py
