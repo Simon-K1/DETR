@@ -133,7 +133,8 @@ class Data_Generate extends Component{
     val io=new Bundle{//测试先用8bit位宽测试
         val start=in Bool()
         val sData=slave Stream(UInt(Config.DATA_GENERATE_BRAM_IN_WIDTH bits))//Stream(UInt(Config.DATA_GENERATE_BRAM_IN_WIDTH bits))//进来的数据给到Bram
-
+        val mData=out UInt(Config.DATA_GENERATE_BRAM_OUT_WIDTH bits)
+        val mValid=out Bool()
         //Conv相关
         //默认所有可配置参数都是正确的,比如要不要Padding,Padding多少,Stride多少?如果不满足条件,那就是算法那边背锅
             //这里不做错误判断
@@ -244,12 +245,14 @@ class Data_Generate extends Component{
     //===========================FifoRd循环读写地址控制========================
     val Update_FifoRd=(Out_Col_Cnt.count===io.OutCol_Count_Times-1)&&(Out_Channel_Cnt.count===io.OutFeature_Channel_Count_Times-1)
         //首先8滑动窗口得滑倒当前16行的最后，然后输出通道的计算也应该是最后的8个输出通道
-    when(Fsm.Load_First_kROWs_End){
+    when(Fsm.nextState===DATA_GENERATE_ENUM.SA_COMPUTE&&Fsm.currentState=/=DATA_GENERATE_ENUM.SA_COMPUTE){//在进入SA_Compute 状态之前得pop一下
         FifoRd0.io.pop.ready:=True
         FifoRd0.io.push.payload:=FifoRd1.io.pop.payload//循环写回
         FifoRd0.io.push.valid:=FifoRd1.io.pop.valid            
     }
+    
     when(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE){
+        
         when(Update_FifoRd){
             when(Window_Col_Cnt.valid){
                 FifoRd0.io.pop.ready:=True
@@ -291,7 +294,7 @@ class Data_Generate extends Component{
 
 
     val FifoWr_Pop_Now=(!Waddr_To_Push_State)&&In_Col_Cnt.valid
-    val Waddr=Waddr_To_Push_State?WaddrOffset|WaddrOffset+In_Col_Cnt.count
+    val Waddr=WaddrOffset+In_Col_Cnt.count//Waddr_To_Push_State?WaddrOffset|WaddrOffset+In_Col_Cnt.count
 
     val FifoWr=new WaddrOffset_Fifo//Fifo Of Write Addr offset
     FifoWr.io.push.payload:=Waddr_To_Push_State?WaddrOffset|FifoWr.io.pop.payload
@@ -339,9 +342,9 @@ class Data_Generate extends Component{
     val DGB=new DataGen_Bram
     DGB.io.dina:=io.sData.payload
     DGB.io.addra:=Waddr.resized//写地址,由于For循环展开都是用32bit来计数的
-    DGB.io.ena:=False
+    DGB.io.ena:=io.sData.fire
     DGB.io.wea:=True
-    DGB.io.addrb:=0//读地址，循环读,还没有处理128入64出的情况,,,,
+    DGB.io.addrb:=Raddr.resized//读地址，循环读,还没有处理128入64出的情况,,,,
 
 //Fsm==========================================================================================================
     
@@ -357,23 +360,30 @@ class Data_Generate extends Component{
         //由于只需要缓存前16行数据就能开始计算，所以这里的状态跳转标志应该没啥问题。
         //这里kernelsize=16，Stride=16，16+16=32，当In_Row_Cnt=32时，说明正在加载第32行数据（从0开始），那么此时前32行数据已经缓存完了
         //不管怎么说，反正最后进fifo的地址应该是0~31
-    Fsm.SA_Compute_End:=False
-    Fsm.All_Computed:=False
-    Fsm.Row_Cached:=False
-
     val Data_Cache_Fsm=Load_KRows_Fsm(Out_Col_Cnt.valid)//输出特征图一行处理完了，就可以启动下一次的数据缓存
+    Fsm.SA_Compute_End:=Out_Col_Cnt.valid//当输出矩阵的一行被处理完了，也就是16行的输入数据也被处理完了，这时脉动阵列计算完了一轮
+    Fsm.All_Computed:=Out_Row_Cnt.valid
+    Fsm.Row_Cached:=True//Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.IDLE//下一轮的计算数据已经被缓存完，就可以开始计算
+    //能否认为计算时间永远大于等于缓存时间?
+    
     val Load_KRows_Cnt=WaCounter(In_Col_Cnt.valid,32,io.Stride-1)//
     Data_Cache_Fsm.Krows_Loaded:=Load_KRows_Cnt.valid&&In_Col_Cnt.valid//当第15行（从0开始）数据全部加载完即可
     Data_Cache_Fsm.Load_Last_KRows:=In_Row_Cnt.count===io.InFeature_Size-(io.Stride)
+    io.sData.ready:=False
     when(Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs){
         io.sData.ready:=True
-    }elsewhen(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE){
-        io.sData.ready:=False//计算状态时也是true，这里还需要加新的约束条件，比如入完多少数据后ready拉低
-    }otherwise{
-        io.sData.ready:=False
-    }    
+    }
+    when(Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.LOAD_NEXT_KROWs||Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.LOAD_LAST_KROWs){
+        io.sData.ready:=True
+    }
+    io.mData:=DGB.io.doutb(7 downto 0).resized
+    io.mValid:=False
+    
+    when(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE){
+        io.mValid:=True
+    }
+        
 }   
-
 
 object DGB_Gen extends App { 
     val verilog_path="./testcode_gen/Systolic_Array" 
