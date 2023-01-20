@@ -297,7 +297,8 @@ class Data_Generate extends Component{
         //而16*16,步长为16的卷积我们需要32行的数据缓存
 
     val Data_Cache_Fsm=Load_KRows_Fsm(Out_Col_Cnt.valid)//输出特征图一行处理完了，就可以启动下一次的数据缓存
-    val FifoWr_Pop_Now=((!Waddr_To_Push_State)&&In_Col_Cnt.valid)||(Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.IDLE&&Data_Cache_Fsm.nextState=/=LOAD_KROWS_ENUM.IDLE)
+    val FifoWr_Pop_Now=((!Waddr_To_Push_State)&&In_Col_Cnt.valid)||(Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs&&Fsm.Load_First_kROWs_End)//(Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.IDLE&&Data_Cache_Fsm.nextState=/=LOAD_KROWS_ENUM.IDLE)
+    //加载完前K行需要pop一下
     val FifoWr_Push_Now=FifoWr_Pop_Now||In_Col_Cnt.valid
         //首先，如果在缓存前k行的状态里，如果那么就只能push不能pop，每缓存完一行就push一下
         //然后，在计算状态中，每拿到输出矩阵完整的一行，就得开始缓存后面的K行,这时得先pop出一个新的Waddr                                                                        
@@ -407,8 +408,6 @@ class Data_Generate extends Component{
         FifoWr.io.flush:=False
     }//清空Fifio，，，那我之前写的那些好像没啥用了
 }   
-
-
 
 
 object DGB_Gen extends App { 
