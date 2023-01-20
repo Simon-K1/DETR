@@ -204,8 +204,12 @@ class Data_Generate extends Component{
     }elsewhen(Out_Channel_Cnt.valid){//每输出8个点对应的全部通道，也就是Out_Feature的一行的8个点，卷积核基地址后移8个滑动窗口位置
         Kernel_Base_Addr:=Kernel_Base_Addr+(io.Window_Size<<3).resized//一个Window_Size对应一个滑动窗口的全部数据的地址长度,并行度是8,
     }//一个Window_Size最大的大小就是:KernelSize*Compute_In_Channel,Compute_In_Channel最大是8
-    when(Out_Channel_Cnt.valid){
-        Kernel_Addr:=Kernel_Base_Addr//输出完一个
+    when(Out_Col_Cnt.valid){
+        //拿到输出矩阵的一行后，Kernel_Base_Addr和Kernel_Addr都要归位
+        Kernel_Addr:=0
+    }elsewhen(Out_Channel_Cnt.valid){
+        Kernel_Addr:=Kernel_Base_Addr+(io.Window_Size<<3).resized//一轮输出通道处理完,8个滑动窗口右移更新成下一8滑动窗口的相对起始地址,
+                                                                //
     }elsewhen(Window_Row_Cnt.valid){
         Kernel_Addr:=Kernel_Base_Addr
     }elsewhen(SA_Row_Cnt.valid){//输完8个卷积核中的第一个点,然后再重新回来输第二个点,输完8个滑窗
@@ -245,10 +249,10 @@ class Data_Generate extends Component{
     //===========================FifoRd循环读写地址控制========================
     val Update_FifoRd=(Out_Col_Cnt.count===io.OutCol_Count_Times-1)&&(Out_Channel_Cnt.count===io.OutFeature_Channel_Count_Times-1)
         //首先8滑动窗口得滑倒当前16行的最后，然后输出通道的计算也应该是最后的8个输出通道
-    when(Fsm.nextState===DATA_GENERATE_ENUM.SA_COMPUTE&&Fsm.currentState=/=DATA_GENERATE_ENUM.SA_COMPUTE){//在进入SA_Compute 状态之前得pop一下
+    when(Fsm.nextState===DATA_GENERATE_ENUM.SA_COMPUTE&&Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs){//在进入SA_Compute 状态之前得pop一下
         FifoRd0.io.pop.ready:=True
-        FifoRd0.io.push.payload:=FifoRd1.io.pop.payload//循环写回
-        FifoRd0.io.push.valid:=FifoRd1.io.pop.valid            
+        FifoRd0.io.push.payload:=FifoRd0.io.pop.payload//循环写回
+        FifoRd0.io.push.valid:=FifoRd0.io.pop.valid   
     }
     
     when(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE){
@@ -322,20 +326,22 @@ class Data_Generate extends Component{
             FifoRd0.io.push.payload:=WaddrOffset
             FifoRd0.io.push.valid:=In_Col_Cnt.valid//在缓存前32行数据的(之后应该修改为只缓存16行数据)这一段时间内和写地址fifo同步
             
-        }otherwise{
-            FifoRd0.io.push.payload:=0
-            FifoRd0.io.push.valid:=False//在缓存前32行数据的(之后应该修改为只缓存16行数据)这一段时间内和写地址fifo同步
-            
         }
+        // otherwise{
+        //     FifoRd0.io.push.payload:=0
+        //     FifoRd0.io.push.valid:=False//在缓存前32行数据的(之后应该修改为只缓存16行数据)这一段时间内和写地址fifo同步
+            
+        // }
         when(In_Row_Cnt.count>=io.Kernel_Size){
             FifoRd1.io.push.payload:=WaddrOffset
             FifoRd1.io.push.valid:=In_Col_Cnt.valid//在缓存前32行数据的(之后应该修改为只缓存16行数据)这一段时间内和写地址fifo同步
             // FifoRd1.io.pop.ready:=(In_Row_Cnt.count<io.Kernel_Size)//前16个点还是继续pop给FIfoRd0
-        }otherwise{
-            FifoRd1.io.push.payload:=0
-            FifoRd1.io.push.valid:=False//在缓存前32行数据的(之后应该修改为只缓存16行数据)这一段时间内和写地址fifo同步
-            // FifoRd1.io.pop.ready:=(In_Row_Cnt.count<io.Kernel_Size)//前16个点还是继续pop给FIfoRd0            
         }
+        // otherwise{
+        //     FifoRd1.io.push.payload:=0
+        //     FifoRd1.io.push.valid:=False//在缓存前32行数据的(之后应该修改为只缓存16行数据)这一段时间内和写地址fifo同步
+        //     // FifoRd1.io.pop.ready:=(In_Row_Cnt.count<io.Kernel_Size)//前16个点还是继续pop给FIfoRd0            
+        // }
     }
 
 //Bram的读写策略采取写优先=================================================================
@@ -365,7 +371,7 @@ class Data_Generate extends Component{
     Fsm.All_Computed:=Out_Row_Cnt.valid
     Fsm.Row_Cached:=True//Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.IDLE//下一轮的计算数据已经被缓存完，就可以开始计算
     //能否认为计算时间永远大于等于缓存时间?
-    
+    //不能这样认为,万一上层出数比较慢,也就是sData.valid可能拉低很长一段时间,,,,嗯,,,,这就是一种极端情况需要被考虑
     val Load_KRows_Cnt=WaCounter(In_Col_Cnt.valid,32,io.Stride-1)//
     Data_Cache_Fsm.Krows_Loaded:=Load_KRows_Cnt.valid&&In_Col_Cnt.valid//当第15行（从0开始）数据全部加载完即可
     Data_Cache_Fsm.Load_Last_KRows:=In_Row_Cnt.count===io.InFeature_Size-(io.Stride)
@@ -376,14 +382,13 @@ class Data_Generate extends Component{
     when(Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.LOAD_NEXT_KROWs||Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.LOAD_LAST_KROWs){
         io.sData.ready:=True
     }
-    io.mData:=DGB.io.doutb(7 downto 0).resized
-    io.mValid:=False
+    io.mData:=DGB.io.doutb//(7 downto 0).resized
+
     
-    when(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE){
-        io.mValid:=True
-    }
+    io.mValid:=RegNext(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE)
         
 }   
+
 
 object DGB_Gen extends App { 
     val verilog_path="./testcode_gen/Systolic_Array" 
