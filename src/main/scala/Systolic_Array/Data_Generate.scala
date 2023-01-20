@@ -296,15 +296,19 @@ class Data_Generate extends Component{
         //比如3*3步长为1的卷积,我们需要4行数据缓存
         //而16*16,步长为16的卷积我们需要32行的数据缓存
 
-
-    val FifoWr_Pop_Now=(!Waddr_To_Push_State)&&In_Col_Cnt.valid
+    val Data_Cache_Fsm=Load_KRows_Fsm(Out_Col_Cnt.valid)//输出特征图一行处理完了，就可以启动下一次的数据缓存
+    val FifoWr_Pop_Now=((!Waddr_To_Push_State)&&In_Col_Cnt.valid)||(Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.IDLE&&Data_Cache_Fsm.nextState=/=LOAD_KROWS_ENUM.IDLE)
+    val FifoWr_Push_Now=FifoWr_Pop_Now||In_Col_Cnt.valid
+        //首先，如果在缓存前k行的状态里，如果那么就只能push不能pop，每缓存完一行就push一下
+        //然后，在计算状态中，每拿到输出矩阵完整的一行，就得开始缓存后面的K行,这时得先pop出一个新的Waddr                                                                        
     val Waddr=WaddrOffset+In_Col_Cnt.count//Waddr_To_Push_State?WaddrOffset|WaddrOffset+In_Col_Cnt.count
 
     val FifoWr=new WaddrOffset_Fifo//Fifo Of Write Addr offset
     FifoWr.io.push.payload:=Waddr_To_Push_State?WaddrOffset|FifoWr.io.pop.payload
         //比如16*16的卷积，步长为16，一开始我们不需要循环复用Bram地址空间，只需要一直往里面写0，1，2，3...行的起始地址即可
         //存完32行数据后，就可以循环复用Bram地址空间了，这时Fifo出来的数据要重新写回fifo队列中
-    FifoWr.io.push.valid:=In_Col_Cnt.valid//将前32行的起始地址缓存下来，每处理完一行，fifo就pop一个地址并且push一个地址
+    FifoWr.io.push.valid:=FifoWr_Push_Now//将前32行的起始地址缓存下来，每处理完一行，fifo就pop一个地址并且push一个地址
+    //因为目前来说只要pop出来就得push进去，但是在最后的K行的时候就不用push了
     FifoWr.io.pop.ready:=FifoWr_Pop_Now//
         //当开始复用Bram地址空间并且数完一行数据后才Pop下一个地址偏移
     
@@ -312,12 +316,19 @@ class Data_Generate extends Component{
         //比如16*16的卷积，步长为16，当行计数器还没满16行时，那么前面32行数据的写地址直接从0一直到32行末尾
         //存完32行数据后，我们才开始复用Bram地址空间，这时可以启动FIFO循环写地址。
 
-    when(In_Col_Cnt.valid){
-        when(Waddr_To_Push_State){
+    // when(In_Col_Cnt.valid){
+    //     when(Waddr_To_Push_State){
+    //         WaddrOffset:=WaddrOffset+io.InCol_Count_Times//变成下一行的起始地址
+    //     }otherwise{
+    //         WaddrOffset:=FifoWr.io.pop.payload//锁住，维持224个周期
+    //     }
+    // }
+    when(Waddr_To_Push_State){
+         when(In_Col_Cnt.valid){
             WaddrOffset:=WaddrOffset+io.InCol_Count_Times//变成下一行的起始地址
-        }otherwise{
-            WaddrOffset:=FifoWr.io.pop.payload//锁住，维持224个周期
-        }
+         }
+    }elsewhen(FifoWr.io.pop.fire){
+        WaddrOffset:=FifoWr.io.pop.payload//锁住，维持224个周期
     }
 
     when(Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs){
@@ -366,14 +377,14 @@ class Data_Generate extends Component{
         //由于只需要缓存前16行数据就能开始计算，所以这里的状态跳转标志应该没啥问题。
         //这里kernelsize=16，Stride=16，16+16=32，当In_Row_Cnt=32时，说明正在加载第32行数据（从0开始），那么此时前32行数据已经缓存完了
         //不管怎么说，反正最后进fifo的地址应该是0~31
-    val Data_Cache_Fsm=Load_KRows_Fsm(Out_Col_Cnt.valid)//输出特征图一行处理完了，就可以启动下一次的数据缓存
+    // val Data_Cache_Fsm=Load_KRows_Fsm(Out_Col_Cnt.valid)//输出特征图一行处理完了，就可以启动下一次的数据缓存
     Fsm.SA_Compute_End:=Out_Col_Cnt.valid//当输出矩阵的一行被处理完了，也就是16行的输入数据也被处理完了，这时脉动阵列计算完了一轮
     Fsm.All_Computed:=Out_Row_Cnt.valid
     Fsm.Row_Cached:=True//Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.IDLE//下一轮的计算数据已经被缓存完，就可以开始计算
     //能否认为计算时间永远大于等于缓存时间?
     //不能这样认为,万一上层出数比较慢,也就是sData.valid可能拉低很长一段时间,,,,嗯,,,,这就是一种极端情况需要被考虑
-    val Load_KRows_Cnt=WaCounter(In_Col_Cnt.valid,32,io.Stride-1)//
-    Data_Cache_Fsm.Krows_Loaded:=Load_KRows_Cnt.valid&&In_Col_Cnt.valid//当第15行（从0开始）数据全部加载完即可
+    val Load_KRows_Cnt=ForLoopCounter(In_Col_Cnt.valid,32,io.Stride-1)//
+    Data_Cache_Fsm.Krows_Loaded:=Load_KRows_Cnt.valid//当第15行（从0开始）数据全部加载完即可
     Data_Cache_Fsm.Load_Last_KRows:=In_Row_Cnt.count===io.InFeature_Size-(io.Stride)
     io.sData.ready:=False
     when(Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs){
@@ -386,8 +397,18 @@ class Data_Generate extends Component{
 
     
     io.mValid:=RegNext(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE)
-        
+    when(Fsm.nextState===DATA_GENERATE_ENUM.IDLE){
+        FifoRd0.io.flush:=True
+        FifoRd1.io.flush:=True
+        FifoWr.io.flush:=True
+    }otherwise{
+        FifoRd0.io.flush:=False
+        FifoRd1.io.flush:=False
+        FifoWr.io.flush:=False
+    }//清空Fifio，，，那我之前写的那些好像没啥用了
 }   
+
+
 
 
 object DGB_Gen extends App { 
