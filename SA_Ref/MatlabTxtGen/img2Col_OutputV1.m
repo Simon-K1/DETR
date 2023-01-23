@@ -16,7 +16,7 @@ for Out_Row_Cnt=1:14
                 for Window_Col_Cnt=1:16
                     for SA_Cnt=1:8
                         OutPut=Frature_In(Window_Row_Cnt+Row_Base_Addr,Window_Col_Cnt+Kernel_Addr:SA_Cnt+Kernel_Addr+2);
-                        fprintf(fid_raw_W,'%02x%02x%02x%02x%02x%02x%02x%02x\n',0,0,0,0,0,OutPut(3),OutPut(2),OutPut(1));%低位第一个点，高位第二个点，
+                        fprintf(fid,'%02x%02x%02x%02x%02x%02x%02x%02x\n',0,0,0,0,0,OutPut(3),OutPut(2),OutPut(1));%低位第一个点，高位第二个点，
                         Kernel_Addr=Kernel_Addr+KernelSize*In_Channel;%先第一个滑动窗口的第一行第一列的点，然后是第二个滑动窗口第一行第一列的点，以此类推
                         if SA_Cnt==Out_Col_Lefted
                             break

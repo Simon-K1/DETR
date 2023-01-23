@@ -34,7 +34,8 @@ for Out_Col_Cnt=1:2
         end
     end
     Out_Col_Lefted=Out_Col_Lefted-8;
-    Kernel_Base_Addr=Kernel_Base_Addr+8*In_Channel*KernelSize
+    Kernel_Base_Addr=Kernel_Base_Addr+8*In_Channel*KernelSize;
+    Kernel_Addr=Kernel_Base_Addr;
 end
 Test=[102	59	152]
 reshape(dec2hex(fliplr(Test))',1,[])
