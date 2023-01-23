@@ -24,6 +24,4 @@ A_Size=[197,768]
 B_Size=[768,768*3]
 Clk_Matrix=(A_Size(1)*B_Size(2)/(SA_H*SA_W*SA_Num))*(A_Size(2)+SA_H-1)
 
-%% 很奇怪，仿真出来第一层卷积8*8*1的阵列需要55ms
-%分析了以下，应该认为数据发送的时间就是一次计算的时间
-Data_Send_Time=()
+
