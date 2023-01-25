@@ -316,7 +316,7 @@ class Data_Generate extends Component{
     val Data_Cache_Fsm=Load_KRows_Fsm(Out_Col_Cnt.valid)//输出特征图一行处理完了，就可以启动下一次的数据缓存
     val FifoWr_Pop_Now=((!Waddr_To_Push_State)&&In_Col_Cnt.valid)||(Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs&&Fsm.Load_First_kROWs_End)//(Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.IDLE&&Data_Cache_Fsm.nextState=/=LOAD_KROWS_ENUM.IDLE)
     //加载完前K行需要pop一下
-    val FifoWr_Push_Now=FifoWr_Pop_Now||In_Col_Cnt.valid
+    // val FifoWr_Push_Now=FifoWr_Pop_Now||In_Col_Cnt.valid
         //首先，如果在缓存前k行的状态里，如果那么就只能push不能pop，每缓存完一行就push一下
         //然后，在计算状态中，每拿到输出矩阵完整的一行，就得开始缓存后面的K行,这时得先pop出一个新的Waddr                                                                        
     val Waddr=WaddrOffset+In_Col_Cnt.count//Waddr_To_Push_State?WaddrOffset|WaddrOffset+In_Col_Cnt.count
@@ -325,10 +325,9 @@ class Data_Generate extends Component{
     FifoWr.io.push.payload:=Waddr_To_Push_State?WaddrOffset|FifoWr.io.pop.payload
         //比如16*16的卷积，步长为16，一开始我们不需要循环复用Bram地址空间，只需要一直往里面写0，1，2，3...行的起始地址即可
         //存完32行数据后，就可以循环复用Bram地址空间了，这时Fifo出来的数据要重新写回fifo队列中
-    FifoWr.io.push.valid:=FifoWr_Push_Now//将前32行的起始地址缓存下来，每处理完一行，fifo就pop一个地址并且push一个地址
+    FifoWr.io.push.valid:=In_Col_Cnt.valid//将前32行的起始地址缓存下来，每处理完一行，fifo就pop一个地址并且push一个地址
     //因为目前来说只要pop出来就得push进去，但是在最后的K行的时候就不用push了
-    FifoWr.io.pop.ready:=FifoWr_Pop_Now//
-        //当开始复用Bram地址空间并且数完一行数据后才Pop下一个地址偏移
+    FifoWr.io.pop.ready:=(!Waddr_To_Push_State)&&In_Col_Cnt.valid
     
         //前期不需要复用Bram地址空间，那么我们就一直往前面写就行了
         //比如16*16的卷积，步长为16，当行计数器还没满16行时，那么前面32行数据的写地址直接从0一直到32行末尾
@@ -341,6 +340,10 @@ class Data_Generate extends Component{
     //         WaddrOffset:=FifoWr.io.pop.payload//锁住，维持224个周期
     //     }
     // }
+    when(Data_Cache_Fsm.nextState===LOAD_KROWS_ENUM.LOAD_NEXT_KROWs&&Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.IDLE){
+        FifoWr.io.pop.ready:=True
+        FifoWr.io.push.valid:=True//之后每缓存K行的一开始都要pop一下
+    }
     when(Waddr_To_Push_State){
          when(In_Col_Cnt.valid){
             WaddrOffset:=WaddrOffset+io.InCol_Count_Times//变成下一行的起始地址
