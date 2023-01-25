@@ -13,6 +13,7 @@ parameter Total_Input_Times=224*224;//发完2224*224*64bit数据后mValid需要�
   reg sReady;
   wire sValid;
   reg start;
+  wire [63:0]sData;
 
   reg [31:0]Total_Cnt;//用来模拟Mvalid和Sready
   reg [63:0]Out_Total_Cnt;//输出数据计数器，用来计数输出数据的
@@ -24,10 +25,28 @@ parameter Total_Input_Times=224*224;//发完2224*224*64bit数据后mValid需要�
   reg	[Mem_Width-1:0]	mem	[0:Mem_Depth-1];
   
   reg [15:0]Scale_Bias_Mem[0:383];
+  
+  //导出txt数据=====================================================
+//  integer file_out;
+//  initial
+//  begin
+//      file_out = $fopen("E:\\Transformer\\Sim_Transformer\\SimData_Output\\DataGenerate.txt","w+");//记得用\\分开
+//      if (!file_out) begin
+//          $display("can't open file");
+//          $finish;
+//      end
+//  end      
+//  always @ (posedge clk) begin  
+//      if(sValid) begin
+//          $fdisplay(file_out, "%h", sData);//将数据写到TXT文件中，并且自动换行
+          
+//      end
+//  end
+  //==========================================
   initial
   begin
 //    $readmemh("E:/Transformer/Sim_File/Xq_LayerNorm_未处理掩码.txt",mem);//_Modified
-    $readmemh("E:/Transformer/Sim_File/DataGenerate/img2Col顺序输入测试数据.txt",mem);//_Modified
+    $readmemh("E:/Transformer/Sim_File/DataGenerate/img2Col随机输入测试数据.txt",mem);//_Modified
     $readmemh("E:/Transformer/Sim_File/Scale_Bias.txt",Scale_Bias_Mem);//高8bit为Scale，低8bit为Bias
     clk=0;
     start=0;
@@ -38,6 +57,7 @@ parameter Total_Input_Times=224*224;//发完2224*224*64bit数据后mValid需要�
      rst=0;
   end
   always#5 clk=~clk;//100M时钟
+
 
   //全局计数器，用于控制Mvalid和Sready
   always@(posedge clk)
@@ -161,7 +181,9 @@ Data_Generate DG(
 .OutRow_Count_Times('d14),
 .InCol_Count_Times('d224),
 .clk(clk),
-.reset(rst)         
+.reset(rst),
+.mData(sData),
+.mValid(sValid)    
 );
 endmodule
 

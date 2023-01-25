@@ -247,8 +247,9 @@ class Data_Generate extends Component{
     //     Row_Base_Addr:=FifoRd0.io.pop.payload//当8个滑窗的一行都被输出了,接下来换下一行,换下一行需要更新Row_Base_Addr
     // }
     //===========================FifoRd循环读写地址控制========================
-    val Update_FifoRd=(Out_Col_Cnt.count===io.OutCol_Count_Times-1)&&(Out_Channel_Cnt.count===io.OutFeature_Channel_Count_Times-1)
-        //首先8滑动窗口得滑倒当前16行的最后，然后输出通道的计算也应该是最后的8个输出通道
+    val Update_FifoRd=(Out_Col_Cnt.count===io.OutCol_Count_Times-1)&&(Out_Channel_Cnt.count===io.OutFeature_Channel_Count_Times-1)//在这个状态下确实需要刷新fifo，
+        //但是需要考虑不同的步长，比如步长为1，只用向fiford0中pop一个到fiford1，再从fiford1pop一个到fiford0即可
+        //8滑动窗口得滑倒当前16行的最后，然后输出通道的计算也应该是最后的8个输出通道
     when(Fsm.nextState===DATA_GENERATE_ENUM.SA_COMPUTE&&Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs){//在进入SA_Compute 状态之前得pop一下
         FifoRd0.io.pop.ready:=True
         FifoRd0.io.push.payload:=FifoRd0.io.pop.payload//循环写回
@@ -257,8 +258,9 @@ class Data_Generate extends Component{
     
     when(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE){
         
-        when(Update_FifoRd){
-            when(Window_Col_Cnt.valid){
+        when(Update_FifoRd){//算到最后一个通道了，
+            when(Window_Col_Cnt.valid&&Window_Row_Cnt.count<io.Stride){//首先默认步长不能超过卷积核大小
+                //每处理完滑动窗口的一行，就可以更新fiford
                 FifoRd0.io.pop.ready:=True
                 FifoRd0.io.push.payload:=FifoRd1.io.pop.payload//循环写回
                 FifoRd0.io.push.valid:=FifoRd1.io.pop.valid            
@@ -266,6 +268,10 @@ class Data_Generate extends Component{
                 FifoRd1.io.pop.ready:=True
                 FifoRd1.io.push.payload:=FifoRd0.io.pop.payload//循环写回
                 FifoRd1.io.push.valid:=FifoRd0.io.pop.valid    
+            }elsewhen(Window_Col_Cnt.valid){
+                FifoRd0.io.pop.ready:=True
+                FifoRd0.io.push.payload:=FifoRd0.io.pop.payload//循环写回
+                FifoRd0.io.push.valid:=FifoRd0.io.pop.valid                     
             }
         }elsewhen(Window_Col_Cnt.valid){
             //滑动窗口的一行输出完后，就开始处理滑动窗口的下一行数据，这是Row_Base_Addr需要被更新
