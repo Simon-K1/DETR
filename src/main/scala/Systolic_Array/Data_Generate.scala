@@ -28,12 +28,13 @@ class DataGen_Bram extends BlackBox{//黑盒，入32bit，出16 bit,Activation B
     mapCurrentClockDomain(io.clkb)
 }
 object DATA_GENERATE_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val IDLE, INIT, LOAD_FIRST_kROWs,SA_COMPUTE,WAIT_ROWs_TO_CACHE= newElement
+    val IDLE, INIT, LOAD_FIRST_kROWs,SA_COMPUTE,UPDATE_FIFORd,WAIT_ROWs_TO_CACHE= newElement
     //LOAD_FIRST_kROWs:加载前K行,卷积核大小多大就加载多少行(这里是加载K行还是k-1行呢?)
         //可以是K-1行,这样又可以少一行的缓存时间
     //SA_COMPUTE:脉动阵列计算,8*8的脉动阵列输出64个点
     //WAIT_ROWs_TO_CACHE:如果输入通道比较大,那么完全可以在计算期间加载后面的数据,比如步长为1,则需要额外加载一行数据,16步长,就要加载16行数据
         //另外还存在一种情况,就是算完了数据还没缓存完,所以这里我们需要消耗一个周期来判断
+    //UPDATE_FIFORd:后面新添加的状态，用来更新Row_Base_Addr Fifo
 }
 case class Data_GenerateFsm(start:Bool)extends Area{
     val currentState = Reg(DATA_GENERATE_ENUM()) init DATA_GENERATE_ENUM.IDLE
@@ -42,6 +43,7 @@ case class Data_GenerateFsm(start:Bool)extends Area{
 
     val Init_End=Bool()
     val Load_First_kROWs_End=Bool()
+    val FifoRd_Updated=Bool()//处理完一行输出，接下来开始更新fifo,fifo更新完后开始等下一行缓存完成
     val SA_Compute_End=Bool()
     val All_Computed=Bool()
     val Row_Cached=Bool()//
@@ -71,9 +73,16 @@ case class Data_GenerateFsm(start:Bool)extends Area{
             when(All_Computed){
                 nextState:=DATA_GENERATE_ENUM.IDLE
             }elsewhen(SA_Compute_End){//这里的意思是脉动阵列处理完了一行数据
-                nextState:=DATA_GENERATE_ENUM.WAIT_ROWs_TO_CACHE
+                nextState:=DATA_GENERATE_ENUM.UPDATE_FIFORd
             }otherwise{
                 nextState:=DATA_GENERATE_ENUM.SA_COMPUTE
+            }
+        }
+        is(DATA_GENERATE_ENUM.UPDATE_FIFORd){
+            when(FifoRd_Updated){
+                nextState:=DATA_GENERATE_ENUM.WAIT_ROWs_TO_CACHE
+            }otherwise{
+                nextState:=DATA_GENERATE_ENUM.UPDATE_FIFORd
             }
         }
         is(DATA_GENERATE_ENUM.WAIT_ROWs_TO_CACHE){
@@ -159,6 +168,9 @@ class Data_Generate extends Component{
         val OutRow_Count_Times=in UInt(32 bits)
         val InCol_Count_Times=in UInt(32 bits)//图片大小*ceil(通道数/8)，比如224的图片，3通道，但是一下子进8个通道，这三个通道补零成8通道，那么这里应该输入224*ceil(3/8)
                                                 //实际上就是输入图片一行（全部通道）的地址空间大小
+
+        val Test_Signal=out Bool()//一个调试信号，比如第一轮的输出保存为txt，或者第5轮的输出保存为txt
+        val Test_Generate_Period=in UInt(32 bits)//
     }
     noIoPrefix()
     val Fsm=Data_GenerateFsm(io.start)
@@ -250,30 +262,16 @@ class Data_Generate extends Component{
     val Update_FifoRd=(Out_Col_Cnt.count===io.OutCol_Count_Times-1)&&(Out_Channel_Cnt.count===io.OutFeature_Channel_Count_Times-1)//在这个状态下确实需要刷新fifo，
         //但是需要考虑不同的步长，比如步长为1，只用向fiford0中pop一个到fiford1，再从fiford1pop一个到fiford0即可
         //8滑动窗口得滑倒当前16行的最后，然后输出通道的计算也应该是最后的8个输出通道
-    when(Fsm.nextState===DATA_GENERATE_ENUM.SA_COMPUTE&&Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs){//在进入SA_Compute 状态之前得pop一下
-        FifoRd0.io.pop.ready:=True
-        FifoRd0.io.push.payload:=FifoRd0.io.pop.payload//循环写回
+    when(Fsm.nextState===DATA_GENERATE_ENUM.SA_COMPUTE&&Fsm.currentState=/=DATA_GENERATE_ENUM.SA_COMPUTE){//在进入SA_Compute 状态之前得pop一下
+        FifoRd0.io.pop.ready:=True//首先我们知道每次计算前FifoRd0都会将要循环读取的Row_Base_Addr存起来，所以每次计算前我们需要先pop出第一个Row_Base_Addr才能开始后面的机选
+        //这里就是在每次计算开始前先pop一个Row_Base_Addr
+        FifoRd0.io.push.payload:=FifoRd0.io.pop.payload
         FifoRd0.io.push.valid:=FifoRd0.io.pop.valid   
     }
     
     when(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE){
         
-        when(Update_FifoRd){//算到最后一个通道了，
-            when(Window_Col_Cnt.valid&&Window_Row_Cnt.count<io.Stride){//首先默认步长不能超过卷积核大小
-                //每处理完滑动窗口的一行，就可以更新fiford
-                FifoRd0.io.pop.ready:=True
-                FifoRd0.io.push.payload:=FifoRd1.io.pop.payload//循环写回
-                FifoRd0.io.push.valid:=FifoRd1.io.pop.valid            
-                
-                FifoRd1.io.pop.ready:=True
-                FifoRd1.io.push.payload:=FifoRd0.io.pop.payload//循环写回
-                FifoRd1.io.push.valid:=FifoRd0.io.pop.valid    
-            }elsewhen(Window_Col_Cnt.valid){
-                FifoRd0.io.pop.ready:=True
-                FifoRd0.io.push.payload:=FifoRd0.io.pop.payload//循环写回
-                FifoRd0.io.push.valid:=FifoRd0.io.pop.valid                     
-            }
-        }elsewhen(Window_Col_Cnt.valid){
+        when(Window_Col_Cnt.valid&&Fsm.nextState=/=DATA_GENERATE_ENUM.UPDATE_FIFORd){//这里很麻烦，需要好好写一个备忘录来说明
             //滑动窗口的一行输出完后，就开始处理滑动窗口的下一行数据，这是Row_Base_Addr需要被更新
             FifoRd0.io.pop.ready:=True
             FifoRd0.io.push.payload:=FifoRd0.io.pop.payload//循环写回
@@ -282,6 +280,19 @@ class Data_Generate extends Component{
     }
     when(FifoRd0.io.pop.fire){
         Row_Base_Addr:=FifoRd0.io.pop.payload//更新行基地址
+    }
+    //=======================花io.stride个周期更新fifoRd0=========================
+    val FifoRd0_Update_Cnt=ForLoopCounter(Fsm.currentState===DATA_GENERATE_ENUM.UPDATE_FIFORd,5,io.Stride-1)//最大支持32bit
+    Fsm.FifoRd_Updated:=FifoRd0_Update_Cnt.valid
+    when(Fsm.currentState===DATA_GENERATE_ENUM.UPDATE_FIFORd){
+        FifoRd0.io.pop.ready:=True
+        FifoRd0.io.push.payload:=FifoRd1.io.pop.payload
+        FifoRd0.io.push.valid:=FifoRd1.io.pop.valid
+
+        FifoRd1.io.pop.ready:=True
+        FifoRd1.io.push.payload:=FifoRd0.io.pop.payload
+        FifoRd1.io.push.valid:=FifoRd0.io.pop.valid
+        
     }
     //写数据缓存控制=====================================================================================================
         //通道优先,先写第一个点的所有通道,第一个点的所有通道写完了,此时列计数器加加,再那么写下一个点的所有通道,也就是当前行第二列的数据
@@ -413,6 +424,9 @@ class Data_Generate extends Component{
         FifoRd1.io.flush:=False
         FifoWr.io.flush:=False
     }//清空Fifio，，，那我之前写的那些好像没啥用了
+
+//测试信号，将来要删除===============================================================
+    io.Test_Signal:=(io.Test_Generate_Period-1)===RegNext(Out_Row_Cnt.count)
 }   
 
 

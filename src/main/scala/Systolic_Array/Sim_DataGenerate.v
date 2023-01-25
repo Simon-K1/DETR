@@ -26,23 +26,24 @@ parameter Total_Input_Times=224*224;//发完2224*224*64bit数据后mValid需要�
   
   reg [15:0]Scale_Bias_Mem[0:383];
   
-  //导出txt数据=====================================================
-//  integer file_out;
-//  initial
-//  begin
-//      file_out = $fopen("E:\\Transformer\\Sim_Transformer\\SimData_Output\\DataGenerate.txt","w+");//记得用\\分开
-//      if (!file_out) begin
-//          $display("can't open file");
-//          $finish;
-//      end
-//  end      
-//  always @ (posedge clk) begin  
-//      if(sValid) begin
-//          $fdisplay(file_out, "%h", sData);//将数据写到TXT文件中，并且自动换行
+//  导出txt数据=====================================================
+  integer file_out;
+  initial
+  begin
+      file_out = $fopen("E:\\Transformer\\Sim_Transformer\\SimData_Output\\DataGenerate.txt","w+");//记得用\\分开
+      if (!file_out) begin
+          $display("can't open file");
+          $finish;
+      end
+  end 
+wire Write_Txt_En;     
+  always @ (posedge clk) begin  
+      if(sValid&&Write_Txt_En) begin
+          $fdisplay(file_out, "%h", sData);//将数据写到TXT文件中，并且自动换行
           
-//      end
-//  end
-  //==========================================
+      end
+  end
+//  ==========================================
   initial
   begin
 //    $readmemh("E:/Transformer/Sim_File/Xq_LayerNorm_未处理掩码.txt",mem);//_Modified
@@ -183,7 +184,11 @@ Data_Generate DG(
 .clk(clk),
 .reset(rst),
 .mData(sData),
-.mValid(sValid)    
+.mValid(sValid),
+
+
+.Test_Signal(Write_Txt_En),
+.Test_Generate_Period('d2)   
 );
 endmodule
 
