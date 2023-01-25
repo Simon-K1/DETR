@@ -95,17 +95,16 @@ case class Data_GenerateFsm(start:Bool)extends Area{
     }
 }
 object LOAD_KROWS_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val IDLE, LOAD_NEXT_KROWs,LOAD_LAST_KROWs= newElement
+    val IDLE, LOAD_NEXT_KROWs,WAITING= newElement
 //LOAD_NEXT_KROWs:当脉动阵列处理完一行数据后，我们就可以加载后面的k行数据了
-//LOAD_LAST_KROWs:加入这个状态是为了处理边界问题，比如当加载最后K行数据时，我们是不需要再往fifo中循环写回地址的，这时Fifo只需pop即可，
-    //当最后的K行被加载完了，fifo也被清空了。
+//WAITING:等待加载下一行状态
 }
 case class Load_KRows_Fsm(start:Bool)extends Area{
     val currentState = Reg(LOAD_KROWS_ENUM()) init LOAD_KROWS_ENUM.IDLE
     val nextState = LOAD_KROWS_ENUM()
     currentState := nextState
     val Krows_Loaded=Bool()
-    val Load_Last_KRows=Bool()
+    val All_Rows_Loaded=Bool()
     switch(currentState){
         is(LOAD_KROWS_ENUM.IDLE){
             when(start){
@@ -115,19 +114,19 @@ case class Load_KRows_Fsm(start:Bool)extends Area{
             }
         }
         is(LOAD_KROWS_ENUM.LOAD_NEXT_KROWs){
-            when(Load_Last_KRows){
-                nextState:=LOAD_KROWS_ENUM.LOAD_LAST_KROWs
-            }elsewhen(Krows_Loaded){
-                nextState:=LOAD_KROWS_ENUM.IDLE//缓存完了就可以进入IDLE状态等计算计算接受结束
+            when(Krows_Loaded){
+                nextState:=LOAD_KROWS_ENUM.WAITING//缓存完了就可以进入IDLE状态等计算计算接受结束
+            }elsewhen(All_Rows_Loaded){
+                nextState:=LOAD_KROWS_ENUM.IDLE
             }otherwise{
                 nextState:=LOAD_KROWS_ENUM.LOAD_NEXT_KROWs
             }
         }
-        is(LOAD_KROWS_ENUM.LOAD_LAST_KROWs){
-            when(Krows_Loaded){
-                nextState:=LOAD_KROWS_ENUM.IDLE
+        is(LOAD_KROWS_ENUM.WAITING){
+            when(start){
+                nextState:=LOAD_KROWS_ENUM.LOAD_NEXT_KROWs
             }otherwise{
-                nextState:=LOAD_KROWS_ENUM.LOAD_LAST_KROWs
+                nextState:=LOAD_KROWS_ENUM.WAITING
             }           
         }
     }
@@ -406,12 +405,12 @@ class Data_Generate extends Component{
     //不能这样认为,万一上层出数比较慢,也就是sData.valid可能拉低很长一段时间,,,,嗯,,,,这就是一种极端情况需要被考虑
     val Load_KRows_Cnt=ForLoopCounter(In_Col_Cnt.valid,32,io.Stride-1)//
     Data_Cache_Fsm.Krows_Loaded:=Load_KRows_Cnt.valid//当第15行（从0开始）数据全部加载完即可
-    Data_Cache_Fsm.Load_Last_KRows:=In_Row_Cnt.count===io.InFeature_Size-(io.Stride)
+    Data_Cache_Fsm.All_Rows_Loaded:=In_Row_Cnt.valid
     io.sData.ready:=False
     when(Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs){
         io.sData.ready:=True
     }
-    when(Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.LOAD_NEXT_KROWs||Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.LOAD_LAST_KROWs){
+    when(Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.LOAD_NEXT_KROWs){
         io.sData.ready:=True
     }
     io.mData:=DGB.io.doutb//(7 downto 0).resized
