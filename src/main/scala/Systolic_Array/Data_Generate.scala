@@ -133,7 +133,7 @@ case class Load_KRows_Fsm(start:Bool)extends Area{
     }
 
 }
-class WaddrOffset_Fifo extends StreamFifo(UInt(32 bits),32)
+class WaddrOffset_Fifo extends StreamFifo(UInt(32 bits),32+1)//必须加一，比如我们需要实现16*16的卷积，如果fifo深度设置为32，32个fifo会被存满，fifo.push.ready会拉低,不能出现这种情况
 class RaddrOffset_Fifo extends StreamFifo(UInt(32 bits),32)
 //读写地址偏移的fifo需要被分开嘛？
 class Data_Generate extends Component{
