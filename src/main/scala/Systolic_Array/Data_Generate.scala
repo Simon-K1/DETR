@@ -300,7 +300,7 @@ class Data_Generate extends Component{
         //RegNext是为了防止当In_Channel_Cnt==223时fire拉低,In_Channel_Cnt.valid就一直拉高的情况
         //当然也可以让In_Channel_Cnt数完一轮后自动归零(还没试过)
             //嗯,,,,好像不能自动归零,因为写地址的地址偏移还有一段In_Channel_Cnt时间要用到In_Col_Cnt...
-    val In_Row_Cnt=WaCounter(In_Col_Cnt.valid,32,io.InFeature_Size-1)//嗯,,,,,谁闲着没事会算1个像素点的图片?现在默认图片大小至少是2*2
+    val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,32,io.InFeature_Size-1)//嗯,,,,,谁闲着没事会算1个像素点的图片?现在默认图片大小至少是2*2
     //这里改成In_Channel_Cnt.valid的原因可以看上次提交的commit备注
     //主要是为了让In_Row_Cnt晚点计数,防止当In_Row_Cnt==15后,In_channel_Cnt还没数完的问题,从而处理丢最后几个点的问题.
     //如果是3通道,会在最后丢一个点,4通道会丢两个点,,,,
@@ -430,7 +430,6 @@ class Data_Generate extends Component{
 //测试信号，将来要删除===============================================================
     io.Test_Signal:=(io.Test_Generate_Period-1)===RegNext(Out_Row_Cnt.count)
 }   
-
 
 object DGB_Gen extends App { 
     val verilog_path="./testcode_gen/Systolic_Array" 
