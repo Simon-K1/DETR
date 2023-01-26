@@ -114,10 +114,10 @@ case class Load_KRows_Fsm(start:Bool)extends Area{
             }
         }
         is(LOAD_KROWS_ENUM.LOAD_NEXT_KROWs){
-            when(Krows_Loaded){
-                nextState:=LOAD_KROWS_ENUM.WAITING//缓存完了就可以进入IDLE状态等计算计算接受结束
-            }elsewhen(All_Rows_Loaded){
-                nextState:=LOAD_KROWS_ENUM.IDLE
+            when( All_Rows_Loaded){
+                nextState:=LOAD_KROWS_ENUM.IDLE//缓存完了就可以进入IDLE状态等计算计算接受结束
+            }elsewhen(Krows_Loaded){
+                nextState:=LOAD_KROWS_ENUM.WAITING
             }otherwise{
                 nextState:=LOAD_KROWS_ENUM.LOAD_NEXT_KROWs
             }
@@ -172,7 +172,7 @@ class Data_Generate extends Component{
         val Test_Generate_Period=in UInt(32 bits)//
     }
     noIoPrefix()
-    val Fsm=Data_GenerateFsm(io.start)
+    val Fsm=Data_GenerateFsm(io.start&&(~RegNext(io.start)))
     //读数据展开控制====================================================================================================
     
     
@@ -312,7 +312,7 @@ class Data_Generate extends Component{
         //比如3*3步长为1的卷积,我们需要4行数据缓存
         //而16*16,步长为16的卷积我们需要32行的数据缓存
 
-    val Data_Cache_Fsm=Load_KRows_Fsm(Out_Col_Cnt.valid)//输出特征图一行处理完了，就可以启动下一次的数据缓存
+    val Data_Cache_Fsm=Load_KRows_Fsm(Out_Col_Cnt.valid&&Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE)//输出特征图一行处理完了，就可以启动下一次的数据缓存
     val FifoWr_Pop_Now=((!Waddr_To_Push_State)&&In_Col_Cnt.valid)||(Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs&&Fsm.Load_First_kROWs_End)//(Data_Cache_Fsm.currentState===LOAD_KROWS_ENUM.IDLE&&Data_Cache_Fsm.nextState=/=LOAD_KROWS_ENUM.IDLE)
     //加载完前K行需要pop一下
     // val FifoWr_Push_Now=FifoWr_Pop_Now||In_Col_Cnt.valid
@@ -405,7 +405,8 @@ class Data_Generate extends Component{
     //不能这样认为,万一上层出数比较慢,也就是sData.valid可能拉低很长一段时间,,,,嗯,,,,这就是一种极端情况需要被考虑
     val Load_KRows_Cnt=ForLoopCounter(In_Col_Cnt.valid,32,io.Stride-1)//
     Data_Cache_Fsm.Krows_Loaded:=Load_KRows_Cnt.valid//当第15行（从0开始）数据全部加载完即可
-    Data_Cache_Fsm.All_Rows_Loaded:=In_Row_Cnt.valid
+    Data_Cache_Fsm.All_Rows_Loaded:=In_Row_Cnt.valid||Fsm.All_Computed//加一个All_Computed的原因（最后才加的）：由于缓存只是比计算快，所以存在全部数据都缓存完了但是还没算完的情况
+    
     io.sData.ready:=False
     when(Fsm.currentState===DATA_GENERATE_ENUM.LOAD_FIRST_kROWs){
         io.sData.ready:=True
