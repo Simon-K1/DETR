@@ -133,8 +133,8 @@ case class Load_KRows_Fsm(start:Bool)extends Area{
     }
 
 }
-class WaddrOffset_Fifo extends StreamFifo(UInt(32 bits),32+1)//必须加一，比如我们需要实现16*16的卷积，如果fifo深度设置为32，32个fifo会被存满，fifo.push.ready会拉低,不能出现这种情况
-class RaddrOffset_Fifo extends StreamFifo(UInt(32 bits),32)
+class WaddrOffset_Fifo extends StreamFifo(UInt(16 bits),32+1)//必须加一，比如我们需要实现16*16的卷积，如果fifo深度设置为32，32个fifo会被存满，fifo.push.ready会拉低,不能出现这种情况
+class RaddrOffset_Fifo extends StreamFifo(UInt(16 bits),32)
 //读写地址偏移的fifo需要被分开嘛？
 class Data_Generate extends Component{
     //数据生成模块,Bram的空间应该能
@@ -151,27 +151,27 @@ class Data_Generate extends Component{
             //默认所有配置参数位宽均为32bit
         val Stride=in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
         val Kernel_Size=in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
-        val Window_Size=in UInt(32 bits)
+        val Window_Size=in UInt(16 bits)
             //所谓WindowSize,比如一个16*16的卷积,那么一个滑动窗口的大小就是16,但是需要考虑输入通道,比如256的输入通道,那么这时输入的Window_Size就是16*256(对应的是滑动窗口一行数据点),只支持方形卷积
             //除了考虑输入通道，还要考虑输入数据的并行度，比如如果一下进8个点，也就是8个通道，虽然实际我们进的是224*224*3的图片，
             //但是我们不能简单的将Window_Size设置为16*3，应该还是设置为16，因为3通道不够，需要补零成8通道
             //这时我们的WindowSize还是1，如果输入通道是9，那么我们的Window_Size就是16*2，9通道继续补零成16通道，有7个通道冗余
             //总的来说Window_Size的实际计算公式应该是：KernelSize*InChannel/(Bram_Out_DataWidth/8)(向上取整)
 
-        val InFeature_Size=in UInt(32 bits)//图片多大就输入多大的数据
-        val InFeature_Channel=in UInt(32 bits)
+        val InFeature_Size=in UInt(16 bits)//图片多大就输入多大的数据
+        val InFeature_Channel=in UInt(16 bits)
         
-        val OutFeature_Channel=in UInt(32 bits)
-        val OutFeature_Channel_Count_Times=in UInt(32 bits)
-        val OutFeature_Size=in UInt(32 bits)//输出特征图的大小
+        val OutFeature_Channel=in UInt(16 bits)
+        val OutFeature_Channel_Count_Times=in UInt(16 bits)
+        val OutFeature_Size=in UInt(16 bits)//输出特征图的大小
                                             //用于计算的冗余处理，
-        val OutCol_Count_Times=in UInt(32 bits)
-        val OutRow_Count_Times=in UInt(32 bits)
-        val InCol_Count_Times=in UInt(32 bits)//图片大小*ceil(通道数/8)，比如224的图片，3通道，但是一下子进8个通道，这三个通道补零成8通道，那么这里应该输入224*ceil(3/8)
+        val OutCol_Count_Times=in UInt(16 bits)
+        val OutRow_Count_Times=in UInt(16 bits)
+        val InCol_Count_Times=in UInt(16 bits)//图片大小*ceil(通道数/8)，比如224的图片，3通道，但是一下子进8个通道，这三个通道补零成8通道，那么这里应该输入224*ceil(3/8)
                                                 //实际上就是输入图片一行（全部通道）的地址空间大小
 
-        val Test_Signal=out Bool()//一个调试信号，比如第一轮的输出保存为txt，或者第5轮的输出保存为txt
-        val Test_Generate_Period=in UInt(32 bits)//
+        // val Test_Signal=out Bool()//一个调试信号，比如第一轮的输出保存为txt，或者第5轮的输出保存为txt
+        // val Test_Generate_Period=in UInt(32 bits)
     }
     noIoPrefix()
     val Fsm=Data_GenerateFsm(io.start&&(~RegNext(io.start)))
@@ -182,19 +182,19 @@ class Data_Generate extends Component{
     val SA_Row_Cnt=ForLoopCounter(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE,3,8-1)//这个计数器对应的是脉动阵列的每一行
     //这里的意思是：脉动阵列一共有8行，每一行处理一个滑动窗口，那么8行就处理8个滑动窗口，对应特征图的一行8个输出点
     //以后这个地方需要修改为可配置的
-    val Window_Col_Cnt=ForLoopCounter(SA_Row_Cnt.valid,32,io.Window_Size-1)
+    val Window_Col_Cnt=ForLoopCounter(SA_Row_Cnt.valid,16,io.Window_Size-1)
     //滑动窗口列计数器
-    val Window_Row_Cnt=ForLoopCounter(Window_Col_Cnt.valid,32,io.Kernel_Size-1)
+    val Window_Row_Cnt=ForLoopCounter(Window_Col_Cnt.valid,16,io.Kernel_Size-1)
     //滑动窗口行计数器
         //与上Window_Col_Cnt.valid的原因：当Window_Col_Cnt==15时会一直拉高，
-    val Out_Channel_Cnt=ForLoopCounter(Window_Row_Cnt.valid,32,io.OutFeature_Channel_Count_Times-1)//因为一下出8个通道，所以得除以8
+    val Out_Channel_Cnt=ForLoopCounter(Window_Row_Cnt.valid,16,io.OutFeature_Channel_Count_Times-1)//因为一下出8个通道，所以得除以8
     //这里假设输出通道总是能被8整除，比如输出通道比较大，768个通道，一下处理8个通道，那么需要768/8=96个循环。
-    val Out_Col_Cnt=ForLoopCounter(Out_Channel_Cnt.valid,32,io.OutCol_Count_Times-1)//输出列计数器，比如输出特征图的大小是14列，但是我们的输出并行度是8，所以这里应该是ceil(14/8)=2
-    val Out_Row_Cnt=ForLoopCounter(Out_Col_Cnt.valid,32,io.OutRow_Count_Times-1)
+    val Out_Col_Cnt=ForLoopCounter(Out_Channel_Cnt.valid,16,io.OutCol_Count_Times-1)//输出列计数器，比如输出特征图的大小是14列，但是我们的输出并行度是8，所以这里应该是ceil(14/8)=2
+    val Out_Row_Cnt=ForLoopCounter(Out_Col_Cnt.valid,16,io.OutRow_Count_Times-1)
 
 
     //冗余计算处理==============================================================================
-    val OutFeature_Col_Lefted=Reg(UInt(32 bits))init(0)//用来标记输出特征图一行还剩多少列没处理
+    val OutFeature_Col_Lefted=Reg(UInt(16 bits))init(0)//用来标记输出特征图一行还剩多少列没处理
     when(Out_Col_Cnt.valid){
         OutFeature_Col_Lefted:=io.OutFeature_Size//跑完一行后归位
     }elsewhen(Out_Channel_Cnt.valid){
@@ -230,7 +230,7 @@ class Data_Generate extends Component{
     }elsewhen(Fsm.currentState===DATA_GENERATE_ENUM.SA_COMPUTE){
         Kernel_Addr:=Kernel_Addr+io.Stride//每向SA输入一行数据,Kernel_Addr就加一个步长
     }
-    val Row_Base_Addr=Reg(UInt(32 bits))init(0)
+    val Row_Base_Addr=Reg(UInt(16 bits))init(0)
     val Raddr=Kernel_Addr+Row_Base_Addr+Window_Col_Cnt.count
 
 
@@ -298,15 +298,15 @@ class Data_Generate extends Component{
     //写数据缓存控制=====================================================================================================
         //通道优先,先写第一个点的所有通道,第一个点的所有通道写完了,此时列计数器加加,再那么写下一个点的所有通道,也就是当前行第二列的数据
     // val In_Channel_Cnt=WaCounter(io.sData.fire,32,io.InFeature_Channel-1)//输入通道计数器
-    val In_Col_Cnt=WaCounter(io.sData.fire,32,io.InCol_Count_Times-1)//需要边界控制,如果输入通道是1的话,那么In_Channel_Cnt.valid会一直拉高
+    val In_Col_Cnt=WaCounter(io.sData.fire,16,io.InCol_Count_Times-1)//需要边界控制,如果输入通道是1的话,那么In_Channel_Cnt.valid会一直拉高
         //RegNext是为了防止当In_Channel_Cnt==223时fire拉低,In_Channel_Cnt.valid就一直拉高的情况
         //当然也可以让In_Channel_Cnt数完一轮后自动归零(还没试过)
             //嗯,,,,好像不能自动归零,因为写地址的地址偏移还有一段In_Channel_Cnt时间要用到In_Col_Cnt...
-    val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,32,io.InFeature_Size-1)//嗯,,,,,谁闲着没事会算1个像素点的图片?现在默认图片大小至少是2*2
+    val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,16,io.InFeature_Size-1)//嗯,,,,,谁闲着没事会算1个像素点的图片?现在默认图片大小至少是2*2
     //这里改成In_Channel_Cnt.valid的原因可以看上次提交的commit备注
     //主要是为了让In_Row_Cnt晚点计数,防止当In_Row_Cnt==15后,In_channel_Cnt还没数完的问题,从而处理丢最后几个点的问题.
     //如果是3通道,会在最后丢一个点,4通道会丢两个点,,,,
-    val WaddrOffset=Reg(UInt(32 bits))init(0)
+    val WaddrOffset=Reg(UInt(16 bits))init(0)
 
 
     
@@ -431,7 +431,7 @@ class Data_Generate extends Component{
     }//清空Fifio，，，那我之前写的那些好像没啥用了
     io.mLast:=RegNext(Out_Row_Cnt.valid)
 //测试信号，将来要删除===============================================================
-    io.Test_Signal:=(io.Test_Generate_Period-1)===RegNext(Out_Row_Cnt.count)
+    // io.Test_Signal:=(io.Test_Generate_Period-1)===RegNext(Out_Row_Cnt.count)
 }   
 
 class DataGenerate_Top extends Component{
@@ -518,7 +518,7 @@ class DataGenerate_Top extends Component{
     SubModule.io.OutRow_Count_Times              :=14               
     SubModule.io.InCol_Count_Times               :=224               
     // SubModule.io.Test_Signal                     :=       
-    SubModule.io.Test_Generate_Period            :=14               
+    // SubModule.io.Test_Generate_Period            :=14               
 }
 object DGB_Gen extends App { 
     val verilog_path="./testcode_gen/Systolic_Array" 
