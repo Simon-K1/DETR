@@ -104,6 +104,10 @@ class Img2Col_Top extends Component{
         val OutRow_Count_Times               =in UInt(16 bits)
         
         val OutFeature_Channel_Count_Times  =in UInt(16 bits)
+        //测试信号==============================================================
+        val Test_Signal=out Bool()
+        val Test_Generate_Period=in UInt(16 bits)
+        
     }
     noIoPrefix()
     val Fsm=Img2Col_Fsm(io.start&&(~RegNext(io.start)))
@@ -198,10 +202,10 @@ class Img2Col_Top extends Component{
     Img2Col_SubModule.io.NewAddrIn.ready<>Img2ColOutput_Module_Ready_Receive_Addr
     Img2Col_SubModule.io.NewAddrIn.valid:=Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR
 
-    Fsm.Layer_End:=False
     
-
-
+    
+    val Out_Row_Cnt=ForLoopCounter(Img2Col_SubModule.io.SA_End,16,io.OutRow_Count_Times-1)
+    Fsm.Layer_End:=Out_Row_Cnt.valid
     //构建一个Bram
     val DGB=new DataGen_Bram
     val Waddr =WaddrOffset+In_Col_Cnt.count
@@ -209,11 +213,13 @@ class Img2Col_Top extends Component{
     DGB.io.addra:=Waddr.resized//写地址,由于For循环展开都是用32bit来计数的
     DGB.io.ena:=io.sData.fire//写使能
     DGB.io.wea:=True
-    DGB.io.addrb:=0//读地址，循环读,还没有处理128入64出的情况,,,,
+    DGB.io.addrb:=Img2Col_SubModule.io.Raddr.resized//读地址，循环读,还没有处理128入64出的情况,,,,
     //============
-    io.mData:=0
-    io.mValid:=False
-    io.mLast:=False
+    io.mData:=DGB.io.doutb
+    io.mValid:=RegNext(Img2Col_SubModule.io.Raddr_Valid)
+    io.mLast:=RegNext(Out_Row_Cnt.valid)
+    //============
+    io.Test_Signal:=(io.Test_Generate_Period-1)===RegNext(Out_Row_Cnt.count)
 }
 
 object IMG2COL_OUTPUT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot){
@@ -269,6 +275,10 @@ class  Img2Col_OutPut extends Component{
         val NewAddrIn=slave Stream(UInt(16 bits))//总控模块传过来的内五层循环的地址
         val SA_Idle=out Bool()//计算结束信号
 
+        val Raddr=out UInt(16 bits)
+        val Raddr_Valid=out Bool()
+
+        val SA_End=out Bool()//一轮计算结束信号
         val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
         val Kernel_Size                     =in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
         val Window_Size                     =in UInt(16 bits)
@@ -311,7 +321,7 @@ class  Img2Col_OutPut extends Component{
 
 
 
-    //卷积窗口按行展开
+    //(核心部分）卷积窗口按行展开=================================================
     val SA_Row_Cnt=ForLoopCounter(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE,3,8-1)//这个计数器对应的是脉动阵列的每一行
     //这里的意思是：脉动阵列一共有8行，每一行处理一个滑动窗口，那么8行就处理8个滑动窗口，对应特征图的一行8个输出点
     //以后这个地方需要修改为可配置的
@@ -323,7 +333,7 @@ class  Img2Col_OutPut extends Component{
     val Out_Channel_Cnt=ForLoopCounter(Window_Row_Cnt.valid,16,io.OutFeature_Channel_Count_Times-1)//因为一下出8个通道，所以得除以8
     //这里假设输出通道总是能被8整除，比如输出通道比较大，768个通道，一下处理8个通道，那么需要768/8=96个循环。
     val Out_Col_Cnt=ForLoopCounter(Out_Channel_Cnt.valid,16,io.OutCol_Count_Times-1)//输出列计数器，比如输出特征图的大小是14列，但是我们的输出并行度是8，所以这里应该是ceil(14/8)=2
-
+    io.SA_End:=Out_Col_Cnt.valid
     //冗余计算处理==============================================================================
     val OutFeature_Col_Lefted=Reg(UInt(16 bits))init(0)//用来标记输出特征图一行还剩多少列没处理
     when(Out_Col_Cnt.valid){
@@ -361,7 +371,7 @@ class  Img2Col_OutPut extends Component{
         Kernel_Addr:=Kernel_Addr+io.Stride//每向SA输入一行数据,Kernel_Addr就加一个步长
     }
 
-    val Raddr=Kernel_Addr+Row_Base_Addr+Window_Col_Cnt.count
+    io.Raddr:=(Kernel_Addr+Row_Base_Addr+Window_Col_Cnt.count).resized
     Fsm.SA_Computed:=Out_Col_Cnt.valid
     io.SA_Idle:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.IDLE
 
@@ -378,6 +388,8 @@ class  Img2Col_OutPut extends Component{
     }
     //======================================================
     RaddrFifo1.io.flush:=Fsm.nextState===IMG2COL_OUTPUT_ENUM.IDLE
+    io.Raddr_Valid:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE
+    
 }
 
 
