@@ -17,6 +17,7 @@ object IMG2COL_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取
     //UPDATE_ADDR:更新下一轮计算的全部读地址，比如在Init_Addr阶段0~31的地址都被存好了,现在计算的话需要的确实0~15的地址,我们需要把0~15的地址写入fifo
                 //下一轮计算的时候需要的是16~31的地址,下一次计算前也要更新.
     //START_COMPUTE:开始计算，理论上就拉高一个周期
+
 }
 case class Img2Col_Fsm(start:Bool)extends Area{
     val currentState = Reg(IMG2COL_ENUM()) init IMG2COL_ENUM.IDLE
@@ -28,6 +29,7 @@ case class Img2Col_Fsm(start:Bool)extends Area{
     val Data_Cached=Bool()//一轮要计算的数据缓存完了
     val Addr_Updated=Bool()
     val SA_Ready=Bool()//脉动阵准备好接收新一轮数据开始计算
+    val Cache_End=Bool()//缓存结束，比如224行数据全部被缓存完了
     val Layer_End=Bool()//一层全部算完了
     switch(currentState){
         is(IMG2COL_ENUM.IDLE){
@@ -52,14 +54,16 @@ case class Img2Col_Fsm(start:Bool)extends Area{
             }
         }
         is(IMG2COL_ENUM.DATA_CACHE){
-            when(Data_Cached){
+            when(Data_Cached||Cache_End){
                 nextState:=IMG2COL_ENUM.WAIT_COMPUTE
             }otherwise{
                 nextState:=IMG2COL_ENUM.DATA_CACHE
             }
         }
         is(IMG2COL_ENUM.WAIT_COMPUTE){
-            when(SA_Ready){
+            when(Layer_End){//全部计算结束
+                nextState:=IMG2COL_ENUM.IDLE
+            }elsewhen(SA_Ready){
                 nextState:=IMG2COL_ENUM.UPDATE_ADDR
             }otherwise{
                 nextState:=IMG2COL_ENUM.WAIT_COMPUTE
@@ -72,7 +76,7 @@ case class Img2Col_Fsm(start:Bool)extends Area{
                 nextState:=IMG2COL_ENUM.UPDATE_ADDR
             }
         }
-        is(IMG2COL_ENUM.START_COMPUTE){
+        is(IMG2COL_ENUM.START_COMPUTE){//这个状态没啥用
             when(Layer_End){
                 nextState:=IMG2COL_ENUM.IDLE
             }otherwise{
@@ -162,6 +166,13 @@ class Img2Col_Top extends Component{
         AddrFifo.io.push.valid:=True//pop出来的数据也要push回去
     }
     Fsm.Data_Cached:=Row_Cache_Cnt.valid//每次只需要缓存Stride行数据即可
+    val CacheEnd_Flag=Reg(Bool())init(False)
+    when(In_Row_Cnt.valid){
+        CacheEnd_Flag:=True
+    }elsewhen(Fsm.currentState===IMG2COL_ENUM.IDLE){
+        CacheEnd_Flag:=False
+    }
+    Fsm.Cache_End:=CacheEnd_Flag
     io.sData.ready:=Fsm.currentState===IMG2COL_ENUM.DATA_CACHE//只有在数据缓存阶段才能接收数据,每次接收Stride的数据
 
 
@@ -205,6 +216,9 @@ class Img2Col_Top extends Component{
     
     
     val Out_Row_Cnt=ForLoopCounter(Img2Col_SubModule.io.SA_End,16,io.OutRow_Count_Times-1)
+    // when(Fsm.currentState===IMG2COL_ENUM.IDLE){
+    //     Out_Row_Cnt.clear//使用WaCounter作为最外层循环要记得最后复位
+    // }
     Fsm.Layer_End:=Out_Row_Cnt.valid
     //构建一个Bram
     val DGB=new DataGen_Bram
