@@ -6,6 +6,7 @@ import spinal.lib.Delay
 import spinal.lib.StreamFifo
 import spinal.core.internals.Operator
 import _root_.com.sourcegraph.semanticdb_javac.Semanticdb.Tree
+import java.awt.Window
 
 object IMG2COL_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, INIT_ADDR,DATA_CACHE,WAIT_COMPUTE,UPDATE_ADDR,START_COMPUTE= newElement
@@ -91,26 +92,18 @@ class Img2Col_Top extends Component{
         val mValid=out Bool()
         val mLast=out Bool()
 
-        val Stride=in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
-        val Kernel_Size=in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
-        val Window_Size=in UInt(16 bits)
-            //所谓WindowSize,比如一个16*16的卷积,那么一个滑动窗口的大小就是16,但是需要考虑输入通道,比如256的输入通道,那么这时输入的Window_Size就是16*256(对应的是滑动窗口一行数据点),只支持方形卷积
-            //除了考虑输入通道，还要考虑输入数据的并行度，比如如果一下进8个点，也就是8个通道，虽然实际我们进的是224*224*3的图片，
-            //但是我们不能简单的将Window_Size设置为16*3，应该还是设置为16，因为3通道不够，需要补零成8通道
-            //这时我们的WindowSize还是1，如果输入通道是9，那么我们的Window_Size就是16*2，9通道继续补零成16通道，有7个通道冗余
-            //总的来说Window_Size的实际计算公式应该是：KernelSize*InChannel/(Bram_Out_DataWidth/8)(向上取整)
-
-        val InFeature_Size=in UInt(16 bits)//图片多大就输入多大的数据
-        val InFeature_Channel=in UInt(16 bits)
+        val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
+        val Kernel_Size                     =in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
+        val Window_Size                     =in UInt(16 bits)
+        val InFeature_Size                  =in UInt(16 bits)//图片多大就输入多大的数据
+        val InFeature_Channel               =in UInt(16 bits)
+        val OutFeature_Channel              =in UInt(16 bits)
+        val OutFeature_Size                 =in UInt(16 bits)//输出特征图的大小                                            
+        val OutCol_Count_Times              =in UInt(16 bits)
+        val InCol_Count_Times               =in UInt(16 bits)
+        val OutRow_Count_Times               =in UInt(16 bits)
         
-        val OutFeature_Channel=in UInt(16 bits)
-        val OutFeature_Channel_Count_Times=in UInt(16 bits)
-        val OutFeature_Size=in UInt(16 bits)//输出特征图的大小
-                                            //用于计算的冗余处理，
-        val OutCol_Count_Times=in UInt(16 bits)
-        val OutRow_Count_Times=in UInt(16 bits)
-        val InCol_Count_Times=in UInt(16 bits)//图片大小*ceil(通道数/8)，比如224的图片，3通道，但是一下子进8个通道，这三个通道补零成8通道，那么这里应该输入224*ceil(3/8)
-                                                //实际上就是输入图片一行（全部通道）的地址空间大小
+        val OutFeature_Channel_Count_Times  =in UInt(16 bits)
     }
     noIoPrefix()
     val Fsm=Img2Col_Fsm(io.start&&(~RegNext(io.start)))
@@ -130,7 +123,7 @@ class Img2Col_Top extends Component{
         AddrFifo.io.push.valid:=True
         // AddrFifo.io.push.payload:=WaddrOffset
     }
-    //开始缓存之前要先pop一下,这里判定的优先级比较重要
+    //这里判定的优先级比较重要
     when(AddrFifo.io.pop.fire){
         WaddrOffset:=AddrFifo.io.pop.payload
     }elsewhen(Fsm.currentState===IMG2COL_ENUM.INIT_ADDR){
@@ -138,10 +131,22 @@ class Img2Col_Top extends Component{
     }//当AddrFifo.io.pop.fire拉高时必须更新WaddrOffset
 
     when(Fsm.currentState===IMG2COL_ENUM.INIT_ADDR&&Fsm.nextState===IMG2COL_ENUM.DATA_CACHE){
-        AddrFifo.io.pop.ready:=True
+        AddrFifo.io.pop.ready:=True//开始缓存之前要先pop一下,
     }
     
-
+    //===================初始化读地址fifo======================
+    val RaddrFifo0 =new WaddrOffset_Fifo//同样地再创建一个读地址fifo用于生成6个for循环的地址
+    val Raddr_Initialization=Reg(UInt(16 bits))init(0)//
+    RaddrFifo0.io.push.valid:=False
+    RaddrFifo0.io.pop.ready:=False
+    RaddrFifo0.io.push.payload:=RaddrFifo0.io.pop.payload
+    when(Fsm.currentState===IMG2COL_ENUM.INIT_ADDR){
+        RaddrFifo0.io.push.valid:=True
+        RaddrFifo0.io.push.payload:=Raddr_Initialization
+        Raddr_Initialization:=Raddr_Initialization+io.InCol_Count_Times
+    }
+    
+    
     //缓存数据================================================================================
     val In_Col_Cnt=ForLoopCounter(io.sData.fire,16,io.InCol_Count_Times-1)
     val Row_Cache_Cnt=ForLoopCounter(In_Col_Cnt.valid,5,io.Stride-1)
@@ -149,29 +154,322 @@ class Img2Col_Top extends Component{
     when(In_Col_Cnt.valid){
         AddrFifo.io.pop.ready:=True//每缓存满一行,Fifo就pop一下
     }
-    when(RegNext(In_Col_Cnt.valid)){//这里RegNext是因为WaddrOffset从AddrFifo中读取数据需要一个周期
+    when(In_Col_Cnt.valid){//这里RegNext是因为WaddrOffset从AddrFifo中读取数据需要一个周期
         AddrFifo.io.push.valid:=True//pop出来的数据也要push回去
     }
     Fsm.Data_Cached:=Row_Cache_Cnt.valid//每次只需要缓存Stride行数据即可
     io.sData.ready:=Fsm.currentState===IMG2COL_ENUM.DATA_CACHE//只有在数据缓存阶段才能接收数据,每次接收Stride的数据
-    //Bram的读写策略采取写优先
-    //更新读地址fifo============================================================================
-    Fsm.Addr_Updated:=False
+
+
     //启动计算==================================================================================
-    Fsm.SA_Ready:=False
+    // Fsm.SA_Ready:=True//脉动阵列已经准备好开始新的一轮计算了
+    //更新读地址fifo============================================================================
+        //此状态应该维持io.KernelSize个周期，向下层模块传递KernelSize个基地址
+    val Img2ColOutput_Module_Ready_Receive_Addr=Bool()
+    val Raddr_UpData_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR&&Img2ColOutput_Module_Ready_Receive_Addr),5,io.Kernel_Size-1)
+    
+
+    when(Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR){
+        RaddrFifo0.io.push.valid:=RaddrFifo0.io.pop.fire
+        RaddrFifo0.io.push.payload:=RaddrFifo0.io.pop.payload
+        RaddrFifo0.io.pop.ready:=Img2ColOutput_Module_Ready_Receive_Addr
+    }
+    Fsm.Addr_Updated:=Raddr_UpData_Cnt.valid
+    //=========================================================================================
+        //这里实现最外层的第六层for循环,多次调用子模块
+    
+
+    val Img2Col_SubModule=new Img2Col_OutPut
+    Img2Col_SubModule.io.Stride                        :=io.Stride                            
+    Img2Col_SubModule.io.Kernel_Size                   :=io.Kernel_Size                       
+    Img2Col_SubModule.io.Window_Size                   :=io.Window_Size                       
+    Img2Col_SubModule.io.InFeature_Size                :=io.InFeature_Size                    
+    Img2Col_SubModule.io.InFeature_Channel             :=io.InFeature_Channel                 
+    Img2Col_SubModule.io.OutFeature_Channel            :=io.OutFeature_Channel                
+    Img2Col_SubModule.io.OutFeature_Size               :=io.OutFeature_Size                   
+    Img2Col_SubModule.io.OutCol_Count_Times            :=io.OutCol_Count_Times                
+    Img2Col_SubModule.io.InCol_Count_Times             :=io.InCol_Count_Times                 
+    Img2Col_SubModule.io.OutFeature_Channel_Count_Times:=io.OutFeature_Channel_Count_Times    
+
+    Img2Col_SubModule.io.start:=Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR
+    Img2Col_SubModule.io.SA_Idle<>Fsm.SA_Ready
+
+    Img2Col_SubModule.io.NewAddrIn.payload<>RaddrFifo0.io.pop.payload
+    Img2Col_SubModule.io.NewAddrIn.ready<>Img2ColOutput_Module_Ready_Receive_Addr
+    Img2Col_SubModule.io.NewAddrIn.valid:=Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR
+
     Fsm.Layer_End:=False
     
 
 
-
+    //构建一个Bram
+    val DGB=new DataGen_Bram
+    val Waddr =WaddrOffset+In_Col_Cnt.count
+    DGB.io.dina:=io.sData.payload
+    DGB.io.addra:=Waddr.resized//写地址,由于For循环展开都是用32bit来计数的
+    DGB.io.ena:=io.sData.fire//写使能
+    DGB.io.wea:=True
+    DGB.io.addrb:=0//读地址，循环读,还没有处理128入64出的情况,,,,
     //============
     io.mData:=0
     io.mValid:=False
     io.mLast:=False
 }
 
+object IMG2COL_OUTPUT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot){
+    val IDLE, INIT, INIT_ADDR,SA_COMPUTE= newElement
+}
+case class Img2Col_Output_Fsm(start:Bool) extends Area{
+    val currentState = Reg(IMG2COL_OUTPUT_ENUM()) init IMG2COL_OUTPUT_ENUM.IDLE
+    val nextState = IMG2COL_OUTPUT_ENUM()
+    currentState := nextState
+    
+    val Init_End=Bool()
+    val Addr_Inited=Bool()
+    val SA_Computed=Bool()
+
+    switch(currentState){
+        is(IMG2COL_OUTPUT_ENUM.IDLE){
+            when(start){
+                nextState:=IMG2COL_OUTPUT_ENUM.INIT
+            }otherwise{
+                nextState:=IMG2COL_OUTPUT_ENUM.IDLE
+            }
+        }
+        is(IMG2COL_OUTPUT_ENUM.INIT){
+            when(Init_End){
+                nextState:=IMG2COL_OUTPUT_ENUM.INIT_ADDR
+            }otherwise{
+                nextState:=IMG2COL_OUTPUT_ENUM.INIT
+            }
+        }
+        is(IMG2COL_OUTPUT_ENUM.INIT_ADDR){//获取最新的地址数据用于内层的5个循环
+            when(Addr_Inited){
+                nextState:=IMG2COL_OUTPUT_ENUM.SA_COMPUTE
+            }otherwise{
+                nextState:=IMG2COL_OUTPUT_ENUM.INIT_ADDR
+            }
+        }
+        is(IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
+            when(SA_Computed){
+                nextState:=IMG2COL_OUTPUT_ENUM.IDLE
+            }otherwise{
+                nextState:=IMG2COL_OUTPUT_ENUM.SA_COMPUTE
+            }
+        }
+    }
+}
+class  Img2Col_OutPut extends Component{
+    //本模块用于实现5个for循环,输出标准的img2Col数据，外部会多次调用此模块
+    //调用之前先要传入有效的用于内层5个循环的行基地址
+    //输出读地址给顶层模块，顶层模块拿到读地址从缓存的数据中输出标准的img2Col矩阵数据
+    val Config=TopConfig()
+    val io=new Bundle{
+        val start=in Bool()//启动信号
+        val NewAddrIn=slave Stream(UInt(16 bits))//总控模块传过来的内五层循环的地址
+        val SA_Idle=out Bool()//计算结束信号
+
+        val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
+        val Kernel_Size                     =in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
+        val Window_Size                     =in UInt(16 bits)
+        val InFeature_Size                  =in UInt(16 bits)//图片多大就输入多大的数据
+        val InFeature_Channel               =in UInt(16 bits)
+        val OutFeature_Channel              =in UInt(16 bits)
+        val OutFeature_Size                 =in UInt(16 bits)//输出特征图的大小                                            
+        val OutCol_Count_Times              =in UInt(16 bits)
+        val InCol_Count_Times               =in UInt(16 bits)
+        val OutFeature_Channel_Count_Times  =in UInt(16 bits)
+    }
+    noIoPrefix()
+
+
+    val Fsm=Img2Col_Output_Fsm(io.start&&(~RegNext(io.start)))
+    val Init_Count=WaCounter(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT,3,5)//数5下进行初始化
+    Fsm.Init_End:=Init_Count.valid
+    //初始化循环基地址=====================================================================
+    io.NewAddrIn.ready:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR
+    val RaddrFifo1=new WaddrOffset_Fifo//第二个RaddrFifo,作用于内五层循环
+    RaddrFifo1.io.push.valid:=False
+    RaddrFifo1.io.pop.ready:=False
+    val Row_Base_Addr=Reg(UInt(16 bits))init(0)
+    
+    
+
+    // RaddrFifo1.io.push.payload:=(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR)?|
+    when(RaddrFifo1.io.pop.fire){//只要fifo pop出一个数，那么就要更新一下值
+        Row_Base_Addr:=RaddrFifo1.io.pop.payload
+    }
+    
+    val Raddr_Init_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR&&RaddrFifo1.io.push.fire),5,io.Stride-1)//需要Stride个周期更新这一轮计算的循环地址
+    Fsm.Addr_Inited:=Raddr_Init_Cnt.valid
+
+
+    //开始计算================================================================
+    when(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR&&Fsm.nextState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
+        RaddrFifo1.io.pop.ready:=True//开始计算之前要先pop一下,
+    }
+
+
+
+    //卷积窗口按行展开
+    val SA_Row_Cnt=ForLoopCounter(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE,3,8-1)//这个计数器对应的是脉动阵列的每一行
+    //这里的意思是：脉动阵列一共有8行，每一行处理一个滑动窗口，那么8行就处理8个滑动窗口，对应特征图的一行8个输出点
+    //以后这个地方需要修改为可配置的
+    val Window_Col_Cnt=ForLoopCounter(SA_Row_Cnt.valid,16,io.Window_Size-1)
+    //滑动窗口列计数器
+    val Window_Row_Cnt=ForLoopCounter(Window_Col_Cnt.valid,16,io.Kernel_Size-1)
+    //滑动窗口行计数器
+        //与上Window_Col_Cnt.valid的原因：当Window_Col_Cnt==15时会一直拉高，
+    val Out_Channel_Cnt=ForLoopCounter(Window_Row_Cnt.valid,16,io.OutFeature_Channel_Count_Times-1)//因为一下出8个通道，所以得除以8
+    //这里假设输出通道总是能被8整除，比如输出通道比较大，768个通道，一下处理8个通道，那么需要768/8=96个循环。
+    val Out_Col_Cnt=ForLoopCounter(Out_Channel_Cnt.valid,16,io.OutCol_Count_Times-1)//输出列计数器，比如输出特征图的大小是14列，但是我们的输出并行度是8，所以这里应该是ceil(14/8)=2
+
+    //冗余计算处理==============================================================================
+    val OutFeature_Col_Lefted=Reg(UInt(16 bits))init(0)//用来标记输出特征图一行还剩多少列没处理
+    when(Out_Col_Cnt.valid){
+        OutFeature_Col_Lefted:=io.OutFeature_Size//跑完一行后归位
+    }elsewhen(Out_Channel_Cnt.valid){
+        //当8个输入通道与所有卷积核计算完后得到输出特征图一行8个点的全部输出通道
+        //还没处理的输出特征图的列数减8更新
+        OutFeature_Col_Lefted:=OutFeature_Col_Lefted-8
+    }elsewhen(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT){
+        OutFeature_Col_Lefted:=io.OutFeature_Size
+    }
+    when(SA_Row_Cnt.count===OutFeature_Col_Lefted-1){//得减个1，看仿真看出来的，分析也好分析
+        SA_Row_Cnt.valid:=True
+        SA_Row_Cnt.count:=0
+    }
+    val Kernel_Addr=Reg(UInt(32 bits))init(0)//WaCounter(Window_Row.valid,32,Config.PICTURE_SIZE-io.Kernel_Size-1,Stride=io.Stride)//默认卷积核的最右边一列最后可以到达输入特征图的最右边
+        //当输出完一个滑动窗口的所有点后,卷积核开始移动
+        //Kernel_Addr对应的是卷积滑动窗口top-left点的相对地址(注意是相对地址,后面读写时相对地址加上地址偏移就是绝对地址)
+    val Kernel_Base_Addr=Reg(UInt(32 bits))init(0)
+    when(Out_Col_Cnt.valid){//每输出一行特征图，卷积核地址复位
+        Kernel_Base_Addr:=0
+    }elsewhen(Out_Channel_Cnt.valid){//每输出8个点对应的全部通道，也就是Out_Feature的一行的8个点，卷积核基地址后移8个滑动窗口位置
+        Kernel_Base_Addr:=Kernel_Base_Addr+(io.Window_Size<<3).resized//一个Window_Size对应一个滑动窗口的全部数据的地址长度,并行度是8,
+    }//一个Window_Size最大的大小就是:KernelSize*Compute_In_Channel,Compute_In_Channel最大是8
+    when(Out_Col_Cnt.valid){
+        //拿到输出矩阵的一行后，Kernel_Base_Addr和Kernel_Addr都要归位
+        Kernel_Addr:=0
+    }elsewhen(Out_Channel_Cnt.valid){
+        Kernel_Addr:=Kernel_Base_Addr+(io.Window_Size<<3).resized//一轮输出通道处理完,8个滑动窗口右移更新成下一8滑动窗口的相对起始地址,
+    }elsewhen(Window_Row_Cnt.valid){
+        Kernel_Addr:=Kernel_Base_Addr
+    }elsewhen(SA_Row_Cnt.valid){//输完8个卷积核中的第一个点,然后再重新回来输第二个点,输完8个滑窗
+        Kernel_Addr:=Kernel_Base_Addr
+    }elsewhen(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
+        Kernel_Addr:=Kernel_Addr+io.Stride//每向SA输入一行数据,Kernel_Addr就加一个步长
+    }
+
+    val Raddr=Kernel_Addr+Row_Base_Addr+Window_Col_Cnt.count
+    Fsm.SA_Computed:=Out_Col_Cnt.valid
+    io.SA_Idle:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.IDLE
+
+    //循环写回地址===========================================
+    when(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR){
+        RaddrFifo1.io.push.valid:=io.NewAddrIn.valid
+        RaddrFifo1.io.push.payload:=io.NewAddrIn.payload
+    }otherwise{
+        RaddrFifo1.io.push.payload:=Row_Base_Addr
+        RaddrFifo1.io.push.valid:=Window_Col_Cnt.valid
+    }
+    when(Window_Col_Cnt.valid){
+        RaddrFifo1.io.pop.ready:=True//每处理完一行,就pop一下
+    }
+    //======================================================
+    RaddrFifo1.io.flush:=Fsm.nextState===IMG2COL_OUTPUT_ENUM.IDLE
+}
+
+
+class DataGenerate_Top extends Component{
+    val Config=TopConfig()
+    val io=new Bundle{
+        def DATA_IN_WIDTH=64
+        val m_axis_mm2s_tdata=out UInt(DATA_IN_WIDTH bits)
+        val m_axis_mm2s_tkeep=out Bits(DATA_IN_WIDTH/8 bits)
+        val m_axis_mm2s_tlast=out Bool()
+        val m_axis_mm2s_tready=in Bool()
+        val m_axis_mm2s_tvalid=out Bool()
+
+        def DATA_OUT_WIDTH=64
+        val s_axis_s2mm_tdata=in UInt(DATA_OUT_WIDTH bits)
+        val s_axis_s2mm_tkeep=in Bits(DATA_OUT_WIDTH/8 bits)
+        val s_axis_s2mm_tlast=in Bool()
+        val s_axis_s2mm_tready=out Bool()
+        val s_axis_s2mm_tvalid=in Bool()
+
+        // val m_tlast=out Bool()
+        val start=in Bool()
+        //=================================================================
+        // val Stride=in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
+        // val Kernel_Size=in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
+        // val Window_Size=in UInt(32 bits)
+        //     //所谓WindowSize,比如一个16*16的卷积,那么一个滑动窗口的大小就是16,但是需要考虑输入通道,比如256的输入通道,那么这时输入的Window_Size就是16*256(对应的是滑动窗口一行数据点),只支持方形卷积
+        //     //除了考虑输入通道，还要考虑输入数据的并行度，比如如果一下进8个点，也就是8个通道，虽然实际我们进的是224*224*3的图片，
+        //     //但是我们不能简单的将Window_Size设置为16*3，应该还是设置为16，因为3通道不够，需要补零成8通道
+        //     //这时我们的WindowSize还是1，如果输入通道是9，那么我们的Window_Size就是16*2，9通道继续补零成16通道，有7个通道冗余
+        //     //总的来说Window_Size的实际计算公式应该是：KernelSize*InChannel/(Bram_Out_DataWidth/8)(向上取整)
+
+        // val InFeature_Size=in UInt(32 bits)//图片多大就输入多大的数据
+        // val InFeature_Channel=in UInt(32 bits)
+        
+        // val OutFeature_Channel=in UInt(32 bits)
+        // val OutFeature_Channel_Count_Times=in UInt(32 bits)
+        // val OutFeature_Size=in UInt(32 bits)//输出特征图的大小
+        //                                     //用于计算的冗余处理，
+        // val OutCol_Count_Times=in UInt(32 bits)
+        // val OutRow_Count_Times=in UInt(32 bits)
+        // val InCol_Count_Times=in UInt(32 bits)//图片大小*ceil(通道数/8)，比如224的图片，3通道，但是一下子进8个通道，这三个通道补零成8通道，那么这里应该输入224*ceil(3/8)
+        //                                         //实际上就是输入图片一行（全部通道）的地址空间大小
+
+        // val Test_Signal=out Bool()//一个调试信号，比如第一轮的输出保存为txt，或者第5轮的输出保存为txt
+        // val Test_Generate_Period=in UInt(32 bits)//
+    }
+    noIoPrefix()
+    val SubModule=new Img2Col_Top
+    SubModule.io.mData<>io.m_axis_mm2s_tdata
+    SubModule.io.mValid<>io.m_axis_mm2s_tvalid
+    // SubModule.io.mReady<>io.m_axis_mm2s_tready
+    SubModule.io.mLast<>io.m_axis_mm2s_tlast
+    io.m_axis_mm2s_tkeep.setAll()//全部设置为1
+
+    SubModule.io.sData.payload<>io.s_axis_s2mm_tdata
+    SubModule.io.sData.valid<>io.s_axis_s2mm_tvalid
+    SubModule.io.sData.ready<>io.s_axis_s2mm_tready
+    SubModule.io.start<>io.start
+
+
+    // io.Stride                           <>SubModule.io.Stride
+    // io.Kernel_Size                      <>SubModule.io.Kernel_Size  
+    // io.Window_Size                      <>SubModule.io.Window_Size  
+    // io.InFeature_Size                   <>SubModule.io.InFeature_Size 
+    // io.InFeature_Channel                <>SubModule.io.InFeature_Channel  
+    // io.OutFeature_Channel               <>SubModule.io.OutFeature_Channel 
+    // io.OutFeature_Channel_Count_Times   <>SubModule.io.OutFeature_Channel_Count_Times 
+    // io.OutFeature_Size                  <>SubModule.io.OutFeature_Size
+    // io.OutCol_Count_Times               <>SubModule.io.OutCol_Count_Times 
+    // io.OutRow_Count_Times               <>SubModule.io.OutRow_Count_Times 
+    // io.InCol_Count_Times                <>SubModule.io.InCol_Count_Times  
+    // io.Test_Signal                      <>SubModule.io.Test_Signal
+    // io.Test_Generate_Period             <>SubModule.io.Test_Generate_Period
+
+    SubModule.io.Stride                          :=16                       
+    SubModule.io.Kernel_Size                     :=16       
+    SubModule.io.Window_Size                     :=16       
+    SubModule.io.InFeature_Size                  :=224          
+    SubModule.io.InFeature_Channel               :=3               
+    SubModule.io.OutFeature_Channel              :=768               
+    SubModule.io.OutFeature_Channel_Count_Times  :=96                           
+    SubModule.io.OutFeature_Size                 :=14           
+    SubModule.io.OutCol_Count_Times              :=2               
+    SubModule.io.OutRow_Count_Times              :=14               
+    SubModule.io.InCol_Count_Times               :=224               
+    // SubModule.io.Test_Signal                     :=       
+    // SubModule.io.Test_Generate_Period            :=14               
+}
 object Img2ColGen extends App { 
     val verilog_path="./testcode_gen/Systolic_Array" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Img2Col_Top)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

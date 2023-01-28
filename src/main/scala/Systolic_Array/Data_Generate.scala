@@ -434,92 +434,92 @@ class Data_Generate extends Component{
     // io.Test_Signal:=(io.Test_Generate_Period-1)===RegNext(Out_Row_Cnt.count)
 }   
 
-class DataGenerate_Top extends Component{
-    val Config=TopConfig()
-    val io=new Bundle{
-        def DATA_IN_WIDTH=64
-        val m_axis_mm2s_tdata=out UInt(DATA_IN_WIDTH bits)
-        val m_axis_mm2s_tkeep=out Bits(DATA_IN_WIDTH/8 bits)
-        val m_axis_mm2s_tlast=out Bool()
-        val m_axis_mm2s_tready=in Bool()
-        val m_axis_mm2s_tvalid=out Bool()
+// class DataGenerate_Top extends Component{
+//     val Config=TopConfig()
+//     val io=new Bundle{
+//         def DATA_IN_WIDTH=64
+//         val m_axis_mm2s_tdata=out UInt(DATA_IN_WIDTH bits)
+//         val m_axis_mm2s_tkeep=out Bits(DATA_IN_WIDTH/8 bits)
+//         val m_axis_mm2s_tlast=out Bool()
+//         val m_axis_mm2s_tready=in Bool()
+//         val m_axis_mm2s_tvalid=out Bool()
 
-        def DATA_OUT_WIDTH=64
-        val s_axis_s2mm_tdata=in UInt(DATA_OUT_WIDTH bits)
-        val s_axis_s2mm_tkeep=in Bits(DATA_OUT_WIDTH/8 bits)
-        val s_axis_s2mm_tlast=in Bool()
-        val s_axis_s2mm_tready=out Bool()
-        val s_axis_s2mm_tvalid=in Bool()
+//         def DATA_OUT_WIDTH=64
+//         val s_axis_s2mm_tdata=in UInt(DATA_OUT_WIDTH bits)
+//         val s_axis_s2mm_tkeep=in Bits(DATA_OUT_WIDTH/8 bits)
+//         val s_axis_s2mm_tlast=in Bool()
+//         val s_axis_s2mm_tready=out Bool()
+//         val s_axis_s2mm_tvalid=in Bool()
 
-        // val m_tlast=out Bool()
-        val start=in Bool()
-        //=================================================================
-        // val Stride=in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
-        // val Kernel_Size=in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
-        // val Window_Size=in UInt(32 bits)
-        //     //所谓WindowSize,比如一个16*16的卷积,那么一个滑动窗口的大小就是16,但是需要考虑输入通道,比如256的输入通道,那么这时输入的Window_Size就是16*256(对应的是滑动窗口一行数据点),只支持方形卷积
-        //     //除了考虑输入通道，还要考虑输入数据的并行度，比如如果一下进8个点，也就是8个通道，虽然实际我们进的是224*224*3的图片，
-        //     //但是我们不能简单的将Window_Size设置为16*3，应该还是设置为16，因为3通道不够，需要补零成8通道
-        //     //这时我们的WindowSize还是1，如果输入通道是9，那么我们的Window_Size就是16*2，9通道继续补零成16通道，有7个通道冗余
-        //     //总的来说Window_Size的实际计算公式应该是：KernelSize*InChannel/(Bram_Out_DataWidth/8)(向上取整)
+//         // val m_tlast=out Bool()
+//         val start=in Bool()
+//         //=================================================================
+//         // val Stride=in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
+//         // val Kernel_Size=in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
+//         // val Window_Size=in UInt(32 bits)
+//         //     //所谓WindowSize,比如一个16*16的卷积,那么一个滑动窗口的大小就是16,但是需要考虑输入通道,比如256的输入通道,那么这时输入的Window_Size就是16*256(对应的是滑动窗口一行数据点),只支持方形卷积
+//         //     //除了考虑输入通道，还要考虑输入数据的并行度，比如如果一下进8个点，也就是8个通道，虽然实际我们进的是224*224*3的图片，
+//         //     //但是我们不能简单的将Window_Size设置为16*3，应该还是设置为16，因为3通道不够，需要补零成8通道
+//         //     //这时我们的WindowSize还是1，如果输入通道是9，那么我们的Window_Size就是16*2，9通道继续补零成16通道，有7个通道冗余
+//         //     //总的来说Window_Size的实际计算公式应该是：KernelSize*InChannel/(Bram_Out_DataWidth/8)(向上取整)
 
-        // val InFeature_Size=in UInt(32 bits)//图片多大就输入多大的数据
-        // val InFeature_Channel=in UInt(32 bits)
+//         // val InFeature_Size=in UInt(32 bits)//图片多大就输入多大的数据
+//         // val InFeature_Channel=in UInt(32 bits)
         
-        // val OutFeature_Channel=in UInt(32 bits)
-        // val OutFeature_Channel_Count_Times=in UInt(32 bits)
-        // val OutFeature_Size=in UInt(32 bits)//输出特征图的大小
-        //                                     //用于计算的冗余处理，
-        // val OutCol_Count_Times=in UInt(32 bits)
-        // val OutRow_Count_Times=in UInt(32 bits)
-        // val InCol_Count_Times=in UInt(32 bits)//图片大小*ceil(通道数/8)，比如224的图片，3通道，但是一下子进8个通道，这三个通道补零成8通道，那么这里应该输入224*ceil(3/8)
-        //                                         //实际上就是输入图片一行（全部通道）的地址空间大小
+//         // val OutFeature_Channel=in UInt(32 bits)
+//         // val OutFeature_Channel_Count_Times=in UInt(32 bits)
+//         // val OutFeature_Size=in UInt(32 bits)//输出特征图的大小
+//         //                                     //用于计算的冗余处理，
+//         // val OutCol_Count_Times=in UInt(32 bits)
+//         // val OutRow_Count_Times=in UInt(32 bits)
+//         // val InCol_Count_Times=in UInt(32 bits)//图片大小*ceil(通道数/8)，比如224的图片，3通道，但是一下子进8个通道，这三个通道补零成8通道，那么这里应该输入224*ceil(3/8)
+//         //                                         //实际上就是输入图片一行（全部通道）的地址空间大小
 
-        // val Test_Signal=out Bool()//一个调试信号，比如第一轮的输出保存为txt，或者第5轮的输出保存为txt
-        // val Test_Generate_Period=in UInt(32 bits)//
-    }
-    noIoPrefix()
-    val SubModule=new Data_Generate
-    SubModule.io.mData<>io.m_axis_mm2s_tdata
-    SubModule.io.mValid<>io.m_axis_mm2s_tvalid
-    // SubModule.io.mReady<>io.m_axis_mm2s_tready
-    SubModule.io.mLast<>io.m_axis_mm2s_tlast
-    io.m_axis_mm2s_tkeep.setAll()//全部设置为1
+//         // val Test_Signal=out Bool()//一个调试信号，比如第一轮的输出保存为txt，或者第5轮的输出保存为txt
+//         // val Test_Generate_Period=in UInt(32 bits)//
+//     }
+//     noIoPrefix()
+//     val SubModule=new Data_Generate
+//     SubModule.io.mData<>io.m_axis_mm2s_tdata
+//     SubModule.io.mValid<>io.m_axis_mm2s_tvalid
+//     // SubModule.io.mReady<>io.m_axis_mm2s_tready
+//     SubModule.io.mLast<>io.m_axis_mm2s_tlast
+//     io.m_axis_mm2s_tkeep.setAll()//全部设置为1
 
-    SubModule.io.sData.payload<>io.s_axis_s2mm_tdata
-    SubModule.io.sData.valid<>io.s_axis_s2mm_tvalid
-    SubModule.io.sData.ready<>io.s_axis_s2mm_tready
-    SubModule.io.start<>io.start
+//     SubModule.io.sData.payload<>io.s_axis_s2mm_tdata
+//     SubModule.io.sData.valid<>io.s_axis_s2mm_tvalid
+//     SubModule.io.sData.ready<>io.s_axis_s2mm_tready
+//     SubModule.io.start<>io.start
 
 
-    // io.Stride                           <>SubModule.io.Stride
-    // io.Kernel_Size                      <>SubModule.io.Kernel_Size  
-    // io.Window_Size                      <>SubModule.io.Window_Size  
-    // io.InFeature_Size                   <>SubModule.io.InFeature_Size 
-    // io.InFeature_Channel                <>SubModule.io.InFeature_Channel  
-    // io.OutFeature_Channel               <>SubModule.io.OutFeature_Channel 
-    // io.OutFeature_Channel_Count_Times   <>SubModule.io.OutFeature_Channel_Count_Times 
-    // io.OutFeature_Size                  <>SubModule.io.OutFeature_Size
-    // io.OutCol_Count_Times               <>SubModule.io.OutCol_Count_Times 
-    // io.OutRow_Count_Times               <>SubModule.io.OutRow_Count_Times 
-    // io.InCol_Count_Times                <>SubModule.io.InCol_Count_Times  
-    // io.Test_Signal                      <>SubModule.io.Test_Signal
-    // io.Test_Generate_Period             <>SubModule.io.Test_Generate_Period
+//     // io.Stride                           <>SubModule.io.Stride
+//     // io.Kernel_Size                      <>SubModule.io.Kernel_Size  
+//     // io.Window_Size                      <>SubModule.io.Window_Size  
+//     // io.InFeature_Size                   <>SubModule.io.InFeature_Size 
+//     // io.InFeature_Channel                <>SubModule.io.InFeature_Channel  
+//     // io.OutFeature_Channel               <>SubModule.io.OutFeature_Channel 
+//     // io.OutFeature_Channel_Count_Times   <>SubModule.io.OutFeature_Channel_Count_Times 
+//     // io.OutFeature_Size                  <>SubModule.io.OutFeature_Size
+//     // io.OutCol_Count_Times               <>SubModule.io.OutCol_Count_Times 
+//     // io.OutRow_Count_Times               <>SubModule.io.OutRow_Count_Times 
+//     // io.InCol_Count_Times                <>SubModule.io.InCol_Count_Times  
+//     // io.Test_Signal                      <>SubModule.io.Test_Signal
+//     // io.Test_Generate_Period             <>SubModule.io.Test_Generate_Period
 
-    SubModule.io.Stride                          :=16                       
-    SubModule.io.Kernel_Size                     :=16       
-    SubModule.io.Window_Size                     :=16       
-    SubModule.io.InFeature_Size                  :=224          
-    SubModule.io.InFeature_Channel               :=3               
-    SubModule.io.OutFeature_Channel              :=768               
-    SubModule.io.OutFeature_Channel_Count_Times  :=96                           
-    SubModule.io.OutFeature_Size                 :=14           
-    SubModule.io.OutCol_Count_Times              :=2               
-    SubModule.io.OutRow_Count_Times              :=14               
-    SubModule.io.InCol_Count_Times               :=224               
-    // SubModule.io.Test_Signal                     :=       
-    // SubModule.io.Test_Generate_Period            :=14               
-}
+//     SubModule.io.Stride                          :=16                       
+//     SubModule.io.Kernel_Size                     :=16       
+//     SubModule.io.Window_Size                     :=16       
+//     SubModule.io.InFeature_Size                  :=224          
+//     SubModule.io.InFeature_Channel               :=3               
+//     SubModule.io.OutFeature_Channel              :=768               
+//     SubModule.io.OutFeature_Channel_Count_Times  :=96                           
+//     SubModule.io.OutFeature_Size                 :=14           
+//     SubModule.io.OutCol_Count_Times              :=2               
+//     SubModule.io.OutRow_Count_Times              :=14               
+//     SubModule.io.InCol_Count_Times               :=224               
+//     // SubModule.io.Test_Signal                     :=       
+//     // SubModule.io.Test_Generate_Period            :=14               
+// }
 object DGB_Gen extends App { 
     val verilog_path="./testcode_gen/Systolic_Array" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Data_Generate)
