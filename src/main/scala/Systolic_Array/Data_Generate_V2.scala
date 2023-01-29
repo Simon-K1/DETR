@@ -151,8 +151,13 @@ class Img2Col_Top extends Component{
     when(Fsm.currentState===IMG2COL_ENUM.INIT_ADDR){
         RaddrFifo0.io.push.valid:=True
         RaddrFifo0.io.push.payload:=Raddr_Initialization
-        Raddr_Initialization:=Raddr_Initialization+io.InCol_Count_Times
     }
+    when(Fsm.currentState===IMG2COL_ENUM.INIT_ADDR){
+        Raddr_Initialization:=Raddr_Initialization+io.InCol_Count_Times
+    }otherwise{
+        Raddr_Initialization:=0
+    }
+    //用完Raddr_Initialization要重置
     
     
     //缓存数据================================================================================
@@ -234,6 +239,9 @@ class Img2Col_Top extends Component{
     io.mLast:=RegNext(Out_Row_Cnt.valid)
     //============
     io.Test_Signal:=(io.Test_Generate_Period-1)===RegNext(Out_Row_Cnt.count)
+
+    AddrFifo.io.flush:=(Fsm.nextState===IMG2COL_ENUM.IDLE)
+    RaddrFifo0.io.flush:=(Fsm.nextState===IMG2COL_ENUM.IDLE)
 }
 
 object IMG2COL_OUTPUT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot){
