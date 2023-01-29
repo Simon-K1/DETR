@@ -491,7 +491,15 @@ class DataGenerate_Top extends Component{
     SubModule.io.OutRow_Count_Times              :=14               
     SubModule.io.InCol_Count_Times               :=224               
     // SubModule.io.Test_Signal                     :=       
-    // SubModule.io.Test_Generate_Period            :=14               
+    // SubModule.io.Test_Generate_Period            :=14
+
+    val Out_Data_Counter=WaCounter(io.m_axis_mm2s_tready&&io.m_axis_mm2s_tvalid,32,U"32'hffffffff")       
+    val In_Data_Counter=WaCounter(io.s_axis_s2mm_tvalid&&io.s_axis_s2mm_tready,32,U"32'hffffffff")   
+    when(io.start){
+        Out_Data_Counter.clear
+        In_Data_Counter.clear
+    }    
+            
 }
 object Img2ColGen extends App { 
     val verilog_path="./testcode_gen/Systolic_Array" 
