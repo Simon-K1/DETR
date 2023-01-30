@@ -1,3 +1,2 @@
 # 注意:Quan_V5只用来在稳定的Quan_V分支的稳定Layernorm版本上测试Softmax
-Quan_V5只用来在稳定的Quan_V分支的稳定Layernorm版本上测试Softmax
-也就是非必要不修改layernorm
+Quan_v6是用来研究torch.fx的
