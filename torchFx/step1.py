@@ -3,17 +3,7 @@
 
 import torch.nn as nn
 import torch
-class Test_Net(nn.Module):
-    def __init__(self,In_Channels:int=1):
-        super(Test_Net,self).__init__()
-        self.conv1=nn.Conv2d(in_channels=In_Channels,out_channels=768, kernel_size=16,stride=16,)
-        self.linear=nn.Linear(768,768*3)
-    def forward(self,x):
-        x=self.conv1(x)#Conv的输出[B,C,H,W]
-        x=x.flatten(2)#[B,C,H*W]
-        x=torch.transpose(1,2)
-        x=self.linear(x)
-        x
+from Mymodels import Test_Net
 
 Test_Module=Test_Net(2)
 print(Test_Module)#打印网络只会将有效的网络层打印出来，不会打印类似展平，转置这些操作

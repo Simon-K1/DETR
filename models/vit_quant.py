@@ -311,8 +311,8 @@ class VisionTransformer(nn.Module):
             self.pre_logits = nn.Identity()
 
         # Classifier head
-        self.head = (QLinear(self.num_features,
-                             num_classes,
+        self.head = (QLinear(self.num_features,#输入num_features
+                             num_classes,#输出类个数
                              quant=quant,
                              calibrate=calibrate,
                              bit_type=cfg.BIT_TYPE_W,

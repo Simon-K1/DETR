@@ -1,55 +1,23 @@
-import torchvision.datasets as datasets
-import torchvision.transforms as transforms
 import torch
-from PIL import Image
-import math
-def build_transform(input_size=224,
-                    interpolation='bicubic',
-                    mean=(0.485, 0.456, 0.406),
-                    std=(0.229, 0.224, 0.225),
-                    crop_pct=0.875):
+from torchvision.models import AlexNet
+import torch.nn as nn
+from torchviz import make_dot
 
-    def _pil_interp(method):
-        if method == 'bicubic':
-            return Image.BICUBIC
-        elif method == 'lanczos':
-            return Image.LANCZOS
-        elif method == 'hamming':
-            return Image.HAMMING
-        else:
-            return Image.BILINEAR
+blocks=nn.Transformer(d_model=768,nhead=12, num_encoder_layers=1,num_decoder_layers=0)
+print(blocks)
+x=torch.rand(1,197,768)
 
-    resize_im = input_size > 32
-    t = []
-    if resize_im:
-        size = int(math.floor(input_size / crop_pct))
-        ip = _pil_interp(interpolation)
-        t.append(
-            transforms.Resize(
-                size,
-                interpolation=ip),  # to maintain same ratio w.r.t. 224 images
-        )
-        t.append(transforms.CenterCrop(input_size))
 
-    t.append(transforms.ToTensor())
-    t.append(transforms.Normalize(mean, std))
-    return transforms.Compose(t)
 
-mean = (0.5, 0.5, 0.5)
-std = (0.5, 0.5, 0.5)
-crop_pct = 0.9
 
-train_transform = build_transform(mean=mean, std=std, crop_pct=crop_pct)
-val_dataset = datasets.ImageFolder('E:/Transformer/DataSets/imagenet/imagenet2012mini/val',train_transform)
-val_loader = torch.utils.data.DataLoader(
-    val_dataset,
-    batch_size=1,#args.val_batchsize,
-    shuffle=False,
-    num_workers=1,#args.num_workers,
-    pin_memory=True,
-)
-
-for i, (data, target) in enumerate(val_loader):#一次验证一个batch，每个target就有batch的维度
-    data = data.to('cuda')
-    target = target.to('cuda')
-    print(data,"---",target)
+x=torch.rand(2,197,768)
+Single_Encoder = nn.TransformerEncoderLayer(d_model=768, nhead=8,batch_first=True,norm_first=True)#在Vit中的norm需要位于atten和FF之前
+Encoders= nn.TransformerEncoder(Single_Encoder,num_layers=1,norm=None)#构建多个连在一起的Encoder
+                                                                      #nomrm 就是在末尾加一个normlization
+x=Encoders(x)
+print(x.shape)
+print(Single_Encoder)
+# out=Single_Encoder(x)
+# g = make_dot(out)
+# g.render('espnet_model', view=True)
+Atten=nn.MultiheadAttention
