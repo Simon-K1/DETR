@@ -66,7 +66,8 @@
 					// "deit_small","/home/dy/VitWorkspace/Vit量化方案2/FQ-ViT-main/Fish_Data","--quant","--ptf","--lis","--quant-method","minmax"
 				],
                 
-                "cwd": "${workspaceFolder}"//debug时可以读取其他目录文件
+                "cwd": "${workspaceFolder}",//debug时可以读取其他目录文件
+                "justMyCode": false//可以断点到其他文件夹
 //================================================s==================================
             },
 

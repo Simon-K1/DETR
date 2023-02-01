@@ -9,6 +9,7 @@ from itertools import repeat
 import collections.abc
 import torch.optim as optim
 import time
+from utils import load_weights_from_npz
 #Trasnforemr相关组件====================================
 def _ntuple(n):
     def parse(x):
@@ -51,43 +52,56 @@ class Vit_Transformer(nn.Module):
         super(Vit_Transformer,self).__init__()
         self.In_Channels=In_Channels
         # self.Batch_Size=2
-        self.Out_Channels=Out_Channels
+        self.Embed_Dim=Out_Channels
         self.Picture_Size=Picture_Size
         # self.x=torch.rand(Batch_Size,In_Channels,Picture_Size,Picture_Size)
-        self.Embedding_Layer=PatchEmbed(In_Channels=self.In_Channels,Out_Channels=self.Out_Channels)
+        self.patch_embed=PatchEmbed(In_Channels=self.In_Channels,Out_Channels=self.Embed_Dim)
         # self.Embedding_Out=Embedding_Layer(x)
 
         self.Num_Heads=Num_Heads
         self.Encoder_layers=Encoder_Layers
         #开始构建Encoder
         #[B,H,W]
-        
-        
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, self.Embed_Dim))
+        num_patches = self.patch_embed.num_patches
+        self.pos_embed = nn.Parameter(
+            torch.zeros(1, num_patches + 1, self.Embed_Dim))
         
         
 
-        self.Single_Encoder = nn.TransformerEncoderLayer(d_model=self.Out_Channels, nhead=self.Num_Heads,batch_first=True,norm_first=True)#在Vit中的norm需要位于atten和FF之前
+        self.Single_Encoder = nn.TransformerEncoderLayer(d_model=self.Embed_Dim, nhead=self.Num_Heads,batch_first=True,norm_first=True)#在Vit中的norm需要位于atten和FF之前
         self.Encoders= nn.TransformerEncoder(self.Single_Encoder,num_layers=self.Encoder_layers,norm=None)#构建多个连在一起的Encoder
                                                                             #nomrm 就是在末尾加一个normlization
 
-        self.NormLayer_After_Encoder=nn.LayerNorm(768,)
+        self.norm=nn.LayerNorm(self.Embed_Dim,)
         
         self.Num_Class=Num_Class
-        self.Mlp_Head=nn.Linear(self.Out_Channels,self.Num_Class)
-        
+        self.head=nn.Linear(self.Embed_Dim,self.Num_Class)
+        self.pre_logits = nn.Identity()
+
+
+        self.emb_dropout=0.1
+        self.dropout = nn.Dropout(self.emb_dropout)
         # print(Class_Out.shape)
                 
                                                     
     def forward(self,x):
-        Embedding_Out=self.Embedding_Layer(x)
+        Embedding_Out=self.patch_embed(x)
+        
         B=Embedding_Out.shape[0]
         H=Embedding_Out.shape[1]
         W=Embedding_Out.shape[2]
         Encoder_Out=self.Encoders(Embedding_Out)
+
+        cls_tokens = self.cls_token.expand(
+            B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
         # print(Encoder_Out.shape)
-        Norm_Out=self.NormLayer_After_Encoder(Encoder_Out)
+        Encoder_Out = torch.cat((cls_tokens, Encoder_Out), dim=1)
+        Encoder_Out = Encoder_Out + self.pos_embed
+
+        Norm_Out=self.norm(Encoder_Out)
         Norm_Out=Norm_Out[:,0]
-        Class_Out=self.Mlp_Head(Norm_Out)
+        Class_Out=self.head(Norm_Out)
         return Class_Out
 
 # print(Model)
@@ -256,7 +270,7 @@ def train(epoch,train_loader, val_loader,model, criterion, device):
             rate = (i + 1) / len(train_loader)
             a = "*" * int(rate * 50)
             b = "." * int((1 - rate) * 50)
-            print("\rtrain loss: {:^3.0f}%[{}->{}]{:.4f}".format(int(rate * 100), a, b, loss), end="")
+            print("[epoch:{}]\rtrain loss: {:^3.0f}%[{}->{}]{:.4f}".format(epoch,int(rate * 100), a, b, loss), end="")
 
 
         model.eval()  # change into test model
@@ -269,44 +283,7 @@ parser.add_argument('--print-freq',
                     type=int,
                     help='print frequency')
 parser.add_argument('--device', default='cuda', type=str, help='device')
-# def main():
-#     args = parser.parse_args()
-#     device = torch.device(args.device)
-#     print("fuck====================================\n")
-#     In_Channels=3
-#     Out_Channels=768
-#     Picture_Size=224
-#     Num_Class=1
-#     Num_Heads=8
-#     Encoder_Layers=12
 
-#     model=Vit_Transformer(In_Channels,Out_Channels,Picture_Size,Num_Class,Num_Heads,Encoder_Layers)
-#     x=torch.rand(2,In_Channels,Picture_Size,Picture_Size)
-#     ClassOut=model(x)
-#     print(ClassOut.shape)    
-
-#     mean = (0.5, 0.5, 0.5)
-#     std = (0.5, 0.5, 0.5)
-#     crop_pct = 0.9
-#     train_transform = build_transform(mean=mean, std=std, crop_pct=crop_pct)
-#     val_dataset = datasets.ImageFolder('E:/Transformer/DataSets/imagenet/Mini_Train/val',train_transform)
-#     train_dataset = datasets.ImageFolder('E:/Transformer/DataSets/imagenet/Mini_Train/train',train_transform)
-#     val_loader = torch.utils.data.DataLoader(
-#         val_dataset,
-#         batch_size=1,#args.val_batchsize,
-#         shuffle=False,
-#         num_workers=1,#args.num_workers,
-#         pin_memory=True,
-#     )
-#     train_loader = torch.utils.data.DataLoader(
-#         train_dataset,
-#         batch_size=1,#args.val_batchsize,
-#         shuffle=False,
-#         num_workers=1,#args.num_workers,
-#         pin_memory=True,
-#     )
-#     criterion = nn.CrossEntropyLoss().to(device)
-#     train(100,train_loader, model,criterion, device)
 
 if __name__== '__main__':
     print("fuck====================================\n")
@@ -314,7 +291,7 @@ if __name__== '__main__':
     Out_Channels=768
     Picture_Size=224
     Num_Class=3
-    Num_Heads=8
+    Num_Heads=12
     Encoder_Layers=12
     model=Vit_Transformer(In_Channels,Out_Channels,Picture_Size,Num_Class,Num_Heads,Encoder_Layers)
     # x=torch.rand(2,In_Channels,Picture_Size,Picture_Size)
@@ -342,6 +319,10 @@ if __name__== '__main__':
         pin_memory=True,
     )
     device='cuda'
+    # url = 'https://storage.googleapis.com/vit_models/augreg/' + \
+    #         'B_16-i21k-300ep-lr_0.001-aug_medium1-wd_0.1-do_0.0-sd_0.0--imagenet2012-steps_20k-lr_0.01-res_224.npz'
+
+    # load_weights_from_npz(model, url, check_hash=True)
     model.to(device)
     criterion = nn.CrossEntropyLoss().to(device)
     train(100,train_loader,val_loader, model,criterion, device)

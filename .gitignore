@@ -122,3 +122,7 @@ datasets/
 *.pth
 *.py~
 *.sh~
+
+
+MyTransformer/vit-pytorch-main(别人实现的)/
+MyTransformer/vision_transformer/
