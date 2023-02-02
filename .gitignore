@@ -124,5 +124,7 @@ datasets/
 *.sh~
 
 
-MyTransformer/vit-pytorch-main(别人实现的)/
+MyTransformer/vit-pytorch-main/
 MyTransformer/vision_transformer/
+*.onnx
+*.pth

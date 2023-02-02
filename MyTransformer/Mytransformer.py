@@ -264,6 +264,7 @@ def train(epoch,train_loader, val_loader,model, criterion, device):
             # with torch.no_grad():
             output = model(data)
             loss = criterion(output, target)
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
@@ -274,7 +275,7 @@ def train(epoch,train_loader, val_loader,model, criterion, device):
 
 
         model.eval()  # change into test model
-        validate(4,val_loader,model,criterion,device)
+        validate(1,val_loader,model,criterion,device)
 
 import argparse
 parser = argparse.ArgumentParser(description='FQ-ViT')
@@ -284,38 +285,60 @@ parser.add_argument('--print-freq',
                     help='print frequency')
 parser.add_argument('--device', default='cuda', type=str, help='device')
 
+def export_onnx(x:torch.tensor=None,model:torch.nn=None,export_path:str='exported_onnx.onnx'):
+    if model is None:
+        x=torch.rand(1,3,224,224)
+        In_Channels=3
+        Out_Channels=384
+        Picture_Size=224
+        Num_Class=3
+        Num_Heads=6
+        Encoder_Layers=6
+        model=Vit_Transformer(In_Channels,Out_Channels,Picture_Size,Num_Class,Num_Heads,Encoder_Layers)
+    if export_path is None:
+        export_path='exported_onnx.onnx'
+    torch.onnx.export(model,               # model being run
+                x,                         # model input 
+                export_path,   # where to save the model (can be a file or file-like object)                  
+                opset_version=11,           # the ONNX version to export the model to                  
+                input_names = ['input'],   # the model's input names
+                output_names = ['output']  # the model's output names
+                )
+
 
 if __name__== '__main__':
     print("fuck====================================\n")
     In_Channels=3
-    Out_Channels=768
+    Out_Channels=384
     Picture_Size=224
     Num_Class=3
-    Num_Heads=12
-    Encoder_Layers=12
+    Num_Heads=6
+    Encoder_Layers=6
     model=Vit_Transformer(In_Channels,Out_Channels,Picture_Size,Num_Class,Num_Heads,Encoder_Layers)
     # x=torch.rand(2,In_Channels,Picture_Size,Picture_Size)
     # ClassOut=model(x)
     # print(ClassOut.shape)    
-    
+    export_onnx()
+    exit()
     mean = (0.5, 0.5, 0.5)
     std = (0.5, 0.5, 0.5)
     crop_pct = 0.9
     train_transform = build_transform(mean=mean, std=std, crop_pct=crop_pct)
     val_dataset = datasets.ImageFolder('E:/Transformer/DataSets/imagenet/Mini_Train/val',train_transform)
     train_dataset = datasets.ImageFolder('E:/Transformer/DataSets/imagenet/Mini_Train/train',train_transform)
+    model_save_path='Saved.pth'
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
-        batch_size=2,#args.val_batchsize,
+        batch_size=1,#args.val_batchsize,
         shuffle=False,
-        num_workers=1,#args.num_workers,
+        num_workers=8,#args.num_workers,
         pin_memory=True,
     )
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=8,#args.val_batchsize,
-        shuffle=False,
-        num_workers=1,#args.num_workers,
+        batch_size=16,#args.val_batchsize,
+        shuffle=True,
+        num_workers=8,#args.num_workers,
         pin_memory=True,
     )
     device='cuda'
@@ -325,6 +348,10 @@ if __name__== '__main__':
     # load_weights_from_npz(model, url, check_hash=True)
     model.to(device)
     criterion = nn.CrossEntropyLoss().to(device)
+
+
+    torch.save(model.state_dict(), model_save_path)
+    
     train(100,train_loader,val_loader, model,criterion, device)
 
 
