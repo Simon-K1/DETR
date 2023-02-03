@@ -9,7 +9,6 @@ from itertools import repeat
 import collections.abc
 import torch.optim as optim
 import time
-from utils import load_weights_from_npz
 #Trasnforemr相关组件====================================
 def _ntuple(n):
     def parse(x):
@@ -52,6 +51,16 @@ class proj(nn.Module):#默认为vit—base
 
 #搭建Vit
 class Vit(nn.Module):
+    #example:
+    # In_Channels=3
+    # Embed_Dim=384
+    # Picture_Size=224
+    # Patch_Size=16
+    # Num_Class=3
+    # Num_Heads=6
+    # Encoder_Layers=6
+    # model=Vit(In_Channels=In_Channels,Out_Channels=Embed_Dim,Picture_Size=Picture_Size,Patch_Size=Patch_Size
+    # ,Num_Class=Num_Class,Num_Heads=Num_Heads,Encoder_Layers=Encoder_Layers)
     def __init__(self,In_Channels:int=3,Out_Channels:int=768,Picture_Size:int=224,Patch_Size:int=16,Num_Class:int=1,Num_Heads:int=8,Encoder_Layers:int=12):
         super(Vit,self).__init__()
         self.In_Channels=In_Channels

@@ -16,7 +16,7 @@ from torch.quantization import get_default_qconfig
 from torch import optim
 import os
 import time
-from Mymodels import VisionTransformer
+from Mymodels import Vit
 
 def evaluate_model(model, test_loader, device=torch.device("cpu"), criterion=None):
     t0 = time.time()
@@ -100,14 +100,16 @@ def prepare_dataloader(num_workers=8, train_batch_size=128, eval_batch_size=256)
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ]
     )
-    train_set = torchvision.datasets.CIFAR10(
-        root="data", train=True, download=True, transform=train_transform
-    )
+    # train_set = torchvision.datasets.CIFAR10(
+    #     root="data", train=True, download=True, transform=train_transform
+    # )
+    test_set = torchvision.datasets.ImageFolder('E:/Transformer/DataSets/imagenet/Mini_Train/val',test_transform)
+    train_set = torchvision.datasets.ImageFolder('E:/Transformer/DataSets/imagenet/Mini_Train/train',train_transform)
     # We will use test set for validation and test in this project.
     # Do not use test set for validation in practice!
-    test_set = torchvision.datasets.CIFAR10(
-        root="data", train=False, download=True, transform=test_transform
-    )
+    # test_set = torchvision.datasets.CIFAR10(
+    #     root="data", train=False, download=True, transform=test_transform
+    # )
     train_sampler = torch.utils.data.RandomSampler(train_set)
     test_sampler = torch.utils.data.SequentialSampler(test_set)
     train_loader = torch.utils.data.DataLoader(
@@ -199,14 +201,23 @@ if __name__ == "__main__":
     # 然后训练一波模型
     train_loader, test_loader = prepare_dataloader()
     # first finetune model on cifar, we don't have imagnet so using cifar as test
-    model = resnet18(pretrained=True)
-    model.fc = nn.Linear(512, 10)
-    if os.path.exists("r18_row.pth"):
-        model.load_state_dict(torch.load("r18_row.pth", map_location="cpu"))
+    In_Channels=3
+    Embed_Dim=384
+    Picture_Size=224
+    Patch_Size=16
+    Num_Class=3
+    Num_Heads=6
+    Encoder_Layers=6
+    model=Vit(In_Channels=In_Channels,Out_Channels=Embed_Dim,Picture_Size=Picture_Size,Patch_Size=Patch_Size
+    ,Num_Class=Num_Class,Num_Heads=Num_Heads,Encoder_Layers=Encoder_Layers)
+    # model(torch.rand(1,3,224,224))
+    # exit()
+    if os.path.exists("MyTransformer/Export/QuanVit_Model.pth"):
+        model.load_state_dict(torch.load("QuanVit_Model.pth", map_location="cpu"))
     else:
         train_model(model, train_loader, test_loader, torch.device("cuda"))
         print("train finished.")
-        torch.save(model.state_dict(), "r18_row.pth")
+        torch.save(model.state_dict(), "QuanVit_Model.pth")
     # 模型量化
     quant_fx(model)
     # 对比是否 calibration 的影响
