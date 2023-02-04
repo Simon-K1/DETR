@@ -122,3 +122,4 @@ datasets/
 *.pth
 *.py~
 *.sh~
+/MyTransformer/
