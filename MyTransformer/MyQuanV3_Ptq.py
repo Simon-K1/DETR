@@ -72,20 +72,23 @@ def accuracy(output, target, topk=(1,)):
         return res
 
 
-def evaluate(model, criterion, data_loader):
+def evaluate(model, criterion, data_loader,device):
     model.eval()
+    model.to(device)
     top1 = AverageMeter('Acc@1', ':6.2f')
     top5 = AverageMeter('Acc@5', ':6.2f')
     cnt = 0
     with torch.no_grad():
         for image, target in data_loader:
+            image=image.to(device)
             output = model(image)
             loss = criterion(output, target)
             cnt += 1
             acc1, acc5 = accuracy(output, target, topk=(1, 2))
             top1.update(acc1[0], image.size(0))
             top5.update(acc5[0], image.size(0))
-    print('')
+            print('Val[',cnt,"]  [top1]:",acc1,"[top5]:",acc5)
+    
 
     return top1, top5
 
@@ -183,7 +186,7 @@ model_to_quantize.eval()
 #     # matching the rule (unless a higher priority match is found)
 qconfig = get_default_qconfig("fbgemm")
 qconfig_mapping = QConfigMapping().set_global(qconfig)
-prepared_model = prepare_fx(model_to_quantize, qconfig_mapping, example_inputs)
+# prepared_model = prepare_fx(model_to_quantize, qconfig_mapping, example_inputs)
 prepared_model = prepare_fx(model_to_quantize, qconfig_mapping, example_inputs)
 print(prepared_model.graph)
 
@@ -212,5 +215,16 @@ print("Size of model after quantization")
 print_size_of_model(quantized_model)
 # print(quantized_model.parameters)
 
-top1, top2 = evaluate(quantized_model, criterion, data_loader_test)
+# test_input=torch.rand(1,3,224,224).to('cuda')
+# quantized_model.to('cuda')
+# out=quantized_model(test_input)
+
+print(quantized_model.patch_embed)
+top1, top2 = evaluate(quantized_model, criterion, data_loader_test,'cpu')#必须用cpu，用cuda会卡死
 print("FX graph mode quantized model Evaluation accuracy on test dataset: %2.2f, %2.2f"%(top1.avg, top2.avg))
+
+
+#阶段二
+from torch.fx import symbolic_trace
+symbolic_traced : torch.fx.GraphModule = symbolic_trace(quantized_model)
+print(symbolic_traced.graph)
