@@ -139,14 +139,14 @@ class Block(nn.Module):
                           calibration_mode=cfg.CALIBRATION_MODE_A,
                           observer_str=cfg.OBSERVER_A,
                           quantizer_str=cfg.QUANTIZER_A)
-        # self.attn = Attention(dim,
-        #                       num_heads=num_heads,
-        #                       qkv_bias=qkv_bias,
-        #                       qk_scale=qk_scale,
-        #                       attn_drop=attn_drop,
-        #                       proj_drop=drop,
-        #                       cfg=cfg)
-        self.attn=torch.nn.MultiheadAttention(embed_dim=dim,num_heads=num_heads,add_bias_kv=True,batch_first=True)
+        self.attn = Attention(dim,
+                              num_heads=num_heads,
+                              qkv_bias=qkv_bias,
+                              qk_scale=qk_scale,
+                              attn_drop=attn_drop,
+                              proj_drop=drop,
+                              cfg=cfg)
+        # self.attn=torch.nn.MultiheadAttention(embed_dim=dim,num_heads=num_heads,add_bias_kv=True,batch_first=True)
         # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
         self.drop_path = DropPath(
             drop_path) if drop_path > 0.0 else nn.Identity()
@@ -180,9 +180,10 @@ class Block(nn.Module):
 
     def forward(self, x, last_quantizer=None):
         Norm_Out=self.norm1(x, last_quantizer,self.qact1.quantizer)
-        # Attn_Out=self.attn(self.qact1(Norm_Out))
+        
         QKV=self.qact1(Norm_Out)
-        Attn_Out,_=self.attn(QKV,QKV,QKV)
+        # Attn_Out,_=self.attn(QKV,QKV,QKV)
+        Attn_Out=self.attn(self.qact1(Norm_Out))
         x=x + self.drop_path(Attn_Out)
         x = self.qact2(x)
         x = self.qact4(x + self.drop_path(

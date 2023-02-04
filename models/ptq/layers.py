@@ -340,7 +340,7 @@ class QIntSoftmax(nn.Module):
         return exp_int, exp_int_sum
 
     def forward(self, x, scale):
-        Pow2=False
+        Pow2=True
         if self.log_i_softmax and scale is not None:
             if not Pow2:
                 exp_int, exp_int_sum = self.int_softmax(x, scale)

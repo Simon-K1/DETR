@@ -73,6 +73,7 @@ def seed(seed=0):
 
 
 def main():
+    Train_En=False
     args = parser.parse_args()
     seed(args.seed)
 
@@ -115,13 +116,14 @@ def main():
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=4,
-        shuffle=False,
+        shuffle=True,
         num_workers=args.num_workers,
         pin_memory=True,
     )
     model = model.to(device)
     criterion = nn.CrossEntropyLoss().to(device)
-    train(100,train_loader, val_loader,model, criterion, device,'float_pth')
+    if Train_En:
+        train(100,train_loader, val_loader,model, criterion, device,'float_pth')
 
 
 
@@ -130,9 +132,18 @@ def main():
     model.eval()
 
     # define loss function (criterion)
-    
+# def load_model(model_file):
+#     model = resnet18(pretrained=False)
+#     state_dict = torch.load(model_file)
+#     model.load_state_dict(state_dict)
+#     model.to("cpu")
+#     return model
 
-    if args.quant:
+    if not Train_En:
+        model_file=r"E:\Transformer\Transformer_Arithmatic\QuanFqVit\float_pth\FloatVit_90.6666666666666798.66666666666667.pth"
+        state_dict = torch.load(model_file)
+        model.load_state_dict(state_dict)
+        model.to(device)
         cali_dataset = datasets.ImageFolder(traindir, train_transform)
         cali_loader = torch.utils.data.DataLoader(
             cali_dataset,
