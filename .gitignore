@@ -123,3 +123,5 @@ datasets/
 *.py~
 *.sh~
 /MyTransformer/
+*.onnx
+*.pth
