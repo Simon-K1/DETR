@@ -118,3 +118,7 @@ class Vit(nn.Module):
         return Class_Out
 # Layer0=Vit(In_Channels,Embed_Dim,Picture_Size,Patch_Size=Patch_Size)
 # export_onnx(Picture,Layer0)
+#再自己构建一个attn
+class EncoderLayer(nn.model):
+    def __init__(self,dim:int=3,Out_Channels:int=768,Picture_Size:int=224,Patch_Size:int=16,Num_Class:int=1,Num_Heads:int=8,Encoder_Layers:int=12):
+        super(Vit,self).__init__()
