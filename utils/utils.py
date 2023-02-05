@@ -163,14 +163,15 @@ def validate(print_freq, val_loader, model, criterion, device):
     print(' * Prec@1 {top1.avg:.3f} Prec@5 {top5.avg:.3f} Time {time:.3f}'.
           format(top1=top1, top5=top5, time=val_end_time - val_start_time))
     return top1.avg,top5.avg
-def train(epoch,train_loader, val_loader,model, criterion, device,save_path):
+def train(epoch,train_loader, val_loader,model, criterion, device,save_path,prefix):
     # batch_time = AverageMeter()
     # losses = AverageMeter()
     # top1 = AverageMeter()
     # top5 = AverageMeter()
     
     # switch to evaluate mode
-
+    if prefix is None:
+        prefix='FloatModel'
     # optimizer = getattr(torch.optim, config['optimizer'])(model.parameters(), **config['optim_hparas'])
     lr = 0.0001
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -198,5 +199,5 @@ def train(epoch,train_loader, val_loader,model, criterion, device,save_path):
 
 
         model.eval()  # change into test model
-        top1,top5=validate(1,val_loader,model,criterion,device)
-        torch.save(model.state_dict(), save_path+"/FloatVit_"+str(top1)+str(top5)+".pth")
+        top1,top5=validate(100,val_loader,model,criterion,device)
+        torch.save(model.state_dict(), save_path+"/"+prefix+str(round(top1, 2))+str(round(top5, 2))+".pth")

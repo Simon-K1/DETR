@@ -74,6 +74,8 @@ def seed(seed=0):
 
 def main():
     Train_En=False
+    Pretrain=True
+    Pretrain_Path=r"E:\Transformer\Transformer_Arithmatic\QuanFqVit\float_pth\littleData80.2896.85.pth"
     args = parser.parse_args()
     seed(args.seed)
 
@@ -98,7 +100,7 @@ def main():
     val_transform = build_transform(mean=mean, std=std, crop_pct=crop_pct)
 
     # Data
-    datapath=r'E:\Transformer\DataSets\imagenet\Mini_Train'
+    datapath=r'E:\Transformer\DataSets\imagenet\Mini_Train2'
     traindir = os.path.join(datapath, 'train')
     calidir = os.path.join(datapath, 'cali')
     valdir = os.path.join(datapath, 'val')
@@ -123,7 +125,11 @@ def main():
     model = model.to(device)
     criterion = nn.CrossEntropyLoss().to(device)
     if Train_En:
-        train(100,train_loader, val_loader,model, criterion, device,'float_pth')
+        if Pretrain:
+            state_dict = torch.load(Pretrain_Path)
+            model.load_state_dict(state_dict)
+        top1,top5=validate(1,val_loader,model,criterion,device)
+        train(20,train_loader,val_loader,model, criterion, device,'float_pth','SoftmaxPow2')
 
 
 
@@ -140,7 +146,7 @@ def main():
 #     return model
 
     if not Train_En:
-        model_file=r"E:\Transformer\Transformer_Arithmatic\QuanFqVit\float_pth\FloatVit_90.6666666666666798.66666666666667.pth"
+        model_file=r"E:\Transformer\Transformer_Arithmatic\QuanFqVit\float_pth\MiniTran2\Minitrain2_91.920.pth"
         state_dict = torch.load(model_file)
         model.load_state_dict(state_dict)
         model.to(device)
