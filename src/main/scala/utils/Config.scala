@@ -83,4 +83,6 @@ case class TopConfig(){
     val DATA_GENERATE_CONV_IN_CHANNEL_WIDTH=10//最大可支持的输入通道是1024,多了就得拆或者加大Bram的存储深度
     val DATA_GENERATE_CONV_OUT_CHANNEL_WIDTH=10//输出通道同样也是1024
     
+
+    //weight cache部分,权重缓存部分
 }

@@ -2,7 +2,7 @@ package xip
 
 import spinal.core._
 import utils.Tcl_Config.Tcl_File_Path
-import org.apache.commons.io.FileUtils
+    import org.apache.commons.io.FileUtils
 object MulConfig {
     val signed = "signed"
     val unsigned = "Unsigned"
@@ -135,10 +135,10 @@ class  MulTest extends Component{
    }
     
 }
-object TestGen extends App { 
-    val verilog_path="./testcode_gen" 
+// object TestGen extends App { 
+//     val verilog_path="./testcode_gen" 
     
-    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Mul(8,8,20,"unsigned","unsigned",ClockDomain,"hahah"))
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new MulTest)
-    //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
-}
+//     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Mul(8,8,20,"unsigned","unsigned",ClockDomain,"hahah"))
+//     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new MulTest)
+//     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
+// }
