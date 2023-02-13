@@ -20,7 +20,7 @@ import spinal.core._
 import org.apache.commons.io.FileUtils
 import utils.Tcl_Config.Tcl_File_Path
 import java.io.File,java.io.PrintWriter
-class xil_SimpleDualBram(inwidth:Int=8,indepth:Int=8,outwidth:Int=8,componentName: String) extends BlackBox{
+class xil_SimpleDualBram(inwidth:Int=8,indepth:Int=8,outwidth:Int=8,componentName: String,genTcl:Boolean) extends BlackBox{
     //Xilinx 简单双口Bram
     val io=new Bundle{//component要求out有驱动，但是black box不要求out的驱动
         val clka=in Bool()
@@ -38,29 +38,33 @@ class xil_SimpleDualBram(inwidth:Int=8,indepth:Int=8,outwidth:Int=8,componentNam
     this.setDefinitionName(componentName)
     mapClockDomain(clockDomain, io.clka)
     mapCurrentClockDomain(io.clkb)
-    FileUtils.forceMkdir(new File(Tcl_File_Path + File.separator + "tcl"))
-    val tclHeader = new PrintWriter(new File(Tcl_File_Path + File.separator + "tcl" + File.separator + s"generate$componentName.tcl"))
-    val tcl_Cmd=s"create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $componentName\n"+
-    s"set_property -dict [list CONFIG.Memory_Type {Simple_Dual_Port_RAM} "+
-    s"CONFIG.Assume_Synchronous_Clk {true} "+
-    s"CONFIG.Write_Width_A {$inwidth} "+
-    s"CONFIG.Write_Depth_A {$indepth} "+
-    s"CONFIG.Read_Width_A {$inwidth} "+
-    s"CONFIG.Operating_Mode_A {NO_CHANGE} "+
-    s"CONFIG.Write_Width_B {$outwidth} "+
-    s"CONFIG.Read_Width_B {$outwidth} "+
-    s"CONFIG.Operating_Mode_B {READ_FIRST} "+
-    s"CONFIG.Enable_B {Always_Enabled} "+
-    s"CONFIG.Register_PortA_Output_of_Memory_Primitives {false} "+
-    s"CONFIG.Register_PortB_Output_of_Memory_Primitives {false} "+
-    s"CONFIG.Port_B_Clock {100} "+
-    s"CONFIG.Port_B_Enable_Rate {100}] "+
-    s"[get_ips $componentName]"
-    tclHeader.write(tcl_Cmd)
-    tclHeader.close()
+
+    if(genTcl){
+        FileUtils.forceMkdir(new File(Tcl_File_Path + File.separator + "tcl"))
+        val tclHeader = new PrintWriter(new File(Tcl_File_Path + File.separator + "tcl" + File.separator + s"generate$componentName.tcl"))
+        val tcl_Cmd=s"create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $componentName\n"+
+        s"set_property -dict [list CONFIG.Memory_Type {Simple_Dual_Port_RAM} "+
+        s"CONFIG.Assume_Synchronous_Clk {true} "+
+        s"CONFIG.Write_Width_A {$inwidth} "+
+        s"CONFIG.Write_Depth_A {$indepth} "+
+        s"CONFIG.Read_Width_A {$inwidth} "+
+        s"CONFIG.Operating_Mode_A {NO_CHANGE} "+
+        s"CONFIG.Write_Width_B {$outwidth} "+
+        s"CONFIG.Read_Width_B {$outwidth} "+
+        s"CONFIG.Operating_Mode_B {READ_FIRST} "+
+        s"CONFIG.Enable_B {Always_Enabled} "+
+        s"CONFIG.Register_PortA_Output_of_Memory_Primitives {false} "+
+        s"CONFIG.Register_PortB_Output_of_Memory_Primitives {false} "+
+        s"CONFIG.Port_B_Clock {100} "+
+        s"CONFIG.Port_B_Enable_Rate {100}] "+
+        s"[get_ips $componentName]"
+        tclHeader.write(tcl_Cmd)
+        tclHeader.close()
+    }
+
 }
 class Fuck extends Component{
-    val DGB=new xil_SimpleDualBram(64,64,64,"fuck")
+    val DGB=new xil_SimpleDualBram(64,64,64,"fuck",true)
     DGB.io.dina:=0
     DGB.io.addra:=0//写地址
     DGB.io.ena:=False

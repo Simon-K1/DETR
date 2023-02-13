@@ -76,7 +76,7 @@ object Mul {
             s"}\n"
         FileUtils.forceMkdir(new File(Tcl_File_Path + File.separator + "tcl"))
         val tclHeader = new PrintWriter(new File(Tcl_File_Path + File.separator + "tcl" + File.separator + s"generate$componentName.tcl"))
-        tclHeader.write(createMulCmd)
+                
         tclHeader.write(s"set_property -dict [list ")
         tclHeader.write(s"CONFIG.PortAWidth {$A_WIDTH} ")
         tclHeader.write(s"CONFIG.PortAType {$A_TYPE} ")

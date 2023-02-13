@@ -70,6 +70,12 @@ case class TopConfig(){
     val PATCH_BRAM_OUT_DEPTH=PICTURE_CHANNEL*PICTURE_SIZE//每个Bram的存储一行的数据，需要考虑输入通道
     val PATCH_BRAM_IN_DEPTH=PATCH_BRAM_OUT_DEPTH/(PATCH_BRAM_IN_WIDTH/PATCH_BRAM_OUT_WIDTH)
 //===================================================================================================
+    //脉动阵列相关配置(暂时写死,之后写成可配置)
+    val SA_ROW=8//阵列行数
+    val SA_COL=8//阵列列数
+
+
+
     //Data_Generate 部分
     val DATA_GENERATE_IN_DATA_NUM=8//一下进8个点
     val DATA_GENERATE_BRAM_IN_WIDTH=64//入128bit
@@ -77,7 +83,7 @@ case class TopConfig(){
     val DATA_GENERATE_BRAM_IN_ADDR_DEPTH=7168//224*32
     val DATA_GENERATE_BRAM_OUT_ADDR_DEPTH=DATA_GENERATE_BRAM_IN_ADDR_DEPTH*(DATA_GENERATE_BRAM_IN_WIDTH/DATA_GENERATE_BRAM_OUT_WIDTH)
     //Conv相关
-    //由于卷积核大小,步长都是可以在计算过程中动态配置,所以这里的配置只需要设置位宽大小即可
+        //由于卷积核大小,步长都是可以在计算过程中动态配置,所以这里的配置只需要设置位宽大小即可
     val DATA_GENERATE_CONV_STRIDE_WIDTH=8//8 bit的stride，可配置，通过axi lite配置
     val DATA_GENERATE_CONV_KERNELSIZE_WIDTH=5//卷积核大小,最大可支持的卷积核大小为32,0代表pw卷积
     val DATA_GENERATE_CONV_IN_CHANNEL_WIDTH=10//最大可支持的输入通道是1024,多了就得拆或者加大Bram的存储深度
@@ -85,4 +91,8 @@ case class TopConfig(){
     
 
     //weight cache部分,权重缓存部分
+    val WEIGHT_CACHE_BRAM_IN_DATA_WIDTH=64//入64 bit
+    val WEIGHT_CACHE_BRAM_OUT_DATA_WIDTH=8//出8 bit,8个Bram拼起来满足脉动阵列所需的64bit输入位宽
+
+
 }
