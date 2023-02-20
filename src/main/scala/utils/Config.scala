@@ -93,6 +93,7 @@ case class TopConfig(){
     //weight cache部分,权重缓存部分
     val WEIGHT_CACHE_BRAM_IN_DATA_WIDTH=64//入64 bit
     val WEIGHT_CACHE_BRAM_OUT_DATA_WIDTH=8//出8 bit,8个Bram拼起来满足脉动阵列所需的64bit输入位宽
-
+    val WEIGHT_CACHE_MATRIX_COL_WIDTH=16//权重缓存模块支持的权重矩阵的最大列数为2^16(一般达不到这么大，以后可以改小一点)
+    val WEIGHT_CACHE_MATRIX_ROW_WIDTH=16//最大行数，也是2^16
 
 }

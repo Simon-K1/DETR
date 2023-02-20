@@ -55,26 +55,36 @@ class Weight_Cache extends Component{
     val io=new Bundle{
         val start=in Bool()
         val sData=slave Stream(UInt(64 bits))
-        val Matrix_Row=in UInt(16 bits)//先初步默认16bit，以后不够再改
-        val Matrix_Col=in UInt(16 bits)//每次计算的权重矩阵的实际列数（对应输出通道数量）
+        val Matrix_Row=in UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits)//先初步默认16bit，以后不够再改
+                                            //Row=InChannels*KernelSize^2
+        val Matrix_Col=in UInt(Config.WEIGHT_CACHE_MATRIX_COL_WIDTH bits)//每次计算的权重矩阵的实际列数（对应输出通道数量）
                                         //比如输出通道是768，但是资源不够，所以只能存192个输出通道，所以这里输入192
-        
+                                        //Col=OutChannels
     }
     noIoPrefix()
     val Fsm=WeightCache_Fsm(io.start)
     val Init_Count=WaCounter(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT,3,5)//数5下进行初始化
     Fsm.Init_End:=Init_Count.valid
 
+    //缓存数据,写地址写数据控制
+    val InData_Switch=Reg(UInt(3 bits))init(0)
+    val In_Col_Cnt=ForLoopCounter(io.sData.fire,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col)
+    val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,io.Matrix_Row)
+    when(In_Col_Cnt.valid){
+        InData_Switch:=InData_Switch+1
+    }
+
+    
 
     //构建8列权重缓存
     val Weight_Cache=Array.tabulate(Config.SA_COL){
         i=>def gen()={
-            val Weight_Bram=new xil_SimpleDualBram(64,6144+5,8,"Weight_Bram",i==0)
+            val Weight_Bram=new xil_SimpleDualBram(64,6144+5,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
             Weight_Bram.io.addra:=0
             Weight_Bram.io.addrb:=0
             // Weight_Bram.io.doutb:=0
             Weight_Bram.io.dina:=0
-            Weight_Bram.io.ena:=False
+            Weight_Bram.io.ena:=InData_Switch(i downto i).asBool
             Weight_Bram.io.wea:=False
         }
         gen()
