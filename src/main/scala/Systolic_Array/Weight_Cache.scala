@@ -67,7 +67,7 @@ class Weight_Cache extends Component{
     Fsm.Init_End:=Init_Count.valid
 
     //缓存数据,写地址写数据控制
-    val InData_Switch=Reg(UInt(3 bits))init(0)
+    val InData_Switch=Reg(UInt(3 bits))init(0)//这地方
     val In_Col_Cnt=ForLoopCounter(io.sData.fire,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col)
     val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,io.Matrix_Row)
     when(In_Col_Cnt.valid){
