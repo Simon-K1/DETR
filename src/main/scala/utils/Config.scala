@@ -80,12 +80,12 @@ case class TopConfig(){
     val DATA_GENERATE_IN_DATA_NUM=8//一下进8个点
     val DATA_GENERATE_BRAM_IN_WIDTH=64//入128bit
     val DATA_GENERATE_BRAM_OUT_WIDTH=64//出64bit
-    val DATA_GENERATE_BRAM_IN_ADDR_DEPTH=7168//224*32
+    val DATA_GENERATE_BRAM_IN_ADDR_DEPTH=7168//224*32，Bram用于缓存输入图片数据，这个Bram的深度必须确保能存够KernelSize*KernelSize*InChannel*2的数据
     val DATA_GENERATE_BRAM_OUT_ADDR_DEPTH=DATA_GENERATE_BRAM_IN_ADDR_DEPTH*(DATA_GENERATE_BRAM_IN_WIDTH/DATA_GENERATE_BRAM_OUT_WIDTH)
     //Conv相关
         //由于卷积核大小,步长都是可以在计算过程中动态配置,所以这里的配置只需要设置位宽大小即可
     val DATA_GENERATE_CONV_STRIDE_WIDTH=8//8 bit的stride，可配置，通过axi lite配置
-    val DATA_GENERATE_CONV_KERNELSIZE_WIDTH=5//卷积核大小,最大可支持的卷积核大小为32,0代表pw卷积
+    val DATA_GENERATE_CONV_KERNELSIZE_WIDTH=5//卷积核大小,最大可支持的卷积核大小为31，不能是0
     val DATA_GENERATE_CONV_IN_CHANNEL_WIDTH=10//最大可支持的输入通道是1024,多了就得拆或者加大Bram的存储深度
     val DATA_GENERATE_CONV_OUT_CHANNEL_WIDTH=10//输出通道同样也是1024
     

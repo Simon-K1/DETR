@@ -100,7 +100,7 @@ class Img2Col_Top extends Component{
         val Kernel_Size                     =in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
         val Window_Size                     =in UInt(16 bits)
         val InFeature_Size                  =in UInt(16 bits)//图片多大就输入多大的数据
-        val InFeature_Channel               =in UInt(16 bits)
+        val InFeature_Channel               =in UInt(16 bits)//输入通道的信息已经包含在WindowSize中，可能以后用不到了
         val OutFeature_Channel              =in UInt(16 bits)
         val OutFeature_Size                 =in UInt(16 bits)//输出特征图的大小                                            
         val OutCol_Count_Times              =in UInt(16 bits)
@@ -304,7 +304,7 @@ class  Img2Col_OutPut extends Component{
         val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
         val Kernel_Size                     =in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
         val Window_Size                     =in UInt(16 bits)
-        val InFeature_Size                  =in UInt(16 bits)//图片多大就输入多大的数据
+        val InFeature_Size                  =in UInt(16 bits)//图片多大就输入多大的数据，目前暂时只能算正方形的图片，因为以前偷懒了，这个InFeature_Size直接代表的是图片的行列
         val InFeature_Channel               =in UInt(16 bits)
         val OutFeature_Channel              =in UInt(16 bits)
         val OutFeature_Size                 =in UInt(16 bits)//输出特征图的大小                                            
@@ -375,7 +375,7 @@ class  Img2Col_OutPut extends Component{
         //当输出完一个滑动窗口的所有点后,卷积核开始移动
         //Kernel_Addr对应的是卷积滑动窗口top-left点的相对地址(注意是相对地址,后面读写时相对地址加上地址偏移就是绝对地址)
     val Kernel_Base_Addr=Reg(UInt(32 bits))init(0)
-    when(Out_Col_Cnt.valid){//每输出一行特征图，卷积核地址复位
+    when(Out_Col_Cnt.valid){//每得到输出特征图的一行，卷积核地址复位
         Kernel_Base_Addr:=0
     }elsewhen(Out_Channel_Cnt.valid){//每输出8个点对应的全部通道，也就是Out_Feature的一行的8个点，卷积核基地址后移8个滑动窗口位置
         Kernel_Base_Addr:=Kernel_Base_Addr+(io.Window_Size<<3).resized//一个Window_Size对应一个滑动窗口的全部数据的地址长度,并行度是8,
@@ -487,8 +487,12 @@ class DataGenerate_Top extends Component{
     // io.Test_Signal                      <>SubModule.io.Test_Signal
     // io.Test_Generate_Period             <>SubModule.io.Test_Generate_Period
 
-    SubModule.io.Stride                          :=16                       
-    SubModule.io.Kernel_Size                     :=16       
+    val Stride=16
+    val Kernel_Size=16
+    val InFeature_Size=224//图片大小为224*224
+
+    SubModule.io.Stride                          :=Stride                       
+    SubModule.io.Kernel_Size                     :=Kernel_Size       
     SubModule.io.Window_Size                     :=16       
     SubModule.io.InFeature_Size                  :=224          
     SubModule.io.InFeature_Channel               :=3               
