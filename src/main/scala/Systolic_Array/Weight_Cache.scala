@@ -67,11 +67,11 @@ class Weight_Cache extends Component{
     Fsm.Init_End:=Init_Count.valid
 
     //缓存数据,写地址写数据控制
-    val InData_Switch=Reg(UInt(3 bits))init(0)//这地方
+    val InData_Switch=Reg(UInt(8 bits))init(0)//这地方
     val In_Col_Cnt=ForLoopCounter(io.sData.fire,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col)
     val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,io.Matrix_Row)
     when(In_Col_Cnt.valid){
-        InData_Switch:=InData_Switch+1
+        InData_Switch:=InData_Switch.rotateLeft(1)//循环左移1位
     }
 
     
@@ -79,6 +79,7 @@ class Weight_Cache extends Component{
     //构建8列权重缓存
     val Weight_Cache=Array.tabulate(Config.SA_COL){
         i=>def gen()={
+            //4096*64bit是一个Bram资源，32K
             val Weight_Bram=new xil_SimpleDualBram(64,6144+5,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
             Weight_Bram.io.addra:=0
             Weight_Bram.io.addrb:=0
@@ -93,7 +94,7 @@ class Weight_Cache extends Component{
 }
 
 object Weight_Gen extends App { 
-    val verilog_path="./testcode_gen/WeightCache" 
+    val verilog_path="./Simulation/SimWeightCache" 
     
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Weight_Cache)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)

@@ -3,7 +3,7 @@ package xip
 import spinal.core._
 import org.apache.commons.io.FileUtils
 import utils.Tcl_Config.Tcl_File_Path
-import java.io.File,java.io.PrintWriter
+import java.io.File,java.io.PrintWriter//输出函数
 class xil_SimpleDualBram(inwidth:Int=8,indepth:Int=8,outwidth:Int=8,componentName: String,genTcl:Boolean) extends BlackBox{
     //Xilinx 简单双口Bram
     val io=new Bundle{//component要求out有驱动，但是black box不要求out的驱动

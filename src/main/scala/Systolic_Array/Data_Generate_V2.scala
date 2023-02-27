@@ -5,8 +5,7 @@ import utils._
 import spinal.lib.Delay
 import spinal.lib.StreamFifo
 import spinal.core.internals.Operator
-import _root_.com.sourcegraph.semanticdb_javac.Semanticdb.Tree
-import java.awt.Window
+
 
 object IMG2COL_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, INIT_ADDR,DATA_CACHE,WAIT_COMPUTE,UPDATE_ADDR,START_COMPUTE= newElement
