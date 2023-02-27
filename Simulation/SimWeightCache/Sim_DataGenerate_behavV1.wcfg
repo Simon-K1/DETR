@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="Sim_DataGenerate_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="Sim_DataGenerate" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="21256012600000fs"></ZoomStartTime>
+      <ZoomEndTime time="21256123400001fs"></ZoomEndTime>
+      <Cursor1Time time="21256065000000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="238"></NameColumnWidth>
+      <ValueColumnWidth column_width="185"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="9" />
+   <wvobject fp_name="group24" type="group">
+      <obj_property name="label">SimTop</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/Sim_DataGenerate/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/rst" type="logic">
+         <obj_property name="ElementShortName">rst</obj_property>
+         <obj_property name="ObjectShortName">rst</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/mReady" type="logic">
+         <obj_property name="ElementShortName">mReady</obj_property>
+         <obj_property name="ObjectShortName">mReady</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/mValid" type="logic">
+         <obj_property name="ElementShortName">mValid</obj_property>
+         <obj_property name="ObjectShortName">mValid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/sReady" type="logic">
+         <obj_property name="ElementShortName">sReady</obj_property>
+         <obj_property name="ObjectShortName">sReady</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/sValid" type="logic">
+         <obj_property name="ElementShortName">sValid</obj_property>
+         <obj_property name="ObjectShortName">sValid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/sLast" type="logic">
+         <obj_property name="ElementShortName">sLast</obj_property>
+         <obj_property name="ObjectShortName">sLast</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Start_Again_En" type="logic">
+         <obj_property name="ElementShortName">Start_Again_En</obj_property>
+         <obj_property name="ObjectShortName">Start_Again_En</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/start" type="logic">
+         <obj_property name="ElementShortName">start</obj_property>
+         <obj_property name="ObjectShortName">start</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/sData" type="array">
+         <obj_property name="ElementShortName">sData[63:0]</obj_property>
+         <obj_property name="ObjectShortName">sData[63:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Total_Cnt" type="array">
+         <obj_property name="ElementShortName">Total_Cnt[31:0]</obj_property>
+         <obj_property name="ObjectShortName">Total_Cnt[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Out_Total_Cnt" type="array">
+         <obj_property name="ElementShortName">Out_Total_Cnt[63:0]</obj_property>
+         <obj_property name="ObjectShortName">Out_Total_Cnt[63:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Input_Total_Cnt" type="array">
+         <obj_property name="ElementShortName">Input_Total_Cnt[63:0]</obj_property>
+         <obj_property name="ObjectShortName">Input_Total_Cnt[63:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/mem_addr" type="array">
+         <obj_property name="ElementShortName">mem_addr[31:0]</obj_property>
+         <obj_property name="ObjectShortName">mem_addr[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Scale_Bias_Mem" type="array">
+         <obj_property name="ElementShortName">Scale_Bias_Mem[0:383][15:0]</obj_property>
+         <obj_property name="ObjectShortName">Scale_Bias_Mem[0:383][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Write_Txt_En" type="logic">
+         <obj_property name="ElementShortName">Write_Txt_En</obj_property>
+         <obj_property name="ObjectShortName">Write_Txt_En</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Scale_In" type="array">
+         <obj_property name="ElementShortName">Scale_In[7:0]</obj_property>
+         <obj_property name="ObjectShortName">Scale_In[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Bias_In" type="array">
+         <obj_property name="ElementShortName">Bias_In[7:0]</obj_property>
+         <obj_property name="ObjectShortName">Bias_In[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Scale_Read_Addr" type="array">
+         <obj_property name="ElementShortName">Scale_Read_Addr[8:0]</obj_property>
+         <obj_property name="ObjectShortName">Scale_Read_Addr[8:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Bias_Read_Addr" type="array">
+         <obj_property name="ElementShortName">Bias_Read_Addr[8:0]</obj_property>
+         <obj_property name="ObjectShortName">Bias_Read_Addr[8:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Mem_Depth" type="array">
+         <obj_property name="ElementShortName">Mem_Depth[31:0]</obj_property>
+         <obj_property name="ObjectShortName">Mem_Depth[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Mem_Width" type="array">
+         <obj_property name="ElementShortName">Mem_Width[31:0]</obj_property>
+         <obj_property name="ObjectShortName">Mem_Width[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Total_Input_Times" type="array">
+         <obj_property name="ElementShortName">Total_Input_Times[31:0]</obj_property>
+         <obj_property name="ObjectShortName">Total_Input_Times[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider25">
+   </wvobject>
+   <wvobject fp_name="group26" type="group">
+      <obj_property name="label">Weight_Cache_Top</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/start" type="logic">
+         <obj_property name="ElementShortName">start</obj_property>
+         <obj_property name="ObjectShortName">start</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Fsm_currentState" type="array">
+         <obj_property name="ElementShortName">Fsm_currentState[3:0]</obj_property>
+         <obj_property name="ObjectShortName">Fsm_currentState[3:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/sData_valid" type="logic">
+         <obj_property name="ElementShortName">sData_valid</obj_property>
+         <obj_property name="ObjectShortName">sData_valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/sData_ready" type="logic">
+         <obj_property name="ElementShortName">sData_ready</obj_property>
+         <obj_property name="ObjectShortName">sData_ready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/sData_payload" type="array">
+         <obj_property name="ElementShortName">sData_payload[63:0]</obj_property>
+         <obj_property name="ObjectShortName">sData_payload[63:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Matrix_Row" type="array">
+         <obj_property name="ElementShortName">Matrix_Row[15:0]</obj_property>
+         <obj_property name="ObjectShortName">Matrix_Row[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Matrix_Col" type="array">
+         <obj_property name="ElementShortName">Matrix_Col[15:0]</obj_property>
+         <obj_property name="ObjectShortName">Matrix_Col[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/reset" type="logic">
+         <obj_property name="ElementShortName">reset</obj_property>
+         <obj_property name="ObjectShortName">reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_ena" type="logic">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_ena</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1_ena" type="logic">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_1_ena</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_1_ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_2_ena" type="logic">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_2_ena</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_2_ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3_ena" type="logic">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_3_ena</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_3_ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_4_ena" type="logic">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_4_ena</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_4_ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_5_ena" type="logic">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_5_ena</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_5_ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_6_ena" type="logic">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_6_ena</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_6_ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_7_ena" type="logic">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_7_ena</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_7_ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_doutb" type="array">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_doutb[7:0]</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_doutb[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1_doutb" type="array">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_1_doutb[7:0]</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_1_doutb[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_2_doutb" type="array">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_2_doutb[7:0]</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_2_doutb[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3_doutb" type="array">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_3_doutb[7:0]</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_3_doutb[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_4_doutb" type="array">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_4_doutb[7:0]</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_4_doutb[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_5_doutb" type="array">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_5_doutb[7:0]</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_5_doutb[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_6_doutb" type="array">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_6_doutb[7:0]</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_6_doutb[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_7_doutb" type="array">
+         <obj_property name="ElementShortName">xil_SimpleDualBram_7_doutb[7:0]</obj_property>
+         <obj_property name="ObjectShortName">xil_SimpleDualBram_7_doutb[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/_zz_ena" type="array">
+         <obj_property name="ElementShortName">_zz_ena[0:0]</obj_property>
+         <obj_property name="ObjectShortName">_zz_ena[0:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/_zz_ena_1" type="array">
+         <obj_property name="ElementShortName">_zz_ena_1[0:0]</obj_property>
+         <obj_property name="ObjectShortName">_zz_ena_1[0:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/_zz_ena_2" type="array">
+         <obj_property name="ElementShortName">_zz_ena_2[0:0]</obj_property>
+         <obj_property name="ObjectShortName">_zz_ena_2[0:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/_zz_ena_3" type="array">
+         <obj_property name="ElementShortName">_zz_ena_3[0:0]</obj_property>
+         <obj_property name="ObjectShortName">_zz_ena_3[0:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/_zz_ena_4" type="array">
+         <obj_property name="ElementShortName">_zz_ena_4[0:0]</obj_property>
+         <obj_property name="ObjectShortName">_zz_ena_4[0:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/_zz_ena_5" type="array">
+         <obj_property name="ElementShortName">_zz_ena_5[0:0]</obj_property>
+         <obj_property name="ObjectShortName">_zz_ena_5[0:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/_zz_ena_6" type="array">
+         <obj_property name="ElementShortName">_zz_ena_6[0:0]</obj_property>
+         <obj_property name="ObjectShortName">_zz_ena_6[0:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/_zz_ena_7" type="array">
+         <obj_property name="ElementShortName">_zz_ena_7[0:0]</obj_property>
+         <obj_property name="ObjectShortName">_zz_ena_7[0:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Fsm_currentState" type="array">
+         <obj_property name="ElementShortName">Fsm_currentState[3:0]</obj_property>
+         <obj_property name="ObjectShortName">Fsm_currentState[3:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Fsm_nextState" type="array">
+         <obj_property name="ElementShortName">Fsm_nextState[3:0]</obj_property>
+         <obj_property name="ObjectShortName">Fsm_nextState[3:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Fsm_Init_End" type="logic">
+         <obj_property name="ElementShortName">Fsm_Init_End</obj_property>
+         <obj_property name="ObjectShortName">Fsm_Init_End</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/when_WaCounter_l18" type="logic">
+         <obj_property name="ElementShortName">when_WaCounter_l18</obj_property>
+         <obj_property name="ObjectShortName">when_WaCounter_l18</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Init_Count_count" type="array">
+         <obj_property name="ElementShortName">Init_Count_count[2:0]</obj_property>
+         <obj_property name="ObjectShortName">Init_Count_count[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Init_Count_valid" type="logic">
+         <obj_property name="ElementShortName">Init_Count_valid</obj_property>
+         <obj_property name="ObjectShortName">Init_Count_valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/when_WaCounter_l13" type="logic">
+         <obj_property name="ElementShortName">when_WaCounter_l13</obj_property>
+         <obj_property name="ObjectShortName">when_WaCounter_l13</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/InData_Switch" type="array">
+         <obj_property name="ElementShortName">InData_Switch[7:0]</obj_property>
+         <obj_property name="ObjectShortName">InData_Switch[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/sData_fire" type="logic">
+         <obj_property name="ElementShortName">sData_fire</obj_property>
+         <obj_property name="ObjectShortName">sData_fire</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/In_Col_Cnt_count" type="array">
+         <obj_property name="ElementShortName">In_Col_Cnt_count[15:0]</obj_property>
+         <obj_property name="ObjectShortName">In_Col_Cnt_count[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/In_Col_Cnt_valid" type="logic">
+         <obj_property name="ElementShortName">In_Col_Cnt_valid</obj_property>
+         <obj_property name="ObjectShortName">In_Col_Cnt_valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/In_Row_Cnt_count" type="array">
+         <obj_property name="ElementShortName">In_Row_Cnt_count[15:0]</obj_property>
+         <obj_property name="ObjectShortName">In_Row_Cnt_count[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/In_Row_Cnt_valid" type="logic">
+         <obj_property name="ElementShortName">In_Row_Cnt_valid</obj_property>
+         <obj_property name="ObjectShortName">In_Row_Cnt_valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Fsm_currentState_string" type="array">
+         <obj_property name="ElementShortName">Fsm_currentState_string[95:0]</obj_property>
+         <obj_property name="ObjectShortName">Fsm_currentState_string[95:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Fsm_nextState_string" type="array">
+         <obj_property name="ElementShortName">Fsm_nextState_string[95:0]</obj_property>
+         <obj_property name="ObjectShortName">Fsm_nextState_string[95:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/WEIGHT_CACHE_STATUS_IDLE" type="array">
+         <obj_property name="ElementShortName">WEIGHT_CACHE_STATUS_IDLE[3:0]</obj_property>
+         <obj_property name="ObjectShortName">WEIGHT_CACHE_STATUS_IDLE[3:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/WEIGHT_CACHE_STATUS_INIT" type="array">
+         <obj_property name="ElementShortName">WEIGHT_CACHE_STATUS_INIT[3:0]</obj_property>
+         <obj_property name="ObjectShortName">WEIGHT_CACHE_STATUS_INIT[3:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider79">
+   </wvobject>
+   <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Fsm_currentState" type="array">
+      <obj_property name="ElementShortName">Fsm_currentState[3:0]</obj_property>
+      <obj_property name="ObjectShortName">Fsm_currentState[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/In_Col_Cnt_count" type="array">
+      <obj_property name="ElementShortName">In_Col_Cnt_count[15:0]</obj_property>
+      <obj_property name="ObjectShortName">In_Col_Cnt_count[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/In_Col_Cnt_valid" type="logic">
+      <obj_property name="ElementShortName">In_Col_Cnt_valid</obj_property>
+      <obj_property name="ObjectShortName">In_Col_Cnt_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/In_Row_Cnt_count" type="array">
+      <obj_property name="ElementShortName">In_Row_Cnt_count[15:0]</obj_property>
+      <obj_property name="ObjectShortName">In_Row_Cnt_count[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/In_Row_Cnt_valid" type="logic">
+      <obj_property name="ElementShortName">In_Row_Cnt_valid</obj_property>
+      <obj_property name="ObjectShortName">In_Row_Cnt_valid</obj_property>
+   </wvobject>
+</wave_config>
