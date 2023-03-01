@@ -8,7 +8,7 @@ class xil_SimpleDualBram(inwidth:Int=8,indepth:Int=8,outwidth:Int=8,componentNam
     //Xilinx 简单双口Bram
     val io=new Bundle{//component要求out有驱动，但是black box不要求out的驱动
         val clka=in Bool()
-        val addra=in UInt(log2Up(inwidth) bits)
+        val addra=in UInt(log2Up(indepth) bits)
         val dina=in UInt(inwidth bits)
         val ena=in Bool()
         val wea=in Bool()

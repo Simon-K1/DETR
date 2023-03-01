@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="21256012600000fs"></ZoomStartTime>
-      <ZoomEndTime time="21256123400001fs"></ZoomEndTime>
-      <Cursor1Time time="21256065000000fs"></Cursor1Time>
+      <ZoomStartTime time="527712600000fs"></ZoomStartTime>
+      <ZoomEndTime time="527993600001fs"></ZoomEndTime>
+      <Cursor1Time time="527765100000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="238"></NameColumnWidth>
-      <ValueColumnWidth column_width="185"></ValueColumnWidth>
+      <ValueColumnWidth column_width="177"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="9" />
+   <WVObjectSize size="15" />
    <wvobject fp_name="group24" type="group">
       <obj_property name="label">SimTop</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -345,5 +345,376 @@
    <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/In_Row_Cnt_valid" type="logic">
       <obj_property name="ElementShortName">In_Row_Cnt_valid</obj_property>
       <obj_property name="ObjectShortName">In_Row_Cnt_valid</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider83">
+      <obj_property name="label">OutData</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="group122" type="group">
+      <obj_property name="label">Raddr</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/In_Row_Cnt_count" type="array">
+         <obj_property name="ElementShortName">In_Row_Cnt_count[15:0]</obj_property>
+         <obj_property name="ObjectShortName">In_Row_Cnt_count[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_2/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_2/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_2/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_4/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_4/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_4/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_5/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_5/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_5/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_6/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_6/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_6/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_7/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_7/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_7/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_0" type="array">
+         <obj_property name="ElementShortName">mData_0[7:0]</obj_property>
+         <obj_property name="ObjectShortName">mData_0[7:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_1" type="array">
+         <obj_property name="ElementShortName">mData_1[7:0]</obj_property>
+         <obj_property name="ObjectShortName">mData_1[7:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_2" type="array">
+         <obj_property name="ElementShortName">mData_2[7:0]</obj_property>
+         <obj_property name="ObjectShortName">mData_2[7:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_3" type="array">
+         <obj_property name="ElementShortName">mData_3[7:0]</obj_property>
+         <obj_property name="ObjectShortName">mData_3[7:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_4" type="array">
+         <obj_property name="ElementShortName">mData_4[7:0]</obj_property>
+         <obj_property name="ObjectShortName">mData_4[7:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_5" type="array">
+         <obj_property name="ElementShortName">mData_5[7:0]</obj_property>
+         <obj_property name="ObjectShortName">mData_5[7:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_6" type="array">
+         <obj_property name="ElementShortName">mData_6[7:0]</obj_property>
+         <obj_property name="ObjectShortName">mData_6[7:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_7" type="array">
+         <obj_property name="ElementShortName">mData_7[7:0]</obj_property>
+         <obj_property name="ObjectShortName">mData_7[7:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Raddr_Valid" type="logic">
+         <obj_property name="ElementShortName">Raddr_Valid</obj_property>
+         <obj_property name="ObjectShortName">Raddr_Valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Raddr_count" type="array">
+         <obj_property name="ElementShortName">Raddr_count[15:0]</obj_property>
+         <obj_property name="ObjectShortName">Raddr_count[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/addrb" type="array">
+         <obj_property name="ElementShortName">addrb[15:0]</obj_property>
+         <obj_property name="ObjectShortName">addrb[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Read_Row_Base_Addr" type="array">
+         <obj_property name="ElementShortName">Read_Row_Base_Addr[15:0]</obj_property>
+         <obj_property name="ObjectShortName">Read_Row_Base_Addr[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Fsm_currentState" type="array">
+         <obj_property name="ElementShortName">Fsm_currentState[3:0]</obj_property>
+         <obj_property name="ObjectShortName">Fsm_currentState[3:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider123">
+      <obj_property name="label">InData</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="group176" type="group">
+      <obj_property name="label">WriteData</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Write_Row_Base_Addr" type="array">
+         <obj_property name="ElementShortName">Write_Row_Base_Addr[15:0]</obj_property>
+         <obj_property name="ObjectShortName">Write_Row_Base_Addr[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/In_Row_Cnt_count" type="array">
+         <obj_property name="ElementShortName">In_Row_Cnt_count[15:0]</obj_property>
+         <obj_property name="ObjectShortName">In_Row_Cnt_count[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Fsm_currentState" type="array">
+         <obj_property name="ElementShortName">Fsm_currentState[3:0]</obj_property>
+         <obj_property name="ObjectShortName">Fsm_currentState[3:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_2/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_2/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_2/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_4/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_4/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_4/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_5/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+         <obj_property name="CustomSignalColor">#00FF00</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_5/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="CustomSignalColor">#00FF00</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_5/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+         <obj_property name="CustomSignalColor">#00FF00</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_6/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_6/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_6/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_7/ena" type="logic">
+         <obj_property name="ElementShortName">ena</obj_property>
+         <obj_property name="ObjectShortName">ena</obj_property>
+         <obj_property name="CustomSignalColor">#00FF00</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_7/addra" type="array">
+         <obj_property name="ElementShortName">addra[12:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="CustomSignalColor">#00FF00</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_7/dina" type="array">
+         <obj_property name="ElementShortName">dina[63:0]</obj_property>
+         <obj_property name="ObjectShortName">dina[63:0]</obj_property>
+         <obj_property name="CustomSignalColor">#00FF00</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/OutRow_Cnt_count" type="array">
+      <obj_property name="ElementShortName">OutRow_Cnt_count[25:0]</obj_property>
+      <obj_property name="ObjectShortName">OutRow_Cnt_count[25:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/OutRow_Cnt_valid" type="logic">
+      <obj_property name="ElementShortName">OutRow_Cnt_valid</obj_property>
+      <obj_property name="ObjectShortName">OutRow_Cnt_valid</obj_property>
    </wvobject>
 </wave_config>

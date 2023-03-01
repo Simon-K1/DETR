@@ -393,7 +393,7 @@ class  Img2Col_OutPut extends Component{
     }
 
     io.Raddr:=(Kernel_Addr+Row_Base_Addr+Window_Col_Cnt.count).resized
-    Fsm.SA_Computed:=Out_Col_Cnt.valid
+    Fsm.SA_Computed:=Out_Col_Cnt.valid//得到输出特征图完整的一行后要等一下。
     io.SA_Idle:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.IDLE
 
     //循环写回地址===========================================
