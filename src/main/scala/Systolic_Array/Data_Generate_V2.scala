@@ -103,7 +103,10 @@ class Img2Col_Top extends Component{
         val OutFeature_Channel              =in UInt(16 bits)
         val OutFeature_Size                 =in UInt(16 bits)//输出特征图的大小                                            
         val OutCol_Count_Times              =in UInt(16 bits)
-        val InCol_Count_Times               =in UInt(16 bits)
+        val InCol_Count_Times               =in UInt(16 bits)//这玩意又是啥？
+        //比如224的图片，输入通道是8，那么InCOl_Count_TImes就是224，数224下就能把输入图片完整的一行存下来
+        //如果图片的输入通道变成了16，那么我们肯定得数224*2下才能把图片的完整的一行存下来，因为输入位宽是64bit，一下进8个点
+
         val OutRow_Count_Times               =in UInt(16 bits)
         
         val OutFeature_Channel_Count_Times  =in UInt(16 bits)
@@ -161,7 +164,7 @@ class Img2Col_Top extends Component{
     
     //缓存数据================================================================================
     val In_Col_Cnt=ForLoopCounter(io.sData.fire,16,io.InCol_Count_Times-1)
-    val Row_Cache_Cnt=ForLoopCounter(In_Col_Cnt.valid,5,io.Stride-1)
+    val Row_Cache_Cnt=ForLoopCounter(In_Col_Cnt.valid,5,io.Kernel_Size-1)
     val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,16,io.InFeature_Size-1)
     when(In_Col_Cnt.valid){
         AddrFifo.io.pop.ready:=True//每缓存满一行,Fifo就pop一下
@@ -169,7 +172,7 @@ class Img2Col_Top extends Component{
     when(In_Col_Cnt.valid){//这里RegNext是因为WaddrOffset从AddrFifo中读取数据需要一个周期
         AddrFifo.io.push.valid:=True//pop出来的数据也要push回去
     }
-    Fsm.Data_Cached:=Row_Cache_Cnt.valid//每次只需要缓存Stride行数据即可
+    Fsm.Data_Cached:=Row_Cache_Cnt.valid//每次只需要缓存Kernel_Size行数据即可
     val CacheEnd_Flag=Reg(Bool())init(False)
     when(In_Row_Cnt.valid){
         CacheEnd_Flag:=True
@@ -389,7 +392,8 @@ class  Img2Col_OutPut extends Component{
     }elsewhen(SA_Row_Cnt.valid){//输完8个卷积核中的第一个点,然后再重新回来输第二个点,输完8个滑窗
         Kernel_Addr:=Kernel_Base_Addr
     }elsewhen(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
-        Kernel_Addr:=Kernel_Addr+io.Stride//每向SA输入一行数据,Kernel_Addr就加一个步长
+        Kernel_Addr:=Kernel_Addr+io.Window_Size//每向SA输入一行数据,Kernel_Addr就加一个步长
+        //Bug修复：注意需要考虑输入通道：步长跨越了输入通道，比如步长为2，输入通道为32，那么下一个地址应该是2*32
     }
 
     io.Raddr:=(Kernel_Addr+Row_Base_Addr+Window_Col_Cnt.count).resized
@@ -513,8 +517,8 @@ class DataGenerate_Top extends Component{
             
 }
 object Img2ColGen extends App { 
-    val verilog_path="./testcode_gen/Systolic_Array" 
+    val verilog_path="./Simulation/SimImg2Col" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Img2Col_Top)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
+    //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }
