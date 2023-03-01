@@ -303,7 +303,7 @@ class  Img2Col_OutPut extends Component{
         val Raddr_Valid=out Bool()
 
         val SA_End=out Bool()//一轮计算结束信号
-        val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
+        val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长,用于从上
         val Kernel_Size                     =in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
         val Window_Size                     =in UInt(16 bits)
         val InFeature_Size                  =in UInt(16 bits)//图片多大就输入多大的数据，目前暂时只能算正方形的图片，因为以前偷懒了，这个InFeature_Size直接代表的是图片的行列
