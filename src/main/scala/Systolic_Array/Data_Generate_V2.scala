@@ -165,14 +165,20 @@ class Img2Col_Top extends Component{
     
     
     //缓存数据================================================================================
+    val Cache_Row_Num=UInt(5 bits)
     val In_Col_Cnt=ForLoopCounter(io.sData.fire,16,io.InCol_Count_Times-1)
-    val Row_Cache_Cnt=ForLoopCounter(In_Col_Cnt.valid,5,io.Kernel_Size-1)
+    val Row_Cache_Cnt=ForLoopCounter(In_Col_Cnt.valid,5,Cache_Row_Num-1)//在计算过程中只需要缓存Stride行数据即可
     val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,16,io.InFeature_Size-1)
     when(In_Col_Cnt.valid){
         AddrFifo.io.pop.ready:=True//每缓存满一行,Fifo就pop一下
     }
     when(In_Col_Cnt.valid){//这里RegNext是因为WaddrOffset从AddrFifo中读取数据需要一个周期
         AddrFifo.io.push.valid:=True//pop出来的数据也要push回去
+    }
+    when(In_Row_Cnt.count>io.Kernel_Size-1){
+        Cache_Row_Num:=io.Stride
+    }otherwise{
+        Cache_Row_Num:=io.Kernel_Size
     }
     Fsm.Data_Cached:=Row_Cache_Cnt.valid//每次只需要缓存Kernel_Size行数据即可
     val CacheEnd_Flag=Reg(Bool())init(False)
@@ -188,9 +194,9 @@ class Img2Col_Top extends Component{
     //启动计算==================================================================================
     // Fsm.SA_Ready:=True//脉动阵列已经准备好开始新的一轮计算了
     //更新读地址fifo============================================================================
-        //此状态应该维持io.Stride个周期，向下层模块传递Stride个基地址
+        //此状态应该维持io.KernelSIze个周期，向下层模块传递Kernel_Size个基地址
     val Img2ColOutput_Module_Ready_Receive_Addr=Bool()
-    val Raddr_UpData_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR&&Img2ColOutput_Module_Ready_Receive_Addr),5,io.Stride-1)//这里实现从上往下的卷积
+    val Raddr_UpData_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR&&Img2ColOutput_Module_Ready_Receive_Addr),5,io.Kernel_Size-1)//这里实现从上往下的卷积
     
 
     when(Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR){
@@ -342,7 +348,7 @@ class  Img2Col_OutPut extends Component{
         Row_Base_Addr:=RaddrFifo1.io.pop.payload
     }
     
-    val Raddr_Init_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR&&RaddrFifo1.io.push.fire),5,io.Stride-1)//需要Stride个周期更新这一轮计算的循环地址
+    val Raddr_Init_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR&&RaddrFifo1.io.push.fire),5,io.Kernel_Size-1)//需要Stride个周期更新这一轮计算的循环地址
     Fsm.Addr_Inited:=Raddr_Init_Cnt.valid
 
 
@@ -357,7 +363,7 @@ class  Img2Col_OutPut extends Component{
     val SA_Row_Cnt=ForLoopCounter(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE,3,8-1)//这个计数器对应的是脉动阵列的每一行
         //这里的意思是：脉动阵列一共有8行，每一行处理一个滑动窗口，那么8行就处理8个滑动窗口，对应特征图的一行8个输出点
         //以后这个地方需要修改为可配置的
-    val In_Channel_Process_Cnt=ForLoopCounter(SA_Row_Cnt.valid,16-3,io.InFeature_Channel>>3-1)//必须确保输入通道是8的倍数
+    val In_Channel_Process_Cnt=ForLoopCounter(SA_Row_Cnt.valid,16-3,(io.InFeature_Channel>>3)-1)//必须确保输入通道是8的倍数
         //输入通道处理次数：目前处理的输入通道次数，比如输入通道是32，一次处理8个通道，需要4次才能处理完一个点的全部的输入通道
     val Window_Col_Cnt=ForLoopCounter(In_Channel_Process_Cnt.valid,16,io.Kernel_Size-1)
     //滑动窗口列计数器
@@ -383,6 +389,7 @@ class  Img2Col_OutPut extends Component{
         SA_Row_Cnt.valid:=True
         SA_Row_Cnt.count:=0
     }
+    val WindowSize_Cnt=ForLoopCounter(SA_Row_Cnt.valid,13,io.Window_Size-1)
     val Kernel_Addr=Reg(UInt(32 bits))init(0)//WaCounter(Window_Row.valid,32,Config.PICTURE_SIZE-io.Kernel_Size-1,Stride=io.Stride)//默认卷积核的最右边一列最后可以到达输入特征图的最右边
         //当输出完一个滑动窗口的所有点后,卷积核开始移动
         //Kernel_Addr对应的是卷积滑动窗口top-left点的相对地址(注意是相对地址,后面读写时相对地址加上地址偏移就是绝对地址)
@@ -399,14 +406,16 @@ class  Img2Col_OutPut extends Component{
         Kernel_Addr:=Kernel_Base_Addr+(io.Sliding_Size<<3).resized//一轮输出通道处理完,8个滑动窗口右移更新成下一8滑动窗口的相对起始地址,
     }elsewhen(Window_Row_Cnt.valid){
         Kernel_Addr:=Kernel_Base_Addr
+    }elsewhen(WindowSize_Cnt.valid){
+        Kernel_Addr:=Kernel_Base_Addr//处理完Window_Size个数据也就是InChannel*KernelSize/8个数据后需要归位
     }elsewhen(SA_Row_Cnt.valid){//输完8个卷积核中的第一个点,然后再重新回来输第二个点,输完8个滑窗
-        Kernel_Addr:=Kernel_Base_Addr
+        Kernel_Addr:=Kernel_Base_Addr+WindowSize_Cnt.count+1//因为In_Channel_Process_Cnt计数器慢一拍
     }elsewhen(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
         Kernel_Addr:=Kernel_Addr+io.Sliding_Size//每向SA输入一行数据,Kernel_Addr就加一个步长
         //Bug修复：注意需要考虑输入通道：步长跨越了输入通道，比如步长为2，输入通道为32，那么下一个地址应该是2*32
     }
 
-    io.Raddr:=(Kernel_Addr+Row_Base_Addr+Window_Col_Cnt.count).resized
+    io.Raddr:=(Kernel_Addr+Row_Base_Addr).resized
     Fsm.SA_Computed:=Out_Col_Cnt.valid//得到输出特征图完整的一行后要等一下。
     io.SA_Idle:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.IDLE
 
