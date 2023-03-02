@@ -113,6 +113,8 @@ class Img2Col_Top extends Component{
         //测试信号==============================================================
         val Test_Signal=out Bool()
         val Test_Generate_Period=in UInt(16 bits)
+        val Test_End=out Bool()
+        val Sliding_Size=in UInt(16-3 bits)
         
     }
     noIoPrefix()
@@ -186,9 +188,9 @@ class Img2Col_Top extends Component{
     //启动计算==================================================================================
     // Fsm.SA_Ready:=True//脉动阵列已经准备好开始新的一轮计算了
     //更新读地址fifo============================================================================
-        //此状态应该维持io.KernelSize个周期，向下层模块传递KernelSize个基地址
+        //此状态应该维持io.Stride个周期，向下层模块传递Stride个基地址
     val Img2ColOutput_Module_Ready_Receive_Addr=Bool()
-    val Raddr_UpData_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR&&Img2ColOutput_Module_Ready_Receive_Addr),5,io.Kernel_Size-1)
+    val Raddr_UpData_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR&&Img2ColOutput_Module_Ready_Receive_Addr),5,io.Stride-1)//这里实现从上往下的卷积
     
 
     when(Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR){
@@ -219,7 +221,7 @@ class Img2Col_Top extends Component{
     Img2Col_SubModule.io.NewAddrIn.payload<>RaddrFifo0.io.pop.payload
     Img2Col_SubModule.io.NewAddrIn.ready<>Img2ColOutput_Module_Ready_Receive_Addr
     Img2Col_SubModule.io.NewAddrIn.valid:=Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR
-
+    Img2Col_SubModule.io.Sliding_Size:=io.Sliding_Size
     
     
     val Out_Row_Cnt=ForLoopCounter(Img2Col_SubModule.io.SA_End,16,io.OutRow_Count_Times-1)
@@ -240,7 +242,10 @@ class Img2Col_Top extends Component{
     io.mValid:=RegNext(Img2Col_SubModule.io.Raddr_Valid)
     io.mLast:=RegNext(Out_Row_Cnt.valid)
     //============
-    io.Test_Signal:=(io.Test_Generate_Period-1)===RegNext(Out_Row_Cnt.count)
+    val Test_Valid=(io.Test_Generate_Period-1)===RegNext(Out_Row_Cnt.count)
+    io.Test_Signal:=Test_Valid//(io.Test_Generate_Period-1)===RegNext(Out_Row_Cnt.count)
+    io.Test_End:=(~Test_Valid)&(RegNext(Test_Valid))
+
 
     AddrFifo.io.flush:=(Fsm.nextState===IMG2COL_ENUM.IDLE)
     RaddrFifo0.io.flush:=(Fsm.nextState===IMG2COL_ENUM.IDLE)
@@ -313,6 +318,9 @@ class  Img2Col_OutPut extends Component{
         val OutCol_Count_Times              =in UInt(16 bits)
         val InCol_Count_Times               =in UInt(16 bits)
         val OutFeature_Channel_Count_Times  =in UInt(16 bits)
+        val Sliding_Size=in UInt(13 bits)//滑动长度，包含了步长信息，比如输入通道是32，步长为2，那么Kernel_Addr+=32/8*2,其中Sliding_Size=32/8*2
+        //同时，当拿到当前8个滑窗对应的全部输出通道后，KernelBaseAddr+=Sliding_Size<<3
+        // val Sliding_Size=in UInt(16 bits)
     }
     noIoPrefix()
 
@@ -347,9 +355,11 @@ class  Img2Col_OutPut extends Component{
 
     //(核心部分）卷积窗口按行展开=================================================
     val SA_Row_Cnt=ForLoopCounter(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE,3,8-1)//这个计数器对应的是脉动阵列的每一行
-    //这里的意思是：脉动阵列一共有8行，每一行处理一个滑动窗口，那么8行就处理8个滑动窗口，对应特征图的一行8个输出点
-    //以后这个地方需要修改为可配置的
-    val Window_Col_Cnt=ForLoopCounter(SA_Row_Cnt.valid,16,io.Window_Size-1)
+        //这里的意思是：脉动阵列一共有8行，每一行处理一个滑动窗口，那么8行就处理8个滑动窗口，对应特征图的一行8个输出点
+        //以后这个地方需要修改为可配置的
+    val In_Channel_Process_Cnt=ForLoopCounter(SA_Row_Cnt.valid,16-3,io.InFeature_Channel>>3-1)//必须确保输入通道是8的倍数
+        //输入通道处理次数：目前处理的输入通道次数，比如输入通道是32，一次处理8个通道，需要4次才能处理完一个点的全部的输入通道
+    val Window_Col_Cnt=ForLoopCounter(In_Channel_Process_Cnt.valid,16,io.Kernel_Size-1)
     //滑动窗口列计数器
     val Window_Row_Cnt=ForLoopCounter(Window_Col_Cnt.valid,16,io.Kernel_Size-1)
     //滑动窗口行计数器
@@ -380,19 +390,19 @@ class  Img2Col_OutPut extends Component{
     when(Out_Col_Cnt.valid){//每得到输出特征图的一行，卷积核地址复位
         Kernel_Base_Addr:=0
     }elsewhen(Out_Channel_Cnt.valid){//每输出8个点对应的全部通道，也就是Out_Feature的一行的8个点，卷积核基地址后移8个滑动窗口位置
-        Kernel_Base_Addr:=Kernel_Base_Addr+(io.Window_Size<<3).resized//一个Window_Size对应一个滑动窗口的全部数据的地址长度,并行度是8,
+        Kernel_Base_Addr:=Kernel_Base_Addr+(io.Sliding_Size<<3).resized//一个Window_Size对应一个滑动窗口的全部数据的地址长度,并行度是8,
     }//一个Window_Size最大的大小就是:KernelSize*Compute_In_Channel,Compute_In_Channel最大是8
     when(Out_Col_Cnt.valid){
         //拿到输出矩阵的一行后，Kernel_Base_Addr和Kernel_Addr都要归位
         Kernel_Addr:=0
     }elsewhen(Out_Channel_Cnt.valid){
-        Kernel_Addr:=Kernel_Base_Addr+(io.Window_Size<<3).resized//一轮输出通道处理完,8个滑动窗口右移更新成下一8滑动窗口的相对起始地址,
+        Kernel_Addr:=Kernel_Base_Addr+(io.Sliding_Size<<3).resized//一轮输出通道处理完,8个滑动窗口右移更新成下一8滑动窗口的相对起始地址,
     }elsewhen(Window_Row_Cnt.valid){
         Kernel_Addr:=Kernel_Base_Addr
     }elsewhen(SA_Row_Cnt.valid){//输完8个卷积核中的第一个点,然后再重新回来输第二个点,输完8个滑窗
         Kernel_Addr:=Kernel_Base_Addr
     }elsewhen(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
-        Kernel_Addr:=Kernel_Addr+io.Window_Size//每向SA输入一行数据,Kernel_Addr就加一个步长
+        Kernel_Addr:=Kernel_Addr+io.Sliding_Size//每向SA输入一行数据,Kernel_Addr就加一个步长
         //Bug修复：注意需要考虑输入通道：步长跨越了输入通道，比如步长为2，输入通道为32，那么下一个地址应该是2*32
     }
 
@@ -504,7 +514,8 @@ class DataGenerate_Top extends Component{
     SubModule.io.OutFeature_Size                 :=14           
     SubModule.io.OutCol_Count_Times              :=2               
     SubModule.io.OutRow_Count_Times              :=14               
-    SubModule.io.InCol_Count_Times               :=224               
+    SubModule.io.InCol_Count_Times               :=224  
+    SubModule.io.Sliding_Size                    :=64             
     // SubModule.io.Test_Signal                     :=       
     // SubModule.io.Test_Generate_Period            :=14
 
@@ -516,6 +527,7 @@ class DataGenerate_Top extends Component{
     }    
             
 }
+
 object Img2ColGen extends App { 
     val verilog_path="./Simulation/SimImg2Col" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Img2Col_Top)
