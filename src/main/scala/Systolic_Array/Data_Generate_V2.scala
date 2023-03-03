@@ -166,6 +166,7 @@ class Img2Col_Top extends Component{
     
     //缓存数据================================================================================
     val Cache_Row_Num=UInt(5 bits)
+    val Raddr_Updata_Cnt_Num=UInt(5 bits)
     val In_Col_Cnt=ForLoopCounter(io.sData.fire,16,io.InCol_Count_Times-1)
     val Row_Cache_Cnt=ForLoopCounter(In_Col_Cnt.valid,5,Cache_Row_Num-1)//在计算过程中只需要缓存Stride行数据即可
     val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,16,io.InFeature_Size-1)
@@ -177,8 +178,10 @@ class Img2Col_Top extends Component{
     }
     when(In_Row_Cnt.count>io.Kernel_Size-1){
         Cache_Row_Num:=io.Stride
+        Raddr_Updata_Cnt_Num:=io.Stride
     }otherwise{
         Cache_Row_Num:=io.Kernel_Size
+        Raddr_Updata_Cnt_Num:=io.Kernel_Size
     }
     Fsm.Data_Cached:=Row_Cache_Cnt.valid//每次只需要缓存Kernel_Size行数据即可
     val CacheEnd_Flag=Reg(Bool())init(False)
@@ -196,7 +199,9 @@ class Img2Col_Top extends Component{
     //更新读地址fifo============================================================================
         //此状态应该维持io.KernelSIze个周期，向下层模块传递Kernel_Size个基地址
     val Img2ColOutput_Module_Ready_Receive_Addr=Bool()
-    val Raddr_UpData_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR&&Img2ColOutput_Module_Ready_Receive_Addr),5,io.Kernel_Size-1)//这里实现从上往下的卷积
+    
+    
+    val Raddr_UpData_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR&&Img2ColOutput_Module_Ready_Receive_Addr),5,Raddr_Updata_Cnt_Num-1)//这里实现从上往下的卷积
     
 
     when(Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR){
@@ -228,7 +233,7 @@ class Img2Col_Top extends Component{
     Img2Col_SubModule.io.NewAddrIn.ready<>Img2ColOutput_Module_Ready_Receive_Addr
     Img2Col_SubModule.io.NewAddrIn.valid:=Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR
     Img2Col_SubModule.io.Sliding_Size:=io.Sliding_Size
-    
+    Img2Col_SubModule.io.AddrInited:=Fsm.Addr_Updated
     
     val Out_Row_Cnt=ForLoopCounter(Img2Col_SubModule.io.SA_End,16,io.OutRow_Count_Times-1)
     // when(Fsm.currentState===IMG2COL_ENUM.IDLE){
@@ -325,6 +330,8 @@ class  Img2Col_OutPut extends Component{
         val InCol_Count_Times               =in UInt(16 bits)
         val OutFeature_Channel_Count_Times  =in UInt(16 bits)
         val Sliding_Size=in UInt(13 bits)//滑动长度，包含了步长信息，比如输入通道是32，步长为2，那么Kernel_Addr+=32/8*2,其中Sliding_Size=32/8*2
+        
+        val AddrInited=in Bool()//地址初始化完成
         //同时，当拿到当前8个滑窗对应的全部输出通道后，KernelBaseAddr+=Sliding_Size<<3
         // val Sliding_Size=in UInt(16 bits)
     }
@@ -349,7 +356,7 @@ class  Img2Col_OutPut extends Component{
     }
     
     val Raddr_Init_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR&&RaddrFifo1.io.push.fire),5,io.Kernel_Size-1)//需要Stride个周期更新这一轮计算的循环地址
-    Fsm.Addr_Inited:=Raddr_Init_Cnt.valid
+    Fsm.Addr_Inited:=io.AddrInited
 
 
     //开始计算================================================================
@@ -423,6 +430,7 @@ class  Img2Col_OutPut extends Component{
     when(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR){
         RaddrFifo1.io.push.valid:=io.NewAddrIn.valid
         RaddrFifo1.io.push.payload:=io.NewAddrIn.payload
+        RaddrFifo1.io.pop.ready:=True
     }otherwise{
         RaddrFifo1.io.push.payload:=Row_Base_Addr
         RaddrFifo1.io.push.valid:=Window_Col_Cnt.valid
@@ -431,7 +439,7 @@ class  Img2Col_OutPut extends Component{
         RaddrFifo1.io.pop.ready:=True//每处理完一行,就pop一下
     }
     //======================================================
-    RaddrFifo1.io.flush:=Fsm.nextState===IMG2COL_OUTPUT_ENUM.IDLE
+    // RaddrFifo1.io.flush:=Fsm.nextState===IMG2COL_OUTPUT_ENUM.IDLE
     io.Raddr_Valid:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE
     
 }
