@@ -1,495 +1,8 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
-// Component : Img2Col_Top
+// Component : Img2Col_OutPut
 // Git hash  : fcbb62a2d86d41fcfebac84016540d1707a2f61e
 
 `timescale 1ns/1ps
-
-module Img2Col_Top (
-  input               start,
-  input               sData_valid,
-  output              sData_ready,
-  input      [63:0]   sData_payload,
-  output     [63:0]   mData,
-  output              mValid,
-  output              mLast,
-  input      [4:0]    Stride,
-  input      [4:0]    Kernel_Size,
-  input      [15:0]   Window_Size,
-  input      [15:0]   InFeature_Size,
-  input      [15:0]   InFeature_Channel,
-  input      [15:0]   OutFeature_Channel,
-  input      [15:0]   OutFeature_Size,
-  input      [15:0]   OutCol_Count_Times,
-  input      [15:0]   InCol_Count_Times,
-  input      [15:0]   OutRow_Count_Times,
-  input      [15:0]   OutFeature_Channel_Count_Times,
-  output              Test_Signal,
-  input      [15:0]   Test_Generate_Period,
-  output              Test_End,
-  input      [12:0]   Sliding_Size,
-  input               clk,
-  input               reset
-);
-  localparam IMG2COL_ENUM_IDLE = 7'd1;
-  localparam IMG2COL_ENUM_INIT = 7'd2;
-  localparam IMG2COL_ENUM_INIT_ADDR = 7'd4;
-  localparam IMG2COL_ENUM_DATA_CACHE = 7'd8;
-  localparam IMG2COL_ENUM_WAIT_COMPUTE = 7'd16;
-  localparam IMG2COL_ENUM_UPDATE_ADDR = 7'd32;
-  localparam IMG2COL_ENUM_START_COMPUTE = 7'd64;
-
-  reg                 AddrFifo_io_push_valid;
-  reg                 AddrFifo_io_pop_ready;
-  wire                AddrFifo_io_flush;
-  reg                 RaddrFifo0_io_push_valid;
-  reg        [15:0]   RaddrFifo0_io_push_payload;
-  reg                 RaddrFifo0_io_pop_ready;
-  wire                RaddrFifo0_io_flush;
-  wire                Img2Col_SubModule_start;
-  wire                Img2Col_SubModule_NewAddrIn_valid;
-  wire       [14:0]   DGB_addra;
-  wire       [14:0]   DGB_addrb;
-  wire                AddrFifo_io_push_ready;
-  wire                AddrFifo_io_pop_valid;
-  wire       [15:0]   AddrFifo_io_pop_payload;
-  wire       [5:0]    AddrFifo_io_occupancy;
-  wire       [5:0]    AddrFifo_io_availability;
-  wire                RaddrFifo0_io_push_ready;
-  wire                RaddrFifo0_io_pop_valid;
-  wire       [15:0]   RaddrFifo0_io_pop_payload;
-  wire       [5:0]    RaddrFifo0_io_occupancy;
-  wire       [5:0]    RaddrFifo0_io_availability;
-  wire                Img2Col_SubModule_NewAddrIn_ready;
-  wire                Img2Col_SubModule_SA_Idle;
-  wire       [15:0]   Img2Col_SubModule_Raddr;
-  wire                Img2Col_SubModule_Raddr_Valid;
-  wire                Img2Col_SubModule_SA_End;
-  wire                Img2Col_SubModule_AddrReceived;
-  wire       [63:0]   DGB_doutb;
-  wire       [4:0]    _zz_Addr_Init_Cnt_valid;
-  wire       [4:0]    _zz_Addr_Init_Cnt_valid_1;
-  wire       [15:0]   _zz_In_Col_Cnt_valid;
-  wire       [4:0]    _zz_Row_Cache_Cnt_valid;
-  wire       [15:0]   _zz_In_Row_Cnt_valid;
-  wire       [15:0]   _zz_when_Data_Generate_V2_l179;
-  wire       [4:0]    _zz_when_Data_Generate_V2_l179_1;
-  wire       [15:0]   _zz_Out_Row_Cnt_valid;
-  wire       [15:0]   _zz_Test_Valid;
-  reg                 start_regNext;
-  wire                when_Data_Generate_V2_l35;
-  reg        [6:0]    Fsm_currentState;
-  reg        [6:0]    Fsm_nextState;
-  wire                Fsm_Init_End;
-  wire                Fsm_Addr_Inited;
-  wire                Fsm_Data_Cached;
-  wire                Fsm_Addr_Updated;
-  wire                Fsm_SA_Ready;
-  wire                Fsm_Cache_End;
-  wire                Fsm_Layer_End;
-  wire                when_Data_Generate_V2_l56;
-  wire                when_WaCounter_l18;
-  reg        [2:0]    Init_Count_count;
-  reg                 Init_Count_valid;
-  wire                when_WaCounter_l13;
-  wire                when_WaCounter_l37;
-  reg        [4:0]    Addr_Init_Cnt_count;
-  wire                Addr_Init_Cnt_valid;
-  reg        [15:0]   WaddrOffset;
-  wire                when_Data_Generate_V2_l134;
-  wire                AddrFifo_io_pop_fire;
-  wire                when_Data_Generate_V2_l141;
-  wire                when_Data_Generate_V2_l145;
-  reg        [15:0]   Raddr_Initialization;
-  wire                when_Data_Generate_V2_l155;
-  wire                when_Data_Generate_V2_l159;
-  reg        [4:0]    Cache_Row_Num;
-  reg        [4:0]    Raddr_Updata_Cnt_Num;
-  wire                sData_fire;
-  reg        [15:0]   In_Col_Cnt_count;
-  wire                In_Col_Cnt_valid;
-  reg        [4:0]    Row_Cache_Cnt_count;
-  wire                Row_Cache_Cnt_valid;
-  reg        [15:0]   In_Row_Cnt_count;
-  wire                In_Row_Cnt_valid;
-  wire                when_Data_Generate_V2_l179;
-  reg                 CacheEnd_Flag;
-  wire                when_Data_Generate_V2_l190;
-  wire                Img2ColOutput_Module_Ready_Receive_Addr;
-  wire                when_Data_Generate_V2_l207;
-  wire                RaddrFifo0_io_pop_fire;
-  reg        [15:0]   Out_Row_Cnt_count;
-  wire                Out_Row_Cnt_valid;
-  wire       [15:0]   Waddr;
-  wire                sData_fire_1;
-  reg                 Img2Col_SubModule_Raddr_Valid_regNext;
-  reg                 Out_Row_Cnt_valid_regNext;
-  reg        [15:0]   Out_Row_Cnt_count_regNext;
-  wire                Test_Valid;
-  reg                 Test_Valid_regNext;
-  `ifndef SYNTHESIS
-  reg [103:0] Fsm_currentState_string;
-  reg [103:0] Fsm_nextState_string;
-  `endif
-
-
-  assign _zz_Addr_Init_Cnt_valid = (_zz_Addr_Init_Cnt_valid_1 - 5'h01);
-  assign _zz_Addr_Init_Cnt_valid_1 = (Kernel_Size + Stride);
-  assign _zz_In_Col_Cnt_valid = (InCol_Count_Times - 16'h0001);
-  assign _zz_Row_Cache_Cnt_valid = (Cache_Row_Num - 5'h01);
-  assign _zz_In_Row_Cnt_valid = (InFeature_Size - 16'h0001);
-  assign _zz_when_Data_Generate_V2_l179_1 = (Kernel_Size - 5'h01);
-  assign _zz_when_Data_Generate_V2_l179 = {11'd0, _zz_when_Data_Generate_V2_l179_1};
-  assign _zz_Out_Row_Cnt_valid = (OutRow_Count_Times - 16'h0001);
-  assign _zz_Test_Valid = (Test_Generate_Period - 16'h0001);
-  WaddrOffset_Fifo AddrFifo (
-    .io_push_valid   (AddrFifo_io_push_valid       ), //i
-    .io_push_ready   (AddrFifo_io_push_ready       ), //o
-    .io_push_payload (WaddrOffset[15:0]            ), //i
-    .io_pop_valid    (AddrFifo_io_pop_valid        ), //o
-    .io_pop_ready    (AddrFifo_io_pop_ready        ), //i
-    .io_pop_payload  (AddrFifo_io_pop_payload[15:0]), //o
-    .io_flush        (AddrFifo_io_flush            ), //i
-    .io_occupancy    (AddrFifo_io_occupancy[5:0]   ), //o
-    .io_availability (AddrFifo_io_availability[5:0]), //o
-    .clk             (clk                          ), //i
-    .reset           (reset                        )  //i
-  );
-  WaddrOffset_Fifo RaddrFifo0 (
-    .io_push_valid   (RaddrFifo0_io_push_valid        ), //i
-    .io_push_ready   (RaddrFifo0_io_push_ready        ), //o
-    .io_push_payload (RaddrFifo0_io_push_payload[15:0]), //i
-    .io_pop_valid    (RaddrFifo0_io_pop_valid         ), //o
-    .io_pop_ready    (RaddrFifo0_io_pop_ready         ), //i
-    .io_pop_payload  (RaddrFifo0_io_pop_payload[15:0] ), //o
-    .io_flush        (RaddrFifo0_io_flush             ), //i
-    .io_occupancy    (RaddrFifo0_io_occupancy[5:0]    ), //o
-    .io_availability (RaddrFifo0_io_availability[5:0] ), //o
-    .clk             (clk                             ), //i
-    .reset           (reset                           )  //i
-  );
-  Img2Col_OutPut Img2Col_SubModule (
-    .start                          (Img2Col_SubModule_start             ), //i
-    .NewAddrIn_valid                (Img2Col_SubModule_NewAddrIn_valid   ), //i
-    .NewAddrIn_ready                (Img2Col_SubModule_NewAddrIn_ready   ), //o
-    .NewAddrIn_payload              (RaddrFifo0_io_pop_payload[15:0]     ), //i
-    .SA_Idle                        (Img2Col_SubModule_SA_Idle           ), //o
-    .Raddr                          (Img2Col_SubModule_Raddr[15:0]       ), //o
-    .Raddr_Valid                    (Img2Col_SubModule_Raddr_Valid       ), //o
-    .SA_End                         (Img2Col_SubModule_SA_End            ), //o
-    .Stride                         (Stride[4:0]                         ), //i
-    .Kernel_Size                    (Kernel_Size[4:0]                    ), //i
-    .Window_Size                    (Window_Size[15:0]                   ), //i
-    .InFeature_Size                 (InFeature_Size[15:0]                ), //i
-    .InFeature_Channel              (InFeature_Channel[15:0]             ), //i
-    .OutFeature_Channel             (OutFeature_Channel[15:0]            ), //i
-    .OutFeature_Size                (OutFeature_Size[15:0]               ), //i
-    .OutCol_Count_Times             (OutCol_Count_Times[15:0]            ), //i
-    .InCol_Count_Times              (InCol_Count_Times[15:0]             ), //i
-    .OutFeature_Channel_Count_Times (OutFeature_Channel_Count_Times[15:0]), //i
-    .Sliding_Size                   (Sliding_Size[12:0]                  ), //i
-    .AddrReceived                   (Img2Col_SubModule_AddrReceived      ), //o
-    .LayerEnd                       (Fsm_Layer_End                       ), //i
-    .clk                            (clk                                 ), //i
-    .reset                          (reset                               )  //i
-  );
-  DataGen_Bram DGB (
-    .clka  (clk                ), //i
-    .addra (DGB_addra[14:0]    ), //i
-    .dina  (sData_payload[63:0]), //i
-    .ena   (sData_fire_1       ), //i
-    .wea   (1'b1               ), //i
-    .addrb (DGB_addrb[14:0]    ), //i
-    .doutb (DGB_doutb[63:0]    ), //o
-    .clkb  (clk                )  //i
-  );
-  `ifndef SYNTHESIS
-  always @(*) begin
-    case(Fsm_currentState)
-      IMG2COL_ENUM_IDLE : Fsm_currentState_string = "IDLE         ";
-      IMG2COL_ENUM_INIT : Fsm_currentState_string = "INIT         ";
-      IMG2COL_ENUM_INIT_ADDR : Fsm_currentState_string = "INIT_ADDR    ";
-      IMG2COL_ENUM_DATA_CACHE : Fsm_currentState_string = "DATA_CACHE   ";
-      IMG2COL_ENUM_WAIT_COMPUTE : Fsm_currentState_string = "WAIT_COMPUTE ";
-      IMG2COL_ENUM_UPDATE_ADDR : Fsm_currentState_string = "UPDATE_ADDR  ";
-      IMG2COL_ENUM_START_COMPUTE : Fsm_currentState_string = "START_COMPUTE";
-      default : Fsm_currentState_string = "?????????????";
-    endcase
-  end
-  always @(*) begin
-    case(Fsm_nextState)
-      IMG2COL_ENUM_IDLE : Fsm_nextState_string = "IDLE         ";
-      IMG2COL_ENUM_INIT : Fsm_nextState_string = "INIT         ";
-      IMG2COL_ENUM_INIT_ADDR : Fsm_nextState_string = "INIT_ADDR    ";
-      IMG2COL_ENUM_DATA_CACHE : Fsm_nextState_string = "DATA_CACHE   ";
-      IMG2COL_ENUM_WAIT_COMPUTE : Fsm_nextState_string = "WAIT_COMPUTE ";
-      IMG2COL_ENUM_UPDATE_ADDR : Fsm_nextState_string = "UPDATE_ADDR  ";
-      IMG2COL_ENUM_START_COMPUTE : Fsm_nextState_string = "START_COMPUTE";
-      default : Fsm_nextState_string = "?????????????";
-    endcase
-  end
-  `endif
-
-  assign when_Data_Generate_V2_l35 = (start && (! start_regNext));
-  always @(*) begin
-    (* parallel_case *)
-    case(1) // synthesis parallel_case
-      (((Fsm_currentState) & IMG2COL_ENUM_IDLE) == IMG2COL_ENUM_IDLE) : begin
-        if(when_Data_Generate_V2_l35) begin
-          Fsm_nextState = IMG2COL_ENUM_INIT;
-        end else begin
-          Fsm_nextState = IMG2COL_ENUM_IDLE;
-        end
-      end
-      (((Fsm_currentState) & IMG2COL_ENUM_INIT) == IMG2COL_ENUM_INIT) : begin
-        if(Fsm_Init_End) begin
-          Fsm_nextState = IMG2COL_ENUM_INIT_ADDR;
-        end else begin
-          Fsm_nextState = IMG2COL_ENUM_INIT;
-        end
-      end
-      (((Fsm_currentState) & IMG2COL_ENUM_INIT_ADDR) == IMG2COL_ENUM_INIT_ADDR) : begin
-        if(Fsm_Addr_Inited) begin
-          Fsm_nextState = IMG2COL_ENUM_DATA_CACHE;
-        end else begin
-          Fsm_nextState = IMG2COL_ENUM_INIT_ADDR;
-        end
-      end
-      (((Fsm_currentState) & IMG2COL_ENUM_DATA_CACHE) == IMG2COL_ENUM_DATA_CACHE) : begin
-        if(when_Data_Generate_V2_l56) begin
-          Fsm_nextState = IMG2COL_ENUM_WAIT_COMPUTE;
-        end else begin
-          Fsm_nextState = IMG2COL_ENUM_DATA_CACHE;
-        end
-      end
-      (((Fsm_currentState) & IMG2COL_ENUM_WAIT_COMPUTE) == IMG2COL_ENUM_WAIT_COMPUTE) : begin
-        if(Fsm_Layer_End) begin
-          Fsm_nextState = IMG2COL_ENUM_IDLE;
-        end else begin
-          if(Fsm_SA_Ready) begin
-            Fsm_nextState = IMG2COL_ENUM_UPDATE_ADDR;
-          end else begin
-            Fsm_nextState = IMG2COL_ENUM_WAIT_COMPUTE;
-          end
-        end
-      end
-      (((Fsm_currentState) & IMG2COL_ENUM_UPDATE_ADDR) == IMG2COL_ENUM_UPDATE_ADDR) : begin
-        if(Fsm_Addr_Updated) begin
-          Fsm_nextState = IMG2COL_ENUM_START_COMPUTE;
-        end else begin
-          Fsm_nextState = IMG2COL_ENUM_UPDATE_ADDR;
-        end
-      end
-      default : begin
-        if(Fsm_Layer_End) begin
-          Fsm_nextState = IMG2COL_ENUM_IDLE;
-        end else begin
-          Fsm_nextState = IMG2COL_ENUM_DATA_CACHE;
-        end
-      end
-    endcase
-  end
-
-  assign when_Data_Generate_V2_l56 = (Fsm_Data_Cached || Fsm_Cache_End);
-  assign when_WaCounter_l18 = ((Fsm_currentState & IMG2COL_ENUM_INIT) != 7'b0000000);
-  assign when_WaCounter_l13 = (Init_Count_count == 3'b101);
-  always @(*) begin
-    if(when_WaCounter_l13) begin
-      Init_Count_valid = 1'b1;
-    end else begin
-      Init_Count_valid = 1'b0;
-    end
-  end
-
-  assign Fsm_Init_End = Init_Count_valid;
-  assign when_WaCounter_l37 = ((Fsm_currentState & IMG2COL_ENUM_INIT_ADDR) != 7'b0000000);
-  assign Addr_Init_Cnt_valid = ((Addr_Init_Cnt_count == _zz_Addr_Init_Cnt_valid) && when_WaCounter_l37);
-  assign Fsm_Addr_Inited = Addr_Init_Cnt_valid;
-  always @(*) begin
-    AddrFifo_io_push_valid = 1'b0;
-    if(when_Data_Generate_V2_l134) begin
-      AddrFifo_io_push_valid = 1'b1;
-    end
-    if(In_Col_Cnt_valid) begin
-      AddrFifo_io_push_valid = 1'b1;
-    end
-  end
-
-  always @(*) begin
-    AddrFifo_io_pop_ready = 1'b0;
-    if(when_Data_Generate_V2_l145) begin
-      AddrFifo_io_pop_ready = 1'b1;
-    end
-    if(In_Col_Cnt_valid) begin
-      AddrFifo_io_pop_ready = 1'b1;
-    end
-  end
-
-  assign when_Data_Generate_V2_l134 = ((Fsm_currentState & IMG2COL_ENUM_INIT_ADDR) != 7'b0000000);
-  assign AddrFifo_io_pop_fire = (AddrFifo_io_pop_valid && AddrFifo_io_pop_ready);
-  assign when_Data_Generate_V2_l141 = ((Fsm_currentState & IMG2COL_ENUM_INIT_ADDR) != 7'b0000000);
-  assign when_Data_Generate_V2_l145 = (((Fsm_currentState & IMG2COL_ENUM_INIT_ADDR) != 7'b0000000) && ((Fsm_nextState & IMG2COL_ENUM_DATA_CACHE) != 7'b0000000));
-  always @(*) begin
-    RaddrFifo0_io_push_valid = 1'b0;
-    if(when_Data_Generate_V2_l155) begin
-      RaddrFifo0_io_push_valid = 1'b1;
-    end
-    if(when_Data_Generate_V2_l207) begin
-      RaddrFifo0_io_push_valid = RaddrFifo0_io_pop_fire;
-    end
-  end
-
-  always @(*) begin
-    RaddrFifo0_io_pop_ready = 1'b0;
-    if(when_Data_Generate_V2_l207) begin
-      RaddrFifo0_io_pop_ready = Img2ColOutput_Module_Ready_Receive_Addr;
-    end
-  end
-
-  always @(*) begin
-    RaddrFifo0_io_push_payload = RaddrFifo0_io_pop_payload;
-    if(when_Data_Generate_V2_l155) begin
-      RaddrFifo0_io_push_payload = Raddr_Initialization;
-    end
-    if(when_Data_Generate_V2_l207) begin
-      RaddrFifo0_io_push_payload = RaddrFifo0_io_pop_payload;
-    end
-  end
-
-  assign when_Data_Generate_V2_l155 = ((Fsm_currentState & IMG2COL_ENUM_INIT_ADDR) != 7'b0000000);
-  assign when_Data_Generate_V2_l159 = ((Fsm_currentState & IMG2COL_ENUM_INIT_ADDR) != 7'b0000000);
-  assign sData_fire = (sData_valid && sData_ready);
-  assign In_Col_Cnt_valid = ((In_Col_Cnt_count == _zz_In_Col_Cnt_valid) && sData_fire);
-  assign Row_Cache_Cnt_valid = ((Row_Cache_Cnt_count == _zz_Row_Cache_Cnt_valid) && In_Col_Cnt_valid);
-  assign In_Row_Cnt_valid = ((In_Row_Cnt_count == _zz_In_Row_Cnt_valid) && In_Col_Cnt_valid);
-  assign when_Data_Generate_V2_l179 = (_zz_when_Data_Generate_V2_l179 < In_Row_Cnt_count);
-  always @(*) begin
-    if(when_Data_Generate_V2_l179) begin
-      Cache_Row_Num = Stride;
-    end else begin
-      Cache_Row_Num = Kernel_Size;
-    end
-  end
-
-  always @(*) begin
-    if(when_Data_Generate_V2_l179) begin
-      Raddr_Updata_Cnt_Num = Stride;
-    end else begin
-      Raddr_Updata_Cnt_Num = Kernel_Size;
-    end
-  end
-
-  assign Fsm_Data_Cached = Row_Cache_Cnt_valid;
-  assign when_Data_Generate_V2_l190 = ((Fsm_currentState & IMG2COL_ENUM_IDLE) != 7'b0000000);
-  assign Fsm_Cache_End = CacheEnd_Flag;
-  assign sData_ready = ((Fsm_currentState & IMG2COL_ENUM_DATA_CACHE) != 7'b0000000);
-  assign when_Data_Generate_V2_l207 = ((Fsm_currentState & IMG2COL_ENUM_UPDATE_ADDR) != 7'b0000000);
-  assign RaddrFifo0_io_pop_fire = (RaddrFifo0_io_pop_valid && RaddrFifo0_io_pop_ready);
-  assign Img2Col_SubModule_start = ((Fsm_currentState & IMG2COL_ENUM_UPDATE_ADDR) != 7'b0000000);
-  assign Fsm_SA_Ready = Img2Col_SubModule_SA_Idle;
-  assign Img2ColOutput_Module_Ready_Receive_Addr = Img2Col_SubModule_NewAddrIn_ready;
-  assign Img2Col_SubModule_NewAddrIn_valid = ((Fsm_currentState & IMG2COL_ENUM_UPDATE_ADDR) != 7'b0000000);
-  assign Fsm_Addr_Updated = Img2Col_SubModule_AddrReceived;
-  assign Out_Row_Cnt_valid = ((Out_Row_Cnt_count == _zz_Out_Row_Cnt_valid) && Img2Col_SubModule_SA_End);
-  assign Fsm_Layer_End = Out_Row_Cnt_valid;
-  assign Waddr = (WaddrOffset + In_Col_Cnt_count);
-  assign DGB_addra = Waddr[14:0];
-  assign sData_fire_1 = (sData_valid && sData_ready);
-  assign DGB_addrb = Img2Col_SubModule_Raddr[14:0];
-  assign mData = DGB_doutb;
-  assign mValid = Img2Col_SubModule_Raddr_Valid_regNext;
-  assign mLast = Out_Row_Cnt_valid_regNext;
-  assign Test_Valid = (_zz_Test_Valid == Out_Row_Cnt_count_regNext);
-  assign Test_Signal = Test_Valid;
-  assign Test_End = ((! Test_Valid) && Test_Valid_regNext);
-  assign AddrFifo_io_flush = ((Fsm_nextState & IMG2COL_ENUM_IDLE) != 7'b0000000);
-  assign RaddrFifo0_io_flush = ((Fsm_nextState & IMG2COL_ENUM_IDLE) != 7'b0000000);
-  always @(posedge clk) begin
-    start_regNext <= start;
-    Img2Col_SubModule_Raddr_Valid_regNext <= Img2Col_SubModule_Raddr_Valid;
-    Out_Row_Cnt_valid_regNext <= Out_Row_Cnt_valid;
-    Out_Row_Cnt_count_regNext <= Out_Row_Cnt_count;
-    Test_Valid_regNext <= Test_Valid;
-  end
-
-  always @(posedge clk or posedge reset) begin
-    if(reset) begin
-      Fsm_currentState <= IMG2COL_ENUM_IDLE;
-      Init_Count_count <= 3'b000;
-      Addr_Init_Cnt_count <= 5'h0;
-      WaddrOffset <= 16'h0;
-      Raddr_Initialization <= 16'h0;
-      In_Col_Cnt_count <= 16'h0;
-      Row_Cache_Cnt_count <= 5'h0;
-      In_Row_Cnt_count <= 16'h0;
-      CacheEnd_Flag <= 1'b0;
-      Out_Row_Cnt_count <= 16'h0;
-    end else begin
-      Fsm_currentState <= Fsm_nextState;
-      if(when_WaCounter_l18) begin
-        Init_Count_count <= (Init_Count_count + 3'b001);
-        if(Init_Count_valid) begin
-          Init_Count_count <= 3'b000;
-        end
-      end
-      if(when_WaCounter_l37) begin
-        if(Addr_Init_Cnt_valid) begin
-          Addr_Init_Cnt_count <= 5'h0;
-        end else begin
-          Addr_Init_Cnt_count <= (Addr_Init_Cnt_count + 5'h01);
-        end
-      end
-      if(AddrFifo_io_pop_fire) begin
-        WaddrOffset <= AddrFifo_io_pop_payload;
-      end else begin
-        if(when_Data_Generate_V2_l141) begin
-          WaddrOffset <= (WaddrOffset + InCol_Count_Times);
-        end
-      end
-      if(when_Data_Generate_V2_l159) begin
-        Raddr_Initialization <= (Raddr_Initialization + InCol_Count_Times);
-      end else begin
-        Raddr_Initialization <= 16'h0;
-      end
-      if(sData_fire) begin
-        if(In_Col_Cnt_valid) begin
-          In_Col_Cnt_count <= 16'h0;
-        end else begin
-          In_Col_Cnt_count <= (In_Col_Cnt_count + 16'h0001);
-        end
-      end
-      if(In_Col_Cnt_valid) begin
-        if(Row_Cache_Cnt_valid) begin
-          Row_Cache_Cnt_count <= 5'h0;
-        end else begin
-          Row_Cache_Cnt_count <= (Row_Cache_Cnt_count + 5'h01);
-        end
-      end
-      if(In_Col_Cnt_valid) begin
-        if(In_Row_Cnt_valid) begin
-          In_Row_Cnt_count <= 16'h0;
-        end else begin
-          In_Row_Cnt_count <= (In_Row_Cnt_count + 16'h0001);
-        end
-      end
-      if(In_Row_Cnt_valid) begin
-        CacheEnd_Flag <= 1'b1;
-      end else begin
-        if(when_Data_Generate_V2_l190) begin
-          CacheEnd_Flag <= 1'b0;
-        end
-      end
-      if(Img2Col_SubModule_SA_End) begin
-        if(Out_Row_Cnt_valid) begin
-          Out_Row_Cnt_count <= 16'h0;
-        end else begin
-          Out_Row_Cnt_count <= (Out_Row_Cnt_count + 16'h0001);
-        end
-      end
-    end
-  end
-
-
-endmodule
 
 module Img2Col_OutPut (
   input               start,
@@ -511,7 +24,7 @@ module Img2Col_OutPut (
   input      [15:0]   InCol_Count_Times,
   input      [15:0]   OutFeature_Channel_Count_Times,
   input      [12:0]   Sliding_Size,
-  output reg          AddrReceived,
+  output              AddrReceived,
   input               LayerEnd,
   input               clk,
   input               reset
@@ -540,8 +53,8 @@ module Img2Col_OutPut (
   wire       [4:0]    _zz_Window_Row_Cnt_valid_1;
   wire       [15:0]   _zz_Out_Channel_Cnt_valid;
   wire       [15:0]   _zz_Out_Col_Cnt_valid;
-  wire       [15:0]   _zz_when_Data_Generate_V2_l414;
-  wire       [15:0]   _zz_when_Data_Generate_V2_l414_1;
+  wire       [15:0]   _zz_when_Data_Generate_V2_l411;
+  wire       [15:0]   _zz_when_Data_Generate_V2_l411_1;
   wire       [15:0]   _zz_WindowSize_Cnt_valid;
   wire       [15:0]   _zz_WindowSize_Cnt_valid_1;
   wire       [31:0]   _zz_Kernel_Base_Addr;
@@ -554,7 +67,7 @@ module Img2Col_OutPut (
   wire       [31:0]   _zz_Raddr;
   wire       [31:0]   _zz_Raddr_1;
   reg                 start_regNext;
-  wire                when_Data_Generate_V2_l282;
+  wire                when_Data_Generate_V2_l281;
   reg        [4:0]    Fsm_currentState;
   reg        [4:0]    Fsm_nextState;
   wire                Fsm_Init_End;
@@ -576,7 +89,7 @@ module Img2Col_OutPut (
   wire                when_WaCounter_l37_1;
   reg        [4:0]    Raddr_Update_Cnt_count;
   wire                Raddr_Update_Cnt_valid;
-  wire                when_Data_Generate_V2_l380;
+  wire                when_Data_Generate_V2_l378;
   wire                when_WaCounter_l37_2;
   reg        [2:0]    SA_Row_Cnt_count;
   reg                 SA_Row_Cnt_valid;
@@ -591,14 +104,14 @@ module Img2Col_OutPut (
   reg        [15:0]   Out_Col_Cnt_count;
   wire                Out_Col_Cnt_valid;
   reg        [15:0]   OutFeature_Col_Lefted;
+  wire                when_Data_Generate_V2_l408;
   wire                when_Data_Generate_V2_l411;
-  wire                when_Data_Generate_V2_l414;
   reg        [12:0]   WindowSize_Cnt_count;
   wire                WindowSize_Cnt_valid;
   reg        [31:0]   Kernel_Addr;
   reg        [31:0]   Kernel_Base_Addr;
-  wire                when_Data_Generate_V2_l439;
-  wire                when_Data_Generate_V2_l449;
+  wire                when_Data_Generate_V2_l436;
+  wire                when_Data_Generate_V2_l446;
   `ifndef SYNTHESIS
   reg [87:0] Fsm_currentState_string;
   reg [87:0] Fsm_nextState_string;
@@ -615,8 +128,8 @@ module Img2Col_OutPut (
   assign _zz_Window_Row_Cnt_valid = {11'd0, _zz_Window_Row_Cnt_valid_1};
   assign _zz_Out_Channel_Cnt_valid = (OutFeature_Channel_Count_Times - 16'h0001);
   assign _zz_Out_Col_Cnt_valid = (OutCol_Count_Times - 16'h0001);
-  assign _zz_when_Data_Generate_V2_l414 = {13'd0, SA_Row_Cnt_count};
-  assign _zz_when_Data_Generate_V2_l414_1 = (OutFeature_Col_Lefted - 16'h0001);
+  assign _zz_when_Data_Generate_V2_l411 = {13'd0, SA_Row_Cnt_count};
+  assign _zz_when_Data_Generate_V2_l411_1 = (OutFeature_Col_Lefted - 16'h0001);
   assign _zz_WindowSize_Cnt_valid = {3'd0, WindowSize_Cnt_count};
   assign _zz_WindowSize_Cnt_valid_1 = (Window_Size - 16'h0001);
   assign _zz_Kernel_Base_Addr_1 = ({3'd0,Sliding_Size} <<< 3);
@@ -664,12 +177,12 @@ module Img2Col_OutPut (
   end
   `endif
 
-  assign when_Data_Generate_V2_l282 = (start && (! start_regNext));
+  assign when_Data_Generate_V2_l281 = (start && (! start_regNext));
   always @(*) begin
     (* parallel_case *)
     case(1) // synthesis parallel_case
       (((Fsm_currentState) & IMG2COL_OUTPUT_ENUM_IDLE) == IMG2COL_OUTPUT_ENUM_IDLE) : begin
-        if(when_Data_Generate_V2_l282) begin
+        if(when_Data_Generate_V2_l281) begin
           Fsm_nextState = IMG2COL_OUTPUT_ENUM_INIT;
         end else begin
           Fsm_nextState = IMG2COL_OUTPUT_ENUM_IDLE;
@@ -724,7 +237,7 @@ module Img2Col_OutPut (
   assign NewAddrIn_ready = (((Fsm_currentState & IMG2COL_OUTPUT_ENUM_INIT_ADDR) != 5'b00000) || ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_UPDATE_ADDR) != 5'b00000));
   always @(*) begin
     RaddrFifo1_io_push_valid = 1'b0;
-    if(when_Data_Generate_V2_l449) begin
+    if(when_Data_Generate_V2_l446) begin
       RaddrFifo1_io_push_valid = NewAddrIn_valid;
     end else begin
       RaddrFifo1_io_push_valid = Window_Col_Cnt_valid;
@@ -733,7 +246,10 @@ module Img2Col_OutPut (
 
   always @(*) begin
     RaddrFifo1_io_pop_ready = 1'b0;
-    if(when_Data_Generate_V2_l380) begin
+    if(when_Data_Generate_V2_l378) begin
+      RaddrFifo1_io_pop_ready = 1'b1;
+    end
+    if(when_Data_Generate_V2_l446) begin
       RaddrFifo1_io_pop_ready = 1'b1;
     end
     if(Window_Col_Cnt_valid) begin
@@ -750,18 +266,12 @@ module Img2Col_OutPut (
   assign when_WaCounter_l37_1 = (((Fsm_currentState & IMG2COL_OUTPUT_ENUM_UPDATE_ADDR) != 5'b00000) && RaddrFifo1_io_push_fire_1);
   assign Raddr_Update_Cnt_valid = ((Raddr_Update_Cnt_count == _zz_Raddr_Update_Cnt_valid) && when_WaCounter_l37_1);
   assign Fsm_Addr_Updated = Raddr_Update_Cnt_valid;
-  always @(*) begin
-    AddrReceived = 1'b0;
-    if(when_Data_Generate_V2_l380) begin
-      AddrReceived = 1'b1;
-    end
-  end
-
-  assign when_Data_Generate_V2_l380 = ((((Fsm_currentState & IMG2COL_OUTPUT_ENUM_INIT_ADDR) != 5'b00000) && ((Fsm_nextState & IMG2COL_OUTPUT_ENUM_SA_COMPUTE) != 5'b00000)) || (((Fsm_currentState & IMG2COL_OUTPUT_ENUM_UPDATE_ADDR) != 5'b00000) && ((Fsm_nextState & IMG2COL_OUTPUT_ENUM_SA_COMPUTE) != 5'b00000)));
+  assign when_Data_Generate_V2_l378 = ((((Fsm_currentState & IMG2COL_OUTPUT_ENUM_INIT_ADDR) != 5'b00000) && ((Fsm_nextState & IMG2COL_OUTPUT_ENUM_SA_COMPUTE) != 5'b00000)) || (((Fsm_currentState & IMG2COL_OUTPUT_ENUM_UPDATE_ADDR) != 5'b00000) && ((Fsm_nextState & IMG2COL_OUTPUT_ENUM_SA_COMPUTE) != 5'b00000)));
+  assign AddrReceived = ((Fsm_nextState & IMG2COL_OUTPUT_ENUM_SA_COMPUTE) != 5'b00000);
   assign when_WaCounter_l37_2 = ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_SA_COMPUTE) != 5'b00000);
   always @(*) begin
     SA_Row_Cnt_valid = ((SA_Row_Cnt_count == 3'b111) && when_WaCounter_l37_2);
-    if(when_Data_Generate_V2_l414) begin
+    if(when_Data_Generate_V2_l411) begin
       SA_Row_Cnt_valid = 1'b1;
     end
   end
@@ -772,16 +282,16 @@ module Img2Col_OutPut (
   assign Out_Channel_Cnt_valid = ((Out_Channel_Cnt_count == _zz_Out_Channel_Cnt_valid) && Window_Row_Cnt_valid);
   assign Out_Col_Cnt_valid = ((Out_Col_Cnt_count == _zz_Out_Col_Cnt_valid) && Out_Channel_Cnt_valid);
   assign SA_End = Out_Col_Cnt_valid;
-  assign when_Data_Generate_V2_l411 = ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_INIT) != 5'b00000);
-  assign when_Data_Generate_V2_l414 = (_zz_when_Data_Generate_V2_l414 == _zz_when_Data_Generate_V2_l414_1);
+  assign when_Data_Generate_V2_l408 = ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_INIT) != 5'b00000);
+  assign when_Data_Generate_V2_l411 = (_zz_when_Data_Generate_V2_l411 == _zz_when_Data_Generate_V2_l411_1);
   assign WindowSize_Cnt_valid = ((_zz_WindowSize_Cnt_valid == _zz_WindowSize_Cnt_valid_1) && SA_Row_Cnt_valid);
-  assign when_Data_Generate_V2_l439 = ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_SA_COMPUTE) != 5'b00000);
+  assign when_Data_Generate_V2_l436 = ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_SA_COMPUTE) != 5'b00000);
   assign Raddr = _zz_Raddr[15:0];
   assign Fsm_SA_Computed = Out_Col_Cnt_valid;
-  assign SA_Idle = (((Fsm_currentState & IMG2COL_OUTPUT_ENUM_IDLE) != 5'b00000) || ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_UPDATE_ADDR) != 5'b00000));
-  assign when_Data_Generate_V2_l449 = ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_INIT_ADDR) != 5'b00000);
+  assign SA_Idle = ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_IDLE) != 5'b00000);
+  assign when_Data_Generate_V2_l446 = ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_INIT_ADDR) != 5'b00000);
   always @(*) begin
-    if(when_Data_Generate_V2_l449) begin
+    if(when_Data_Generate_V2_l446) begin
       RaddrFifo1_io_push_payload = NewAddrIn_payload;
     end else begin
       RaddrFifo1_io_push_payload = Row_Base_Addr;
@@ -884,12 +394,12 @@ module Img2Col_OutPut (
         if(Out_Channel_Cnt_valid) begin
           OutFeature_Col_Lefted <= (OutFeature_Col_Lefted - 16'h0008);
         end else begin
-          if(when_Data_Generate_V2_l411) begin
+          if(when_Data_Generate_V2_l408) begin
             OutFeature_Col_Lefted <= OutFeature_Size;
           end
         end
       end
-      if(when_Data_Generate_V2_l414) begin
+      if(when_Data_Generate_V2_l411) begin
         SA_Row_Cnt_count <= 3'b000;
       end
       if(SA_Row_Cnt_valid) begin
@@ -921,7 +431,7 @@ module Img2Col_OutPut (
               if(SA_Row_Cnt_valid) begin
                 Kernel_Addr <= (_zz_Kernel_Addr_2 + 32'h00000001);
               end else begin
-                if(when_Data_Generate_V2_l439) begin
+                if(when_Data_Generate_V2_l436) begin
                   Kernel_Addr <= (Kernel_Addr + _zz_Kernel_Addr_4);
                 end
               end
@@ -934,10 +444,6 @@ module Img2Col_OutPut (
 
 
 endmodule
-
-//WaddrOffset_Fifo replaced by WaddrOffset_Fifo
-
-//WaddrOffset_Fifo replaced by WaddrOffset_Fifo
 
 module WaddrOffset_Fifo (
   input               io_push_valid,

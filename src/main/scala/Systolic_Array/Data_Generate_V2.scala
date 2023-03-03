@@ -201,7 +201,7 @@ class Img2Col_Top extends Component{
     val Img2ColOutput_Module_Ready_Receive_Addr=Bool()
     
     
-    val Raddr_UpData_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR&&Img2ColOutput_Module_Ready_Receive_Addr),5,Raddr_Updata_Cnt_Num-1)//这里实现从上往下的卷积
+    // val Raddr_UpData_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR&&Img2ColOutput_Module_Ready_Receive_Addr),5,Raddr_Updata_Cnt_Num-1)//这里实现从上往下的卷积
     
 
     when(Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR){
@@ -209,7 +209,8 @@ class Img2Col_Top extends Component{
         RaddrFifo0.io.push.payload:=RaddrFifo0.io.pop.payload
         RaddrFifo0.io.pop.ready:=Img2ColOutput_Module_Ready_Receive_Addr
     }
-    Fsm.Addr_Updated:=Raddr_UpData_Cnt.valid
+    // val RaddrUpdated=Bool()
+    // Fsm.Addr_Updated:=RaddrUpdated//Raddr_UpData_Cnt.valid
     //=========================================================================================
         //这里实现最外层的第六层for循环,多次调用子模块
     
@@ -233,8 +234,9 @@ class Img2Col_Top extends Component{
     Img2Col_SubModule.io.NewAddrIn.ready<>Img2ColOutput_Module_Ready_Receive_Addr
     Img2Col_SubModule.io.NewAddrIn.valid:=Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR
     Img2Col_SubModule.io.Sliding_Size:=io.Sliding_Size
-    Img2Col_SubModule.io.AddrInited:=Fsm.Addr_Updated
+    Img2Col_SubModule.io.LayerEnd:=Fsm.Layer_End
     
+    Fsm.Addr_Updated:=Img2Col_SubModule.io.AddrReceived
     val Out_Row_Cnt=ForLoopCounter(Img2Col_SubModule.io.SA_End,16,io.OutRow_Count_Times-1)
     // when(Fsm.currentState===IMG2COL_ENUM.IDLE){
     //     Out_Row_Cnt.clear//使用WaCounter作为最外层循环要记得最后复位
@@ -263,7 +265,7 @@ class Img2Col_Top extends Component{
 }
 
 object IMG2COL_OUTPUT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot){
-    val IDLE, INIT, INIT_ADDR,SA_COMPUTE= newElement
+    val IDLE, INIT, INIT_ADDR,SA_COMPUTE,UPDATE_ADDR= newElement
 }
 case class Img2Col_Output_Fsm(start:Bool) extends Area{
     val currentState = Reg(IMG2COL_OUTPUT_ENUM()) init IMG2COL_OUTPUT_ENUM.IDLE
@@ -273,7 +275,8 @@ case class Img2Col_Output_Fsm(start:Bool) extends Area{
     val Init_End=Bool()
     val Addr_Inited=Bool()
     val SA_Computed=Bool()
-
+    val Addr_Updated=Bool()
+    val LayerEnd=Bool()
     switch(currentState){
         is(IMG2COL_OUTPUT_ENUM.IDLE){
             when(start){
@@ -297,10 +300,19 @@ case class Img2Col_Output_Fsm(start:Bool) extends Area{
             }
         }
         is(IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
-            when(SA_Computed){
+            when(LayerEnd){//当前网络层计算完了，就结束计算进入IDLE状态
                 nextState:=IMG2COL_OUTPUT_ENUM.IDLE
+            }elsewhen(SA_Computed){
+                nextState:=IMG2COL_OUTPUT_ENUM.UPDATE_ADDR
             }otherwise{
                 nextState:=IMG2COL_OUTPUT_ENUM.SA_COMPUTE
+            }
+        }
+        is(IMG2COL_OUTPUT_ENUM.UPDATE_ADDR){
+            when(Addr_Updated){
+                nextState:=IMG2COL_OUTPUT_ENUM.SA_COMPUTE
+            }otherwise{
+                nextState:=IMG2COL_OUTPUT_ENUM.UPDATE_ADDR
             }
         }
     }
@@ -331,7 +343,8 @@ class  Img2Col_OutPut extends Component{
         val OutFeature_Channel_Count_Times  =in UInt(16 bits)
         val Sliding_Size=in UInt(13 bits)//滑动长度，包含了步长信息，比如输入通道是32，步长为2，那么Kernel_Addr+=32/8*2,其中Sliding_Size=32/8*2
         
-        val AddrInited=in Bool()//地址初始化完成
+        val AddrReceived=out Bool()//地址初始化完成
+        val LayerEnd=in Bool()
         //同时，当拿到当前8个滑窗对应的全部输出通道后，KernelBaseAddr+=Sliding_Size<<3
         // val Sliding_Size=in UInt(16 bits)
     }
@@ -341,8 +354,11 @@ class  Img2Col_OutPut extends Component{
     val Fsm=Img2Col_Output_Fsm(io.start&&(~RegNext(io.start)))
     val Init_Count=WaCounter(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT,3,5)//数5下进行初始化
     Fsm.Init_End:=Init_Count.valid
+    
     //初始化循环基地址=====================================================================
-    io.NewAddrIn.ready:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR
+    io.NewAddrIn.ready:=(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR||Fsm.currentState===IMG2COL_OUTPUT_ENUM.UPDATE_ADDR)//位于更新Addr或初始化Addr状态则可以获取Addr
+    
+    
     val RaddrFifo1=new WaddrOffset_Fifo//第二个RaddrFifo,作用于内五层循环
     RaddrFifo1.io.push.valid:=False
     RaddrFifo1.io.pop.ready:=False
@@ -356,13 +372,16 @@ class  Img2Col_OutPut extends Component{
     }
     
     val Raddr_Init_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR&&RaddrFifo1.io.push.fire),5,io.Kernel_Size-1)//需要Stride个周期更新这一轮计算的循环地址
-    Fsm.Addr_Inited:=io.AddrInited
-
-
+    Fsm.Addr_Inited:=Raddr_Init_Cnt.valid
+    val Raddr_Update_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_OUTPUT_ENUM.UPDATE_ADDR&&RaddrFifo1.io.push.fire),5,io.Stride-1)
+    Fsm.Addr_Updated:=Raddr_Update_Cnt.valid
     //开始计算================================================================
-    when(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR&&Fsm.nextState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
+    io.AddrReceived:=False
+    when(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR&&Fsm.nextState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE||Fsm.currentState===IMG2COL_OUTPUT_ENUM.UPDATE_ADDR&&Fsm.nextState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
         RaddrFifo1.io.pop.ready:=True//开始计算之前要先pop一下,
+        io.AddrReceived:=True
     }
+    
 
 
 
@@ -424,13 +443,13 @@ class  Img2Col_OutPut extends Component{
 
     io.Raddr:=(Kernel_Addr+Row_Base_Addr).resized
     Fsm.SA_Computed:=Out_Col_Cnt.valid//得到输出特征图完整的一行后要等一下。
-    io.SA_Idle:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.IDLE
+    io.SA_Idle:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.IDLE||Fsm.currentState===IMG2COL_OUTPUT_ENUM.UPDATE_ADDR
 
     //循环写回地址===========================================
     when(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR){
         RaddrFifo1.io.push.valid:=io.NewAddrIn.valid
         RaddrFifo1.io.push.payload:=io.NewAddrIn.payload
-        RaddrFifo1.io.pop.ready:=True
+        // RaddrFifo1.io.pop.ready:=True
     }otherwise{
         RaddrFifo1.io.push.payload:=Row_Base_Addr
         RaddrFifo1.io.push.valid:=Window_Col_Cnt.valid
@@ -441,7 +460,7 @@ class  Img2Col_OutPut extends Component{
     //======================================================
     // RaddrFifo1.io.flush:=Fsm.nextState===IMG2COL_OUTPUT_ENUM.IDLE
     io.Raddr_Valid:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE
-    
+    Fsm.LayerEnd:=io.LayerEnd
 }
 
 
@@ -544,6 +563,8 @@ class DataGenerate_Top extends Component{
     }    
             
 }
+
+
 
 object Img2ColGen extends App { 
     val verilog_path="./Simulation/SimImg2Col" 
