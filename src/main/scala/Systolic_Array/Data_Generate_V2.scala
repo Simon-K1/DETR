@@ -446,10 +446,14 @@ class  Img2Col_OutPut extends Component{
     io.SA_Idle:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.IDLE||Fsm.currentState===IMG2COL_OUTPUT_ENUM.UPDATE_ADDR
 
     //循环写回地址===========================================
-    when(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR){
+    when(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR){//初始化阶段只push
         RaddrFifo1.io.push.valid:=io.NewAddrIn.valid
         RaddrFifo1.io.push.payload:=io.NewAddrIn.payload
         // RaddrFifo1.io.pop.ready:=True
+    }elsewhen(Fsm.currentState===IMG2COL_OUTPUT_ENUM.UPDATE_ADDR){//更新地址阶段除了push进来还要pop出去
+        RaddrFifo1.io.push.valid:=io.NewAddrIn.valid
+        RaddrFifo1.io.push.payload:=io.NewAddrIn.payload
+        RaddrFifo1.io.pop.ready:=RaddrFifo1.io.push.fire//进来一个就pop一个
     }otherwise{
         RaddrFifo1.io.push.payload:=Row_Base_Addr
         RaddrFifo1.io.push.valid:=Window_Col_Cnt.valid

@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : Img2Col_Top
-// Git hash  : fcbb62a2d86d41fcfebac84016540d1707a2f61e
+// Git hash  : cd677f47988672fd5cd7b1393f88b535c224f10b
 
 `timescale 1ns/1ps
 
@@ -599,6 +599,8 @@ module Img2Col_OutPut (
   reg        [31:0]   Kernel_Base_Addr;
   wire                when_Data_Generate_V2_l439;
   wire                when_Data_Generate_V2_l449;
+  wire                RaddrFifo1_io_push_fire_2;
+  wire                when_Data_Generate_V2_l453;
   `ifndef SYNTHESIS
   reg [87:0] Fsm_currentState_string;
   reg [87:0] Fsm_nextState_string;
@@ -727,7 +729,11 @@ module Img2Col_OutPut (
     if(when_Data_Generate_V2_l449) begin
       RaddrFifo1_io_push_valid = NewAddrIn_valid;
     end else begin
-      RaddrFifo1_io_push_valid = Window_Col_Cnt_valid;
+      if(when_Data_Generate_V2_l453) begin
+        RaddrFifo1_io_push_valid = NewAddrIn_valid;
+      end else begin
+        RaddrFifo1_io_push_valid = Window_Col_Cnt_valid;
+      end
     end
   end
 
@@ -735,6 +741,11 @@ module Img2Col_OutPut (
     RaddrFifo1_io_pop_ready = 1'b0;
     if(when_Data_Generate_V2_l380) begin
       RaddrFifo1_io_pop_ready = 1'b1;
+    end
+    if(!when_Data_Generate_V2_l449) begin
+      if(when_Data_Generate_V2_l453) begin
+        RaddrFifo1_io_pop_ready = RaddrFifo1_io_push_fire_2;
+      end
     end
     if(Window_Col_Cnt_valid) begin
       RaddrFifo1_io_pop_ready = 1'b1;
@@ -784,10 +795,16 @@ module Img2Col_OutPut (
     if(when_Data_Generate_V2_l449) begin
       RaddrFifo1_io_push_payload = NewAddrIn_payload;
     end else begin
-      RaddrFifo1_io_push_payload = Row_Base_Addr;
+      if(when_Data_Generate_V2_l453) begin
+        RaddrFifo1_io_push_payload = NewAddrIn_payload;
+      end else begin
+        RaddrFifo1_io_push_payload = Row_Base_Addr;
+      end
     end
   end
 
+  assign RaddrFifo1_io_push_fire_2 = (RaddrFifo1_io_push_valid && RaddrFifo1_io_push_ready);
+  assign when_Data_Generate_V2_l453 = ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_UPDATE_ADDR) != 5'b00000);
   assign Raddr_Valid = ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_SA_COMPUTE) != 5'b00000);
   assign Fsm_LayerEnd = LayerEnd;
   always @(posedge clk) begin
