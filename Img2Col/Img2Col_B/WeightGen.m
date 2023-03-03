@@ -2,7 +2,7 @@
 clear
 KernelSize=16;%卷积核大小
 InChannel=32%输入通道，这里不像之前仿真Img2Col那样设置一个8输入通道,现在直接设置一个大一点的输入通道
-OutChannel=256;%输出通道,768输出通道数据太大了
+OutChannel=32;%输出通道,768输出通道数据太大了
 Stride=16;%步长
 
 WeightMatrix=zeros(InChannel*KernelSize*KernelSize,OutChannel);%%构建权重矩阵

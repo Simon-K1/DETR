@@ -1,10 +1,10 @@
 %% 第二层Window_Col_Cnt for循环
 clear
 clc
-load('保存的matlab数据\第一版随机输入数据.mat','Frature_In');
+load('保存的图片矩阵\V1\matlab.mat');
 In_Col=224;
 In_Row=224;
-In_Channel=3;
+In_Channel=Feature_Channel;
 Stride=16;
 KernelSize=16;
 
@@ -15,7 +15,7 @@ Row_Base_Addr=0;%行基地址
 Kernel_Base_Addr=0;
 Kernel_Addr=0;
 
-Out_Channel=768;
+Out_Channel=32;
 Out_Col=14;
 Out_Row=14;
 Out_Col_Lefted=Out_Col;
