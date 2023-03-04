@@ -115,6 +115,8 @@ class Img2Col_Top extends Component{
         val Test_Generate_Period=in UInt(16 bits)
         val Test_End=out Bool()
         val Sliding_Size=in UInt(16-3 bits)
+
+        val Raddr_Valid=out Bool()
         
     }
     noIoPrefix()
@@ -274,6 +276,7 @@ class Img2Col_Top extends Component{
 
     AddrFifo.io.flush:=(Fsm.nextState===IMG2COL_ENUM.IDLE)
     RaddrFifo0.io.flush:=(Fsm.nextState===IMG2COL_ENUM.IDLE)
+    io.Raddr_Valid:=Img2Col_SubModule.io.Raddr_Valid//这个读地址Valid是给外面的权重缓存模块用的
 }
 
 object IMG2COL_OUTPUT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot){

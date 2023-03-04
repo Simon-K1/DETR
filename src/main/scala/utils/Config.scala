@@ -99,7 +99,7 @@ case class TopConfig(){
     val WEIGHT_CACHE_BRAM_IN_DATA_WIDTH=64//入64 bit,也可以认为是连接权重缓存模块DMA的位宽
     val WEIGHT_CACHE_BRAM_OUT_DATA_WIDTH=8//出8 bit,8个Bram拼起来满足脉动阵列所需的64bit输入位宽
     val WEIGHT_CACHE_MATRIX_COL_WIDTH=16//权重缓存模块支持的权重矩阵的最大列数为2^16(一般达不到这么大，以后可以改小一点)
-    val WEIGHT_CACHE_MATRIX_ROW_WIDTH=16//最大行数，也是2^16
+    val WEIGHT_CACHE_MATRIX_ROW_WIDTH=16//最大行数，也是2^16,最大输出图片大小为512*512
 
     val MATRIXC_COL_WIDTH=16//最大可支持的输出矩阵大小为2^16=65536列，
     val MATRIXC_ROW_WIDTH=26//输出矩阵的行数可能会很大，比如1024*1024，2048*2048

@@ -2,6 +2,7 @@ package top
 import spinal.core._
 import Systolic_Array.{Tile,DataGenerate_Top,Weight_Cache,PEConfig,Img2Col_Top}
 import utils.{TopConfig,WaCounter,WidthConvert}
+import java.util.concurrent.SubmissionPublisher
 
 
 class Img2ColStream extends Component{
@@ -22,6 +23,7 @@ class Img2ColStream extends Component{
 
         // val m_tlast=out Bool()
         val start=in Bool()
+        val Raddr_Valid=out Bool()
     }
     noIoPrefix()
     val SubModule=new Img2Col_Top
@@ -30,7 +32,8 @@ class Img2ColStream extends Component{
     
     // SubModule.io.mData<>io.mdata
     io.mvalid:=RegNext(SubModule.io.mValid)//数据进WidthConverter后会慢一个周期才能出来
-    
+    io.Raddr_Valid:=RegNext(SubModule.io.Raddr_Valid)
+    //分析：不想写了，自己看波形叭~，---->计算模块开发记录-2023/3/4:连连线
     val OutData_Switch=Reg(Bits(8 bits))init(1)
     when(SubModule.io.mValid){
         OutData_Switch:=OutData_Switch.rotateLeft(1)//循环左移1位    
@@ -86,6 +89,6 @@ object Top extends App {
     // printf("=================%d===============",log2Up(7))
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Tile(8,8,20,PEConfig(767,20)))
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Img2ColStream)
-    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Weight_Cache)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Weight_Cache)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

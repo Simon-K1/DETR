@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="227075100000fs"></ZoomStartTime>
-      <ZoomEndTime time="227207100001fs"></ZoomEndTime>
-      <Cursor1Time time="227115100000fs"></Cursor1Time>
+      <ZoomStartTime time="238665800000fs"></ZoomStartTime>
+      <ZoomEndTime time="238798600001fs"></ZoomEndTime>
+      <Cursor1Time time="238705100000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="243"></NameColumnWidth>
-      <ValueColumnWidth column_width="74"></ValueColumnWidth>
+      <ValueColumnWidth column_width="70"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="17" />
+   <WVObjectSize size="73" />
    <wvobject fp_name="group26" type="group">
       <obj_property name="label">SimTOp</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -79,10 +79,6 @@
          <obj_property name="ElementShortName">mem_addr[31:0]</obj_property>
          <obj_property name="ObjectShortName">mem_addr[31:0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Scale_Bias_Mem" type="array">
-         <obj_property name="ElementShortName">Scale_Bias_Mem[0:383][15:0]</obj_property>
-         <obj_property name="ObjectShortName">Scale_Bias_Mem[0:383][15:0]</obj_property>
-      </wvobject>
       <wvobject fp_name="/SimSystolicArray/Write_Txt_En" type="logic">
          <obj_property name="ElementShortName">Write_Txt_En</obj_property>
          <obj_property name="ObjectShortName">Write_Txt_En</obj_property>
@@ -94,22 +90,6 @@
       <wvobject fp_name="/SimSystolicArray/file_out" type="array">
          <obj_property name="ElementShortName">file_out[31:0]</obj_property>
          <obj_property name="ObjectShortName">file_out[31:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Scale_In" type="array">
-         <obj_property name="ElementShortName">Scale_In[7:0]</obj_property>
-         <obj_property name="ObjectShortName">Scale_In[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Bias_In" type="array">
-         <obj_property name="ElementShortName">Bias_In[7:0]</obj_property>
-         <obj_property name="ObjectShortName">Bias_In[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Scale_Read_Addr" type="array">
-         <obj_property name="ElementShortName">Scale_Read_Addr[8:0]</obj_property>
-         <obj_property name="ObjectShortName">Scale_Read_Addr[8:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Bias_Read_Addr" type="array">
-         <obj_property name="ElementShortName">Bias_Read_Addr[8:0]</obj_property>
-         <obj_property name="ObjectShortName">Bias_Read_Addr[8:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/SimSystolicArray/Mem_Depth" type="array">
          <obj_property name="ElementShortName">Mem_Depth[31:0]</obj_property>
@@ -197,5 +177,268 @@
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/Raddr_Valid" type="logic">
       <obj_property name="ElementShortName">Raddr_Valid</obj_property>
       <obj_property name="ObjectShortName">Raddr_Valid</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider137">
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/Weight_Cached" type="logic">
+      <obj_property name="ElementShortName">Weight_Cached</obj_property>
+      <obj_property name="ObjectShortName">Weight_Cached</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/sData_payload" type="array">
+      <obj_property name="ElementShortName">sData_payload[63:0]</obj_property>
+      <obj_property name="ObjectShortName">sData_payload[63:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/Raddr_Valid" type="logic">
+      <obj_property name="ElementShortName">Raddr_Valid</obj_property>
+      <obj_property name="ObjectShortName">Raddr_Valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/mData_0" type="array">
+      <obj_property name="ElementShortName">mData_0[7:0]</obj_property>
+      <obj_property name="ObjectShortName">mData_0[7:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/mData_1" type="array">
+      <obj_property name="ElementShortName">mData_1[7:0]</obj_property>
+      <obj_property name="ObjectShortName">mData_1[7:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/mData_2" type="array">
+      <obj_property name="ElementShortName">mData_2[7:0]</obj_property>
+      <obj_property name="ObjectShortName">mData_2[7:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/mData_3" type="array">
+      <obj_property name="ElementShortName">mData_3[7:0]</obj_property>
+      <obj_property name="ObjectShortName">mData_3[7:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/mData_4" type="array">
+      <obj_property name="ElementShortName">mData_4[7:0]</obj_property>
+      <obj_property name="ObjectShortName">mData_4[7:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/mData_5" type="array">
+      <obj_property name="ElementShortName">mData_5[7:0]</obj_property>
+      <obj_property name="ObjectShortName">mData_5[7:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/mData_6" type="array">
+      <obj_property name="ElementShortName">mData_6[7:0]</obj_property>
+      <obj_property name="ObjectShortName">mData_6[7:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/mData_7" type="array">
+      <obj_property name="ElementShortName">mData_7[7:0]</obj_property>
+      <obj_property name="ObjectShortName">mData_7[7:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mvalid" type="logic">
+      <obj_property name="ElementShortName">mvalid</obj_property>
+      <obj_property name="ObjectShortName">mvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/Raddr_count" type="array">
+      <obj_property name="ElementShortName">Raddr_count[15:0]</obj_property>
+      <obj_property name="ObjectShortName">Raddr_count[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram/addrb" type="array">
+      <obj_property name="ElementShortName">addrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">addrb[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_1/addrb" type="array">
+      <obj_property name="ElementShortName">addrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">addrb[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider144">
+      <obj_property name="label">Wdata</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/Write_Row_Base_Addr" type="array">
+      <obj_property name="ElementShortName">Write_Row_Base_Addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">Write_Row_Base_Addr[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/Fsm_currentState" type="array">
+      <obj_property name="ElementShortName">Fsm_currentState[3:0]</obj_property>
+      <obj_property name="ObjectShortName">Fsm_currentState[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/Fsm_Weight_All_Cached" type="logic">
+      <obj_property name="ElementShortName">Fsm_Weight_All_Cached</obj_property>
+      <obj_property name="ObjectShortName">Fsm_Weight_All_Cached</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/In_Row_Cnt_count" type="array">
+      <obj_property name="ElementShortName">In_Row_Cnt_count[15:0]</obj_property>
+      <obj_property name="ObjectShortName">In_Row_Cnt_count[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/In_Row_Cnt_valid" type="logic">
+      <obj_property name="ElementShortName">In_Row_Cnt_valid</obj_property>
+      <obj_property name="ObjectShortName">In_Row_Cnt_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/In_Col_Cnt_count" type="array">
+      <obj_property name="ElementShortName">In_Col_Cnt_count[15:0]</obj_property>
+      <obj_property name="ObjectShortName">In_Col_Cnt_count[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/In_Col_Cnt_valid" type="logic">
+      <obj_property name="ElementShortName">In_Col_Cnt_valid</obj_property>
+      <obj_property name="ObjectShortName">In_Col_Cnt_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_addra" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_addra[12:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_addra[12:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_ena" type="logic">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_ena</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_ena</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_addrb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_addrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_addrb[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_1_addra" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_1_addra[12:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_1_addra[12:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_1_ena" type="logic">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_1_ena</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_1_ena</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_1_addrb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_1_addrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_1_addrb[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_2_addra" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_2_addra[12:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_2_addra[12:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_2_ena" type="logic">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_2_ena</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_2_ena</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_2_addrb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_2_addrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_2_addrb[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_3_addra" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_3_addra[12:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_3_addra[12:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_3_ena" type="logic">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_3_ena</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_3_ena</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_3_addrb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_3_addrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_3_addrb[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_4_addra" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_4_addra[12:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_4_addra[12:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_4_ena" type="logic">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_4_ena</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_4_ena</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_4_addrb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_4_addrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_4_addrb[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_5_addra" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_5_addra[12:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_5_addra[12:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_5_ena" type="logic">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_5_ena</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_5_ena</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_5_addrb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_5_addrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_5_addrb[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_6_addra" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_6_addra[12:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_6_addra[12:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_6_ena" type="logic">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_6_ena</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_6_ena</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_6_addrb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_6_addrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_6_addrb[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_7_addra" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_7_addra[12:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_7_addra[12:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_7_ena" type="logic">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_7_ena</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_7_ena</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_7_addrb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_7_addrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_7_addrb[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_doutb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_doutb[7:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_doutb[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_1_doutb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_1_doutb[7:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_1_doutb[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_2_doutb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_2_doutb[7:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_2_doutb[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_3_doutb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_3_doutb[7:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_3_doutb[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_4_doutb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_4_doutb[7:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_4_doutb[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_5_doutb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_5_doutb[7:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_5_doutb[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_6_doutb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_6_doutb[7:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_6_doutb[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram_7_doutb" type="array">
+      <obj_property name="ElementShortName">xil_SimpleDualBram_7_doutb[7:0]</obj_property>
+      <obj_property name="ObjectShortName">xil_SimpleDualBram_7_doutb[7:0]</obj_property>
    </wvobject>
 </wave_config>

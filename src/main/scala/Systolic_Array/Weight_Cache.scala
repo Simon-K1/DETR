@@ -66,7 +66,7 @@ class Weight_Cache extends Component{
         val start=in Bool()
         val sData=slave Stream(UInt(Config.WEIGHT_CACHE_BRAM_IN_DATA_WIDTH bits))
         val Matrix_Row=in UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits)//先初步默认16bit，以后不够再改
-                                            //Row=InChannels*KernelSize^2
+                                            //Row=InChannels*KernelSize^2,实际是多少就输入多少
         
         val Matrix_Col=in UInt(Config.WEIGHT_CACHE_MATRIX_COL_WIDTH bits)//每次计算的权重矩阵的实际列数（对应输出通道数量）
                                         //比如输出通道是768，但是资源不够，所以只能存256个输出通道，所以这里输入256
@@ -78,7 +78,9 @@ class Weight_Cache extends Component{
         val mData=out Vec(UInt(8 bits),Config.SA_COL)
         val Raddr_Valid=in Bool()//读Bram使能
         val OutMatrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
-        //这个使能是干啥的？
+
+        val Weight_Cached=out Bool()//权重缓存完了，给Img2Col一个启动型号
+
     //分析：首先，假设输入通道是32，输出通道是256，16*16，那么权重矩阵的每一列有16*16*32=8192个元素，每一列8192代表一个完整的卷积核，也就是对应矩阵的一列
     }
     noIoPrefix()
@@ -114,7 +116,7 @@ class Weight_Cache extends Component{
         Write_Row_Base_Addr:=Write_Row_Base_Addr+Matrix_In_MaxCnt
     }
     Fsm.Weight_All_Cached:=In_Col_Cnt.valid
-    
+    io.Weight_Cached:=In_Col_Cnt.valid
 
     //构建8列权重缓存
     
@@ -136,7 +138,6 @@ class Weight_Cache extends Component{
     val OutRow_Cnt=ForLoopCounter(Out_RowTimes_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.OutMatrix_Row-1)
     //每遍历一次WeightCache就会得到输出矩阵完整的一行
     Fsm.SA_Computed:=OutRow_Cnt.valid
-
 }
 
 object Weight_Gen extends App { 
