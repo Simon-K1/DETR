@@ -2,15 +2,12 @@ package Systolic_Array
 import spinal.core._
 import utils.WaCounter
 
+
 class dsp_marco(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int) extends BlackBox {
   val io = new Bundle{
     val CLK = in Bool()
-//    val CE = in Bool()
-//    val SCLR =in Bool()
     val A = in UInt(A_WIDTH bits)
     val B = in UInt(B_WIDTH bits)
-    val ACOUT= out UInt(A_WIDTH bits)
-    val BCOUT = out UInt(B_WIDTH bits)
     val P =out UInt(OUT_WIDTH bits)
   }
   noIoPrefix()
@@ -18,9 +15,7 @@ class dsp_marco(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int) extends BlackBox {
   mapClockDomain(clock=io.CLK)
 }
 
-//case class PEConfig(count_WIDTH:Int){
-//
-//}
+
 
 
 class PE(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int,peConfig:PEConfig) extends Component{
@@ -28,9 +23,6 @@ class PE(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int,peConfig:PEConfig) extends Com
     val activate = in UInt(A_WIDTH bits)
     val weight = in UInt(B_WIDTH bits)
     val vaild = in Bool()//数据有效的信号
-//    val CE = in Bool()
-//    val SCLR = in Bool()
-
     val signCount = in UInt(16 bits)  //卷积核16*16  signCoun就是t256
     val acount = out UInt(A_WIDTH bits)
     val bcount = out UInt(B_WIDTH bits)
@@ -57,8 +49,8 @@ class PE(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int,peConfig:PEConfig) extends Com
 
   io.activate <> dsp.io.A   ////根据vaild将dsp输入改变
   io.weight <> dsp.io.B
-  io.acount <> dsp.io.ACOUT
-  io.bcount <> dsp.io.BCOUT
+  io.acount <> RegNext(io.activate)
+  io.bcount <> RegNext(io.weight)
 
 
 }

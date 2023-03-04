@@ -3,6 +3,9 @@ import spinal.core._
 import spinal.lib.Delay
 import utils.WaCounter
 
+
+
+
 case class PEConfig(count:Int,Reg_WIDTH:Int){
 
 }
@@ -24,17 +27,6 @@ class Tile (Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PEConfi
     io.resultVaild(k) := False
   }
 
-
-
-  //  val PEone = new PEOther(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int,Reg_WIDTH:Int,peConfig:PEConfig)
-
-//  (1 to Tile_Size - 1).foreach { i =>
-//    val PEone = new PEOther(dataWidthIn: Int, dataWidthOut:Int,dataWidthOut:Int,peConfig:PEConfig)
-//
-//  }
- // val outCnt =  WaCounter(io.vaild,20,)
-
-
   val PEArry = Array.ofDim[PE](8, 8)
   PEArry(0)(0) = new PE(dataWidthIn, dataWidthIn,dataWidthOut,PEConfig(64,20))
   PEArry(0)(0).io.weight <> io.weight(7 downto 0)
@@ -46,7 +38,7 @@ class Tile (Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PEConfi
   for (i <- 1 to Tile_Size-1) {
     val j=0
     PEArry(i)(j) = new PE(dataWidthIn, dataWidthIn,dataWidthOut,PEConfig(64,20))
-    PEArry(i)(j).io.activate <> Delay(io.activate((i+1)*dataWidthIn-1 downto i*dataWidthIn),i)
+    PEArry(i)(j).io.activate <> io.activate((i+1)*dataWidthIn-1 downto i*dataWidthIn)//Delay(io.activate((i+1)*dataWidthIn-1 downto i*dataWidthIn),i)
     PEArry(i)(j).io.weight <> PEArry(i-1)(0).io.bcount
     PEArry(i)(j).io.vaild <> Delay(io.vaild,i)
     PEArry(i)(j).io.signCount<>io.signCount
@@ -85,29 +77,9 @@ class Tile (Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PEConfi
   }
 
 
-//    io.activate <> PELeft.io.activate
-//    io.weight <> PELeft.io.weight
-//    io.vaild <>PELeft.io.vaild
-//    io.signCount <>PELeft.io.signCount
-//    io.PE_OUT<>PEone.io.PE_OUT
-//
-//
-//  PEone.io.activate <> PELeft.io.acount //hang
-//  PEone.io.weight <> PELeft.io.bcount  //列
-//  PEone.io.vaild := RegNext(PELeft.io.vaild)
-//  PEone.io.signCount := PELeft.io.signCount
-//  PEone.io.finishNum <> PELeft.io.PE_OUT
 
-
-
-
-// object Tile extends App{
-//   SpinalVerilog(new Tile(8,8,20,PEConfig(767,20)))
-// }
-
-object Tile extends App { 
-    val verilog_path="./Simulation/SimWeightTile" 
-    // printf("=================%d===============",log2Up(7))
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Tile(8,8,20,PEConfig(767,20)))
-    //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
+object Tile extends App{
+  SpinalVerilog(new Tile(8,8,20,PEConfig(767,20)))
 }
+
+

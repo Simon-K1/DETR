@@ -5,7 +5,7 @@ import utils._
 import spinal.lib.Delay
 import spinal.lib.StreamFifo
 import spinal.core.internals.Operator
-
+import xip.xil_SimpleDualBram
 
 object IMG2COL_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, INIT_ADDR,DATA_CACHE,WAIT_COMPUTE,UPDATE_ADDR,START_COMPUTE= newElement
@@ -243,7 +243,19 @@ class Img2Col_Top extends Component{
     // }
     Fsm.Layer_End:=Out_Row_Cnt.valid
     //构建一个Bram
-    val DGB=new DataGen_Bram
+    //val DGB=new DataGen_Bram
+        // val addra=in UInt(log2Up(Config.DATA_GENERATE_BRAM_IN_ADDR_DEPTH) bits)
+        // val dina=in UInt(Config.DATA_GENERATE_BRAM_IN_WIDTH bits)
+        // val ena=in Bool()
+        // val wea=in Bool()
+
+        
+        // val addrb=in UInt(log2Up(Config.DATA_GENERATE_BRAM_OUT_ADDR_DEPTH) bits)
+        // val doutb=out UInt((Config.DATA_GENERATE_BRAM_OUT_WIDTH) bits)
+        // val clkb=in Bool()
+
+
+    val DGB=new xil_SimpleDualBram(Config.DATA_GENERATE_BRAM_IN_WIDTH,Config.DATA_GENERATE_BRAM_IN_ADDR_DEPTH,Config.DATA_GENERATE_BRAM_OUT_WIDTH,"DataGen_Bram",true)
     val Waddr =WaddrOffset+In_Col_Cnt.count
     DGB.io.dina:=io.sData.payload
     DGB.io.addra:=Waddr.resized//写地址,由于For循环展开都是用32bit来计数的
