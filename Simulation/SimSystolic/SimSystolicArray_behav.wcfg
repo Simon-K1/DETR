@@ -11,9 +11,9 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="549689500000fs"></ZoomStartTime>
-      <ZoomEndTime time="549842500001fs"></ZoomEndTime>
-      <Cursor1Time time="549715000000fs"></Cursor1Time>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="7650000000001fs"></ZoomEndTime>
+      <Cursor1Time time="238985000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="243"></NameColumnWidth>
@@ -221,6 +221,7 @@
    <wvobject fp_name="/SimSystolicArray/Weight_Cache/xil_SimpleDualBram/addrb" type="array">
       <obj_property name="ElementShortName">addrb[15:0]</obj_property>
       <obj_property name="ObjectShortName">addrb[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject fp_name="/SimSystolicArray/Weight_Cache/OutRow_Cnt_count" type="array">
       <obj_property name="ElementShortName">OutRow_Cnt_count[15:0]</obj_property>

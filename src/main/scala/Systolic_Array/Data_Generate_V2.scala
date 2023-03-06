@@ -92,6 +92,7 @@ class Img2Col_Top extends Component{
         val start=in Bool()
         val sData=slave Stream(UInt(64 bits))
         val mData=out UInt(Config.DATA_GENERATE_BRAM_OUT_WIDTH bits)
+        val mReady=in Bool()//下层准备好的信号
         val mValid=out Bool()
         val mLast=out Bool()
 
@@ -237,6 +238,7 @@ class Img2Col_Top extends Component{
     Img2Col_SubModule.io.NewAddrIn.valid:=Fsm.currentState===IMG2COL_ENUM.UPDATE_ADDR
     Img2Col_SubModule.io.Sliding_Size:=io.Sliding_Size
     Img2Col_SubModule.io.LayerEnd:=Fsm.Layer_End
+    Img2Col_SubModule.io.mReady:=io.mReady
     
     Fsm.Addr_Updated:=Img2Col_SubModule.io.AddrReceived
     val Out_Row_Cnt=ForLoopCounter(Img2Col_SubModule.io.SA_End,16,io.OutRow_Count_Times-1)
@@ -280,7 +282,9 @@ class Img2Col_Top extends Component{
 }
 
 object IMG2COL_OUTPUT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot){
-    val IDLE, INIT, INIT_ADDR,SA_COMPUTE,UPDATE_ADDR= newElement
+    val IDLE, INIT, INIT_ADDR,SA_COMPUTE,UPDATE_ADDR,WAIT_NEXT_READY= newElement
+    //WAIT_NEXT_READY:最最最最后加的一个状态,因为img2Col处理了冗余计算，那么img2Col出数据的速度会比WeightCache模块出数据的速度快很多
+    //所以img2COl模块可能会要等一下WeightCache模块，这是就需要处理数据反压
 }
 case class Img2Col_Output_Fsm(start:Bool) extends Area{
     val currentState = Reg(IMG2COL_OUTPUT_ENUM()) init IMG2COL_OUTPUT_ENUM.IDLE
@@ -292,6 +296,7 @@ case class Img2Col_Output_Fsm(start:Bool) extends Area{
     val SA_Computed=Bool()
     val Addr_Updated=Bool()
     val LayerEnd=Bool()
+    val NextReady=Bool()
     switch(currentState){
         is(IMG2COL_OUTPUT_ENUM.IDLE){
             when(start){
@@ -309,9 +314,16 @@ case class Img2Col_Output_Fsm(start:Bool) extends Area{
         }
         is(IMG2COL_OUTPUT_ENUM.INIT_ADDR){//获取最新的地址数据用于内层的5个循环
             when(Addr_Inited){
-                nextState:=IMG2COL_OUTPUT_ENUM.SA_COMPUTE
+                nextState:=IMG2COL_OUTPUT_ENUM.WAIT_NEXT_READY
             }otherwise{
                 nextState:=IMG2COL_OUTPUT_ENUM.INIT_ADDR
+            }
+        }
+        is(IMG2COL_OUTPUT_ENUM.WAIT_NEXT_READY){
+            when(NextReady){
+                nextState:=IMG2COL_OUTPUT_ENUM.SA_COMPUTE
+            }otherwise{
+                nextState:=IMG2COL_OUTPUT_ENUM.WAIT_NEXT_READY
             }
         }
         is(IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
@@ -319,13 +331,15 @@ case class Img2Col_Output_Fsm(start:Bool) extends Area{
                 nextState:=IMG2COL_OUTPUT_ENUM.IDLE
             }elsewhen(SA_Computed){
                 nextState:=IMG2COL_OUTPUT_ENUM.UPDATE_ADDR
+            }elsewhen(!NextReady){
+                nextState:=IMG2COL_OUTPUT_ENUM.WAIT_NEXT_READY
             }otherwise{
                 nextState:=IMG2COL_OUTPUT_ENUM.SA_COMPUTE
             }
         }
         is(IMG2COL_OUTPUT_ENUM.UPDATE_ADDR){
             when(Addr_Updated){
-                nextState:=IMG2COL_OUTPUT_ENUM.SA_COMPUTE
+                nextState:=IMG2COL_OUTPUT_ENUM.WAIT_NEXT_READY
             }otherwise{
                 nextState:=IMG2COL_OUTPUT_ENUM.UPDATE_ADDR
             }
@@ -358,6 +372,7 @@ class  Img2Col_OutPut extends Component{
         val OutFeature_Channel_Count_Times  =in UInt(16 bits)
         val Sliding_Size=in UInt(13 bits)//滑动长度，包含了步长信息，比如输入通道是32，步长为2，那么Kernel_Addr+=32/8*2,其中Sliding_Size=32/8*2
         
+        val mReady=in Bool()//下层准备好接收数据的信号
         val AddrReceived=out Bool()//地址初始化完成
         val LayerEnd=in Bool()
         //同时，当拿到当前8个滑窗对应的全部输出通道后，KernelBaseAddr+=Sliding_Size<<3
@@ -390,9 +405,10 @@ class  Img2Col_OutPut extends Component{
     Fsm.Addr_Inited:=Raddr_Init_Cnt.valid
     val Raddr_Update_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_OUTPUT_ENUM.UPDATE_ADDR&&RaddrFifo1.io.push.fire),5,io.Stride-1)
     Fsm.Addr_Updated:=Raddr_Update_Cnt.valid
+    Fsm.NextReady:=io.mReady
     //开始计算================================================================
     io.AddrReceived:=False
-    when(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR&&Fsm.nextState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE||Fsm.currentState===IMG2COL_OUTPUT_ENUM.UPDATE_ADDR&&Fsm.nextState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
+    when(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR&&Fsm.nextState===IMG2COL_OUTPUT_ENUM.WAIT_NEXT_READY||Fsm.currentState===IMG2COL_OUTPUT_ENUM.UPDATE_ADDR&&Fsm.nextState===IMG2COL_OUTPUT_ENUM.WAIT_NEXT_READY){
         RaddrFifo1.io.pop.ready:=True//开始计算之前要先pop一下,
         io.AddrReceived:=True
     }
@@ -401,7 +417,7 @@ class  Img2Col_OutPut extends Component{
 
 
     //(核心部分）卷积窗口按行展开=================================================
-    val SA_Row_Cnt=ForLoopCounter(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE,3,8-1)//这个计数器对应的是脉动阵列的每一行
+    val SA_Row_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE)&&io.mReady,3,8-1)//这个计数器对应的是脉动阵列的每一行
         //这里的意思是：脉动阵列一共有8行，每一行处理一个滑动窗口，那么8行就处理8个滑动窗口，对应特征图的一行8个输出点
         //以后这个地方需要修改为可配置的
     val In_Channel_Process_Cnt=ForLoopCounter(SA_Row_Cnt.valid,16-3,(io.InFeature_Channel>>3)-1)//必须确保输入通道是8的倍数
@@ -451,7 +467,7 @@ class  Img2Col_OutPut extends Component{
         Kernel_Addr:=Kernel_Base_Addr//处理完Window_Size个数据也就是InChannel*KernelSize/8个数据后需要归位
     }elsewhen(SA_Row_Cnt.valid){//输完8个卷积核中的第一个点,然后再重新回来输第二个点,输完8个滑窗
         Kernel_Addr:=Kernel_Base_Addr+WindowSize_Cnt.count+1//因为In_Channel_Process_Cnt计数器慢一拍
-    }elsewhen(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
+    }elsewhen(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE&&io.mReady){
         Kernel_Addr:=Kernel_Addr+io.Sliding_Size//每向SA输入一行数据,Kernel_Addr就加一个步长
         //Bug修复：注意需要考虑输入通道：步长跨越了输入通道，比如步长为2，输入通道为32，那么下一个地址应该是2*32
     }
@@ -478,7 +494,7 @@ class  Img2Col_OutPut extends Component{
     }
     //======================================================
     // RaddrFifo1.io.flush:=Fsm.nextState===IMG2COL_OUTPUT_ENUM.IDLE
-    io.Raddr_Valid:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE
+    io.Raddr_Valid:=(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE)&&io.mReady
     Fsm.LayerEnd:=io.LayerEnd
 }
 
