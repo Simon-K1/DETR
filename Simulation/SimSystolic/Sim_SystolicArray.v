@@ -242,6 +242,7 @@ Weight_Cache Weight_Cache(
   .Raddr_Valid(Raddr_Valid),
   .OutMatrix_Row('d49729),
   .Weight_Cached(WeightCached),
+  .LayerEnd('d0),
   .clk(clk),
   .reset(rst)
 );
