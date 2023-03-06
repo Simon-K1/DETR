@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : Weight_Cache
-// Git hash  : 961a6a74a434acc17f4cee30741919d1d550fa6c
+// Git hash  : cb9aaaec0dfcf2af37a64899685a0f40a9ab50e4
 
 `timescale 1ns/1ps
 
@@ -20,8 +20,10 @@ module Weight_Cache (
   output     [7:0]    mData_6,
   output     [7:0]    mData_7,
   input               Raddr_Valid,
-  input      [25:0]   OutMatrix_Row,
+  input      [11:0]   OutMatrix_Col,
+  input      [23:0]   OutMatrix_Row,
   output              Weight_Cached,
+  input               LayerEnd,
   input               clk,
   input               reset
 );
@@ -65,10 +67,10 @@ module Weight_Cache (
   wire       [15:0]   _zz_In_Row_Cnt_valid;
   wire       [12:0]   _zz_In_Row_Cnt_valid_1;
   wire       [15:0]   _zz_In_Col_Cnt_valid;
-  wire       [15:0]   _zz_Raddr_valid_1;
-  wire       [15:0]   _zz_Out_RowTimes_Cnt_valid;
-  wire       [12:0]   _zz_Out_RowTimes_Cnt_valid_1;
-  wire       [12:0]   _zz_Out_RowTimes_Cnt_valid_2;
+  wire       [15:0]   _zz_OutRow_Cnt_valid;
+  wire       [12:0]   _zz_OutCol_Cnt_valid;
+  wire       [12:0]   _zz_OutCol_Cnt_valid_1;
+  wire       [12:0]   _zz_OutCol_Cnt_valid_2;
   wire       [15:0]   _zz_Write_Row_Base_Addr;
   wire       [15:0]   _zz_addra;
   wire       [0:0]    _zz_ena;
@@ -86,7 +88,6 @@ module Weight_Cache (
   wire       [0:0]    _zz_ena_6;
   wire       [15:0]   _zz_addra_7;
   wire       [0:0]    _zz_ena_7;
-  wire       [25:0]   _zz_OutRow_Cnt_valid;
   reg        [3:0]    Fsm_currentState;
   reg        [3:0]    Fsm_nextState;
   wire                Fsm_Init_End;
@@ -103,13 +104,13 @@ module Weight_Cache (
   wire                In_Row_Cnt_valid;
   reg        [15:0]   In_Col_Cnt_count;
   wire                In_Col_Cnt_valid;
-  wire                when_WaCounter_l37;
-  reg        [15:0]   Raddr_count;
-  wire                Raddr_valid_1;
   reg        [15:0]   Read_Row_Base_Addr;
   reg        [15:0]   Write_Row_Base_Addr;
-  reg        [15:0]   Out_RowTimes_Cnt_count;
-  wire                Out_RowTimes_Cnt_valid;
+  wire                when_WaCounter_l37;
+  reg        [15:0]   OutRow_Cnt_count;
+  wire                OutRow_Cnt_valid;
+  reg        [11:0]   OutCol_Cnt_count;
+  wire                OutCol_Cnt_valid;
   reg        [2:0]    Col_In_8_Cnt_count;
   wire                Col_In_8_Cnt_valid;
   wire                sData_fire_1;
@@ -120,8 +121,6 @@ module Weight_Cache (
   wire                sData_fire_6;
   wire                sData_fire_7;
   wire                sData_fire_8;
-  reg        [25:0]   OutRow_Cnt_count;
-  wire                OutRow_Cnt_valid;
   `ifndef SYNTHESIS
   reg [95:0] Fsm_currentState_string;
   reg [95:0] Fsm_nextState_string;
@@ -131,10 +130,10 @@ module Weight_Cache (
   assign _zz_In_Row_Cnt_valid_1 = (Matrix_In_MaxCnt - 13'h0001);
   assign _zz_In_Row_Cnt_valid = {3'd0, _zz_In_Row_Cnt_valid_1};
   assign _zz_In_Col_Cnt_valid = (Matrix_Col - 16'h0001);
-  assign _zz_Raddr_valid_1 = (Matrix_Row - 16'h0001);
-  assign _zz_Out_RowTimes_Cnt_valid_1 = (_zz_Out_RowTimes_Cnt_valid_2 - 13'h0001);
-  assign _zz_Out_RowTimes_Cnt_valid = {3'd0, _zz_Out_RowTimes_Cnt_valid_1};
-  assign _zz_Out_RowTimes_Cnt_valid_2 = (Matrix_Col >>> 3);
+  assign _zz_OutRow_Cnt_valid = (Matrix_Row - 16'h0001);
+  assign _zz_OutCol_Cnt_valid = {1'd0, OutCol_Cnt_count};
+  assign _zz_OutCol_Cnt_valid_1 = (_zz_OutCol_Cnt_valid_2 - 13'h0001);
+  assign _zz_OutCol_Cnt_valid_2 = (Matrix_Col >>> 3);
   assign _zz_Write_Row_Base_Addr = {3'd0, Matrix_In_MaxCnt};
   assign _zz_addra = (In_Row_Cnt_count + Write_Row_Base_Addr);
   assign _zz_ena = InData_Switch[0 : 0];
@@ -152,7 +151,6 @@ module Weight_Cache (
   assign _zz_ena_6 = InData_Switch[6 : 6];
   assign _zz_addra_7 = (In_Row_Cnt_count + Write_Row_Base_Addr);
   assign _zz_ena_7 = InData_Switch[7 : 7];
-  assign _zz_OutRow_Cnt_valid = (OutMatrix_Row - 26'h0000001);
   Weight_Bram xil_SimpleDualBram (
     .clka  (clk                           ), //i
     .addra (xil_SimpleDualBram_addra[12:0]), //i
@@ -304,54 +302,53 @@ module Weight_Cache (
   assign In_Row_Cnt_valid = ((In_Row_Cnt_count == _zz_In_Row_Cnt_valid) && sData_fire);
   assign In_Col_Cnt_valid = ((In_Col_Cnt_count == _zz_In_Col_Cnt_valid) && In_Row_Cnt_valid);
   assign when_WaCounter_l37 = (Raddr_Valid && ((Fsm_currentState & WEIGHT_CACHE_STATUS_SA_COMPUTE) != 4'b0000));
-  assign Raddr_valid_1 = ((Raddr_count == _zz_Raddr_valid_1) && when_WaCounter_l37);
-  assign Out_RowTimes_Cnt_valid = ((Out_RowTimes_Cnt_count == _zz_Out_RowTimes_Cnt_valid) && Raddr_valid_1);
+  assign OutRow_Cnt_valid = ((OutRow_Cnt_count == _zz_OutRow_Cnt_valid) && when_WaCounter_l37);
+  assign OutCol_Cnt_valid = ((_zz_OutCol_Cnt_valid == _zz_OutCol_Cnt_valid_1) && OutRow_Cnt_valid);
   assign Col_In_8_Cnt_valid = ((Col_In_8_Cnt_count == 3'b111) && In_Row_Cnt_valid);
   assign Fsm_Weight_All_Cached = In_Col_Cnt_valid;
   assign Weight_Cached = In_Col_Cnt_valid;
   assign xil_SimpleDualBram_addra = _zz_addra[12:0];
-  assign xil_SimpleDualBram_addrb = (Read_Row_Base_Addr + Raddr_count);
+  assign xil_SimpleDualBram_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_1 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_ena = (_zz_ena[0] && sData_fire_1);
   assign mData_0 = xil_SimpleDualBram_doutb;
   assign xil_SimpleDualBram_1_addra = _zz_addra_1[12:0];
-  assign xil_SimpleDualBram_1_addrb = (Read_Row_Base_Addr + Raddr_count);
+  assign xil_SimpleDualBram_1_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_2 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_1_ena = (_zz_ena_1[0] && sData_fire_2);
   assign mData_1 = xil_SimpleDualBram_1_doutb;
   assign xil_SimpleDualBram_2_addra = _zz_addra_2[12:0];
-  assign xil_SimpleDualBram_2_addrb = (Read_Row_Base_Addr + Raddr_count);
+  assign xil_SimpleDualBram_2_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_3 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_2_ena = (_zz_ena_2[0] && sData_fire_3);
   assign mData_2 = xil_SimpleDualBram_2_doutb;
   assign xil_SimpleDualBram_3_addra = _zz_addra_3[12:0];
-  assign xil_SimpleDualBram_3_addrb = (Read_Row_Base_Addr + Raddr_count);
+  assign xil_SimpleDualBram_3_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_4 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_3_ena = (_zz_ena_3[0] && sData_fire_4);
   assign mData_3 = xil_SimpleDualBram_3_doutb;
   assign xil_SimpleDualBram_4_addra = _zz_addra_4[12:0];
-  assign xil_SimpleDualBram_4_addrb = (Read_Row_Base_Addr + Raddr_count);
+  assign xil_SimpleDualBram_4_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_5 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_4_ena = (_zz_ena_4[0] && sData_fire_5);
   assign mData_4 = xil_SimpleDualBram_4_doutb;
   assign xil_SimpleDualBram_5_addra = _zz_addra_5[12:0];
-  assign xil_SimpleDualBram_5_addrb = (Read_Row_Base_Addr + Raddr_count);
+  assign xil_SimpleDualBram_5_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_6 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_5_ena = (_zz_ena_5[0] && sData_fire_6);
   assign mData_5 = xil_SimpleDualBram_5_doutb;
   assign xil_SimpleDualBram_6_addra = _zz_addra_6[12:0];
-  assign xil_SimpleDualBram_6_addrb = (Read_Row_Base_Addr + Raddr_count);
+  assign xil_SimpleDualBram_6_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_7 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_6_ena = (_zz_ena_6[0] && sData_fire_7);
   assign mData_6 = xil_SimpleDualBram_6_doutb;
   assign xil_SimpleDualBram_7_addra = _zz_addra_7[12:0];
-  assign xil_SimpleDualBram_7_addrb = (Read_Row_Base_Addr + Raddr_count);
+  assign xil_SimpleDualBram_7_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_8 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_7_ena = (_zz_ena_7[0] && sData_fire_8);
   assign mData_7 = xil_SimpleDualBram_7_doutb;
   assign sData_ready = ((Fsm_currentState & WEIGHT_CACHE_STATUS_CACHE_WEIGHT) != 4'b0000);
-  assign OutRow_Cnt_valid = ((OutRow_Cnt_count == _zz_OutRow_Cnt_valid) && Out_RowTimes_Cnt_valid);
-  assign Fsm_SA_Computed = OutRow_Cnt_valid;
+  assign Fsm_SA_Computed = LayerEnd;
   always @(posedge clk or posedge reset) begin
     if(reset) begin
       Fsm_currentState <= WEIGHT_CACHE_STATUS_IDLE;
@@ -359,12 +356,11 @@ module Weight_Cache (
       InData_Switch <= 8'h01;
       In_Row_Cnt_count <= 16'h0;
       In_Col_Cnt_count <= 16'h0;
-      Raddr_count <= 16'h0;
       Read_Row_Base_Addr <= 16'h0;
       Write_Row_Base_Addr <= 16'h0;
-      Out_RowTimes_Cnt_count <= 16'h0;
+      OutRow_Cnt_count <= 16'h0;
+      OutCol_Cnt_count <= 12'h0;
       Col_In_8_Cnt_count <= 3'b000;
-      OutRow_Cnt_count <= 26'h0;
     end else begin
       Fsm_currentState <= Fsm_nextState;
       if(when_WaCounter_l18) begin
@@ -388,17 +384,17 @@ module Weight_Cache (
         end
       end
       if(when_WaCounter_l37) begin
-        if(Raddr_valid_1) begin
-          Raddr_count <= 16'h0;
+        if(OutRow_Cnt_valid) begin
+          OutRow_Cnt_count <= 16'h0;
         end else begin
-          Raddr_count <= (Raddr_count + 16'h0001);
+          OutRow_Cnt_count <= (OutRow_Cnt_count + 16'h0001);
         end
       end
-      if(Raddr_valid_1) begin
-        if(Out_RowTimes_Cnt_valid) begin
-          Out_RowTimes_Cnt_count <= 16'h0;
+      if(OutRow_Cnt_valid) begin
+        if(OutCol_Cnt_valid) begin
+          OutCol_Cnt_count <= 12'h0;
         end else begin
-          Out_RowTimes_Cnt_count <= (Out_RowTimes_Cnt_count + 16'h0001);
+          OutCol_Cnt_count <= (OutCol_Cnt_count + 12'h001);
         end
       end
       if(In_Row_Cnt_valid) begin
@@ -408,10 +404,10 @@ module Weight_Cache (
           Col_In_8_Cnt_count <= (Col_In_8_Cnt_count + 3'b001);
         end
       end
-      if(Out_RowTimes_Cnt_valid) begin
+      if(OutCol_Cnt_valid) begin
         Read_Row_Base_Addr <= 16'h0;
       end else begin
-        if(Raddr_valid_1) begin
+        if(OutRow_Cnt_valid) begin
           Read_Row_Base_Addr <= (Read_Row_Base_Addr + Matrix_Row);
         end
       end
@@ -420,13 +416,6 @@ module Weight_Cache (
       end
       if(Col_In_8_Cnt_valid) begin
         Write_Row_Base_Addr <= (Write_Row_Base_Addr + _zz_Write_Row_Base_Addr);
-      end
-      if(Out_RowTimes_Cnt_valid) begin
-        if(OutRow_Cnt_valid) begin
-          OutRow_Cnt_count <= 26'h0;
-        end else begin
-          OutRow_Cnt_count <= (OutRow_Cnt_count + 26'h0000001);
-        end
       end
     end
   end

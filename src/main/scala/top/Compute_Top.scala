@@ -11,7 +11,7 @@ class Img2ColStream extends Component{
     val io=new Bundle{
         
         val mdata=out Vec(Bits(8 bits),8)
-        val mready=in Bool()
+        val mReady=in Bool()
         val mvalid=out Bool()
 
         def DATA_OUT_WIDTH=64
@@ -56,21 +56,22 @@ class Img2ColStream extends Component{
     // val InFeature_Size=224//图片大小为224*224
 
 
-    SubModule.io.Stride                        :=1
-    SubModule.io.Kernel_Size                   :=3
-    SubModule.io.Window_Size                   :=12
-    SubModule.io.InFeature_Size                :=224
-    SubModule.io.InFeature_Channel             :=32
-    SubModule.io.OutFeature_Channel            :=32
-    SubModule.io.OutFeature_Size               :=222
-    SubModule.io.OutCol_Count_Times            :=28
-    SubModule.io.InCol_Count_Times             :=896
-    SubModule.io.OutRow_Count_Times            :=222
-    SubModule.io.OutFeature_Channel_Count_Times:=4
-    SubModule.io.Sliding_Size                  :=4
+    SubModule.io.Stride                            :=16
+    SubModule.io.Kernel_Size                       :=16
+    SubModule.io.Window_Size                       :=64
+    SubModule.io.InFeature_Size                    :=224
+    SubModule.io.InFeature_Channel                 :=32
+    SubModule.io.OutFeature_Channel                :=32
+    SubModule.io.OutFeature_Size                   :=14
+    SubModule.io.OutCol_Count_Times                :=2
+    SubModule.io.InCol_Count_Times                 :=896
+    SubModule.io.OutRow_Count_Times                :=14
+    SubModule.io.OutFeature_Channel_Count_Times    :=4
+    SubModule.io.Sliding_Size                      :=64
+    SubModule.io.mReady                            :=io.mReady
 
 //调试信号================================================================================================
-    val Out_Data_Counter=WaCounter(io.mready&&io.mvalid,32,U"32'hffffffff")       
+    val Out_Data_Counter=WaCounter(io.mReady&&io.mvalid,32,U"32'hffffffff")       
     val In_Data_Counter=WaCounter(io.s_axis_s2mm_tvalid&&io.s_axis_s2mm_tready,32,U"32'hffffffff")   
     when(io.start){
         Out_Data_Counter.clear

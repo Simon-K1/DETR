@@ -221,7 +221,7 @@ always@(posedge clk)
 wire WeightCached;
 wire Raddr_Valid;
 Img2ColStream Img2ComStream(
-    .mready(sReady),
+    .mReady(sReady),
     .mvalid(sValid),
     .s_axis_s2mm_tdata(mem[mem_addr]),
 

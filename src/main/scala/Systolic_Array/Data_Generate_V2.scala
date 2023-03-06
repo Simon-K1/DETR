@@ -442,7 +442,7 @@ class  Img2Col_OutPut extends Component{
     }elsewhen(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT){
         OutFeature_Col_Lefted:=io.OutFeature_Size
     }
-    when(SA_Row_Cnt.count===OutFeature_Col_Lefted-1){//得减个1，看仿真看出来的，分析也好分析
+    when((SA_Row_Cnt.count===OutFeature_Col_Lefted-1)&&io.mReady&&(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE)){//得减个1，看仿真看出来的，分析也好分析
         SA_Row_Cnt.valid:=True
         SA_Row_Cnt.count:=0
     }

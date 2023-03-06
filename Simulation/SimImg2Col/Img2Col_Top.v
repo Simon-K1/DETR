@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : Img2Col_Top
-// Git hash  : 6ddbe74f856d86eee0eb8dd24e5623b9ff44a164
+// Git hash  : cb9aaaec0dfcf2af37a64899685a0f40a9ab50e4
 
 `timescale 1ns/1ps
 
@@ -807,7 +807,7 @@ module Img2Col_OutPut (
   assign Out_Col_Cnt_valid = ((Out_Col_Cnt_count == _zz_Out_Col_Cnt_valid) && Out_Channel_Cnt_valid);
   assign SA_End = Out_Col_Cnt_valid;
   assign when_Data_Generate_V2_l442 = ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_INIT) != 6'b000000);
-  assign when_Data_Generate_V2_l445 = (_zz_when_Data_Generate_V2_l445 == _zz_when_Data_Generate_V2_l445_1);
+  assign when_Data_Generate_V2_l445 = (((_zz_when_Data_Generate_V2_l445 == _zz_when_Data_Generate_V2_l445_1) && mReady) && ((Fsm_currentState & IMG2COL_OUTPUT_ENUM_SA_COMPUTE) != 6'b000000));
   assign WindowSize_Cnt_valid = ((_zz_WindowSize_Cnt_valid == _zz_WindowSize_Cnt_valid_1) && SA_Row_Cnt_valid);
   assign when_Data_Generate_V2_l470 = (((Fsm_currentState & IMG2COL_OUTPUT_ENUM_SA_COMPUTE) != 6'b000000) && mReady);
   assign Raddr = _zz_Raddr[15:0];
