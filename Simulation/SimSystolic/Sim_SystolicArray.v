@@ -220,9 +220,12 @@ always@(posedge clk)
 
 wire WeightCached;
 wire Raddr_Valid;
+wire DataInValid;
+wire [63:0]activate;
+wire [63:0]Weight;
 Img2ColStreamV2 Img2ComStream(
     .mReady(sReady),
-    .mvalid(sValid),
+//    .mValid(sValid),
     .s_axis_s2mm_tdata(mem[mem_addr]),
 
     .s_axis_s2mm_tready(mReady),
@@ -230,7 +233,19 @@ Img2ColStreamV2 Img2ComStream(
     .start(WeightCached),//权重缓存完了才能启动图片缓存（实际上板可能不是这样的)
     .clk(clk),
     .Raddr_Valid(Raddr_Valid),
-    .reset(rst)
+    .mValid(DataInValid),
+    .reset(rst),
+    
+    
+    
+    .mData_0(activate[7:0]),
+    .mData_1(activate[15:8]),
+    .mData_2(activate[23:16]),                     
+    .mData_3(activate[31:24]),                     
+    .mData_4(activate[39:32]),                     
+    .mData_5(activate[47:40]),                     
+    .mData_6(activate[55:48]),                     
+    .mData_7(activate[63:56])             
 );
 Weight_Cache Weight_Cache(
   .start(start),
@@ -244,7 +259,39 @@ Weight_Cache Weight_Cache(
   .Weight_Cached(WeightCached),
   .LayerEnd('d0),
   .clk(clk),
-  .reset(rst)
-);
+  .reset(rst),
+  .mData_0(Weight[7:0]),
+    .mData_1(Weight[15:8]),
+    .mData_2(Weight[23:16]),                     
+    .mData_3(Weight[31:24]),                     
+    .mData_4(Weight[39:32]),                     
+    .mData_5(Weight[47:40]),                     
+    .mData_6(Weight[55:48]),                     
+    .mData_7(Weight[63:56])
+);  
 
+Tile SystolicArray(
+.activate(activate),
+.weight(Weight),
+.vaild(DataInValid),
+.signCount('d511),
+//.PE_OUT_0(),
+//.PE_OUT_1(),
+//.PE_OUT_2(),
+//.PE_OUT_3(),
+//.PE_OUT_4(),
+//.PE_OUT_5(),
+//.PE_OUT_6(),
+//.PE_OUT_7(),
+//.resultVaild_0(),
+//.resultVaild_1(),
+//.resultVaild_2(),
+//.resultVaild_3(),
+//.resultVaild_4(),
+//.resultVaild_5(),
+//.resultVaild_6(),
+//.resultVaild_7(),
+.clk(clk),
+.reset(rst)
+);
 endmodule

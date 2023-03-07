@@ -1,20 +1,20 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : Img2ColStreamV2
-// Git hash  : 880dc56d393f4ce73abece0b39567adb2bf2b85b
+// Git hash  : f9241ee2b4a0d04e3833b8cff0f6734208a7edd2
 
 `timescale 1ns/1ps
 
 module Img2ColStreamV2 (
-  output     [7:0]    mdata_0,
-  output     [7:0]    mdata_1,
-  output     [7:0]    mdata_2,
-  output     [7:0]    mdata_3,
-  output     [7:0]    mdata_4,
-  output     [7:0]    mdata_5,
-  output     [7:0]    mdata_6,
-  output     [7:0]    mdata_7,
+  output     [7:0]    mData_0,
+  output     [7:0]    mData_1,
+  output     [7:0]    mData_2,
+  output     [7:0]    mData_3,
+  output     [7:0]    mData_4,
+  output     [7:0]    mData_5,
+  output     [7:0]    mData_6,
+  output     [7:0]    mData_7,
   input               mReady,
-  output              mvalid,
+  output              mValid,
   input      [63:0]   s_axis_s2mm_tdata,
   input      [7:0]    s_axis_s2mm_tkeep,
   input               s_axis_s2mm_tlast,
@@ -107,6 +107,14 @@ module Img2ColStreamV2 (
   wire                axisDataConverter_15_outStream_valid;
   wire       [7:0]    axisDataConverter_15_outStream_payload;
   reg        [7:0]    OutData_Switch;
+  wire                TestValid_Signal_0;
+  wire                TestValid_Signal_1;
+  wire                TestValid_Signal_2;
+  wire                TestValid_Signal_3;
+  wire                TestValid_Signal_4;
+  wire                TestValid_Signal_5;
+  wire                TestValid_Signal_6;
+  wire                TestValid_Signal_7;
   reg        [7:0]    axisDataConverter_8_outStream_payload_regNext;
   reg        [7:0]    axisDataConverter_9_outStream_payload_regNext;
   reg        [7:0]    axisDataConverter_10_outStream_payload_regNext;
@@ -115,6 +123,7 @@ module Img2ColStreamV2 (
   reg        [7:0]    axisDataConverter_13_outStream_payload_regNext;
   reg        [7:0]    axisDataConverter_14_outStream_payload_regNext;
   reg        [7:0]    axisDataConverter_15_outStream_payload_regNext;
+  reg                 axisDataConverter_8_outStream_valid_regNext;
   wire                when_WaCounter_l18;
   reg        [31:0]   Out_Data_Counter_count;
   reg                 Out_Data_Counter_valid;
@@ -337,25 +346,25 @@ module Img2ColStreamV2 (
     .reset             (reset                                      )  //i
   );
   assign streamFifo_io_push_valid = (OutData_Switch[0] && SubModule_mValid);
-  assign mdata_0 = axisDataConverter_8_outStream_payload_regNext;
+  assign mData_0 = axisDataConverter_8_outStream_payload_regNext;
   assign streamFifo_1_io_push_valid = (OutData_Switch[1] && SubModule_mValid);
-  assign mdata_1 = axisDataConverter_9_outStream_payload_regNext;
+  assign mData_1 = axisDataConverter_9_outStream_payload_regNext;
   assign streamFifo_2_io_push_valid = (OutData_Switch[2] && SubModule_mValid);
-  assign mdata_2 = axisDataConverter_10_outStream_payload_regNext;
+  assign mData_2 = axisDataConverter_10_outStream_payload_regNext;
   assign streamFifo_3_io_push_valid = (OutData_Switch[3] && SubModule_mValid);
-  assign mdata_3 = axisDataConverter_11_outStream_payload_regNext;
+  assign mData_3 = axisDataConverter_11_outStream_payload_regNext;
   assign streamFifo_4_io_push_valid = (OutData_Switch[4] && SubModule_mValid);
-  assign mdata_4 = axisDataConverter_12_outStream_payload_regNext;
+  assign mData_4 = axisDataConverter_12_outStream_payload_regNext;
   assign streamFifo_5_io_push_valid = (OutData_Switch[5] && SubModule_mValid);
-  assign mdata_5 = axisDataConverter_13_outStream_payload_regNext;
+  assign mData_5 = axisDataConverter_13_outStream_payload_regNext;
   assign streamFifo_6_io_push_valid = (OutData_Switch[6] && SubModule_mValid);
-  assign mdata_6 = axisDataConverter_14_outStream_payload_regNext;
+  assign mData_6 = axisDataConverter_14_outStream_payload_regNext;
   assign streamFifo_7_io_push_valid = (OutData_Switch[7] && SubModule_mValid);
-  assign mdata_7 = axisDataConverter_15_outStream_payload_regNext;
-  assign mvalid = axisDataConverter_8_outStream_valid;
+  assign mData_7 = axisDataConverter_15_outStream_payload_regNext;
+  assign mValid = axisDataConverter_8_outStream_valid_regNext;
   assign Raddr_Valid = axisDataConverter_8_outStream_valid;
   assign s_axis_s2mm_tready = SubModule_sData_ready;
-  assign when_WaCounter_l18 = (mReady && mvalid);
+  assign when_WaCounter_l18 = (mReady && mValid);
   assign when_WaCounter_l13 = (Out_Data_Counter_count == 32'hffffffff);
   always @(*) begin
     if(when_WaCounter_l13) begin
@@ -418,6 +427,7 @@ module Img2ColStreamV2 (
     axisDataConverter_13_outStream_payload_regNext <= axisDataConverter_13_outStream_payload;
     axisDataConverter_14_outStream_payload_regNext <= axisDataConverter_14_outStream_payload;
     axisDataConverter_15_outStream_payload_regNext <= axisDataConverter_15_outStream_payload;
+    axisDataConverter_8_outStream_valid_regNext <= axisDataConverter_8_outStream_valid;
   end
 
 

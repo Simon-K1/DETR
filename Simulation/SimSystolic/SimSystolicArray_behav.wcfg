@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="32374012800000fs"></ZoomStartTime>
-      <ZoomEndTime time="32374268200001fs"></ZoomEndTime>
-      <Cursor1Time time="32374065000000fs"></Cursor1Time>
+      <ZoomStartTime time="262172466667fs"></ZoomStartTime>
+      <ZoomEndTime time="262307666668fs"></ZoomEndTime>
+      <Cursor1Time time="262217667000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="243"></NameColumnWidth>
-      <ValueColumnWidth column_width="62"></ValueColumnWidth>
+      <ValueColumnWidth column_width="58"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="65" />
+   <WVObjectSize size="69" />
    <wvobject fp_name="group467" type="group">
       <obj_property name="label">SimTop</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -145,45 +145,9 @@
    <wvobject fp_name="group498" type="group">
       <obj_property name="label">SimImg2COl</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_0" type="array">
-         <obj_property name="ElementShortName">mdata_0[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mdata_0[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_1" type="array">
-         <obj_property name="ElementShortName">mdata_1[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mdata_1[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_2" type="array">
-         <obj_property name="ElementShortName">mdata_2[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mdata_2[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_3" type="array">
-         <obj_property name="ElementShortName">mdata_3[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mdata_3[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_4" type="array">
-         <obj_property name="ElementShortName">mdata_4[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mdata_4[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_5" type="array">
-         <obj_property name="ElementShortName">mdata_5[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mdata_5[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_6" type="array">
-         <obj_property name="ElementShortName">mdata_6[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mdata_6[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_7" type="array">
-         <obj_property name="ElementShortName">mdata_7[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mdata_7[7:0]</obj_property>
-      </wvobject>
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/mReady" type="logic">
          <obj_property name="ElementShortName">mReady</obj_property>
          <obj_property name="ObjectShortName">mReady</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/mvalid" type="logic">
-         <obj_property name="ElementShortName">mvalid</obj_property>
-         <obj_property name="ObjectShortName">mvalid</obj_property>
       </wvobject>
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/s_axis_s2mm_tdata" type="array">
          <obj_property name="ElementShortName">s_axis_s2mm_tdata[63:0]</obj_property>
@@ -2072,81 +2036,33 @@
       <obj_property name="ObjectShortName">Fsm_currentState[3:0]</obj_property>
       <obj_property name="label">WeightCacheFsm</obj_property>
    </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_0" type="array">
-      <obj_property name="ElementShortName">mdata_0[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_0[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/axisDataConverter_8/outStream_valid" type="logic">
       <obj_property name="ElementShortName">outStream_valid</obj_property>
       <obj_property name="ObjectShortName">outStream_valid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_1" type="array">
-      <obj_property name="ElementShortName">mdata_1[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_1[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/axisDataConverter_9/outStream_valid" type="logic">
       <obj_property name="ElementShortName">outStream_valid</obj_property>
       <obj_property name="ObjectShortName">outStream_valid</obj_property>
    </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_2" type="array">
-      <obj_property name="ElementShortName">mdata_2[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_2[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/axisDataConverter_10/outStream_valid" type="logic">
       <obj_property name="ElementShortName">outStream_valid</obj_property>
       <obj_property name="ObjectShortName">outStream_valid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_3" type="array">
-      <obj_property name="ElementShortName">mdata_3[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_3[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/axisDataConverter_11/outStream_valid" type="logic">
       <obj_property name="ElementShortName">outStream_valid</obj_property>
       <obj_property name="ObjectShortName">outStream_valid</obj_property>
    </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_4" type="array">
-      <obj_property name="ElementShortName">mdata_4[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_4[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/axisDataConverter_12/outStream_valid" type="logic">
       <obj_property name="ElementShortName">outStream_valid</obj_property>
       <obj_property name="ObjectShortName">outStream_valid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_5" type="array">
-      <obj_property name="ElementShortName">mdata_5[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_5[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/axisDataConverter_13/outStream_valid" type="logic">
       <obj_property name="ElementShortName">outStream_valid</obj_property>
       <obj_property name="ObjectShortName">outStream_valid</obj_property>
    </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_6" type="array">
-      <obj_property name="ElementShortName">mdata_6[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_6[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/axisDataConverter_14/outStream_valid" type="logic">
       <obj_property name="ElementShortName">outStream_valid</obj_property>
       <obj_property name="ObjectShortName">outStream_valid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_7" type="array">
-      <obj_property name="ElementShortName">mdata_7[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_7[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/axisDataConverter_15/outStream_valid" type="logic">
       <obj_property name="ElementShortName">outStream_valid</obj_property>
@@ -2155,10 +2071,6 @@
    <wvobject fp_name="/SimSystolicArray/Weight_Cache/Raddr_Valid" type="logic">
       <obj_property name="ElementShortName">Raddr_Valid</obj_property>
       <obj_property name="ObjectShortName">Raddr_Valid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Weight_Cache/mData_0" type="array">
-      <obj_property name="ElementShortName">mData_0[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mData_0[7:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/SimSystolicArray/Weight_Cache/mData_1" type="array">
       <obj_property name="ElementShortName">mData_1[7:0]</obj_property>
@@ -2287,54 +2199,6 @@
       <obj_property name="ElementShortName">Raddr_Valid</obj_property>
       <obj_property name="ObjectShortName">Raddr_Valid</obj_property>
    </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_0" type="array">
-      <obj_property name="ElementShortName">mdata_0[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_0[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_1" type="array">
-      <obj_property name="ElementShortName">mdata_1[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_1[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_2" type="array">
-      <obj_property name="ElementShortName">mdata_2[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_2[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_3" type="array">
-      <obj_property name="ElementShortName">mdata_3[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_3[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_4" type="array">
-      <obj_property name="ElementShortName">mdata_4[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_4[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_5" type="array">
-      <obj_property name="ElementShortName">mdata_5[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_5[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_6" type="array">
-      <obj_property name="ElementShortName">mdata_6[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_6[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mdata_7" type="array">
-      <obj_property name="ElementShortName">mdata_7[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mdata_7[7:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/Out_Channel_Cnt_valid" type="logic">
       <obj_property name="ElementShortName">Out_Channel_Cnt_valid</obj_property>
       <obj_property name="ObjectShortName">Out_Channel_Cnt_valid</obj_property>
@@ -2343,5 +2207,95 @@
       <obj_property name="ElementShortName">Out_Channel_Cnt_count[15:0]</obj_property>
       <obj_property name="ObjectShortName">Out_Channel_Cnt_count[15:0]</obj_property>
       <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider571">
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_0" type="array">
+      <obj_property name="ElementShortName">PE_OUT_0[19:0]</obj_property>
+      <obj_property name="ObjectShortName">PE_OUT_0[19:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_0" type="logic">
+      <obj_property name="ElementShortName">resultVaild_0</obj_property>
+      <obj_property name="ObjectShortName">resultVaild_0</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_1" type="array">
+      <obj_property name="ElementShortName">PE_OUT_1[19:0]</obj_property>
+      <obj_property name="ObjectShortName">PE_OUT_1[19:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_2" type="array">
+      <obj_property name="ElementShortName">PE_OUT_2[19:0]</obj_property>
+      <obj_property name="ObjectShortName">PE_OUT_2[19:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_3" type="array">
+      <obj_property name="ElementShortName">PE_OUT_3[19:0]</obj_property>
+      <obj_property name="ObjectShortName">PE_OUT_3[19:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_4" type="array">
+      <obj_property name="ElementShortName">PE_OUT_4[19:0]</obj_property>
+      <obj_property name="ObjectShortName">PE_OUT_4[19:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_5" type="array">
+      <obj_property name="ElementShortName">PE_OUT_5[19:0]</obj_property>
+      <obj_property name="ObjectShortName">PE_OUT_5[19:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_6" type="array">
+      <obj_property name="ElementShortName">PE_OUT_6[19:0]</obj_property>
+      <obj_property name="ObjectShortName">PE_OUT_6[19:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_7" type="array">
+      <obj_property name="ElementShortName">PE_OUT_7[19:0]</obj_property>
+      <obj_property name="ObjectShortName">PE_OUT_7[19:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_0" type="logic">
+      <obj_property name="ElementShortName">resultVaild_0</obj_property>
+      <obj_property name="ObjectShortName">resultVaild_0</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_1" type="logic">
+      <obj_property name="ElementShortName">resultVaild_1</obj_property>
+      <obj_property name="ObjectShortName">resultVaild_1</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_2" type="logic">
+      <obj_property name="ElementShortName">resultVaild_2</obj_property>
+      <obj_property name="ObjectShortName">resultVaild_2</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_3" type="logic">
+      <obj_property name="ElementShortName">resultVaild_3</obj_property>
+      <obj_property name="ObjectShortName">resultVaild_3</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_4" type="logic">
+      <obj_property name="ElementShortName">resultVaild_4</obj_property>
+      <obj_property name="ObjectShortName">resultVaild_4</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_5" type="logic">
+      <obj_property name="ElementShortName">resultVaild_5</obj_property>
+      <obj_property name="ObjectShortName">resultVaild_5</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_6" type="logic">
+      <obj_property name="ElementShortName">resultVaild_6</obj_property>
+      <obj_property name="ObjectShortName">resultVaild_6</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_7" type="logic">
+      <obj_property name="ElementShortName">resultVaild_7</obj_property>
+      <obj_property name="ObjectShortName">resultVaild_7</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/mData_0" type="array">
+      <obj_property name="ElementShortName">mData_0[7:0]</obj_property>
+      <obj_property name="ObjectShortName">mData_0[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Weight_Cache/mData_0" type="array">
+      <obj_property name="ElementShortName">mData_0[7:0]</obj_property>
+      <obj_property name="ObjectShortName">mData_0[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/SystolicArray/vaild" type="logic">
+      <obj_property name="ElementShortName">vaild</obj_property>
+      <obj_property name="ObjectShortName">vaild</obj_property>
    </wvobject>
 </wave_config>

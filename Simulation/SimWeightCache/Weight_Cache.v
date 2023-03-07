@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : Weight_Cache
-// Git hash  : 669349e08b388f5a4a5902f8a09cb703b6aa6649
+// Git hash  : f9241ee2b4a0d04e3833b8cff0f6734208a7edd2
 
 `timescale 1ns/1ps
 
@@ -20,8 +20,6 @@ module Weight_Cache (
   output     [7:0]    mData_6,
   output     [7:0]    mData_7,
   input               Raddr_Valid,
-  input      [11:0]   OutMatrix_Col,
-  input      [23:0]   OutMatrix_Row,
   output              Weight_Cached,
   input               LayerEnd,
   input               clk,
@@ -115,12 +113,40 @@ module Weight_Cache (
   wire                Col_In_8_Cnt_valid;
   wire                sData_fire_1;
   wire                sData_fire_2;
+  reg        [7:0]    xil_SimpleDualBram_1_doutb_delay_1;
   wire                sData_fire_3;
+  reg        [7:0]    xil_SimpleDualBram_2_doutb_delay_1;
+  reg        [7:0]    xil_SimpleDualBram_2_doutb_delay_2;
   wire                sData_fire_4;
+  reg        [7:0]    xil_SimpleDualBram_3_doutb_delay_1;
+  reg        [7:0]    xil_SimpleDualBram_3_doutb_delay_2;
+  reg        [7:0]    xil_SimpleDualBram_3_doutb_delay_3;
   wire                sData_fire_5;
+  reg        [7:0]    xil_SimpleDualBram_4_doutb_delay_1;
+  reg        [7:0]    xil_SimpleDualBram_4_doutb_delay_2;
+  reg        [7:0]    xil_SimpleDualBram_4_doutb_delay_3;
+  reg        [7:0]    xil_SimpleDualBram_4_doutb_delay_4;
   wire                sData_fire_6;
+  reg        [7:0]    xil_SimpleDualBram_5_doutb_delay_1;
+  reg        [7:0]    xil_SimpleDualBram_5_doutb_delay_2;
+  reg        [7:0]    xil_SimpleDualBram_5_doutb_delay_3;
+  reg        [7:0]    xil_SimpleDualBram_5_doutb_delay_4;
+  reg        [7:0]    xil_SimpleDualBram_5_doutb_delay_5;
   wire                sData_fire_7;
+  reg        [7:0]    xil_SimpleDualBram_6_doutb_delay_1;
+  reg        [7:0]    xil_SimpleDualBram_6_doutb_delay_2;
+  reg        [7:0]    xil_SimpleDualBram_6_doutb_delay_3;
+  reg        [7:0]    xil_SimpleDualBram_6_doutb_delay_4;
+  reg        [7:0]    xil_SimpleDualBram_6_doutb_delay_5;
+  reg        [7:0]    xil_SimpleDualBram_6_doutb_delay_6;
   wire                sData_fire_8;
+  reg        [7:0]    xil_SimpleDualBram_7_doutb_delay_1;
+  reg        [7:0]    xil_SimpleDualBram_7_doutb_delay_2;
+  reg        [7:0]    xil_SimpleDualBram_7_doutb_delay_3;
+  reg        [7:0]    xil_SimpleDualBram_7_doutb_delay_4;
+  reg        [7:0]    xil_SimpleDualBram_7_doutb_delay_5;
+  reg        [7:0]    xil_SimpleDualBram_7_doutb_delay_6;
+  reg        [7:0]    xil_SimpleDualBram_7_doutb_delay_7;
   `ifndef SYNTHESIS
   reg [95:0] Fsm_currentState_string;
   reg [95:0] Fsm_nextState_string;
@@ -316,37 +342,37 @@ module Weight_Cache (
   assign xil_SimpleDualBram_1_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_2 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_1_ena = (_zz_ena_1[0] && sData_fire_2);
-  assign mData_1 = xil_SimpleDualBram_1_doutb;
+  assign mData_1 = xil_SimpleDualBram_1_doutb_delay_1;
   assign xil_SimpleDualBram_2_addra = _zz_addra_2[12:0];
   assign xil_SimpleDualBram_2_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_3 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_2_ena = (_zz_ena_2[0] && sData_fire_3);
-  assign mData_2 = xil_SimpleDualBram_2_doutb;
+  assign mData_2 = xil_SimpleDualBram_2_doutb_delay_2;
   assign xil_SimpleDualBram_3_addra = _zz_addra_3[12:0];
   assign xil_SimpleDualBram_3_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_4 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_3_ena = (_zz_ena_3[0] && sData_fire_4);
-  assign mData_3 = xil_SimpleDualBram_3_doutb;
+  assign mData_3 = xil_SimpleDualBram_3_doutb_delay_3;
   assign xil_SimpleDualBram_4_addra = _zz_addra_4[12:0];
   assign xil_SimpleDualBram_4_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_5 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_4_ena = (_zz_ena_4[0] && sData_fire_5);
-  assign mData_4 = xil_SimpleDualBram_4_doutb;
+  assign mData_4 = xil_SimpleDualBram_4_doutb_delay_4;
   assign xil_SimpleDualBram_5_addra = _zz_addra_5[12:0];
   assign xil_SimpleDualBram_5_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_6 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_5_ena = (_zz_ena_5[0] && sData_fire_6);
-  assign mData_5 = xil_SimpleDualBram_5_doutb;
+  assign mData_5 = xil_SimpleDualBram_5_doutb_delay_5;
   assign xil_SimpleDualBram_6_addra = _zz_addra_6[12:0];
   assign xil_SimpleDualBram_6_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_7 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_6_ena = (_zz_ena_6[0] && sData_fire_7);
-  assign mData_6 = xil_SimpleDualBram_6_doutb;
+  assign mData_6 = xil_SimpleDualBram_6_doutb_delay_6;
   assign xil_SimpleDualBram_7_addra = _zz_addra_7[12:0];
   assign xil_SimpleDualBram_7_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
   assign sData_fire_8 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_7_ena = (_zz_ena_7[0] && sData_fire_8);
-  assign mData_7 = xil_SimpleDualBram_7_doutb;
+  assign mData_7 = xil_SimpleDualBram_7_doutb_delay_7;
   assign sData_ready = ((Fsm_currentState & WEIGHT_CACHE_STATUS_CACHE_WEIGHT) != 4'b0000);
   assign Fsm_SA_Computed = LayerEnd;
   always @(posedge clk or posedge reset) begin
@@ -418,6 +444,37 @@ module Weight_Cache (
         Write_Row_Base_Addr <= (Write_Row_Base_Addr + _zz_Write_Row_Base_Addr);
       end
     end
+  end
+
+  always @(posedge clk) begin
+    xil_SimpleDualBram_1_doutb_delay_1 <= xil_SimpleDualBram_1_doutb;
+    xil_SimpleDualBram_2_doutb_delay_1 <= xil_SimpleDualBram_2_doutb;
+    xil_SimpleDualBram_2_doutb_delay_2 <= xil_SimpleDualBram_2_doutb_delay_1;
+    xil_SimpleDualBram_3_doutb_delay_1 <= xil_SimpleDualBram_3_doutb;
+    xil_SimpleDualBram_3_doutb_delay_2 <= xil_SimpleDualBram_3_doutb_delay_1;
+    xil_SimpleDualBram_3_doutb_delay_3 <= xil_SimpleDualBram_3_doutb_delay_2;
+    xil_SimpleDualBram_4_doutb_delay_1 <= xil_SimpleDualBram_4_doutb;
+    xil_SimpleDualBram_4_doutb_delay_2 <= xil_SimpleDualBram_4_doutb_delay_1;
+    xil_SimpleDualBram_4_doutb_delay_3 <= xil_SimpleDualBram_4_doutb_delay_2;
+    xil_SimpleDualBram_4_doutb_delay_4 <= xil_SimpleDualBram_4_doutb_delay_3;
+    xil_SimpleDualBram_5_doutb_delay_1 <= xil_SimpleDualBram_5_doutb;
+    xil_SimpleDualBram_5_doutb_delay_2 <= xil_SimpleDualBram_5_doutb_delay_1;
+    xil_SimpleDualBram_5_doutb_delay_3 <= xil_SimpleDualBram_5_doutb_delay_2;
+    xil_SimpleDualBram_5_doutb_delay_4 <= xil_SimpleDualBram_5_doutb_delay_3;
+    xil_SimpleDualBram_5_doutb_delay_5 <= xil_SimpleDualBram_5_doutb_delay_4;
+    xil_SimpleDualBram_6_doutb_delay_1 <= xil_SimpleDualBram_6_doutb;
+    xil_SimpleDualBram_6_doutb_delay_2 <= xil_SimpleDualBram_6_doutb_delay_1;
+    xil_SimpleDualBram_6_doutb_delay_3 <= xil_SimpleDualBram_6_doutb_delay_2;
+    xil_SimpleDualBram_6_doutb_delay_4 <= xil_SimpleDualBram_6_doutb_delay_3;
+    xil_SimpleDualBram_6_doutb_delay_5 <= xil_SimpleDualBram_6_doutb_delay_4;
+    xil_SimpleDualBram_6_doutb_delay_6 <= xil_SimpleDualBram_6_doutb_delay_5;
+    xil_SimpleDualBram_7_doutb_delay_1 <= xil_SimpleDualBram_7_doutb;
+    xil_SimpleDualBram_7_doutb_delay_2 <= xil_SimpleDualBram_7_doutb_delay_1;
+    xil_SimpleDualBram_7_doutb_delay_3 <= xil_SimpleDualBram_7_doutb_delay_2;
+    xil_SimpleDualBram_7_doutb_delay_4 <= xil_SimpleDualBram_7_doutb_delay_3;
+    xil_SimpleDualBram_7_doutb_delay_5 <= xil_SimpleDualBram_7_doutb_delay_4;
+    xil_SimpleDualBram_7_doutb_delay_6 <= xil_SimpleDualBram_7_doutb_delay_5;
+    xil_SimpleDualBram_7_doutb_delay_7 <= xil_SimpleDualBram_7_doutb_delay_6;
   end
 
 

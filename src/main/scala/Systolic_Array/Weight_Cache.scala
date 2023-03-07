@@ -6,6 +6,7 @@ import utils._
 import xip.xil_SimpleDualBram
 import spinal.core
 import scala.tools.reflect.FrontEnd
+import spinal.lib.Delay
 //实现权重矩阵的缓存与输出计算
 //初步思路:在所有计算开始前应该先缓存所有权重,
     //如果片上资源不够,应该进行矩阵切块,这里将权重矩阵切4块,也就是需要调用计算模块4次
@@ -137,7 +138,7 @@ class Weight_Cache extends Component{
             Weight_Bram.io.dina:=io.sData.payload
             Weight_Bram.io.ena:=InData_Switch(i downto i).asBool&&io.sData.fire
             Weight_Bram.io.wea:=True
-            io.mData(i):=Weight_Bram.io.doutb
+            io.mData(i):=Delay(Weight_Bram.io.doutb,i)
         }
         gen()
     }
