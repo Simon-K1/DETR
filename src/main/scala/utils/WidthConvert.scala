@@ -27,9 +27,9 @@ class WidthConvert extends Component{
 
 class AxisDataConverter(InWidth:Int,OutWidth:Int) extends Component{
     if(InWidth>OutWidth)
-    assert(InWidth%OutWidth==0,"要使用SpinalHDL自带的Converter的话,InWidth和OutWidth必须为倍数关系")
+    assert(InWidth%OutWidth==0,"要使用SpinalHDL自带的Converter,InWidth和OutWidth必须为倍数关系")
     else if(InWidth<OutWidth)
-    assert(OutWidth%InWidth==0,"要使用SpinalHDL自带的Converter的话,InWidth和OutWidth必须为倍数关系")
+    assert(OutWidth%InWidth==0,"要使用SpinalHDL自带的Converter,InWidth和OutWidth必须为倍数关系")
     val inStream =slave Stream(UInt(InWidth bits))
     val outStream =master Stream(UInt(OutWidth bits))
     val adapter = StreamWidthAdapter(inStream,outStream)

@@ -63,8 +63,8 @@ parameter Mem2_Width=64;
   begin
   
 //    $readmemh("E:/Transformer/Sim_File/Xq_LayerNorm_未处理掩码.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\保存的图片矩阵\\K33\\S1\\img2Col随机输入测试数据.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\保存的图片矩阵\\K33\\S1\\WeightData.txt",mem2);//高8bit为Scale，低8bit为Bias
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\保存的图片矩阵\\K44\\S2\\img2Col随机输入测试数据.txt",mem);//_Modified
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\保存的图片矩阵\\K44\\S2\\WeightData.txt",mem2);//高8bit为Scale，低8bit为Bias
     clk=0;
     start=0;
     rst=1;
@@ -220,7 +220,7 @@ always@(posedge clk)
 
 wire WeightCached;
 wire Raddr_Valid;
-Img2ColStream Img2ComStream(
+Img2ColStreamV2 Img2ComStream(
     .mReady(sReady),
     .mvalid(sValid),
     .s_axis_s2mm_tdata(mem[mem_addr]),
@@ -237,10 +237,10 @@ Weight_Cache Weight_Cache(
   .sData_valid(mValid2),
   .sData_ready(mReady2),
   .sData_payload(mem2[mem_addr2]),
-  .Matrix_Row('d288),
+  .Matrix_Row('d512),
   .Matrix_Col('d32),
   .Raddr_Valid(Raddr_Valid),
-  .OutMatrix_Row('d49729),
+//  .OutMatrix_Row('d49729),
   .Weight_Cached(WeightCached),
   .LayerEnd('d0),
   .clk(clk),

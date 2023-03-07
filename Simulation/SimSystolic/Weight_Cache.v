@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : Weight_Cache
-// Git hash  : cb9aaaec0dfcf2af37a64899685a0f40a9ab50e4
+// Git hash  : 880dc56d393f4ce73abece0b39567adb2bf2b85b
 
 `timescale 1ns/1ps
 
@@ -20,8 +20,6 @@ module Weight_Cache (
   output     [7:0]    mData_6,
   output     [7:0]    mData_7,
   input               Raddr_Valid,
-  input      [11:0]   OutMatrix_Col,
-  input      [23:0]   OutMatrix_Row,
   output              Weight_Cached,
   input               LayerEnd,
   input               clk,

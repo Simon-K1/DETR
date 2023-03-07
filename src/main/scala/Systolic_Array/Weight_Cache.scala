@@ -77,8 +77,8 @@ class Weight_Cache extends Component{
 
         val mData=out Vec(UInt(8 bits),Config.SA_COL)
         val Raddr_Valid=in Bool()//读Bram使能
-        val OutMatrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
-        val OutMatrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
+        // val OutMatrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
+        // val OutMatrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
         
         val Weight_Cached=out Bool()//权重缓存完了，给Img2Col一个启动型号
         val LayerEnd=in Bool()//当前网络层计算完毕
