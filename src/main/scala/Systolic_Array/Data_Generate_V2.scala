@@ -118,6 +118,7 @@ class Img2Col_Top extends Component{
         val Sliding_Size=in UInt(16-3 bits)
 
         val Raddr_Valid=out Bool()
+        val LayerEnd=out Bool()
         
     }
     noIoPrefix()
@@ -239,7 +240,7 @@ class Img2Col_Top extends Component{
     Img2Col_SubModule.io.Sliding_Size:=io.Sliding_Size
     Img2Col_SubModule.io.LayerEnd:=Fsm.Layer_End
     Img2Col_SubModule.io.mReady:=io.mReady
-    
+    io.LayerEnd:=Fsm.Layer_End
     Fsm.Addr_Updated:=Img2Col_SubModule.io.AddrReceived
     val Out_Row_Cnt=ForLoopCounter(Img2Col_SubModule.io.SA_End,16,io.OutRow_Count_Times-1)
     // when(Fsm.currentState===IMG2COL_ENUM.IDLE){
@@ -496,6 +497,7 @@ class  Img2Col_OutPut extends Component{
     // RaddrFifo1.io.flush:=Fsm.nextState===IMG2COL_OUTPUT_ENUM.IDLE
     io.Raddr_Valid:=(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE)&&io.mReady
     Fsm.LayerEnd:=io.LayerEnd
+    RaddrFifo1.io.flush:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.IDLE
 }
 
 

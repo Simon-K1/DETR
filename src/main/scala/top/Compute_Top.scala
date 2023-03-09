@@ -1,22 +1,26 @@
 package top
 import spinal.core._
-import Systolic_Array.{Tile,DataGenerate_Top,Weight_Cache,PEConfig,Img2Col_Top}
+import Systolic_Array.{Tile,DataGenerate_Top,WeightCache_Stream,PEConfig,Img2Col_Top}
+import RegTable.RegTable
 import utils.{TopConfig,WaCounter,WidthConvert}
 import spinal.lib.StreamFifo
 import utils.AxisDataConverter
+import spinal.lib.Delay
+import utils.Axis_Switch_1s
+import utils.Axis_Switch_2s
 
 
 class Img2ColStreamV2 extends Component{
     val Config=TopConfig()
     val io=new Bundle{
         
-        val mData=out Vec(UInt(8 bits),8)
+        val mData=out UInt(64 bits)//Vec(UInt(8 bits),8)
         val mReady=in Bool()
         val mValid=out Bool()
 
-        def DATA_OUT_WIDTH=64
-        val s_axis_s2mm_tdata=in UInt(DATA_OUT_WIDTH bits)
-        val s_axis_s2mm_tkeep=in Bits(DATA_OUT_WIDTH/8 bits)
+        def DATA_IN_WIDTH=64
+        val s_axis_s2mm_tdata=in UInt(DATA_IN_WIDTH bits)
+        val s_axis_s2mm_tkeep=in Bits(DATA_IN_WIDTH/8 bits)
         val s_axis_s2mm_tlast=in Bool()
         val s_axis_s2mm_tready=out Bool()
         val s_axis_s2mm_tvalid=in Bool()
@@ -24,6 +28,7 @@ class Img2ColStreamV2 extends Component{
         // val m_tlast=out Bool()
         val start=in Bool()
         val Raddr_Valid=out Bool()
+        val LayerEnd=out Bool()
     }
     noIoPrefix()
     val SubModule=new Img2Col_Top
@@ -48,7 +53,7 @@ class Img2ColStreamV2 extends Component{
         WidthConvert_Fifo(i).setDefinitionName("WidthConverter_Fifo")
         Converter(i).inStream<>WidthConvert_Fifo(i).io.pop
         Converter(i).outStream.ready:=True
-        io.mData(i):=RegNext(Converter(i).outStream.payload)//valid拉高，数据应该在valid拉高的下一个周期出去，这是为了与weightCache对上
+        io.mData((i+1)*8-1 downto i*8):=RegNext(Converter(i).outStream.payload)//valid拉高，数据应该在valid拉高的下一个周期出去，这是为了与weightCache对上
     }
     io.mValid:=RegNext(Converter(0).outStream.valid)//这个valid信号给到脉动阵列
     io.Raddr_Valid:=Converter(0).outStream.valid
@@ -75,7 +80,7 @@ class Img2ColStreamV2 extends Component{
 
 
     SubModule.io.mReady                         :=WidthConvert_Fifo(0).io.push.ready
-
+    io.LayerEnd:=Delay(SubModule.io.LayerEnd,3)
 //调试信号================================================================================================
     val Out_Data_Counter=WaCounter(io.mReady&&io.mValid,32,U"32'hffffffff")       
     val In_Data_Counter=WaCounter(io.s_axis_s2mm_tvalid&&io.s_axis_s2mm_tready,32,U"32'hffffffff")   
@@ -91,11 +96,19 @@ class Img2ColStreamV2 extends Component{
 
 
 object Top extends App { 
-    val verilog_path="./Simulation/SimSystolic" 
+    val OnBoard=true
+    var verilog_path="./Simulation/SimSystolic" 
+    if(OnBoard){
+        verilog_path="./OnBoard"
+    }
+    
     
     // printf("=================%d===============",log2Up(7))
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Tile(8,8,20,PEConfig(4*4*32,20)))
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Img2ColStreamV2)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Weight_Cache)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new WeightCache_Stream)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new RegTable)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Axis_Switch_2s(3,64))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Axis_Switch_1s(3,64))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

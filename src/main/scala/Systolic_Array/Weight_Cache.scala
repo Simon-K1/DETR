@@ -76,7 +76,7 @@ class Weight_Cache extends Component{
         //必须确保InChannel*KernelSize*KernelSize<2^(WEIGHT_CACHE_MATRIX_ROW_WIDTH)
         //比如我们这里Matrix_Col的位宽是16bit，地址空间就是0~2^16-1,如果我们计算16*16的卷积核，可以得到支持的最大输入通道为2^16/(16*16)=256,所以这里输入通道是有上限的
 
-        val mData=out Vec(UInt(8 bits),Config.SA_COL)
+        val mData=out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
         val Raddr_Valid=in Bool()//读Bram使能
         // val OutMatrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
         // val OutMatrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
@@ -131,14 +131,14 @@ class Weight_Cache extends Component{
     val Weight_Cache=Array.tabulate(Config.SA_COL){
         i=>def gen()={
             //4096*64bit是一个Bram资源，32K
-            val Weight_Bram=new xil_SimpleDualBram(64,6144+5,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
+            val Weight_Bram=new xil_SimpleDualBram(64,512,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
             Weight_Bram.io.addra:=(In_Row_Cnt.count+Write_Row_Base_Addr).resized
-            Weight_Bram.io.addrb:=Read_Row_Base_Addr+OutRow_Cnt.count
+            Weight_Bram.io.addrb:=(Read_Row_Base_Addr+OutRow_Cnt.count).resized
             // Weight_Bram.io.doutb:=0
             Weight_Bram.io.dina:=io.sData.payload
             Weight_Bram.io.ena:=InData_Switch(i downto i).asBool&&io.sData.fire
             Weight_Bram.io.wea:=True
-            io.mData(i):=Delay(Weight_Bram.io.doutb,i)
+            io.mData((i+1)*8-1 downto i*8):=Delay(Weight_Bram.io.doutb,i)
         }
         gen()
     }
@@ -150,7 +150,40 @@ class Weight_Cache extends Component{
 
     
 }
+class WeightCache_Stream extends Component{
+    val Config=new TopConfig
+    val io=new Bundle{
+        def DATA_IN_WIDTH=64
+        val s_axis_s2mm_tdata=in UInt(DATA_IN_WIDTH bits)
+        val s_axis_s2mm_tkeep=in Bits(DATA_IN_WIDTH/8 bits)
+        val s_axis_s2mm_tlast=in Bool()
+        val s_axis_s2mm_tready=out Bool()
+        val s_axis_s2mm_tvalid=in Bool()
 
+
+        val start=in Bool()
+        val Matrix_Row=in UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits)
+        val Matrix_Col=in UInt(Config.WEIGHT_CACHE_MATRIX_COL_WIDTH bits)
+        val mData=out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
+        val Raddr_Valid=in Bool()//读Bram使能
+        val Weight_Cached=out Bool()//权重缓存完了，给Img2Col一个启动型号
+        val LayerEnd=in Bool()//当前网络层计算完毕
+    }
+    noIoPrefix()
+    val WeightCache=new Weight_Cache
+    WeightCache.io.start:=io.start
+    WeightCache.io.Matrix_Col:=io.Matrix_Col
+    WeightCache.io.Matrix_Row:=io.Matrix_Row
+    WeightCache.io.mData<>io.mData
+    WeightCache.io.Raddr_Valid<>io.Raddr_Valid
+    WeightCache.io.LayerEnd<>io.LayerEnd
+    WeightCache.io.Weight_Cached<>io.Weight_Cached
+
+    WeightCache.io.sData.payload<>io.s_axis_s2mm_tdata
+    WeightCache.io.sData.valid<>io.s_axis_s2mm_tvalid
+    WeightCache.io.sData.ready<>io.s_axis_s2mm_tready
+    
+}
 object Weight_Gen extends App { 
     val verilog_path="./Simulation/SimWeightCache" 
     // printf("=================%d===============",log2Up(7))

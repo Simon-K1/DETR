@@ -19,8 +19,9 @@ class RegTable extends Component{
 	val LD4567=LED_Reg.field(Bits(4 bit),WO,doc="O:接外面的灯，测试").asOutput() 
 
 
-	val Img2Col_Start=bus.newReg(doc="Img2Col_Start")
-	val Start=Img2Col_Start.field(Bits(1 bits),WO,doc="Ps Start Img2Col_Start(only for test)").asOutput()
+	val Img2Col_Reg=bus.newReg(doc="Img2Col_Start")
+	val Start=Img2Col_Reg.field(Bits(1 bits),WO,doc="Ps Start Img2Col_Start(only for test)").asOutput()
+	val Switch=Img2Col_Reg.field(Bits(2 bits),WO,doc="01:Start Weight Cache\n 10:Start Img2Col\n").asOutput()
 	bus.accept(HtmlGenerator("regif", "RegTable V1"))
 }
 

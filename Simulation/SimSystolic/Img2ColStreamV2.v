@@ -1,18 +1,11 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : Img2ColStreamV2
-// Git hash  : f9241ee2b4a0d04e3833b8cff0f6734208a7edd2
+// Git hash  : 54eeb6ab5e44c9162766453013cfdd0dc8faff97
 
 `timescale 1ns/1ps
 
 module Img2ColStreamV2 (
-  output     [7:0]    mData_0,
-  output     [7:0]    mData_1,
-  output     [7:0]    mData_2,
-  output     [7:0]    mData_3,
-  output     [7:0]    mData_4,
-  output     [7:0]    mData_5,
-  output     [7:0]    mData_6,
-  output     [7:0]    mData_7,
+  output reg [63:0]   mData,
   input               mReady,
   output              mValid,
   input      [63:0]   s_axis_s2mm_tdata,
@@ -346,21 +339,24 @@ module Img2ColStreamV2 (
     .reset             (reset                                      )  //i
   );
   assign streamFifo_io_push_valid = (OutData_Switch[0] && SubModule_mValid);
-  assign mData_0 = axisDataConverter_8_outStream_payload_regNext;
+  always @(*) begin
+    mData[7 : 0] = axisDataConverter_8_outStream_payload_regNext;
+    mData[15 : 8] = axisDataConverter_9_outStream_payload_regNext;
+    mData[23 : 16] = axisDataConverter_10_outStream_payload_regNext;
+    mData[31 : 24] = axisDataConverter_11_outStream_payload_regNext;
+    mData[39 : 32] = axisDataConverter_12_outStream_payload_regNext;
+    mData[47 : 40] = axisDataConverter_13_outStream_payload_regNext;
+    mData[55 : 48] = axisDataConverter_14_outStream_payload_regNext;
+    mData[63 : 56] = axisDataConverter_15_outStream_payload_regNext;
+  end
+
   assign streamFifo_1_io_push_valid = (OutData_Switch[1] && SubModule_mValid);
-  assign mData_1 = axisDataConverter_9_outStream_payload_regNext;
   assign streamFifo_2_io_push_valid = (OutData_Switch[2] && SubModule_mValid);
-  assign mData_2 = axisDataConverter_10_outStream_payload_regNext;
   assign streamFifo_3_io_push_valid = (OutData_Switch[3] && SubModule_mValid);
-  assign mData_3 = axisDataConverter_11_outStream_payload_regNext;
   assign streamFifo_4_io_push_valid = (OutData_Switch[4] && SubModule_mValid);
-  assign mData_4 = axisDataConverter_12_outStream_payload_regNext;
   assign streamFifo_5_io_push_valid = (OutData_Switch[5] && SubModule_mValid);
-  assign mData_5 = axisDataConverter_13_outStream_payload_regNext;
   assign streamFifo_6_io_push_valid = (OutData_Switch[6] && SubModule_mValid);
-  assign mData_6 = axisDataConverter_14_outStream_payload_regNext;
   assign streamFifo_7_io_push_valid = (OutData_Switch[7] && SubModule_mValid);
-  assign mData_7 = axisDataConverter_15_outStream_payload_regNext;
   assign mValid = axisDataConverter_8_outStream_valid_regNext;
   assign Raddr_Valid = axisDataConverter_8_outStream_valid;
   assign s_axis_s2mm_tready = SubModule_sData_ready;

@@ -20,7 +20,7 @@ parameter Mem2_Width=64;
   wire sValid;
   wire sLast;//获取sLast信号，第二次启动。
   wire Start_Again_En;
-  assign Start_Again_En=0;//需要仿真再次启动
+  assign Start_Again_En=1;//需要仿真再次启动
   reg start;
   reg start2;
   wire [63:0]sData;
@@ -39,25 +39,25 @@ parameter Mem2_Width=64;
   wire Write_Txt_End;     
 //  导出txt数据=====================================================
 //E:\\Transformer\\Sim_Transformer\\SimData_Output\\DataGenerate.txt
-  integer file_out;
-  initial
-  begin
+//  integer file_out;
+//  initial
+//  begin
 
-      file_out = $fopen("C:\\Users\\25073\\Desktop\\compare\\VivadoOutput.txt","w+");//记得用\\分开
-      if (!file_out) begin
-          $display("can't open file");
-          $finish;
-      end
-  end 
+//      file_out = $fopen("C:\\Users\\25073\\Desktop\\compare\\VivadoOutput.txt","w+");//记得用\\分开
+//      if (!file_out) begin
+//          $display("can't open file");
+//          $finish;
+//      end
+//  end 
 
-  always @ (posedge clk) begin  
-        if(Write_Txt_End)begin
-           $fclose(file_out);  //关闭写文件
-        end
-        else if(sValid&&Write_Txt_En) begin
-          $fdisplay(file_out, "%h", sData);//将数据写到TXT文件中，并且自动换行
-        end 
-  end
+//  always @ (posedge clk) begin  
+//        if(Write_Txt_End)begin
+//           $fclose(file_out);  //关闭写文件
+//        end
+//        else if(sValid&&Write_Txt_En) begin
+//          $fdisplay(file_out, "%h", sData);//将数据写到TXT文件中，并且自动换行
+//        end 
+//  end
 //  ==========================================
   initial
   begin
@@ -223,6 +223,7 @@ wire Raddr_Valid;
 wire DataInValid;
 wire [63:0]activate;
 wire [63:0]Weight;
+wire LayerEnd;
 Img2ColStreamV2 Img2ComStream(
     .mReady(sReady),
 //    .mValid(sValid),
@@ -234,18 +235,19 @@ Img2ColStreamV2 Img2ComStream(
     .clk(clk),
     .Raddr_Valid(Raddr_Valid),
     .mValid(DataInValid),
-    .reset(rst),
+    .LayerEnd(LayerEnd),
+    .reset(rst)
     
     
     
-    .mData_0(activate[7:0]),
-    .mData_1(activate[15:8]),
-    .mData_2(activate[23:16]),                     
-    .mData_3(activate[31:24]),                     
-    .mData_4(activate[39:32]),                     
-    .mData_5(activate[47:40]),                     
-    .mData_6(activate[55:48]),                     
-    .mData_7(activate[63:56])             
+//    .mData_0(activate[7:0]),
+//    .mData_1(activate[15:8]),
+//    .mData_2(activate[23:16]),                     
+//    .mData_3(activate[31:24]),                     
+//    .mData_4(activate[39:32]),                     
+//    .mData_5(activate[47:40]),                     
+//    .mData_6(activate[55:48]),                     
+//    .mData_7(activate[63:56])             
 );
 Weight_Cache Weight_Cache(
   .start(start),
@@ -257,41 +259,25 @@ Weight_Cache Weight_Cache(
   .Raddr_Valid(Raddr_Valid),
 //  .OutMatrix_Row('d49729),
   .Weight_Cached(WeightCached),
-  .LayerEnd('d0),
+  .LayerEnd(LayerEnd),
   .clk(clk),
-  .reset(rst),
-  .mData_0(Weight[7:0]),
-    .mData_1(Weight[15:8]),
-    .mData_2(Weight[23:16]),                     
-    .mData_3(Weight[31:24]),                     
-    .mData_4(Weight[39:32]),                     
-    .mData_5(Weight[47:40]),                     
-    .mData_6(Weight[55:48]),                     
-    .mData_7(Weight[63:56])
+  .reset(rst)
+//  .mData_0(Weight[7:0]),
+//    .mData_1(Weight[15:8]),
+//    .mData_2(Weight[23:16]),                     
+//    .mData_3(Weight[31:24]),                     
+//    .mData_4(Weight[39:32]),                     
+//    .mData_5(Weight[47:40]),                     
+//    .mData_6(Weight[55:48]),                     
+//    .mData_7(Weight[63:56])
 );  
 
-Tile SystolicArray(
-.activate(activate),
-.weight(Weight),
-.vaild(DataInValid),
-.signCount('d511),
-//.PE_OUT_0(),
-//.PE_OUT_1(),
-//.PE_OUT_2(),
-//.PE_OUT_3(),
-//.PE_OUT_4(),
-//.PE_OUT_5(),
-//.PE_OUT_6(),
-//.PE_OUT_7(),
-//.resultVaild_0(),
-//.resultVaild_1(),
-//.resultVaild_2(),
-//.resultVaild_3(),
-//.resultVaild_4(),
-//.resultVaild_5(),
-//.resultVaild_6(),
-//.resultVaild_7(),
-.clk(clk),
-.reset(rst)
-);
+//Tile SystolicArray(
+//.activate(activate),
+//.weight(Weight),
+//.vaild(DataInValid),
+//.signCount('d511),
+//.clk(clk),
+//.reset(rst)
+//);
 endmodule

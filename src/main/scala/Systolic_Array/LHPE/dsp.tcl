@@ -1,0 +1,3 @@
+catch { config_ip_cache -export [get_ips -all dsp_marco] }
+export_ip_user_files -of_objects [get_files e:/Transformer/OnBoard/SystolicOnBoard/V1/Zedboard_Startup2/Zedboard_Startup2.srcs/sources_1/ip/dsp_marco/dsp_marco.xci] -no_script -sync -force -quiet
+create_ip_run [get_files -of_objects [get_fileset sources_1] e:/Transformer/OnBoard/SystolicOnBoard/V1/Zedboard_Startup2/Zedboard_Startup2.srcs/sources_1/ip/dsp_marco/dsp_marco.xci]
