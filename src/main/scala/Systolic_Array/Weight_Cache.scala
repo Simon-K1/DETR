@@ -72,7 +72,7 @@ class Weight_Cache extends Component{
         val Matrix_Col=in UInt(Config.WEIGHT_CACHE_MATRIX_COL_WIDTH bits)//每次计算的权重矩阵的实际列数（对应输出通道数量）
                                         //比如输出通道是768，但是资源不够，所以只能存256个输出通道，所以这里输入256
                                         //Col=OutChannels
-
+        
         //必须确保InChannel*KernelSize*KernelSize<2^(WEIGHT_CACHE_MATRIX_ROW_WIDTH)
         //比如我们这里Matrix_Col的位宽是16bit，地址空间就是0~2^16-1,如果我们计算16*16的卷积核，可以得到支持的最大输入通道为2^16/(16*16)=256,所以这里输入通道是有上限的
 
@@ -83,9 +83,11 @@ class Weight_Cache extends Component{
         
         val Weight_Cached=out Bool()//权重缓存完了，给Img2Col一个启动型号
         val LayerEnd=in Bool()//当前网络层计算完毕
+        val MatrixCol_Switch=out UInt(Config.SA_COL bits)//脉动阵列有多少列就需要多少选择信号
     //分析：首先，假设输入通道是32，输出通道是256，16*16，那么权重矩阵的每一列有16*16*32=8192个元素，每一列8192代表一个完整的卷积核，也就是对应矩阵的一列
     }
     noIoPrefix()
+    //val Col_Lefted=Reg(UInt(Config.WEIGHT_CACHE_MATRIX_COL_WIDTH bits))init(0)//剩余待处理的列数
     val Fsm=WeightCache_Fsm(io.start)
     val Init_Count=WaCounter(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT,3,5)//数5下进行初始化
     Fsm.Init_End:=Init_Count.valid
@@ -103,7 +105,7 @@ class Weight_Cache extends Component{
     //输出行计数器
     val OutRow_Cnt=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,(io.Matrix_Row)-1)//输出行计数器,（要求输出通道必须是8的倍数）
 
-    val OutCol_Cnt=ForLoopCounter(OutRow_Cnt.valid,Config.MATRIXC_COL_WIDTH,(io.Matrix_Col>>3)-1)
+    val OutCol_Cnt=SubstractLoopCounter(OutRow_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col,Config.SA_COL)
     
 
     //举个栗子：比如16*16*32入，32出的卷积展平成2D矩阵，那么这个2D矩阵一共有8192行，32列，脉动阵列一共有8列,
@@ -149,7 +151,21 @@ class Weight_Cache extends Component{
     // val OutFeatureRow_Cnt=ForLoopCounter()
     Fsm.SA_Computed:=io.LayerEnd
 
-    
+
+
+    switch(OutCol_Cnt.count) {
+        for(i<-1 to Config.SA_COL-1){
+            is(i) {
+                io.MatrixCol_Switch(i-1 downto 0).setAll()
+                io.MatrixCol_Switch(Config.SA_COL-1 downto i).clearAll()
+            }
+        } 
+
+
+        default {
+            io.MatrixCol_Switch.setAll()
+        }
+    }
 }
 class WeightCache_Stream extends Component{
     val Config=new TopConfig

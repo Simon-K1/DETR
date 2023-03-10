@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="527712600000fs"></ZoomStartTime>
-      <ZoomEndTime time="527993600001fs"></ZoomEndTime>
-      <Cursor1Time time="527765100000fs"></Cursor1Time>
+      <ZoomStartTime time="211815000000fs"></ZoomStartTime>
+      <ZoomEndTime time="246365000001fs"></ZoomEndTime>
+      <Cursor1Time time="240565000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="238"></NameColumnWidth>
-      <ValueColumnWidth column_width="177"></ValueColumnWidth>
+      <ValueColumnWidth column_width="173"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="15" />
+   <WVObjectSize size="18" />
    <wvobject fp_name="group24" type="group">
       <obj_property name="label">SimTop</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -265,10 +265,6 @@
          <obj_property name="ElementShortName">Fsm_Init_End</obj_property>
          <obj_property name="ObjectShortName">Fsm_Init_End</obj_property>
       </wvobject>
-      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/when_WaCounter_l18" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l18</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l18</obj_property>
-      </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Init_Count_count" type="array">
          <obj_property name="ElementShortName">Init_Count_count[2:0]</obj_property>
          <obj_property name="ObjectShortName">Init_Count_count[2:0]</obj_property>
@@ -276,10 +272,6 @@
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Init_Count_valid" type="logic">
          <obj_property name="ElementShortName">Init_Count_valid</obj_property>
          <obj_property name="ObjectShortName">Init_Count_valid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/when_WaCounter_l13" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l13</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l13</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/InData_Switch" type="array">
          <obj_property name="ElementShortName">InData_Switch[7:0]</obj_property>
@@ -366,8 +358,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
          <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
@@ -384,8 +376,8 @@
          <obj_property name="ObjectShortName">ena</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/dina" type="array">
          <obj_property name="ElementShortName">dina[63:0]</obj_property>
@@ -398,8 +390,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_2/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
@@ -414,8 +406,8 @@
          <obj_property name="ObjectShortName">ena</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3/dina" type="array">
          <obj_property name="ElementShortName">dina[63:0]</obj_property>
@@ -428,8 +420,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_4/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
@@ -446,8 +438,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_5/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
@@ -462,8 +454,8 @@
          <obj_property name="ObjectShortName">ena</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_6/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_6/dina" type="array">
          <obj_property name="ElementShortName">dina[63:0]</obj_property>
@@ -476,8 +468,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_7/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
@@ -487,58 +479,13 @@
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
-      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_0" type="array">
-         <obj_property name="ElementShortName">mData_0[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mData_0[7:0]</obj_property>
-         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
-      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_1" type="array">
-         <obj_property name="ElementShortName">mData_1[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mData_1[7:0]</obj_property>
-         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
-      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_2" type="array">
-         <obj_property name="ElementShortName">mData_2[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mData_2[7:0]</obj_property>
-         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
-      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_3" type="array">
-         <obj_property name="ElementShortName">mData_3[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mData_3[7:0]</obj_property>
-         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
-      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_4" type="array">
-         <obj_property name="ElementShortName">mData_4[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mData_4[7:0]</obj_property>
-         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
-      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_5" type="array">
-         <obj_property name="ElementShortName">mData_5[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mData_5[7:0]</obj_property>
-         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
-      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_6" type="array">
-         <obj_property name="ElementShortName">mData_6[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mData_6[7:0]</obj_property>
-         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
-      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/mData_7" type="array">
-         <obj_property name="ElementShortName">mData_7[7:0]</obj_property>
-         <obj_property name="ObjectShortName">mData_7[7:0]</obj_property>
-         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Raddr_Valid" type="logic">
          <obj_property name="ElementShortName">Raddr_Valid</obj_property>
          <obj_property name="ObjectShortName">Raddr_Valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Raddr_count" type="array">
-         <obj_property name="ElementShortName">Raddr_count[15:0]</obj_property>
-         <obj_property name="ObjectShortName">Raddr_count[15:0]</obj_property>
-         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/addrb" type="array">
-         <obj_property name="ElementShortName">addrb[15:0]</obj_property>
-         <obj_property name="ObjectShortName">addrb[15:0]</obj_property>
+         <obj_property name="ElementShortName">addrb[11:0]</obj_property>
+         <obj_property name="ObjectShortName">addrb[11:0]</obj_property>
          <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/Read_Row_Base_Addr" type="array">
@@ -579,8 +526,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
          <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
@@ -597,8 +544,8 @@
          <obj_property name="ObjectShortName">ena</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_1/dina" type="array">
@@ -612,8 +559,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_2/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
@@ -628,8 +575,8 @@
          <obj_property name="ObjectShortName">ena</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_3/dina" type="array">
          <obj_property name="ElementShortName">dina[63:0]</obj_property>
@@ -642,8 +589,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_4/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
@@ -660,8 +607,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_5/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="CustomSignalColor">#00FF00</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
@@ -678,8 +625,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_6/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
@@ -696,8 +643,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/xil_SimpleDualBram_7/addra" type="array">
-         <obj_property name="ElementShortName">addra[12:0]</obj_property>
-         <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+         <obj_property name="ElementShortName">addra[8:0]</obj_property>
+         <obj_property name="ObjectShortName">addra[8:0]</obj_property>
          <obj_property name="CustomSignalColor">#00FF00</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
@@ -709,12 +656,26 @@
       </wvobject>
    </wvobject>
    <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/OutRow_Cnt_count" type="array">
-      <obj_property name="ElementShortName">OutRow_Cnt_count[25:0]</obj_property>
-      <obj_property name="ObjectShortName">OutRow_Cnt_count[25:0]</obj_property>
+      <obj_property name="ElementShortName">OutRow_Cnt_count[15:0]</obj_property>
+      <obj_property name="ObjectShortName">OutRow_Cnt_count[15:0]</obj_property>
       <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/OutRow_Cnt_valid" type="logic">
       <obj_property name="ElementShortName">OutRow_Cnt_valid</obj_property>
       <obj_property name="ObjectShortName">OutRow_Cnt_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/OutCol_Cnt_count" type="array">
+      <obj_property name="ElementShortName">OutCol_Cnt_count[15:0]</obj_property>
+      <obj_property name="ObjectShortName">OutCol_Cnt_count[15:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/OutCol_Cnt_valid" type="logic">
+      <obj_property name="ElementShortName">OutCol_Cnt_valid</obj_property>
+      <obj_property name="ObjectShortName">OutCol_Cnt_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/Sim_DataGenerate/Weight_Cache_Module/MatrixCol_Switch" type="array">
+      <obj_property name="ElementShortName">MatrixCol_Switch[7:0]</obj_property>
+      <obj_property name="ObjectShortName">MatrixCol_Switch[7:0]</obj_property>
+      <obj_property name="Radix">BINARYRADIX</obj_property>
    </wvobject>
 </wave_config>

@@ -51,7 +51,7 @@ parameter Total_Input_Times=224*224;//发完2224*224*64bit数据后mValid需要拉低
   initial
   begin
 //    $readmemh("E:/Transformer/Sim_File/Xq_LayerNorm_未处理掩码.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_B\\保存的权重矩阵\\V2\\WeightData.txt",mem);//_Modified
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col_A\\main\\K33\\S1_O35\\WeightData.txt",mem);//_Modified
     $readmemh("E:/Transformer/Sim_File/Scale_Bias.txt",Scale_Bias_Mem);//高8bit为Scale，低8bit为Bias
     clk=0;
     start=0;
@@ -179,10 +179,10 @@ Weight_Cache Weight_Cache_Module(
   .sData_valid(mValid),
   .sData_ready(mReady),
   .sData_payload(mem[mem_addr]),
-  .Matrix_Row('d8192),
-  .Matrix_Col('d32),
+.Matrix_Row                    (432),
+  .Matrix_Col                    (35),
   .Raddr_Valid(1'b1),
-  .OutMatrix_Row(26'd196),
+  .LayerEnd(1'b0),
   .clk(clk),
   .reset(rst)
 );

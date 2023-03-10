@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : WidthConvert
-// Git hash  : 4d8d30214f19f846ea29697bc4a8c9ccb188f4ed
+// Git hash  : 1793850d2e2a29cad12658c7e3e366685fe59e2a
 
 `timescale 1ns/1ps
 
@@ -21,13 +21,6 @@ module WidthConvert (
   reg        [7:0]    Regs_5;
   reg        [7:0]    Regs_6;
   reg        [7:0]    Regs_7;
-  reg        [7:0]    Regs_1_regNext;
-  reg        [7:0]    Regs_2_regNext;
-  reg        [7:0]    Regs_3_regNext;
-  reg        [7:0]    Regs_4_regNext;
-  reg        [7:0]    Regs_5_regNext;
-  reg        [7:0]    Regs_6_regNext;
-  reg        [7:0]    Regs_7_regNext;
 
   assign io_OutData = Regs_0;
   assign io_InData_ready = 1'b1;
@@ -52,25 +45,15 @@ module WidthConvert (
         Regs_6 <= io_InData_payload[55 : 48];
         Regs_7 <= io_InData_payload[63 : 56];
       end else begin
-        Regs_0 <= Regs_1_regNext;
-        Regs_1 <= Regs_2_regNext;
-        Regs_2 <= Regs_3_regNext;
-        Regs_3 <= Regs_4_regNext;
-        Regs_4 <= Regs_5_regNext;
-        Regs_5 <= Regs_6_regNext;
-        Regs_6 <= Regs_7_regNext;
+        Regs_0 <= Regs_1;
+        Regs_1 <= Regs_2;
+        Regs_2 <= Regs_3;
+        Regs_3 <= Regs_4;
+        Regs_4 <= Regs_5;
+        Regs_5 <= Regs_6;
+        Regs_6 <= Regs_7;
       end
     end
-  end
-
-  always @(posedge clk) begin
-    Regs_1_regNext <= Regs_1;
-    Regs_2_regNext <= Regs_2;
-    Regs_3_regNext <= Regs_3;
-    Regs_4_regNext <= Regs_4;
-    Regs_5_regNext <= Regs_5;
-    Regs_6_regNext <= Regs_6;
-    Regs_7_regNext <= Regs_7;
   end
 
 
