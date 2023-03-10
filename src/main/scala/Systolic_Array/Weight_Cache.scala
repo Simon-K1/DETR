@@ -76,7 +76,7 @@ class Weight_Cache extends Component{
         //必须确保InChannel*KernelSize*KernelSize<2^(WEIGHT_CACHE_MATRIX_ROW_WIDTH)
         //比如我们这里Matrix_Col的位宽是16bit，地址空间就是0~2^16-1,如果我们计算16*16的卷积核，可以得到支持的最大输入通道为2^16/(16*16)=256,所以这里输入通道是有上限的
 
-        val mData=out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
+        val mData=out UInt(64 bits)//out Vec(UInt(8 bits),Config.SA_COL)//out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
         val Raddr_Valid=in Bool()//读Bram使能
         // val OutMatrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
         // val OutMatrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
@@ -138,7 +138,8 @@ class Weight_Cache extends Component{
             Weight_Bram.io.dina:=io.sData.payload
             Weight_Bram.io.ena:=InData_Switch(i downto i).asBool&&io.sData.fire
             Weight_Bram.io.wea:=True
-            io.mData((i+1)*8-1 downto i*8):=Delay(Weight_Bram.io.doutb,i)
+            io.mData((i+1)*8-1 downto i*8):=Weight_Bram.io.doutb//Delay(,i)
+            // io.mData(i):=Delay(Weight_Bram.io.doutb,i)
         }
         gen()
     }
@@ -164,7 +165,7 @@ class WeightCache_Stream extends Component{
         val start=in Bool()
         val Matrix_Row=in UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits)
         val Matrix_Col=in UInt(Config.WEIGHT_CACHE_MATRIX_COL_WIDTH bits)
-        val mData=out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
+        val mData=out UInt(64 bits)//out Vec(UInt(8 bits),Config.SA_COL)//out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
         val Raddr_Valid=in Bool()//读Bram使能
         val Weight_Cached=out Bool()//权重缓存完了，给Img2Col一个启动型号
         val LayerEnd=in Bool()//当前网络层计算完毕

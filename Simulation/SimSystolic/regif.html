@@ -1,0 +1,190 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>
+      RegTable V1
+    </title>
+    <style>
+      div{
+          text-align: center;
+      }
+
+      body{ font-size: 0.8em; }
+      p.regif-title{
+          font-weight:800;
+          font-size:1.2em;
+      }
+      td{
+          white-space:pre-line; word-wrap: break-word; word-break: break-all;
+      }
+      td.fixWidth{
+          min-width:50px;
+          max-width:300px;
+      }
+      td.fixWidth2{
+          min-width:50px;
+          max-width:400px;
+      }
+      footer div p.info{
+          font-weight:300;
+          font-size:0.7em;
+      }
+      a {
+        color:black;text-decoration:none;
+      }
+      a:hover {
+          color:#09f;
+      }
+
+
+      .theme-default {
+          border: 3px solid #000;
+          border-collapse: collapse;
+      }
+      .theme-default td,
+      .theme-default th{
+          border: 1px solid #000;
+          border-top: 1px dashed #555;
+          border-bottom: 1px dashed #555;
+          padding: 3px;
+      }
+      .theme-default th{
+          background: #bbb;
+      }
+      .theme-default tbody td.reserved{
+          color: #bbb;
+          font-weight:200;
+          background : #eee;
+          /* text-decoration:line-through; */
+          text-decoration-color:#888;
+      }
+      .theme-default tbody tr.reg{
+          border-top: 2px solid #000;
+      }
+
+
+      .theme-spring{
+          border-collapse: collapse;
+          font-size: 1.em;
+          min-width: 800px;
+          border-radius: 5px 5px 0 0 ;
+          overflow: hidden;
+          box-shadow: 0 -10px 20px rgba(0,0,0,0.15);
+      }
+      .theme-spring th,
+      .theme-spring td {
+          padding:5px 10px;
+      }
+      .theme-spring thead tr {
+          background-color: #009879;
+          color: #ffffff;
+          text-align:center;
+          font-weight: bold;
+      }
+      .theme-spring tbody tr{
+          border-bottom: 1px solid #ddd;
+      }
+      .theme-spring tbody td{
+          border: 1px solid #ddd;
+      }
+      .theme-spring tbody tr:last-of-type{
+          border-bottom: 3px solid #009879;
+      }
+      .theme-spring tbody tr.active-row {
+          font-weight: blod;
+          color: #009879;
+      }
+      .theme-spring tbody td.reserved{
+          color: #aaa;
+          background : #fffff0;
+          /* font-style:italic; */
+          font-weight:200;
+          font-size:1.0em;
+      }
+      .theme-spring tbody tr.green{
+          background :#fffff0 ;
+      }
+
+    </style>
+  </head>
+  <body>
+  <header align="center">
+  <p class="regif-title"> RegTable V1 register interface </p>
+  </header>
+  <div class="table">
+  <table  align="center" class="theme-default">
+      <br/>
+
+      <thead>
+        <tr align="center" >
+          <th>AddressOffset</th>
+          <th>RegName</th>
+          <th>Description</th>
+          <th>Width</th>
+          <th>Section</th>
+          <th>FieldName</th>
+          <th>R/W</th>
+          <th>Reset value</th>
+          <th>Field-Description</th>
+        </tr>
+      <thead>
+
+      <tbody>
+          <tr class="reg" align="left">
+            <td align="center" rowspan="3">0x0</td>
+            <td align="left" rowspan="3">LED_REG</td>
+            <td class="fixWidth" align="center" rowspan="3">PS Lights up Led ,test </td>
+            <td align="center" rowspan="3">32</td>
+            <td class="reserved">[31:8]</td>
+            <td class="reserved">--</td>
+            <td class="reserved" align="center">NA</td>
+            <td class="reserved" align="right">24'b0</td>
+            <td class="reserved fixWidth2">Reserved</td>
+          </tr>          <tr align="left">
+            <td class="">[7:4]</td>
+            <td class="">LD4567</td>
+            <td class="" align="center">WO</td>
+            <td class="" align="right">4'b0</td>
+            <td class=" fixWidth2">O:接外面的灯，测试</td>
+                      </tr>          <tr align="left">
+            <td class="">[3:0]</td>
+            <td class="">LD0123</td>
+            <td class="" align="center">WO</td>
+            <td class="" align="right">4'b0</td>
+            <td class=" fixWidth2">O:接外面的灯，测试</td>
+                      </tr>          <tr class="reg" align="left">
+            <td align="center" rowspan="3">0x4</td>
+            <td align="left" rowspan="3">IMG2COL_REG</td>
+            <td class="fixWidth" align="center" rowspan="3">Img2Col_Start </td>
+            <td align="center" rowspan="3">32</td>
+            <td class="reserved">[31:3]</td>
+            <td class="reserved">--</td>
+            <td class="reserved" align="center">NA</td>
+            <td class="reserved" align="right">29'b0</td>
+            <td class="reserved fixWidth2">Reserved</td>
+          </tr>          <tr align="left">
+            <td class="">[2:1]</td>
+            <td class="">Switch</td>
+            <td class="" align="center">WO</td>
+            <td class="" align="right">2'b0</td>
+            <td class=" fixWidth2">01:Start Weight Cache
+ 10:Start Img2Col
+</td>
+                      </tr>          <tr align="left">
+            <td class="">[0]</td>
+            <td class="">Start</td>
+            <td class="" align="center">WO</td>
+            <td class="" align="right">1'b0</td>
+            <td class=" fixWidth2">Ps Start Img2Col_Start(only for test)</td>
+                      </tr>
+      </tbody>
+  </table>
+  </div>
+  <footer align="center">
+  <div> <p class="info">Powered by <a href="https://spinalhdl.github.io/SpinalDoc-RTD/"> SpinalHDL </a> </p> </div>
+  <div> <p class="info"> Fri Mar 10 10:18:32 CST 2023 </p> </div>
+  </footer>
+  </body>
+</html>

@@ -14,7 +14,7 @@ class Img2ColStreamV2 extends Component{
     val Config=TopConfig()
     val io=new Bundle{
         
-        val mData=out UInt(64 bits)//Vec(UInt(8 bits),8)
+        val mData=out UInt(64 bits)//out UInt(64 bits)//Vec(UInt(8 bits),8)
         val mReady=in Bool()
         val mValid=out Bool()
 
@@ -54,6 +54,7 @@ class Img2ColStreamV2 extends Component{
         Converter(i).inStream<>WidthConvert_Fifo(i).io.pop
         Converter(i).outStream.ready:=True
         io.mData((i+1)*8-1 downto i*8):=RegNext(Converter(i).outStream.payload)//valid拉高，数据应该在valid拉高的下一个周期出去，这是为了与weightCache对上
+        //io.mData(i):=RegNext(Converter(i).outStream.payload)//valid拉高，数据应该在valid拉高的下一个周期出去，这是为了与weightCache对上
     }
     io.mValid:=RegNext(Converter(0).outStream.valid)//这个valid信号给到脉动阵列
     io.Raddr_Valid:=Converter(0).outStream.valid
@@ -96,7 +97,7 @@ class Img2ColStreamV2 extends Component{
 
 
 object Top extends App { 
-    val OnBoard=true
+    val OnBoard=false
     var verilog_path="./Simulation/SimSystolic" 
     if(OnBoard){
         verilog_path="./OnBoard"

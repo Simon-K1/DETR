@@ -63,8 +63,8 @@ parameter Mem2_Width=64;
   begin
   
 //    $readmemh("E:/Transformer/Sim_File/Xq_LayerNorm_未处理掩码.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\保存的图片矩阵\\K44\\S2\\img2Col随机输入测试数据.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\保存的图片矩阵\\K44\\S2\\WeightData.txt",mem2);//高8bit为Scale，低8bit为Bias
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K44\\S2\\img2Col随机输入测试数据.txt",mem);//_Modified
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K44\\S2\\WeightData.txt",mem2);//高8bit为Scale，低8bit为Bias
     clk=0;
     start=0;
     rst=1;
@@ -236,18 +236,22 @@ Img2ColStreamV2 Img2ComStream(
     .Raddr_Valid(Raddr_Valid),
     .mValid(DataInValid),
     .LayerEnd(LayerEnd),
-    .reset(rst)
-    
-    
-    
-//    .mData_0(activate[7:0]),
+    .mData(activate),
+//        .mData_0(activate[7:0]),
 //    .mData_1(activate[15:8]),
 //    .mData_2(activate[23:16]),                     
 //    .mData_3(activate[31:24]),                     
 //    .mData_4(activate[39:32]),                     
 //    .mData_5(activate[47:40]),                     
 //    .mData_6(activate[55:48]),                     
-//    .mData_7(activate[63:56])             
+//    .mData_7(activate[63:56])，
+    
+    .reset(rst)
+    
+    
+    
+    
+            
 );
 Weight_Cache Weight_Cache(
   .start(start),
@@ -261,8 +265,8 @@ Weight_Cache Weight_Cache(
   .Weight_Cached(WeightCached),
   .LayerEnd(LayerEnd),
   .clk(clk),
-  .reset(rst)
-//  .mData_0(Weight[7:0]),
+  .mData(Weight),
+//    .mData_0(Weight[7:0]),
 //    .mData_1(Weight[15:8]),
 //    .mData_2(Weight[23:16]),                     
 //    .mData_3(Weight[31:24]),                     
@@ -270,14 +274,17 @@ Weight_Cache Weight_Cache(
 //    .mData_5(Weight[47:40]),                     
 //    .mData_6(Weight[55:48]),                     
 //    .mData_7(Weight[63:56])
+  
+  .reset(rst)
+
 );  
 
-//Tile SystolicArray(
-//.activate(activate),
-//.weight(Weight),
-//.vaild(DataInValid),
-//.signCount('d511),
-//.clk(clk),
-//.reset(rst)
-//);
+Tile SystolicArray(
+.activate(activate),
+.weight(Weight),
+.vaild(DataInValid),
+.signCount('d511),
+.clk(clk),
+.reset(rst)
+);
 endmodule
