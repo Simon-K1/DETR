@@ -11,7 +11,9 @@ if __name__== '__main__':
     Encoder_Layers=6
     model=Vit(In_Channels=In_Channels,Out_Channels=Embed_Dim,Picture_Size=Picture_Size,Patch_Size=Patch_Size
     ,Num_Class=Num_Class,Num_Heads=Num_Heads,Encoder_Layers=Encoder_Layers)
-
+    print(model)
+    export_onnx(torch.rand(1,3,224,224),model,'exported_onnx.onnx')
+    # exit()
     mean = (0.5, 0.5, 0.5)
     std = (0.5, 0.5, 0.5)
     crop_pct = 0.9

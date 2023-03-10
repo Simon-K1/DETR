@@ -81,7 +81,7 @@ class Vit(nn.Module):
         #     torch.zeros(1, num_patches + 1, self.Embed_Dim))
         
         
-
+        nn.Transformer
         self.Single_Encoder = nn.TransformerEncoderLayer(d_model=self.Embed_Dim, nhead=self.Num_Heads,batch_first=True,norm_first=True)#在Vit中的norm需要位于atten和FF之前
         self.Encoders= nn.TransformerEncoder(self.Single_Encoder,num_layers=self.Encoder_layers,norm=None)#构建多个连在一起的Encoder
                                                                             #nomrm 就是在末尾加一个normlization
@@ -119,6 +119,6 @@ class Vit(nn.Module):
 # Layer0=Vit(In_Channels,Embed_Dim,Picture_Size,Patch_Size=Patch_Size)
 # export_onnx(Picture,Layer0)
 #再自己构建一个attn
-class EncoderLayer(nn.model):
-    def __init__(self,dim:int=3,Out_Channels:int=768,Picture_Size:int=224,Patch_Size:int=16,Num_Class:int=1,Num_Heads:int=8,Encoder_Layers:int=12):
-        super(Vit,self).__init__()
+# class EncoderLayer(nn.model):
+#     def __init__(self,dim:int=3,Out_Channels:int=768,Picture_Size:int=224,Patch_Size:int=16,Num_Class:int=1,Num_Heads:int=8,Encoder_Layers:int=12):
+#         super(Vit,self).__init__()

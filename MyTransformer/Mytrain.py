@@ -9,7 +9,7 @@ from itertools import repeat
 import collections.abc
 import torch.optim as optim
 import time
-from utils import load_weights_from_npz
+
 
 from Mymodels import Vit
 
