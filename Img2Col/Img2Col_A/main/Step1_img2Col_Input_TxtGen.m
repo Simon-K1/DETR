@@ -3,10 +3,10 @@
 clear
 Feature_Size=225;%图片大小224*224
 Feature_Channel=48;%图片通道32
-Out_Channel=64;
+Out_Channel=35;
 
-Stride=5;%要修改
-KernelSize=5;%要修改
+Stride=1;%要修改
+KernelSize=3;%要修改
 OutFeatureSize=75;%无需修改，在后面自动推理出来
 %Strdie1
 if Stride==KernelSize

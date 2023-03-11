@@ -4,6 +4,7 @@
 *.exe
 *.asv
 *.txt
+*.onnx
 #这个还有顺序,比如这个*.exe放最前面就不行
 
 !LayerNorm_Txt_Gen/

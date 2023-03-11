@@ -6,7 +6,7 @@ load('matlab.mat')
 fid=fopen('C:\Users\25073\Desktop\compare\Matlab输出数据.txt','w');
 %% ============开关（只改这里）===========
 Compare_By_Row=1;%逐行对比，如果关闭就是直接生成全部的对比数据
-Compare_Row=112;%需要修改
+Compare_Row=14;%需要修改
 %% =======================================
 
 
@@ -27,7 +27,7 @@ for Out_Row_Cnt=1:Compare_Row
         fprintf(fid,'===========OutPut Row %d==========\n',Out_Row_Cnt);%低位第一个点，高位第二个点，
     end
     for Out_Col_Cnt=1:ceil(Out_Col/Compute_OutChannel)
-        for Out_Channel_Cnt=1:Out_Channel/Compute_OutChannel
+        for Out_Channel_Cnt=1:ceil(Out_Channel/Compute_OutChannel)
             for Window_Row_Cnt=1:KernelSize
 %                              fprintf('========================New Col================================\n')
                 for Window_Col_Cnt=1:KernelSize

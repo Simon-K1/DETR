@@ -36,6 +36,12 @@ fprintf(".OutFeature_Size               (%d),\n",io_OutFeature_Size             
 fprintf(".OutCol_Count_Times            (%d),\n",io_OutCol_Count_Times            )
 fprintf(".InCol_Count_Times             (%d),\n",io_InCol_Count_Times             )
 fprintf(".OutRow_Count_Times            (%d),\n",io_OutRow_Count_Times            )
-fprintf(".OutFeature_Channel_Count_Times(%d),\n",io_OutFeature_Channel_Count_Times)
+fprintf(".OutFeature_Channel_Count_Times(%d),\n",ceil(io_OutFeature_Channel_Count_Times))
 fprintf(".Sliding_Size                  (%d),\n",io_Sliding_Size)
 
+%% 权重对应指令
+[Row,Col]=size(WeightMatrix);
+io_Matrix_Row=Row;
+io_Matrix_Col=Col;
+fprintf(".Matrix_Row                    (%d),\n",io_Matrix_Row)
+fprintf(".Matrix_Col                    (%d),\n",io_Matrix_Col)
