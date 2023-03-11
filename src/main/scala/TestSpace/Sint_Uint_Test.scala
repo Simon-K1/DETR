@@ -46,18 +46,25 @@ class gray2bin_V2(data_width:Int=4) extends Component{
         val gray=in Bits(data_width bits)
         val bin=out Bits(data_width bits)
     }
+    // io.bin(data_width-1 downto data_width-1):=io.gray(data_width-1 downto data_width-1)
+    // for(i <-0 to data_width-2){
+    //     io.bin(i downto i):=io.bin(i+1 downto i+1)^io.gray(i downto i)
+    // }
+    io.bin:=0
+}
 
-
-    
-    io.bin(data_width-1 downto data_width-1):=io.gray(data_width-1 downto data_width-1)
-    for(i <-0 to data_width-2){
-        io.bin(i downto i):=io.bin(i+1 downto i+1)^io.gray(i downto i)
-    }
+class TopTest extends Component{
+    val SubModule=new gray2bin_V2(4)
+    // val io=new Bundle{
+    //     val gray=in Bits(4 bits)
+    //     val bin=out Bits(4 bits)
+    // }
+    val io=SubModule.io
 }
 
 object TestGen extends App { 
     val verilog_path="./testcode_gen" 
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ExtendsTest)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new gray2bin)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new TopTest)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

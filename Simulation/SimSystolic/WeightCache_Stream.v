@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : WeightCache_Stream
-// Git hash  : 3f47e2272714eaadc4903fce7d57faff55e9534d
+// Git hash  : 38ca0002442a53854501226aaa32895051626a31
 
 `timescale 1ns/1ps
 
@@ -24,20 +24,22 @@ module WeightCache_Stream (
   wire                WeightCache_sData_ready;
   wire       [63:0]   WeightCache_mData;
   wire                WeightCache_Weight_Cached;
+  wire       [7:0]    WeightCache_MatrixCol_Switch;
 
   Weight_Cache WeightCache (
-    .start         (start                    ), //i
-    .sData_valid   (s_axis_s2mm_tvalid       ), //i
-    .sData_ready   (WeightCache_sData_ready  ), //o
-    .sData_payload (s_axis_s2mm_tdata[63:0]  ), //i
-    .Matrix_Row    (Matrix_Row[15:0]         ), //i
-    .Matrix_Col    (Matrix_Col[15:0]         ), //i
-    .mData         (WeightCache_mData[63:0]  ), //o
-    .Raddr_Valid   (Raddr_Valid              ), //i
-    .Weight_Cached (WeightCache_Weight_Cached), //o
-    .LayerEnd      (LayerEnd                 ), //i
-    .clk           (clk                      ), //i
-    .reset         (reset                    )  //i
+    .start            (start                            ), //i
+    .sData_valid      (s_axis_s2mm_tvalid               ), //i
+    .sData_ready      (WeightCache_sData_ready          ), //o
+    .sData_payload    (s_axis_s2mm_tdata[63:0]          ), //i
+    .Matrix_Row       (Matrix_Row[15:0]                 ), //i
+    .Matrix_Col       (Matrix_Col[15:0]                 ), //i
+    .mData            (WeightCache_mData[63:0]          ), //o
+    .Raddr_Valid      (Raddr_Valid                      ), //i
+    .Weight_Cached    (WeightCache_Weight_Cached        ), //o
+    .LayerEnd         (LayerEnd                         ), //i
+    .MatrixCol_Switch (WeightCache_MatrixCol_Switch[7:0]), //o
+    .clk              (clk                              ), //i
+    .reset            (reset                            )  //i
   );
   assign mData = WeightCache_mData;
   assign Weight_Cached = WeightCache_Weight_Cached;
@@ -56,6 +58,7 @@ module Weight_Cache (
   input               Raddr_Valid,
   output              Weight_Cached,
   input               LayerEnd,
+  output reg [7:0]    MatrixCol_Switch,
   input               clk,
   input               reset
 );
@@ -100,9 +103,8 @@ module Weight_Cache (
   wire       [12:0]   _zz_In_Row_Cnt_valid_1;
   wire       [15:0]   _zz_In_Col_Cnt_valid;
   wire       [15:0]   _zz_OutRow_Cnt_valid;
-  wire       [12:0]   _zz_OutCol_Cnt_valid;
-  wire       [12:0]   _zz_OutCol_Cnt_valid_1;
-  wire       [12:0]   _zz_OutCol_Cnt_valid_2;
+  wire       [15:0]   _zz_OutCol_Cnt_valid;
+  wire       [15:0]   _zz_OutCol_Cnt_count_1;
   wire       [15:0]   _zz_Write_Row_Base_Addr;
   wire       [15:0]   _zz_addra;
   wire       [15:0]   _zz_addrb;
@@ -133,10 +135,10 @@ module Weight_Cache (
   wire                Fsm_Init_End;
   wire                Fsm_Weight_All_Cached;
   wire                Fsm_SA_Computed;
-  wire                when_WaCounter_l18;
+  wire                when_WaCounter_l19;
   reg        [2:0]    Init_Count_count;
   reg                 Init_Count_valid;
-  wire                when_WaCounter_l13;
+  wire                when_WaCounter_l14;
   reg        [7:0]    InData_Switch;
   wire       [12:0]   Matrix_In_MaxCnt;
   wire                sData_fire;
@@ -146,10 +148,11 @@ module Weight_Cache (
   wire                In_Col_Cnt_valid;
   reg        [15:0]   Read_Row_Base_Addr;
   reg        [15:0]   Write_Row_Base_Addr;
-  wire                when_WaCounter_l37;
+  wire                when_WaCounter_l39;
   reg        [15:0]   OutRow_Cnt_count;
   wire                OutRow_Cnt_valid;
-  reg        [11:0]   OutCol_Cnt_count;
+  wire       [3:0]    _zz_OutCol_Cnt_count;
+  reg        [15:0]   OutCol_Cnt_count;
   wire                OutCol_Cnt_valid;
   reg        [2:0]    Col_In_8_Cnt_count;
   wire                Col_In_8_Cnt_valid;
@@ -171,9 +174,8 @@ module Weight_Cache (
   assign _zz_In_Row_Cnt_valid = {3'd0, _zz_In_Row_Cnt_valid_1};
   assign _zz_In_Col_Cnt_valid = (Matrix_Col - 16'h0001);
   assign _zz_OutRow_Cnt_valid = (Matrix_Row - 16'h0001);
-  assign _zz_OutCol_Cnt_valid = {1'd0, OutCol_Cnt_count};
-  assign _zz_OutCol_Cnt_valid_1 = (_zz_OutCol_Cnt_valid_2 - 13'h0001);
-  assign _zz_OutCol_Cnt_valid_2 = (Matrix_Col >>> 3);
+  assign _zz_OutCol_Cnt_valid = {12'd0, _zz_OutCol_Cnt_count};
+  assign _zz_OutCol_Cnt_count_1 = {12'd0, _zz_OutCol_Cnt_count};
   assign _zz_Write_Row_Base_Addr = {3'd0, Matrix_In_MaxCnt};
   assign _zz_addra = (In_Row_Cnt_count + Write_Row_Base_Addr);
   assign _zz_addrb = (Read_Row_Base_Addr + OutRow_Cnt_count);
@@ -334,10 +336,10 @@ module Weight_Cache (
     endcase
   end
 
-  assign when_WaCounter_l18 = ((Fsm_currentState & WEIGHT_CACHE_STATUS_INIT) != 4'b0000);
-  assign when_WaCounter_l13 = (Init_Count_count == 3'b101);
+  assign when_WaCounter_l19 = ((Fsm_currentState & WEIGHT_CACHE_STATUS_INIT) != 4'b0000);
+  assign when_WaCounter_l14 = (Init_Count_count == 3'b101);
   always @(*) begin
-    if(when_WaCounter_l13) begin
+    if(when_WaCounter_l14) begin
       Init_Count_valid = 1'b1;
     end else begin
       Init_Count_valid = 1'b0;
@@ -349,9 +351,10 @@ module Weight_Cache (
   assign sData_fire = (sData_valid && sData_ready);
   assign In_Row_Cnt_valid = ((In_Row_Cnt_count == _zz_In_Row_Cnt_valid) && sData_fire);
   assign In_Col_Cnt_valid = ((In_Col_Cnt_count == _zz_In_Col_Cnt_valid) && In_Row_Cnt_valid);
-  assign when_WaCounter_l37 = (Raddr_Valid && ((Fsm_currentState & WEIGHT_CACHE_STATUS_SA_COMPUTE) != 4'b0000));
-  assign OutRow_Cnt_valid = ((OutRow_Cnt_count == _zz_OutRow_Cnt_valid) && when_WaCounter_l37);
-  assign OutCol_Cnt_valid = ((_zz_OutCol_Cnt_valid == _zz_OutCol_Cnt_valid_1) && OutRow_Cnt_valid);
+  assign when_WaCounter_l39 = (Raddr_Valid && ((Fsm_currentState & WEIGHT_CACHE_STATUS_SA_COMPUTE) != 4'b0000));
+  assign OutRow_Cnt_valid = ((OutRow_Cnt_count == _zz_OutRow_Cnt_valid) && when_WaCounter_l39);
+  assign _zz_OutCol_Cnt_count = 4'b1000;
+  assign OutCol_Cnt_valid = ((OutCol_Cnt_count <= _zz_OutCol_Cnt_valid) && OutRow_Cnt_valid);
   assign Col_In_8_Cnt_valid = ((Col_In_8_Cnt_count == 3'b111) && In_Row_Cnt_valid);
   assign Fsm_Weight_All_Cached = In_Col_Cnt_valid;
   assign Weight_Cached = In_Col_Cnt_valid;
@@ -400,6 +403,42 @@ module Weight_Cache (
   assign xil_SimpleDualBram_7_ena = (_zz_ena_7[0] && sData_fire_8);
   assign sData_ready = ((Fsm_currentState & WEIGHT_CACHE_STATUS_CACHE_WEIGHT) != 4'b0000);
   assign Fsm_SA_Computed = LayerEnd;
+  always @(*) begin
+    case(OutCol_Cnt_count)
+      16'h0001 : begin
+        MatrixCol_Switch[0 : 0] = 1'b1;
+        MatrixCol_Switch[7 : 1] = 7'h0;
+      end
+      16'h0002 : begin
+        MatrixCol_Switch[1 : 0] = 2'b11;
+        MatrixCol_Switch[7 : 2] = 6'h0;
+      end
+      16'h0003 : begin
+        MatrixCol_Switch[2 : 0] = 3'b111;
+        MatrixCol_Switch[7 : 3] = 5'h0;
+      end
+      16'h0004 : begin
+        MatrixCol_Switch[3 : 0] = 4'b1111;
+        MatrixCol_Switch[7 : 4] = 4'b0000;
+      end
+      16'h0005 : begin
+        MatrixCol_Switch[4 : 0] = 5'h1f;
+        MatrixCol_Switch[7 : 5] = 3'b000;
+      end
+      16'h0006 : begin
+        MatrixCol_Switch[5 : 0] = 6'h3f;
+        MatrixCol_Switch[7 : 6] = 2'b00;
+      end
+      16'h0007 : begin
+        MatrixCol_Switch[6 : 0] = 7'h7f;
+        MatrixCol_Switch[7 : 7] = 1'b0;
+      end
+      default : begin
+        MatrixCol_Switch = 8'hff;
+      end
+    endcase
+  end
+
   always @(posedge clk or posedge reset) begin
     if(reset) begin
       Fsm_currentState <= WEIGHT_CACHE_STATUS_IDLE;
@@ -410,11 +449,11 @@ module Weight_Cache (
       Read_Row_Base_Addr <= 16'h0;
       Write_Row_Base_Addr <= 16'h0;
       OutRow_Cnt_count <= 16'h0;
-      OutCol_Cnt_count <= 12'h0;
+      OutCol_Cnt_count <= Matrix_Col;
       Col_In_8_Cnt_count <= 3'b000;
     end else begin
       Fsm_currentState <= Fsm_nextState;
-      if(when_WaCounter_l18) begin
+      if(when_WaCounter_l19) begin
         Init_Count_count <= (Init_Count_count + 3'b001);
         if(Init_Count_valid) begin
           Init_Count_count <= 3'b000;
@@ -434,7 +473,7 @@ module Weight_Cache (
           In_Col_Cnt_count <= (In_Col_Cnt_count + 16'h0001);
         end
       end
-      if(when_WaCounter_l37) begin
+      if(when_WaCounter_l39) begin
         if(OutRow_Cnt_valid) begin
           OutRow_Cnt_count <= 16'h0;
         end else begin
@@ -443,9 +482,9 @@ module Weight_Cache (
       end
       if(OutRow_Cnt_valid) begin
         if(OutCol_Cnt_valid) begin
-          OutCol_Cnt_count <= 12'h0;
+          OutCol_Cnt_count <= Matrix_Col;
         end else begin
-          OutCol_Cnt_count <= (OutCol_Cnt_count + 12'h001);
+          OutCol_Cnt_count <= (OutCol_Cnt_count - _zz_OutCol_Cnt_count_1);
         end
       end
       if(In_Row_Cnt_valid) begin

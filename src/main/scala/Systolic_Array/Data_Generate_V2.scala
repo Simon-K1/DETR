@@ -105,20 +105,25 @@ class Img2Col_Top extends Component{
         val OutFeature_Size                 =in UInt(16 bits)//输出特征图的大小                                            
         val OutCol_Count_Times              =in UInt(16 bits)
         val InCol_Count_Times               =in UInt(16 bits)//这玩意又是啥？
+        val OutRow_Count_Times              =in UInt(16 bits)
+        val OutFeature_Channel_Count_Times  =in UInt(16 bits)
+        val Sliding_Size                    =in UInt(16-3 bits)
         //比如224的图片，输入通道是8，那么InCOl_Count_TImes就是224，数224下就能把输入图片完整的一行存下来
         //如果图片的输入通道变成了16，那么我们肯定得数224*2下才能把图片的完整的一行存下来，因为输入位宽是64bit，一下进8个点
-
-        val OutRow_Count_Times               =in UInt(16 bits)
         
-        val OutFeature_Channel_Count_Times  =in UInt(16 bits)
+        
+
+
         //测试信号==============================================================
         val Test_Signal=out Bool()
         val Test_Generate_Period=in UInt(16 bits)
         val Test_End=out Bool()
-        val Sliding_Size=in UInt(16-3 bits)
+        
 
         val Raddr_Valid=out Bool()
         val LayerEnd=out Bool()
+
+        val SA_Row_Cnt_Valid=out Bool()//给脉动阵列的行选择信号的复位标志
         
     }
     noIoPrefix()
@@ -240,6 +245,8 @@ class Img2Col_Top extends Component{
     Img2Col_SubModule.io.Sliding_Size:=io.Sliding_Size
     Img2Col_SubModule.io.LayerEnd:=Fsm.Layer_End
     Img2Col_SubModule.io.mReady:=io.mReady
+    Img2Col_SubModule.io.SA_Row_Cnt_Valid<>io.SA_Row_Cnt_Valid
+
     io.LayerEnd:=Fsm.Layer_End
     Fsm.Addr_Updated:=Img2Col_SubModule.io.AddrReceived
     val Out_Row_Cnt=ForLoopCounter(Img2Col_SubModule.io.SA_End,16,io.OutRow_Count_Times-1)
@@ -376,6 +383,8 @@ class  Img2Col_OutPut extends Component{
         val mReady=in Bool()//下层准备好接收数据的信号
         val AddrReceived=out Bool()//地址初始化完成
         val LayerEnd=in Bool()
+
+        val SA_Row_Cnt_Valid=out Bool()
         //同时，当拿到当前8个滑窗对应的全部输出通道后，KernelBaseAddr+=Sliding_Size<<3
         // val Sliding_Size=in UInt(16 bits)
     }
@@ -421,6 +430,7 @@ class  Img2Col_OutPut extends Component{
     val SA_Row_Cnt=ForLoopCounter((Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE)&&io.mReady,3,8-1)//这个计数器对应的是脉动阵列的每一行
         //这里的意思是：脉动阵列一共有8行，每一行处理一个滑动窗口，那么8行就处理8个滑动窗口，对应特征图的一行8个输出点
         //以后这个地方需要修改为可配置的
+    io.SA_Row_Cnt_Valid:=SA_Row_Cnt.valid
     val In_Channel_Process_Cnt=ForLoopCounter(SA_Row_Cnt.valid,16-3,(io.InFeature_Channel>>3)-1)//必须确保输入通道是8的倍数
         //输入通道处理次数：目前处理的输入通道次数，比如输入通道是32，一次处理8个通道，需要4次才能处理完一个点的全部的输入通道
     val Window_Col_Cnt=ForLoopCounter(In_Channel_Process_Cnt.valid,16,io.Kernel_Size-1)
@@ -500,106 +510,6 @@ class  Img2Col_OutPut extends Component{
     RaddrFifo1.io.flush:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.IDLE
 }
 
-
-class DataGenerate_Top extends Component{
-    val Config=TopConfig()
-    val io=new Bundle{
-        def DATA_IN_WIDTH=64
-        val m_axis_mm2s_tdata=out UInt(DATA_IN_WIDTH bits)
-        val m_axis_mm2s_tkeep=out Bits(DATA_IN_WIDTH/8 bits)
-        val m_axis_mm2s_tlast=out Bool()
-        val m_axis_mm2s_tready=in Bool()
-        val m_axis_mm2s_tvalid=out Bool()
-
-        def DATA_OUT_WIDTH=64
-        val s_axis_s2mm_tdata=in UInt(DATA_OUT_WIDTH bits)
-        val s_axis_s2mm_tkeep=in Bits(DATA_OUT_WIDTH/8 bits)
-        val s_axis_s2mm_tlast=in Bool()
-        val s_axis_s2mm_tready=out Bool()
-        val s_axis_s2mm_tvalid=in Bool()
-
-        // val m_tlast=out Bool()
-        val start=in Bool()
-        //=================================================================
-        // val Stride=in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
-        // val Kernel_Size=in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
-        // val Window_Size=in UInt(32 bits)
-        //     //所谓WindowSize,比如一个16*16的卷积,那么一个滑动窗口的大小就是16,但是需要考虑输入通道,比如256的输入通道,那么这时输入的Window_Size就是16*256(对应的是滑动窗口一行数据点),只支持方形卷积
-        //     //除了考虑输入通道，还要考虑输入数据的并行度，比如如果一下进8个点，也就是8个通道，虽然实际我们进的是224*224*3的图片，
-        //     //但是我们不能简单的将Window_Size设置为16*3，应该还是设置为16，因为3通道不够，需要补零成8通道
-        //     //这时我们的WindowSize还是1，如果输入通道是9，那么我们的Window_Size就是16*2，9通道继续补零成16通道，有7个通道冗余
-        //     //总的来说Window_Size的实际计算公式应该是：KernelSize*InChannel/(Bram_Out_DataWidth/8)(向上取整)
-
-        // val InFeature_Size=in UInt(32 bits)//图片多大就输入多大的数据
-        // val InFeature_Channel=in UInt(32 bits)
-        
-        // val OutFeature_Channel=in UInt(32 bits)
-        // val OutFeature_Channel_Count_Times=in UInt(32 bits)
-        // val OutFeature_Size=in UInt(32 bits)//输出特征图的大小
-        //                                     //用于计算的冗余处理，
-        // val OutCol_Count_Times=in UInt(32 bits)
-        // val OutRow_Count_Times=in UInt(32 bits)
-        // val InCol_Count_Times=in UInt(32 bits)//图片大小*ceil(通道数/8)，比如224的图片，3通道，但是一下子进8个通道，这三个通道补零成8通道，那么这里应该输入224*ceil(3/8)
-        //                                         //实际上就是输入图片一行（全部通道）的地址空间大小
-
-        // val Test_Signal=out Bool()//一个调试信号，比如第一轮的输出保存为txt，或者第5轮的输出保存为txt
-        // val Test_Generate_Period=in UInt(32 bits)//
-    }
-    noIoPrefix()
-    val SubModule=new Img2Col_Top
-    SubModule.io.mData<>io.m_axis_mm2s_tdata
-    SubModule.io.mValid<>io.m_axis_mm2s_tvalid
-    // SubModule.io.mReady<>io.m_axis_mm2s_tready
-    SubModule.io.mLast<>io.m_axis_mm2s_tlast
-    io.m_axis_mm2s_tkeep.setAll()//全部设置为1
-
-    SubModule.io.sData.payload<>io.s_axis_s2mm_tdata
-    SubModule.io.sData.valid<>io.s_axis_s2mm_tvalid
-    SubModule.io.sData.ready<>io.s_axis_s2mm_tready
-    SubModule.io.start<>io.start
-
-
-    // io.Stride                           <>SubModule.io.Stride
-    // io.Kernel_Size                      <>SubModule.io.Kernel_Size  
-    // io.Window_Size                      <>SubModule.io.Window_Size  
-    // io.InFeature_Size                   <>SubModule.io.InFeature_Size 
-    // io.InFeature_Channel                <>SubModule.io.InFeature_Channel  
-    // io.OutFeature_Channel               <>SubModule.io.OutFeature_Channel 
-    // io.OutFeature_Channel_Count_Times   <>SubModule.io.OutFeature_Channel_Count_Times 
-    // io.OutFeature_Size                  <>SubModule.io.OutFeature_Size
-    // io.OutCol_Count_Times               <>SubModule.io.OutCol_Count_Times 
-    // io.OutRow_Count_Times               <>SubModule.io.OutRow_Count_Times 
-    // io.InCol_Count_Times                <>SubModule.io.InCol_Count_Times  
-    // io.Test_Signal                      <>SubModule.io.Test_Signal
-    // io.Test_Generate_Period             <>SubModule.io.Test_Generate_Period
-
-    val Stride=16
-    val Kernel_Size=16
-    val InFeature_Size=224//图片大小为224*224
-
-    SubModule.io.Stride                          :=Stride                       
-    SubModule.io.Kernel_Size                     :=Kernel_Size       
-    SubModule.io.Window_Size                     :=16       
-    SubModule.io.InFeature_Size                  :=224          
-    SubModule.io.InFeature_Channel               :=3               
-    SubModule.io.OutFeature_Channel              :=768               
-    SubModule.io.OutFeature_Channel_Count_Times  :=96                           
-    SubModule.io.OutFeature_Size                 :=14           
-    SubModule.io.OutCol_Count_Times              :=2               
-    SubModule.io.OutRow_Count_Times              :=14               
-    SubModule.io.InCol_Count_Times               :=224  
-    SubModule.io.Sliding_Size                    :=64             
-    // SubModule.io.Test_Signal                     :=       
-    // SubModule.io.Test_Generate_Period            :=14
-
-    val Out_Data_Counter=WaCounter(io.m_axis_mm2s_tready&&io.m_axis_mm2s_tvalid,32,U"32'hffffffff")       
-    val In_Data_Counter=WaCounter(io.s_axis_s2mm_tvalid&&io.s_axis_s2mm_tready,32,U"32'hffffffff")   
-    when(io.start){
-        Out_Data_Counter.clear
-        In_Data_Counter.clear
-    }    
-            
-}
 
 
 

@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="262103666666fs"></ZoomStartTime>
-      <ZoomEndTime time="262260866667fs"></ZoomEndTime>
-      <Cursor1Time time="262138467000fs"></Cursor1Time>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="13330000000001fs"></ZoomEndTime>
+      <Cursor1Time time="5000000000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="227"></NameColumnWidth>
+      <NameColumnWidth column_width="223"></NameColumnWidth>
       <ValueColumnWidth column_width="58"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="105" />
+   <WVObjectSize size="88" />
    <wave_markers>
       <marker time="262115000000" label="" />
    </wave_markers>
@@ -540,10 +540,6 @@
          <obj_property name="ElementShortName">axisDataConverter_15_outStream_payload_regNext[7:0]</obj_property>
          <obj_property name="ObjectShortName">axisDataConverter_15_outStream_payload_regNext[7:0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/when_WaCounter_l18" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l18</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l18</obj_property>
-      </wvobject>
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/Out_Data_Counter_count" type="array">
          <obj_property name="ElementShortName">Out_Data_Counter_count[31:0]</obj_property>
          <obj_property name="ObjectShortName">Out_Data_Counter_count[31:0]</obj_property>
@@ -552,14 +548,6 @@
          <obj_property name="ElementShortName">Out_Data_Counter_valid</obj_property>
          <obj_property name="ObjectShortName">Out_Data_Counter_valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/when_WaCounter_l13" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l13</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l13</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/when_WaCounter_l18_1" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l18_1</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l18_1</obj_property>
-      </wvobject>
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/In_Data_Counter_count" type="array">
          <obj_property name="ElementShortName">In_Data_Counter_count[31:0]</obj_property>
          <obj_property name="ObjectShortName">In_Data_Counter_count[31:0]</obj_property>
@@ -567,10 +555,6 @@
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/In_Data_Counter_valid" type="logic">
          <obj_property name="ElementShortName">In_Data_Counter_valid</obj_property>
          <obj_property name="ObjectShortName">In_Data_Counter_valid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/when_WaCounter_l13_1" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l13_1</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l13_1</obj_property>
       </wvobject>
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/start" type="logic">
          <obj_property name="ElementShortName">start</obj_property>
@@ -864,10 +848,6 @@
          <obj_property name="ElementShortName">when_Data_Generate_V2_l56</obj_property>
          <obj_property name="ObjectShortName">when_Data_Generate_V2_l56</obj_property>
       </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/when_WaCounter_l18" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l18</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l18</obj_property>
-      </wvobject>
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Init_Count_count" type="array">
          <obj_property name="ElementShortName">Init_Count_count[2:0]</obj_property>
          <obj_property name="ObjectShortName">Init_Count_count[2:0]</obj_property>
@@ -875,14 +855,6 @@
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Init_Count_valid" type="logic">
          <obj_property name="ElementShortName">Init_Count_valid</obj_property>
          <obj_property name="ObjectShortName">Init_Count_valid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/when_WaCounter_l13" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l13</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l13</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/when_WaCounter_l37" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l37</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l37</obj_property>
       </wvobject>
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Addr_Init_Cnt_count" type="array">
          <obj_property name="ElementShortName">Addr_Init_Cnt_count[4:0]</obj_property>
@@ -1320,10 +1292,6 @@
          <obj_property name="ElementShortName">when_Data_Generate_V2_l56</obj_property>
          <obj_property name="ObjectShortName">when_Data_Generate_V2_l56</obj_property>
       </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/when_WaCounter_l18" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l18</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l18</obj_property>
-      </wvobject>
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Init_Count_count" type="array">
          <obj_property name="ElementShortName">Init_Count_count[2:0]</obj_property>
          <obj_property name="ObjectShortName">Init_Count_count[2:0]</obj_property>
@@ -1331,14 +1299,6 @@
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Init_Count_valid" type="logic">
          <obj_property name="ElementShortName">Init_Count_valid</obj_property>
          <obj_property name="ObjectShortName">Init_Count_valid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/when_WaCounter_l13" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l13</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l13</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/when_WaCounter_l37" type="logic">
-         <obj_property name="ElementShortName">when_WaCounter_l37</obj_property>
-         <obj_property name="ObjectShortName">when_WaCounter_l37</obj_property>
       </wvobject>
       <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Addr_Init_Cnt_count" type="array">
          <obj_property name="ElementShortName">Addr_Init_Cnt_count[4:0]</obj_property>
@@ -1964,10 +1924,6 @@
       <obj_property name="ObjectShortName">SA_Row_Cnt_count[2:0]</obj_property>
       <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
-   <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/SA_Row_Cnt_valid" type="logic">
-      <obj_property name="ElementShortName">SA_Row_Cnt_valid</obj_property>
-      <obj_property name="ObjectShortName">SA_Row_Cnt_valid</obj_property>
-   </wvobject>
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/In_Channel_Process_Cnt_count" type="array">
       <obj_property name="ElementShortName">In_Channel_Process_Cnt_count[12:0]</obj_property>
       <obj_property name="ObjectShortName">In_Channel_Process_Cnt_count[12:0]</obj_property>
@@ -2099,95 +2055,11 @@
    </wvobject>
    <wvobject type="divider" fp_name="divider2023">
    </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_0" type="array">
-      <obj_property name="ElementShortName">PE_OUT_0[19:0]</obj_property>
-      <obj_property name="ObjectShortName">PE_OUT_0[19:0]</obj_property>
-      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_1" type="array">
-      <obj_property name="ElementShortName">PE_OUT_1[19:0]</obj_property>
-      <obj_property name="ObjectShortName">PE_OUT_1[19:0]</obj_property>
-      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_2" type="array">
-      <obj_property name="ElementShortName">PE_OUT_2[19:0]</obj_property>
-      <obj_property name="ObjectShortName">PE_OUT_2[19:0]</obj_property>
-      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_3" type="array">
-      <obj_property name="ElementShortName">PE_OUT_3[19:0]</obj_property>
-      <obj_property name="ObjectShortName">PE_OUT_3[19:0]</obj_property>
-      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_4" type="array">
-      <obj_property name="ElementShortName">PE_OUT_4[19:0]</obj_property>
-      <obj_property name="ObjectShortName">PE_OUT_4[19:0]</obj_property>
-      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_5" type="array">
-      <obj_property name="ElementShortName">PE_OUT_5[19:0]</obj_property>
-      <obj_property name="ObjectShortName">PE_OUT_5[19:0]</obj_property>
-      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_6" type="array">
-      <obj_property name="ElementShortName">PE_OUT_6[19:0]</obj_property>
-      <obj_property name="ObjectShortName">PE_OUT_6[19:0]</obj_property>
-      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/PE_OUT_7" type="array">
-      <obj_property name="ElementShortName">PE_OUT_7[19:0]</obj_property>
-      <obj_property name="ObjectShortName">PE_OUT_7[19:0]</obj_property>
-      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_0" type="logic">
-      <obj_property name="ElementShortName">resultVaild_0</obj_property>
-      <obj_property name="ObjectShortName">resultVaild_0</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_1" type="logic">
-      <obj_property name="ElementShortName">resultVaild_1</obj_property>
-      <obj_property name="ObjectShortName">resultVaild_1</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_2" type="logic">
-      <obj_property name="ElementShortName">resultVaild_2</obj_property>
-      <obj_property name="ObjectShortName">resultVaild_2</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_3" type="logic">
-      <obj_property name="ElementShortName">resultVaild_3</obj_property>
-      <obj_property name="ObjectShortName">resultVaild_3</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_4" type="logic">
-      <obj_property name="ElementShortName">resultVaild_4</obj_property>
-      <obj_property name="ObjectShortName">resultVaild_4</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_5" type="logic">
-      <obj_property name="ElementShortName">resultVaild_5</obj_property>
-      <obj_property name="ObjectShortName">resultVaild_5</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_6" type="logic">
-      <obj_property name="ElementShortName">resultVaild_6</obj_property>
-      <obj_property name="ObjectShortName">resultVaild_6</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/resultVaild_7" type="logic">
-      <obj_property name="ElementShortName">resultVaild_7</obj_property>
-      <obj_property name="ObjectShortName">resultVaild_7</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/activate" type="array">
-      <obj_property name="ElementShortName">activate[63:0]</obj_property>
-      <obj_property name="ObjectShortName">activate[63:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/weight" type="array">
-      <obj_property name="ElementShortName">weight[63:0]</obj_property>
-      <obj_property name="ObjectShortName">weight[63:0]</obj_property>
-   </wvobject>
    <wvobject fp_name="/SimSystolicArray/Weight_Cache/Raddr_Valid" type="logic">
       <obj_property name="ElementShortName">Raddr_Valid</obj_property>
       <obj_property name="ObjectShortName">Raddr_Valid</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider2042">
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/vaild" type="logic">
-      <obj_property name="ElementShortName">vaild</obj_property>
-      <obj_property name="ObjectShortName">vaild</obj_property>
    </wvobject>
    <wvobject fp_name="/SimSystolicArray/Img2ComStream/axisDataConverter_8/outStream_valid" type="logic">
       <obj_property name="ElementShortName">outStream_valid</obj_property>
@@ -2230,30 +2102,6 @@
       <obj_property name="ObjectShortName">outStream_payload[7:0]</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider2057">
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/activate" type="array">
-      <obj_property name="ElementShortName">activate[7:0]</obj_property>
-      <obj_property name="ObjectShortName">activate[7:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/weight" type="array">
-      <obj_property name="ElementShortName">weight[7:0]</obj_property>
-      <obj_property name="ObjectShortName">weight[7:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/vaild" type="logic">
-      <obj_property name="ElementShortName">vaild</obj_property>
-      <obj_property name="ObjectShortName">vaild</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_72/activate" type="array">
-      <obj_property name="ElementShortName">activate[7:0]</obj_property>
-      <obj_property name="ObjectShortName">activate[7:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_72/weight" type="array">
-      <obj_property name="ElementShortName">weight[7:0]</obj_property>
-      <obj_property name="ObjectShortName">weight[7:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_72/vaild" type="logic">
-      <obj_property name="ElementShortName">vaild</obj_property>
-      <obj_property name="ObjectShortName">vaild</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider2067">
    </wvobject>
@@ -2312,94 +2160,49 @@
    </wvobject>
    <wvobject type="divider" fp_name="divider2082">
    </wvobject>
-   <wvobject fp_name="group2114" type="group">
-      <obj_property name="label">Pe11</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/activate" type="array">
-         <obj_property name="ElementShortName">activate[7:0]</obj_property>
-         <obj_property name="ObjectShortName">activate[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/weight" type="array">
-         <obj_property name="ElementShortName">weight[7:0]</obj_property>
-         <obj_property name="ObjectShortName">weight[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/vaild" type="logic">
-         <obj_property name="ElementShortName">vaild</obj_property>
-         <obj_property name="ObjectShortName">vaild</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/signCount" type="array">
-         <obj_property name="ElementShortName">signCount[15:0]</obj_property>
-         <obj_property name="ObjectShortName">signCount[15:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/acount" type="array">
-         <obj_property name="ElementShortName">acount[7:0]</obj_property>
-         <obj_property name="ObjectShortName">acount[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/bcount" type="array">
-         <obj_property name="ElementShortName">bcount[7:0]</obj_property>
-         <obj_property name="ObjectShortName">bcount[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/PE_OUT" type="array">
-         <obj_property name="ElementShortName">PE_OUT[19:0]</obj_property>
-         <obj_property name="ObjectShortName">PE_OUT[19:0]</obj_property>
-         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/finish" type="logic">
-         <obj_property name="ElementShortName">finish</obj_property>
-         <obj_property name="ObjectShortName">finish</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/clk" type="logic">
-         <obj_property name="ElementShortName">clk</obj_property>
-         <obj_property name="ObjectShortName">clk</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/reset" type="logic">
-         <obj_property name="ElementShortName">reset</obj_property>
-         <obj_property name="ObjectShortName">reset</obj_property>
-      </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/SA_Row_Cnt_Valid" type="logic">
+      <obj_property name="ElementShortName">SA_Row_Cnt_Valid</obj_property>
+      <obj_property name="ObjectShortName">SA_Row_Cnt_Valid</obj_property>
    </wvobject>
-   <wvobject fp_name="group2115" type="group">
-      <obj_property name="label">Pe12</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/activate" type="array">
-         <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="ElementShortName">activate[7:0]</obj_property>
-         <obj_property name="ObjectShortName">activate[7:0]</obj_property>
-         <obj_property name="label">Pe11_act</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_72/activate" type="array">
-         <obj_property name="ElementShortName">activate[7:0]</obj_property>
-         <obj_property name="ObjectShortName">activate[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_72/finish" type="logic">
-         <obj_property name="ElementShortName">finish</obj_property>
-         <obj_property name="ObjectShortName">finish</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_72/weight" type="array">
-         <obj_property name="ElementShortName">weight[7:0]</obj_property>
-         <obj_property name="ObjectShortName">weight[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_72/vaild" type="logic">
-         <obj_property name="ElementShortName">vaild</obj_property>
-         <obj_property name="ObjectShortName">vaild</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_72/signCount" type="array">
-         <obj_property name="ElementShortName">signCount[15:0]</obj_property>
-         <obj_property name="ObjectShortName">signCount[15:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_72/PE_OUT" type="array">
-         <obj_property name="ElementShortName">PE_OUT[19:0]</obj_property>
-         <obj_property name="ObjectShortName">PE_OUT[19:0]</obj_property>
-         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_72/clk" type="logic">
-         <obj_property name="ElementShortName">clk</obj_property>
-         <obj_property name="ObjectShortName">clk</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_72/reset" type="logic">
-         <obj_property name="ElementShortName">reset</obj_property>
-         <obj_property name="ObjectShortName">reset</obj_property>
-      </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/SA_Row_Cnt_count" type="array">
+      <obj_property name="ElementShortName">SA_Row_Cnt_count[2:0]</obj_property>
+      <obj_property name="ObjectShortName">SA_Row_Cnt_count[2:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/SA_Row_Cnt_valid_1" type="logic">
+      <obj_property name="ElementShortName">SA_Row_Cnt_valid_1</obj_property>
+      <obj_property name="ObjectShortName">SA_Row_Cnt_valid_1</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/WindowSize_Cnt_count" type="array">
+      <obj_property name="ElementShortName">WindowSize_Cnt_count[12:0]</obj_property>
+      <obj_property name="ObjectShortName">WindowSize_Cnt_count[12:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/WindowSize_Cnt_valid" type="logic">
+      <obj_property name="ElementShortName">WindowSize_Cnt_valid</obj_property>
+      <obj_property name="ObjectShortName">WindowSize_Cnt_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/Window_Col_Cnt_count" type="array">
+      <obj_property name="ElementShortName">Window_Col_Cnt_count[15:0]</obj_property>
+      <obj_property name="ObjectShortName">Window_Col_Cnt_count[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/Window_Col_Cnt_valid" type="logic">
+      <obj_property name="ElementShortName">Window_Col_Cnt_valid</obj_property>
+      <obj_property name="ObjectShortName">Window_Col_Cnt_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/Window_Row_Cnt_count" type="array">
+      <obj_property name="ElementShortName">Window_Row_Cnt_count[15:0]</obj_property>
+      <obj_property name="ObjectShortName">Window_Row_Cnt_count[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/SubModule/Img2Col_SubModule/Window_Row_Cnt_valid" type="logic">
+      <obj_property name="ElementShortName">Window_Row_Cnt_valid</obj_property>
+      <obj_property name="ObjectShortName">Window_Row_Cnt_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/Switch_Reset" type="logic">
+      <obj_property name="ElementShortName">Switch_Reset</obj_property>
+      <obj_property name="ObjectShortName">Switch_Reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSystolicArray/Img2ComStream/OutData_Switch" type="array">
+      <obj_property name="ElementShortName">OutData_Switch[7:0]</obj_property>
+      <obj_property name="ObjectShortName">OutData_Switch[7:0]</obj_property>
+      <obj_property name="Radix">BINARYRADIX</obj_property>
    </wvobject>
 </wave_config>

@@ -2,8 +2,8 @@
 
 module Sim_DataGenerate;
 parameter Mem_Depth =300*300*4;
-parameter Mem_Width=8*8;//txtæ•°æ®ä½å®½
-parameter Total_Input_Times=224*224*4;//å‘å®Œ2224*224*64bitæ•°æ®åmValidéœ€è¦æ‹‰ä½
+parameter Mem_Width=8*8;//txtÊı¾İÎ»¿í
+parameter Total_Input_Times=224*224*4;//·¢Íê2224*224*64bitÊı¾İºómValidĞèÒªÀ­µÍ
   reg clk;
   reg rst;
 
@@ -12,15 +12,15 @@ parameter Total_Input_Times=224*224*4;//å‘å®Œ2224*224*64bitæ•°æ®åmValidéœ€è¦
 
   reg sReady;
   wire sValid;
-  wire sLast;//è·å–sLastä¿¡å·ï¼Œç¬¬äºŒæ¬¡å¯åŠ¨ã€‚
+  wire sLast;//»ñÈ¡sLastĞÅºÅ£¬µÚ¶ş´ÎÆô¶¯¡£
   wire Start_Again_En;
-  assign Start_Again_En=0;//éœ€è¦ä»¿çœŸå†æ¬¡å¯åŠ¨
+  assign Start_Again_En=0;//ĞèÒª·ÂÕæÔÙ´ÎÆô¶¯
   reg start;
   wire [63:0]sData;
 
-  reg [31:0]Total_Cnt;//ç”¨æ¥æ¨¡æ‹ŸMvalidå’ŒSready
-  reg [63:0]Out_Total_Cnt;//è¾“å‡ºæ•°æ®è®¡æ•°å™¨ï¼Œç”¨æ¥è®¡æ•°è¾“å‡ºæ•°æ®çš„
-  reg[63:0]Input_Total_Cnt;//ç”¨æ¥è®¡ç®—è¾“å…¥æ•°æ®æ•°é‡
+  reg [31:0]Total_Cnt;//ÓÃÀ´Ä£ÄâMvalidºÍSready
+  reg [63:0]Out_Total_Cnt;//Êä³öÊı¾İ¼ÆÊıÆ÷£¬ÓÃÀ´¼ÆÊıÊä³öÊı¾İµÄ
+  reg[63:0]Input_Total_Cnt;//ÓÃÀ´¼ÆËãÊäÈëÊı¾İÊıÁ¿
 
   reg [31:0]mem_addr;
 
@@ -29,13 +29,13 @@ parameter Total_Input_Times=224*224*4;//å‘å®Œ2224*224*64bitæ•°æ®åmValidéœ€è¦
   reg [15:0]Scale_Bias_Mem[0:383];
   wire Write_Txt_En;
   wire Write_Txt_End;     
-//  å¯¼å‡ºtxtæ•°æ®=====================================================
+//  µ¼³ötxtÊı¾İ=====================================================
 //E:\\Transformer\\Sim_Transformer\\SimData_Output\\DataGenerate.txt
   integer file_out;
   initial
   begin
 
-      file_out = $fopen("C:\\Users\\25073\\Desktop\\compare\\VivadoOutput.txt","w+");//è®°å¾—ç”¨\\åˆ†å¼€
+      file_out = $fopen("C:\\Users\\25073\\Desktop\\compare\\VivadoOutput.txt","w+");//¼ÇµÃÓÃ\\·Ö¿ª
       if (!file_out) begin
           $display("can't open file");
           $finish;
@@ -44,19 +44,19 @@ parameter Total_Input_Times=224*224*4;//å‘å®Œ2224*224*64bitæ•°æ®åmValidéœ€è¦
 
   always @ (posedge clk) begin  
         if(Write_Txt_End)begin
-           $fclose(file_out);  //å…³é—­å†™æ–‡ä»¶
+           $fclose(file_out);  //¹Ø±ÕĞ´ÎÄ¼ş
         end
         else if(sValid&&Write_Txt_En) begin
-          $fdisplay(file_out, "%h", sData);//å°†æ•°æ®å†™åˆ°TXTæ–‡ä»¶ä¸­ï¼Œå¹¶ä¸”è‡ªåŠ¨æ¢è¡Œ
+          $fdisplay(file_out, "%h", sData);//½«Êı¾İĞ´µ½TXTÎÄ¼şÖĞ£¬²¢ÇÒ×Ô¶¯»»ĞĞ
         end 
   end
 //  ==========================================
   initial
   begin
   
-//    $readmemh("E:/Transformer/Sim_File/Xq_LayerNorm_æœªå¤„ç†æ©ç .txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\ä¿å­˜çš„å›¾ç‰‡çŸ©é˜µ\\K1616\\S16\\img2Coléšæœºè¾“å…¥æµ‹è¯•æ•°æ®.txt",mem);//_Modified
-    $readmemh("E:/Transformer/Sim_File/Scale_Bias.txt",Scale_Bias_Mem);//é«˜8bitä¸ºScaleï¼Œä½8bitä¸ºBias
+//    $readmemh("E:/Transformer/Sim_File/Xq_LayerNorm_Î´´¦ÀíÑÚÂë.txt",mem);//_Modified
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K33\\S1_O35\\img2ColËæ»úÊäÈë²âÊÔÊı¾İ.txt",mem);//_Modified
+    $readmemh("E:/Transformer/Sim_File/Scale_Bias.txt",Scale_Bias_Mem);//¸ß8bitÎªScale£¬µÍ8bitÎªBias
     clk=0;
     start=0;
     rst=1;
@@ -68,10 +68,10 @@ parameter Total_Input_Times=224*224*4;//å‘å®Œ2224*224*64bitæ•°æ®åmValidéœ€è¦
     #200
      start=0;
   end
-  always#5 clk=~clk;//100Mæ—¶é’Ÿ
+  always#5 clk=~clk;//100MÊ±ÖÓ
 
 
-  //å…¨å±€è®¡æ•°å™¨ï¼Œç”¨äºæ§åˆ¶Mvalidå’ŒSready
+  //È«¾Ö¼ÆÊıÆ÷£¬ÓÃÓÚ¿ØÖÆMvalidºÍSready
   always@(posedge clk)
   begin
     if(rst)
@@ -85,7 +85,7 @@ parameter Total_Input_Times=224*224*4;//å‘å®Œ2224*224*64bitæ•°æ®åmValidéœ€è¦
     else
       Total_Cnt<=0;
   end
-  //è¾“å‡ºæ•°æ®è®¡æ•°å™¨===============================================
+  //Êä³öÊı¾İ¼ÆÊıÆ÷===============================================
   always@(posedge clk)
   begin
     if(rst)
@@ -101,7 +101,7 @@ parameter Total_Input_Times=224*224*4;//å‘å®Œ2224*224*64bitæ•°æ®åmValidéœ€è¦
     else
       Out_Total_Cnt<=Out_Total_Cnt;
   end
-  //æ•°æ®è¾“å…¥ï¼Œæ²¡æœ‰å»¶æ—¶ï¼Œç›´æ¥ä»regä¸­è¯»å‡ºæ¥=========================
+  //Êı¾İÊäÈë£¬Ã»ÓĞÑÓÊ±£¬Ö±½Ó´ÓregÖĞ¶Á³öÀ´=========================
   always@(posedge clk)
   begin
     if(rst)
@@ -117,10 +117,10 @@ parameter Total_Input_Times=224*224*4;//å‘å®Œ2224*224*64bitæ•°æ®åmValidéœ€è¦
     else
       mem_addr<=mem_addr;
   end
-  //æ€»è¾“å…¥æ•°æ®è®¡æ•°å™¨================================================
+  //×ÜÊäÈëÊı¾İ¼ÆÊıÆ÷================================================
   always@(posedge clk)
   begin
-    if(rst||start)//è‹¥å¤ä½æˆ–ç¬¬äºŒæ¬¡å¯åŠ¨ï¼Œè¿™ä¸ªè®¡æ•°å™¨è¦å½’ä½
+    if(rst||start)//Èô¸´Î»»òµÚ¶ş´ÎÆô¶¯£¬Õâ¸ö¼ÆÊıÆ÷Òª¹éÎ»
     begin
       Input_Total_Cnt<=0;
     end
@@ -131,7 +131,7 @@ parameter Total_Input_Times=224*224*4;//å‘å®Œ2224*224*64bitæ•°æ®åmValidéœ€è¦
     else
       Input_Total_Cnt<=Input_Total_Cnt;
   end
-  //mValidå’ŒsReadyæ¨¡æ‹Ÿ============================================
+  //mValidºÍsReadyÄ£Äâ============================================
   always@(posedge clk)
   begin
     if(rst)
@@ -174,11 +174,11 @@ parameter Total_Input_Times=224*224*4;//å‘å®Œ2224*224*64bitæ•°æ®åmValidéœ€è¦
     begin
       start<=0;
     end
-    else if(sLast&&Start_Again_En)//sLastå³æœ€åä¸€ä¸ªè¾“å‡ºï¼Œç»“æŸåå†æ¬¡å¯åŠ¨
+    else if(sLast&&Start_Again_En)//sLast¼´×îºóÒ»¸öÊä³ö£¬½áÊøºóÔÙ´ÎÆô¶¯
       start<=1;
     else start<=0;
   end
-//æ¨¡æ‹Ÿä»å¤–éƒ¨memå–scaleå’Œbias
+//Ä£Äâ´ÓÍâ²¿memÈ¡scaleºÍbias
 reg [7:0]Scale_In;
 reg [7:0]Bias_In;
 wire[8:0]Scale_Read_Addr;
@@ -211,18 +211,18 @@ Img2Col_Top DG(
 //.OutCol_Count_Times('d2),
 //.OutRow_Count_Times('d14),
 //.InCol_Count_Times('d896),
-.Stride                        (16),
-.Kernel_Size                   (16),
-.Window_Size                   (64),
-.InFeature_Size                (224),
-.InFeature_Channel             (32),
-.OutFeature_Channel            (32),
-.OutFeature_Size               (14),
-.OutCol_Count_Times            (2),
-.InCol_Count_Times             (896),
-.OutRow_Count_Times            (14),
-.OutFeature_Channel_Count_Times(4),
-.Sliding_Size                  (64),
+.Stride                        (1),
+.Kernel_Size                   (3),
+.Window_Size                   (18),
+.InFeature_Size                (225),
+.InFeature_Channel             (48),
+.OutFeature_Channel            (35),
+.OutFeature_Size               (223),
+.OutCol_Count_Times            (28),
+.InCol_Count_Times             (1350),
+.OutRow_Count_Times            (223),
+.OutFeature_Channel_Count_Times(5),
+.Sliding_Size                  (6),
 
 .clk(clk),
 .reset(rst),
@@ -234,7 +234,7 @@ Img2Col_Top DG(
 
 .Test_Signal(Write_Txt_En),
 .Test_End(Write_Txt_End),
-.Test_Generate_Period('d14)//è¦å¯¹æ¯”ç¬¬å‡ è¡Œå°±è¾“å…¥å‡ ï¼Œæ¯”å¦‚2å°±æ˜¯ç¬¬äºŒè¡Œï¼Œèµ·å§‹è¡Œæ•°ä¸º1
+.Test_Generate_Period('d14)//Òª¶Ô±ÈµÚ¼¸ĞĞ¾ÍÊäÈë¼¸£¬±ÈÈç2¾ÍÊÇµÚ¶şĞĞ£¬ÆğÊ¼ĞĞÊıÎª1
 );
 
 endmodule

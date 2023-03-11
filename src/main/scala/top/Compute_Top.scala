@@ -1,6 +1,6 @@
 package top
 import spinal.core._
-import Systolic_Array.{Tile,DataGenerate_Top,WeightCache_Stream,PEConfig,Img2Col_Top}
+import Systolic_Array.{Tile,WeightCache_Stream,PEConfig,Img2Col_Top}
 import RegTable.RegTable
 import utils.{TopConfig,WaCounter,WidthConvert}
 import spinal.lib.StreamFifo
@@ -29,6 +29,21 @@ class Img2ColStreamV2 extends Component{
         val start=in Bool()
         val Raddr_Valid=out Bool()
         val LayerEnd=out Bool()
+
+
+
+        val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
+        val Kernel_Size                     =in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
+        val Window_Size                     =in UInt(16 bits)
+        val InFeature_Size                  =in UInt(16 bits)//图片多大就输入多大的数据
+        val InFeature_Channel               =in UInt(16 bits)//输入通道的信息已经包含在WindowSize中，可能以后用不到了
+        val OutFeature_Channel              =in UInt(16 bits)
+        val OutFeature_Size                 =in UInt(16 bits)//输出特征图的大小                                            
+        val OutCol_Count_Times              =in UInt(16 bits)
+        val InCol_Count_Times               =in UInt(16 bits)//这玩意又是啥？
+        val OutRow_Count_Times              =in UInt(16 bits)
+        val OutFeature_Channel_Count_Times  =in UInt(16 bits)
+        val Sliding_Size                    =in UInt(16-3 bits)
     }
     noIoPrefix()
     val SubModule=new Img2Col_Top
@@ -40,7 +55,10 @@ class Img2ColStreamV2 extends Component{
     // io.Raddr_Valid:=RegNext(SubModule.io.Raddr_Valid)
     //分析：不想写了，自己看波形叭~，---->计算模块开发记录-2023/3/4:连连线
     val OutData_Switch=Reg(Bits(8 bits))init(1)
-    when(SubModule.io.mValid){
+    val Switch_Reset=RegNext(SubModule.io.SA_Row_Cnt_Valid)
+    when(Switch_Reset){
+        OutData_Switch:=1
+    }elsewhen(SubModule.io.mValid){
         OutData_Switch:=OutData_Switch.rotateLeft(1)//循环左移1位    
     }
     val TestValid_Signal=Vec(Bool(),8)//8个测试信号，以后要删除
@@ -66,18 +84,18 @@ class Img2ColStreamV2 extends Component{
 
 
 
-    SubModule.io.Stride                         :=2
-    SubModule.io.Kernel_Size                    :=4
-    SubModule.io.Window_Size                    :=16
-    SubModule.io.InFeature_Size                 :=226
-    SubModule.io.InFeature_Channel              :=32
-    SubModule.io.OutFeature_Channel             :=32
-    SubModule.io.OutFeature_Size                :=112
-    SubModule.io.OutCol_Count_Times             :=14
-    SubModule.io.InCol_Count_Times              :=904
-    SubModule.io.OutRow_Count_Times             :=112
-    SubModule.io.OutFeature_Channel_Count_Times :=4
-    SubModule.io.Sliding_Size                   :=8
+    SubModule.io.Stride                         <>io.Stride                         
+    SubModule.io.Kernel_Size                    <>io.Kernel_Size                    
+    SubModule.io.Window_Size                    <>io.Window_Size                    
+    SubModule.io.InFeature_Size                 <>io.InFeature_Size                 
+    SubModule.io.InFeature_Channel              <>io.InFeature_Channel              
+    SubModule.io.OutFeature_Channel             <>io.OutFeature_Channel             
+    SubModule.io.OutFeature_Size                <>io.OutFeature_Size                
+    SubModule.io.OutCol_Count_Times             <>io.OutCol_Count_Times             
+    SubModule.io.InCol_Count_Times              <>io.InCol_Count_Times              
+    SubModule.io.OutRow_Count_Times             <>io.OutRow_Count_Times             
+    SubModule.io.OutFeature_Channel_Count_Times <>io.OutFeature_Channel_Count_Times 
+    SubModule.io.Sliding_Size                   <>io.Sliding_Size                   
 
 
     SubModule.io.mReady                         :=WidthConvert_Fifo(0).io.push.ready
@@ -89,6 +107,8 @@ class Img2ColStreamV2 extends Component{
         Out_Data_Counter.clear
         In_Data_Counter.clear
     }
+
+    
 
 }
 

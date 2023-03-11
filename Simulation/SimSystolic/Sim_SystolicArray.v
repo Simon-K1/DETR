@@ -63,8 +63,8 @@ parameter Mem2_Width=64;
   begin
   
 //    $readmemh("E:/Transformer/Sim_File/Xq_LayerNorm_未处理掩码.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K44\\S2\\img2Col随机输入测试数据.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K44\\S2\\WeightData.txt",mem2);//高8bit为Scale，低8bit为Bias
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K33\\S1_O35\\img2Col随机输入测试数据.txt",mem);//_Modified
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K33\\S1_O35\\WeightData.txt",mem2);//高8bit为Scale，低8bit为Bias
     clk=0;
     start=0;
     rst=1;
@@ -237,14 +237,19 @@ Img2ColStreamV2 Img2ComStream(
     .mValid(DataInValid),
     .LayerEnd(LayerEnd),
     .mData(activate),
-//        .mData_0(activate[7:0]),
-//    .mData_1(activate[15:8]),
-//    .mData_2(activate[23:16]),                     
-//    .mData_3(activate[31:24]),                     
-//    .mData_4(activate[39:32]),                     
-//    .mData_5(activate[47:40]),                     
-//    .mData_6(activate[55:48]),                     
-//    .mData_7(activate[63:56])，
+    
+    .Stride                        (1),
+    .Kernel_Size                   (3),
+    .Window_Size                   (18),
+    .InFeature_Size                (225),
+    .InFeature_Channel             (48),
+    .OutFeature_Channel            (35),
+    .OutFeature_Size               (223),
+    .OutCol_Count_Times            (28),
+    .InCol_Count_Times             (1350),
+    .OutRow_Count_Times            (223),
+    .OutFeature_Channel_Count_Times(5),
+    .Sliding_Size                  (6),
     
     .reset(rst)
     
@@ -258,8 +263,8 @@ Weight_Cache Weight_Cache(
   .sData_valid(mValid2),
   .sData_ready(mReady2),
   .sData_payload(mem2[mem_addr2]),
-  .Matrix_Row('d512),
-  .Matrix_Col('d32),
+.Matrix_Row                    (432),
+  .Matrix_Col                    (35),
   .Raddr_Valid(Raddr_Valid),
 //  .OutMatrix_Row('d49729),
   .Weight_Cached(WeightCached),
@@ -279,12 +284,12 @@ Weight_Cache Weight_Cache(
 
 );  
 
-Tile SystolicArray(
-.activate(activate),
-.weight(Weight),
-.vaild(DataInValid),
-.signCount('d511),
-.clk(clk),
-.reset(rst)
-);
+//Tile SystolicArray(
+//.activate(activate),
+//.weight(Weight),
+//.vaild(DataInValid),
+//.signCount('d511),
+//.clk(clk),
+//.reset(rst)
+//);
 endmodule
