@@ -185,6 +185,7 @@ class WeightCache_Stream extends Component{
         val Raddr_Valid=in Bool()//读Bram使能
         val Weight_Cached=out Bool()//权重缓存完了，给Img2Col一个启动型号
         val LayerEnd=in Bool()//当前网络层计算完毕
+        val MatrixCol_Switch=out UInt(Config.SA_COL bits)
     }
     noIoPrefix()
     val WeightCache=new Weight_Cache
@@ -195,6 +196,7 @@ class WeightCache_Stream extends Component{
     WeightCache.io.Raddr_Valid<>io.Raddr_Valid
     WeightCache.io.LayerEnd<>io.LayerEnd
     WeightCache.io.Weight_Cached<>io.Weight_Cached
+    WeightCache.io.MatrixCol_Switch<>io.MatrixCol_Switch
 
     WeightCache.io.sData.payload<>io.s_axis_s2mm_tdata
     WeightCache.io.sData.valid<>io.s_axis_s2mm_tvalid

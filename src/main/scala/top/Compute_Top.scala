@@ -16,7 +16,7 @@ class Img2ColStreamV2 extends Component{
         
         val mData=out UInt(64 bits)//out UInt(64 bits)//Vec(UInt(8 bits),8)
         val mReady=in Bool()
-        val mValid=out Bool()
+        val mValid=out UInt(Config.SA_ROW bits)
 
         def DATA_IN_WIDTH=64
         val s_axis_s2mm_tdata=in UInt(DATA_IN_WIDTH bits)
@@ -29,6 +29,7 @@ class Img2ColStreamV2 extends Component{
         val start=in Bool()
         val Raddr_Valid=out Bool()
         val LayerEnd=out Bool()
+        // val MatrixRow_Switch=out UInt(Config.SA_ROW bits)
 
 
 
@@ -72,9 +73,10 @@ class Img2ColStreamV2 extends Component{
         Converter(i).inStream<>WidthConvert_Fifo(i).io.pop
         Converter(i).outStream.ready:=True
         io.mData((i+1)*8-1 downto i*8):=RegNext(Converter(i).outStream.payload)//valid拉高，数据应该在valid拉高的下一个周期出去，这是为了与weightCache对上
+        io.mValid(i):=RegNext(Converter(i).outStream.valid)//这个valid信号给到脉动阵列
         //io.mData(i):=RegNext(Converter(i).outStream.payload)//valid拉高，数据应该在valid拉高的下一个周期出去，这是为了与weightCache对上
     }
-    io.mValid:=RegNext(Converter(0).outStream.valid)//这个valid信号给到脉动阵列
+    
     io.Raddr_Valid:=Converter(0).outStream.valid
     // val WeightCached_Flag=Bool
     SubModule.io.sData.payload<>io.s_axis_s2mm_tdata
@@ -101,17 +103,13 @@ class Img2ColStreamV2 extends Component{
     SubModule.io.mReady                         :=WidthConvert_Fifo(0).io.push.ready
     io.LayerEnd:=Delay(SubModule.io.LayerEnd,3)
 //调试信号================================================================================================
-    val Out_Data_Counter=WaCounter(io.mReady&&io.mValid,32,U"32'hffffffff")       
-    val In_Data_Counter=WaCounter(io.s_axis_s2mm_tvalid&&io.s_axis_s2mm_tready,32,U"32'hffffffff")   
-    when(io.start){
-        Out_Data_Counter.clear
-        In_Data_Counter.clear
-    }
-
-    
-
+    // //val Out_Data_Counter=WaCounter(io.mReady&&io.mValid,32,U"32'hffffffff")       
+    // val In_Data_Counter=WaCounter(io.s_axis_s2mm_tvalid&&io.s_axis_s2mm_tready,32,U"32'hffffffff")   
+    // when(io.start){
+    //     //Out_Data_Counter.clear
+    //     In_Data_Counter.clear
+    // }
 }
-
 
 
 

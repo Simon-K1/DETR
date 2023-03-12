@@ -224,6 +224,8 @@ wire DataInValid;
 wire [63:0]activate;
 wire [63:0]Weight;
 wire LayerEnd;
+wire [7:0]a_Valid;
+wire [7:0]b_Valid;
 Img2ColStreamV2 Img2ComStream(
     .mReady(sReady),
 //    .mValid(sValid),
@@ -234,7 +236,7 @@ Img2ColStreamV2 Img2ComStream(
     .start(WeightCached),//权重缓存完了才能启动图片缓存（实际上板可能不是这样的)
     .clk(clk),
     .Raddr_Valid(Raddr_Valid),
-    .mValid(DataInValid),
+    .mValid(a_Valid),
     .LayerEnd(LayerEnd),
     .mData(activate),
     
@@ -250,7 +252,7 @@ Img2ColStreamV2 Img2ComStream(
     .OutRow_Count_Times            (223),
     .OutFeature_Channel_Count_Times(5),
     .Sliding_Size                  (6),
-    
+
     .reset(rst)
     
     
@@ -269,8 +271,8 @@ Weight_Cache Weight_Cache(
 //  .OutMatrix_Row('d49729),
   .Weight_Cached(WeightCached),
   .LayerEnd(LayerEnd),
-  .clk(clk),
   .mData(Weight),
+  .MatrixCol_Switch(b_Valid),
 //    .mData_0(Weight[7:0]),
 //    .mData_1(Weight[15:8]),
 //    .mData_2(Weight[23:16]),                     
@@ -279,17 +281,36 @@ Weight_Cache Weight_Cache(
 //    .mData_5(Weight[47:40]),                     
 //    .mData_6(Weight[55:48]),                     
 //    .mData_7(Weight[63:56])
-  
+    .clk(clk),
   .reset(rst)
 
 );  
 
-//Tile SystolicArray(
-//.activate(activate),
-//.weight(Weight),
-//.vaild(DataInValid),
-//.signCount('d511),
-//.clk(clk),
-//.reset(rst)
-//);
+Tile SystolicArray(
+.activate(activate),
+.weight(Weight),
+.signCount('d431),
+.a_Valid_0(a_Valid[0]),
+.a_Valid_1(a_Valid[1]),
+.a_Valid_2(a_Valid[2]),
+.a_Valid_3(a_Valid[3]),
+.a_Valid_4(a_Valid[4]),
+.a_Valid_5(a_Valid[5]),
+.a_Valid_6(a_Valid[6]),
+.a_Valid_7(a_Valid[7]),
+.b_Valid_0(b_Valid[0]),
+.b_Valid_1(b_Valid[1]),
+.b_Valid_2(b_Valid[2]),
+.b_Valid_3(b_Valid[3]),
+.b_Valid_4(b_Valid[4]),
+.b_Valid_5(b_Valid[5]),
+.b_Valid_6(b_Valid[6]),
+.b_Valid_7(b_Valid[7]),
+
+
+
+
+.clk(clk),
+.reset(rst)
+);
 endmodule

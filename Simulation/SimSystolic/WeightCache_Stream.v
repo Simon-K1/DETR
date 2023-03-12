@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : WeightCache_Stream
-// Git hash  : 38ca0002442a53854501226aaa32895051626a31
+// Git hash  : e1778690abf4e3a57d9aac0bee0c26b58aa5098e
 
 `timescale 1ns/1ps
 
@@ -17,6 +17,7 @@ module WeightCache_Stream (
   input               Raddr_Valid,
   output              Weight_Cached,
   input               LayerEnd,
+  output     [7:0]    MatrixCol_Switch,
   input               clk,
   input               reset
 );
@@ -43,6 +44,7 @@ module WeightCache_Stream (
   );
   assign mData = WeightCache_mData;
   assign Weight_Cached = WeightCache_Weight_Cached;
+  assign MatrixCol_Switch = WeightCache_MatrixCol_Switch;
   assign s_axis_s2mm_tready = WeightCache_sData_ready;
 
 endmodule

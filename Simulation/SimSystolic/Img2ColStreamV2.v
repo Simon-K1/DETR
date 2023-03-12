@@ -1,13 +1,13 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : Img2ColStreamV2
-// Git hash  : 38ca0002442a53854501226aaa32895051626a31
+// Git hash  : e1778690abf4e3a57d9aac0bee0c26b58aa5098e
 
 `timescale 1ns/1ps
 
 module Img2ColStreamV2 (
   output reg [63:0]   mData,
   input               mReady,
-  output              mValid,
+  output reg [7:0]    mValid,
   input      [63:0]   s_axis_s2mm_tdata,
   input      [7:0]    s_axis_s2mm_tkeep,
   input               s_axis_s2mm_tlast,
@@ -125,25 +125,24 @@ module Img2ColStreamV2 (
   wire                TestValid_Signal_6;
   wire                TestValid_Signal_7;
   reg        [7:0]    axisDataConverter_8_outStream_payload_regNext;
-  reg        [7:0]    axisDataConverter_9_outStream_payload_regNext;
-  reg        [7:0]    axisDataConverter_10_outStream_payload_regNext;
-  reg        [7:0]    axisDataConverter_11_outStream_payload_regNext;
-  reg        [7:0]    axisDataConverter_12_outStream_payload_regNext;
-  reg        [7:0]    axisDataConverter_13_outStream_payload_regNext;
-  reg        [7:0]    axisDataConverter_14_outStream_payload_regNext;
-  reg        [7:0]    axisDataConverter_15_outStream_payload_regNext;
   reg                 axisDataConverter_8_outStream_valid_regNext;
+  reg        [7:0]    axisDataConverter_9_outStream_payload_regNext;
+  reg                 axisDataConverter_9_outStream_valid_regNext;
+  reg        [7:0]    axisDataConverter_10_outStream_payload_regNext;
+  reg                 axisDataConverter_10_outStream_valid_regNext;
+  reg        [7:0]    axisDataConverter_11_outStream_payload_regNext;
+  reg                 axisDataConverter_11_outStream_valid_regNext;
+  reg        [7:0]    axisDataConverter_12_outStream_payload_regNext;
+  reg                 axisDataConverter_12_outStream_valid_regNext;
+  reg        [7:0]    axisDataConverter_13_outStream_payload_regNext;
+  reg                 axisDataConverter_13_outStream_valid_regNext;
+  reg        [7:0]    axisDataConverter_14_outStream_payload_regNext;
+  reg                 axisDataConverter_14_outStream_valid_regNext;
+  reg        [7:0]    axisDataConverter_15_outStream_payload_regNext;
+  reg                 axisDataConverter_15_outStream_valid_regNext;
   reg                 SubModule_LayerEnd_delay_1;
   reg                 SubModule_LayerEnd_delay_2;
   reg                 SubModule_LayerEnd_delay_3;
-  wire                when_WaCounter_l19;
-  reg        [31:0]   Out_Data_Counter_count;
-  reg                 Out_Data_Counter_valid;
-  wire                when_WaCounter_l14;
-  wire                when_WaCounter_l19_1;
-  reg        [31:0]   In_Data_Counter_count;
-  reg                 In_Data_Counter_valid;
-  wire                when_WaCounter_l14_1;
 
   Img2Col_Top SubModule (
     .start                          (start                               ), //i
@@ -371,6 +370,17 @@ module Img2ColStreamV2 (
     mData[63 : 56] = axisDataConverter_15_outStream_payload_regNext;
   end
 
+  always @(*) begin
+    mValid[0] = axisDataConverter_8_outStream_valid_regNext;
+    mValid[1] = axisDataConverter_9_outStream_valid_regNext;
+    mValid[2] = axisDataConverter_10_outStream_valid_regNext;
+    mValid[3] = axisDataConverter_11_outStream_valid_regNext;
+    mValid[4] = axisDataConverter_12_outStream_valid_regNext;
+    mValid[5] = axisDataConverter_13_outStream_valid_regNext;
+    mValid[6] = axisDataConverter_14_outStream_valid_regNext;
+    mValid[7] = axisDataConverter_15_outStream_valid_regNext;
+  end
+
   assign streamFifo_1_io_push_valid = (OutData_Switch[1] && SubModule_mValid);
   assign streamFifo_2_io_push_valid = (OutData_Switch[2] && SubModule_mValid);
   assign streamFifo_3_io_push_valid = (OutData_Switch[3] && SubModule_mValid);
@@ -378,41 +388,12 @@ module Img2ColStreamV2 (
   assign streamFifo_5_io_push_valid = (OutData_Switch[5] && SubModule_mValid);
   assign streamFifo_6_io_push_valid = (OutData_Switch[6] && SubModule_mValid);
   assign streamFifo_7_io_push_valid = (OutData_Switch[7] && SubModule_mValid);
-  assign mValid = axisDataConverter_8_outStream_valid_regNext;
   assign Raddr_Valid = axisDataConverter_8_outStream_valid;
   assign s_axis_s2mm_tready = SubModule_sData_ready;
   assign LayerEnd = SubModule_LayerEnd_delay_3;
-  assign when_WaCounter_l19 = (mReady && mValid);
-  assign when_WaCounter_l14 = (Out_Data_Counter_count == 32'hffffffff);
-  always @(*) begin
-    if(when_WaCounter_l14) begin
-      Out_Data_Counter_valid = 1'b1;
-    end else begin
-      Out_Data_Counter_valid = 1'b0;
-    end
-    if(start) begin
-      Out_Data_Counter_valid = 1'b0;
-    end
-  end
-
-  assign when_WaCounter_l19_1 = (s_axis_s2mm_tvalid && s_axis_s2mm_tready);
-  assign when_WaCounter_l14_1 = (In_Data_Counter_count == 32'hffffffff);
-  always @(*) begin
-    if(when_WaCounter_l14_1) begin
-      In_Data_Counter_valid = 1'b1;
-    end else begin
-      In_Data_Counter_valid = 1'b0;
-    end
-    if(start) begin
-      In_Data_Counter_valid = 1'b0;
-    end
-  end
-
   always @(posedge clk or posedge reset) begin
     if(reset) begin
       OutData_Switch <= 8'h01;
-      Out_Data_Counter_count <= 32'h0;
-      In_Data_Counter_count <= 32'h0;
     end else begin
       if(Switch_Reset) begin
         OutData_Switch <= 8'h01;
@@ -421,36 +402,27 @@ module Img2ColStreamV2 (
           OutData_Switch <= {OutData_Switch[6 : 0],OutData_Switch[7 : 7]};
         end
       end
-      if(when_WaCounter_l19) begin
-        Out_Data_Counter_count <= (Out_Data_Counter_count + 32'h00000001);
-        if(Out_Data_Counter_valid) begin
-          Out_Data_Counter_count <= 32'h0;
-        end
-      end
-      if(when_WaCounter_l19_1) begin
-        In_Data_Counter_count <= (In_Data_Counter_count + 32'h00000001);
-        if(In_Data_Counter_valid) begin
-          In_Data_Counter_count <= 32'h0;
-        end
-      end
-      if(start) begin
-        Out_Data_Counter_count <= 32'h0;
-        In_Data_Counter_count <= 32'h0;
-      end
     end
   end
 
   always @(posedge clk) begin
     Switch_Reset <= SubModule_SA_Row_Cnt_Valid;
     axisDataConverter_8_outStream_payload_regNext <= axisDataConverter_8_outStream_payload;
-    axisDataConverter_9_outStream_payload_regNext <= axisDataConverter_9_outStream_payload;
-    axisDataConverter_10_outStream_payload_regNext <= axisDataConverter_10_outStream_payload;
-    axisDataConverter_11_outStream_payload_regNext <= axisDataConverter_11_outStream_payload;
-    axisDataConverter_12_outStream_payload_regNext <= axisDataConverter_12_outStream_payload;
-    axisDataConverter_13_outStream_payload_regNext <= axisDataConverter_13_outStream_payload;
-    axisDataConverter_14_outStream_payload_regNext <= axisDataConverter_14_outStream_payload;
-    axisDataConverter_15_outStream_payload_regNext <= axisDataConverter_15_outStream_payload;
     axisDataConverter_8_outStream_valid_regNext <= axisDataConverter_8_outStream_valid;
+    axisDataConverter_9_outStream_payload_regNext <= axisDataConverter_9_outStream_payload;
+    axisDataConverter_9_outStream_valid_regNext <= axisDataConverter_9_outStream_valid;
+    axisDataConverter_10_outStream_payload_regNext <= axisDataConverter_10_outStream_payload;
+    axisDataConverter_10_outStream_valid_regNext <= axisDataConverter_10_outStream_valid;
+    axisDataConverter_11_outStream_payload_regNext <= axisDataConverter_11_outStream_payload;
+    axisDataConverter_11_outStream_valid_regNext <= axisDataConverter_11_outStream_valid;
+    axisDataConverter_12_outStream_payload_regNext <= axisDataConverter_12_outStream_payload;
+    axisDataConverter_12_outStream_valid_regNext <= axisDataConverter_12_outStream_valid;
+    axisDataConverter_13_outStream_payload_regNext <= axisDataConverter_13_outStream_payload;
+    axisDataConverter_13_outStream_valid_regNext <= axisDataConverter_13_outStream_valid;
+    axisDataConverter_14_outStream_payload_regNext <= axisDataConverter_14_outStream_payload;
+    axisDataConverter_14_outStream_valid_regNext <= axisDataConverter_14_outStream_valid;
+    axisDataConverter_15_outStream_payload_regNext <= axisDataConverter_15_outStream_payload;
+    axisDataConverter_15_outStream_valid_regNext <= axisDataConverter_15_outStream_valid;
     SubModule_LayerEnd_delay_1 <= SubModule_LayerEnd;
     SubModule_LayerEnd_delay_2 <= SubModule_LayerEnd_delay_1;
     SubModule_LayerEnd_delay_3 <= SubModule_LayerEnd_delay_2;

@@ -2,6 +2,7 @@ package TestSpace
 import spinal.core._
 import utils.TopConfig
 import spinal.lib.StreamFifo
+import java.util.concurrent.SubmissionPublisher
 class Xq2C extends BlackBox{
     //XQC=C*X_q计算
     val Config=TopConfig()
@@ -59,7 +60,10 @@ class TopTest extends Component{
     //     val gray=in Bits(4 bits)
     //     val bin=out Bits(4 bits)
     // }
-    val io=SubModule.io
+    // val io=new Bundle{
+    //     val datain=SubModule.io.gray
+    // }
+    val Datain_io=SubModule.io
 }
 
 object TestGen extends App { 
