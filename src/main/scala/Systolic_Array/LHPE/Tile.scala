@@ -2,8 +2,7 @@ package Systolic_Array
 import spinal.core._
 import spinal.lib.Delay
 import utils.WaCounter
-
-
+//======================================
 case class PEConfig(count:Int,Reg_WIDTH:Int){
 
 }
@@ -41,7 +40,7 @@ class Tile (Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PEConfi
     PEArry(i)(j) = new PE(dataWidthIn, dataWidthIn,dataWidthOut,PEConfig(64,20)).setName("left")
     PEArry(i)(j).io.activate <> io.activate((i+1)*dataWidthIn-1 downto i*dataWidthIn)//io.activate((i+1)*dataWidthIn-1 downto i*dataWidthIn)//Delay(io.activate((i+1)*dataWidthIn-1 downto i*dataWidthIn),i)
     PEArry(i)(j).io.weight <> PEArry(i-1)(0).io.bcount
-    PEArry(i)(j).io.vaild <> io.a_Valid(i)//Delay(io.a_Valid(i),i)//io.a_Valid(i)
+    PEArry(i)(j).io.vaild <> (io.a_Valid(i)&Delay(io.b_Valid(0),i))//Delay(io.a_Valid(i),i)//io.a_Valid(i)
     PEArry(i)(j).io.signCount<>io.signCount
     }
 
@@ -50,7 +49,7 @@ class Tile (Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PEConfi
     PEArry(i)(j) = new PE(dataWidthIn, dataWidthIn, dataWidthOut, PEConfig(64, 20)).setName("top")
     PEArry(i)(j).io.activate <> PEArry(0)(j - 1).io.acount
     PEArry(i)(j).io.weight <>   Delay(io.weight((j + 1) * dataWidthIn - 1 downto j * dataWidthIn),j)
-    PEArry(i)(j).io.vaild <> Delay(io.b_Valid(j),j)
+    PEArry(i)(j).io.vaild <> (Delay(io.b_Valid(j),j)&Delay(io.a_Valid(0),j))
     PEArry(i)(j).io.signCount<>io.signCount
 
   }
@@ -82,5 +81,7 @@ class Tile (Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PEConfi
 object Tile extends App{
   SpinalVerilog(new Tile(8,8,20,PEConfig(767,20)))
 }
+
+
 
 

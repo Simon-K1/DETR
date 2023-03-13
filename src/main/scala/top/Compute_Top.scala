@@ -116,7 +116,7 @@ class Img2ColStreamV2 extends Component{
 
 object Top extends App { 
     val OnBoard=false
-    var verilog_path="./Simulation/SimSystolic" 
+    var verilog_path="./Simulation/SimSystolic/verilog" 
     if(OnBoard){
         verilog_path="./OnBoard"
     }

@@ -1,6 +1,7 @@
 package Systolic_Array
 import spinal.core._
 import utils.WaCounter
+import utils.ForLoopCounter
 
 
 class dsp_marco(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int) extends BlackBox {
@@ -43,7 +44,7 @@ class PE(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int,peConfig:PEConfig) extends Com
     reg1:=dsp.io.P+reg1
   }
 
-  val finishCnt = WaCounter(RegNext(RegNext(io.vaild)),16,io.signCount)
+  val finishCnt = ForLoopCounter(RegNext(RegNext(io.vaild)),16,io.signCount)
   io.finish:=finishCnt.valid
 
   when(finishCnt.valid){

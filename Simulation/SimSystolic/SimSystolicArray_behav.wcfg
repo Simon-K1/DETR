@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="259804016666fs"></ZoomStartTime>
-      <ZoomEndTime time="259937316667fs"></ZoomEndTime>
-      <Cursor1Time time="259835100000fs"></Cursor1Time>
+      <ZoomStartTime time="281112833333fs"></ZoomStartTime>
+      <ZoomEndTime time="281379433334fs"></ZoomEndTime>
+      <Cursor1Time time="281335000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="223"></NameColumnWidth>
       <ValueColumnWidth column_width="58"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="122" />
+   <WVObjectSize size="124" />
    <wave_markers>
       <marker time="262115000000" label="" />
    </wave_markers>
@@ -2310,7 +2310,6 @@
    <wvobject fp_name="group3441" type="group">
       <obj_property name="label">PE11</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/activate" type="array">
          <obj_property name="ElementShortName">activate[7:0]</obj_property>
          <obj_property name="ObjectShortName">activate[7:0]</obj_property>
@@ -2408,6 +2407,82 @@
       <wvobject fp_name="/SimSystolicArray/SystolicArray/top_6/finish" type="logic">
          <obj_property name="ElementShortName">finish</obj_property>
          <obj_property name="ObjectShortName">finish</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group3478" type="group">
+      <obj_property name="label">WeightCache_Cnt</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/SimSystolicArray/Weight_Cache/OutRow_Cnt_count" type="array">
+         <obj_property name="ElementShortName">OutRow_Cnt_count[15:0]</obj_property>
+         <obj_property name="ObjectShortName">OutRow_Cnt_count[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/Weight_Cache/OutRow_Cnt_valid" type="logic">
+         <obj_property name="ElementShortName">OutRow_Cnt_valid</obj_property>
+         <obj_property name="ObjectShortName">OutRow_Cnt_valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/Weight_Cache/OutCol_Cnt_count" type="array">
+         <obj_property name="ElementShortName">OutCol_Cnt_count[15:0]</obj_property>
+         <obj_property name="ObjectShortName">OutCol_Cnt_count[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/Weight_Cache/OutCol_Cnt_valid" type="logic">
+         <obj_property name="ElementShortName">OutCol_Cnt_valid</obj_property>
+         <obj_property name="ObjectShortName">OutCol_Cnt_valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/Weight_Cache/MatrixCol_Switch" type="array">
+         <obj_property name="ElementShortName">MatrixCol_Switch[7:0]</obj_property>
+         <obj_property name="ObjectShortName">MatrixCol_Switch[7:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group3479" type="group">
+      <obj_property name="label">PE14</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/SimSystolicArray/SystolicArray/top_2/activate" type="array">
+         <obj_property name="ElementShortName">activate[7:0]</obj_property>
+         <obj_property name="ObjectShortName">activate[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/SystolicArray/top_2/weight" type="array">
+         <obj_property name="ElementShortName">weight[7:0]</obj_property>
+         <obj_property name="ObjectShortName">weight[7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/SystolicArray/top_2/vaild" type="logic">
+         <obj_property name="ElementShortName">vaild</obj_property>
+         <obj_property name="ObjectShortName">vaild</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/SystolicArray/top_2/signCount" type="array">
+         <obj_property name="ElementShortName">signCount[15:0]</obj_property>
+         <obj_property name="ObjectShortName">signCount[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/SystolicArray/top_2/PE_OUT" type="array">
+         <obj_property name="ElementShortName">PE_OUT[19:0]</obj_property>
+         <obj_property name="ObjectShortName">PE_OUT[19:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/SystolicArray/top_2/finish" type="logic">
+         <obj_property name="ElementShortName">finish</obj_property>
+         <obj_property name="ObjectShortName">finish</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/SystolicArray/top_2/finishCnt_count" type="array">
+         <obj_property name="ElementShortName">finishCnt_count[15:0]</obj_property>
+         <obj_property name="ObjectShortName">finishCnt_count[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/SystolicArray/top_2/finishCnt_valid" type="logic">
+         <obj_property name="ElementShortName">finishCnt_valid</obj_property>
+         <obj_property name="ObjectShortName">finishCnt_valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/SystolicArray/top_2/clk" type="logic">
+         <obj_property name="ElementShortName">clk</obj_property>
+         <obj_property name="ObjectShortName">clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSystolicArray/SystolicArray/top_2/reset" type="logic">
+         <obj_property name="ElementShortName">reset</obj_property>
+         <obj_property name="ObjectShortName">reset</obj_property>
       </wvobject>
    </wvobject>
 </wave_config>

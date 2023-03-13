@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : Tile
-// Git hash  : e1778690abf4e3a57d9aac0bee0c26b58aa5098e
+// Git hash  : 2ccfc09eaa2ed4da0da1c3f881b53c4c706883ec
 
 `timescale 1ns/1ps
 
@@ -48,12 +48,26 @@ module Tile (
   wire       [7:0]    pE_64_weight;
   wire                pE_64_vaild;
   wire       [7:0]    left_activate;
+  wire                left_vaild;
   wire       [7:0]    left_1_activate;
+  wire                left_1_vaild;
   wire       [7:0]    left_2_activate;
+  wire                left_2_vaild;
   wire       [7:0]    left_3_activate;
+  wire                left_3_vaild;
   wire       [7:0]    left_4_activate;
+  wire                left_4_vaild;
   wire       [7:0]    left_5_activate;
+  wire                left_5_vaild;
   wire       [7:0]    left_6_activate;
+  wire                left_6_vaild;
+  wire                top_vaild;
+  wire                top_1_vaild;
+  wire                top_2_vaild;
+  wire                top_3_vaild;
+  wire                top_4_vaild;
+  wire                top_5_vaild;
+  wire                top_6_vaild;
   wire                mid_vaild;
   wire                mid_1_vaild;
   wire                mid_2_vaild;
@@ -359,18 +373,52 @@ module Tile (
   wire       [7:0]    mid_48_bcount;
   wire       [19:0]   mid_48_PE_OUT;
   wire                mid_48_finish;
+  reg                 b_Valid_0_delay_1;
+  reg                 b_Valid_0_delay_1_1;
+  reg                 b_Valid_0_delay_2;
+  reg                 b_Valid_0_delay_1_2;
+  reg                 b_Valid_0_delay_2_1;
+  reg                 b_Valid_0_delay_3;
+  reg                 b_Valid_0_delay_1_3;
+  reg                 b_Valid_0_delay_2_2;
+  reg                 b_Valid_0_delay_3_1;
+  reg                 b_Valid_0_delay_4;
+  reg                 b_Valid_0_delay_1_4;
+  reg                 b_Valid_0_delay_2_3;
+  reg                 b_Valid_0_delay_3_2;
+  reg                 b_Valid_0_delay_4_1;
+  reg                 b_Valid_0_delay_5;
+  reg                 b_Valid_0_delay_1_5;
+  reg                 b_Valid_0_delay_2_4;
+  reg                 b_Valid_0_delay_3_3;
+  reg                 b_Valid_0_delay_4_2;
+  reg                 b_Valid_0_delay_5_1;
+  reg                 b_Valid_0_delay_6;
+  reg                 b_Valid_0_delay_1_6;
+  reg                 b_Valid_0_delay_2_5;
+  reg                 b_Valid_0_delay_3_4;
+  reg                 b_Valid_0_delay_4_3;
+  reg                 b_Valid_0_delay_5_2;
+  reg                 b_Valid_0_delay_6_1;
+  reg                 b_Valid_0_delay_7;
   reg        [7:0]    _zz_weight;
   reg                 b_Valid_1_delay_1;
+  reg                 a_Valid_0_delay_1;
   reg        [7:0]    _zz_weight_1;
   reg        [7:0]    _zz_weight_2;
   reg                 b_Valid_2_delay_1;
   reg                 b_Valid_2_delay_2;
+  reg                 a_Valid_0_delay_1_1;
+  reg                 a_Valid_0_delay_2;
   reg        [7:0]    _zz_weight_3;
   reg        [7:0]    _zz_weight_4;
   reg        [7:0]    _zz_weight_5;
   reg                 b_Valid_3_delay_1;
   reg                 b_Valid_3_delay_2;
   reg                 b_Valid_3_delay_3;
+  reg                 a_Valid_0_delay_1_2;
+  reg                 a_Valid_0_delay_2_1;
+  reg                 a_Valid_0_delay_3;
   reg        [7:0]    _zz_weight_6;
   reg        [7:0]    _zz_weight_7;
   reg        [7:0]    _zz_weight_8;
@@ -379,6 +427,10 @@ module Tile (
   reg                 b_Valid_4_delay_2;
   reg                 b_Valid_4_delay_3;
   reg                 b_Valid_4_delay_4;
+  reg                 a_Valid_0_delay_1_3;
+  reg                 a_Valid_0_delay_2_2;
+  reg                 a_Valid_0_delay_3_1;
+  reg                 a_Valid_0_delay_4;
   reg        [7:0]    _zz_weight_10;
   reg        [7:0]    _zz_weight_11;
   reg        [7:0]    _zz_weight_12;
@@ -389,6 +441,11 @@ module Tile (
   reg                 b_Valid_5_delay_3;
   reg                 b_Valid_5_delay_4;
   reg                 b_Valid_5_delay_5;
+  reg                 a_Valid_0_delay_1_4;
+  reg                 a_Valid_0_delay_2_3;
+  reg                 a_Valid_0_delay_3_2;
+  reg                 a_Valid_0_delay_4_1;
+  reg                 a_Valid_0_delay_5;
   reg        [7:0]    _zz_weight_15;
   reg        [7:0]    _zz_weight_16;
   reg        [7:0]    _zz_weight_17;
@@ -401,6 +458,12 @@ module Tile (
   reg                 b_Valid_6_delay_4;
   reg                 b_Valid_6_delay_5;
   reg                 b_Valid_6_delay_6;
+  reg                 a_Valid_0_delay_1_5;
+  reg                 a_Valid_0_delay_2_4;
+  reg                 a_Valid_0_delay_3_3;
+  reg                 a_Valid_0_delay_4_2;
+  reg                 a_Valid_0_delay_5_1;
+  reg                 a_Valid_0_delay_6;
   reg        [7:0]    _zz_weight_21;
   reg        [7:0]    _zz_weight_22;
   reg        [7:0]    _zz_weight_23;
@@ -415,6 +478,13 @@ module Tile (
   reg                 b_Valid_7_delay_5;
   reg                 b_Valid_7_delay_6;
   reg                 b_Valid_7_delay_7;
+  reg                 a_Valid_0_delay_1_6;
+  reg                 a_Valid_0_delay_2_5;
+  reg                 a_Valid_0_delay_3_4;
+  reg                 a_Valid_0_delay_4_3;
+  reg                 a_Valid_0_delay_5_2;
+  reg                 a_Valid_0_delay_6_1;
+  reg                 a_Valid_0_delay_7;
   reg                 left_vaild_delay_1;
   reg                 top_vaild_delay_1;
   reg                 mid_vaild_delay_1;
@@ -513,70 +583,70 @@ module Tile (
   reg                 mid_40_vaild_delay_1_1;
   reg                 mid_47_vaild_delay_1;
   reg                 mid_41_vaild_delay_1;
-  wire                when_Tile_l69;
-  wire                when_Tile_l69_1;
-  wire                when_Tile_l69_2;
-  wire                when_Tile_l69_3;
-  wire                when_Tile_l69_4;
-  wire                when_Tile_l69_5;
-  wire                when_Tile_l69_6;
-  wire                when_Tile_l69_7;
-  wire                when_Tile_l69_8;
-  wire                when_Tile_l69_9;
-  wire                when_Tile_l69_10;
-  wire                when_Tile_l69_11;
-  wire                when_Tile_l69_12;
-  wire                when_Tile_l69_13;
-  wire                when_Tile_l69_14;
-  wire                when_Tile_l69_15;
-  wire                when_Tile_l69_16;
-  wire                when_Tile_l69_17;
-  wire                when_Tile_l69_18;
-  wire                when_Tile_l69_19;
-  wire                when_Tile_l69_20;
-  wire                when_Tile_l69_21;
-  wire                when_Tile_l69_22;
-  wire                when_Tile_l69_23;
-  wire                when_Tile_l69_24;
-  wire                when_Tile_l69_25;
-  wire                when_Tile_l69_26;
-  wire                when_Tile_l69_27;
-  wire                when_Tile_l69_28;
-  wire                when_Tile_l69_29;
-  wire                when_Tile_l69_30;
-  wire                when_Tile_l69_31;
-  wire                when_Tile_l69_32;
-  wire                when_Tile_l69_33;
-  wire                when_Tile_l69_34;
-  wire                when_Tile_l69_35;
-  wire                when_Tile_l69_36;
-  wire                when_Tile_l69_37;
-  wire                when_Tile_l69_38;
-  wire                when_Tile_l69_39;
-  wire                when_Tile_l69_40;
-  wire                when_Tile_l69_41;
-  wire                when_Tile_l69_42;
-  wire                when_Tile_l69_43;
-  wire                when_Tile_l69_44;
-  wire                when_Tile_l69_45;
-  wire                when_Tile_l69_46;
-  wire                when_Tile_l69_47;
-  wire                when_Tile_l69_48;
-  wire                when_Tile_l69_49;
-  wire                when_Tile_l69_50;
-  wire                when_Tile_l69_51;
-  wire                when_Tile_l69_52;
-  wire                when_Tile_l69_53;
-  wire                when_Tile_l69_54;
-  wire                when_Tile_l69_55;
-  wire                when_Tile_l69_56;
-  wire                when_Tile_l69_57;
-  wire                when_Tile_l69_58;
-  wire                when_Tile_l69_59;
-  wire                when_Tile_l69_60;
-  wire                when_Tile_l69_61;
-  wire                when_Tile_l69_62;
-  wire                when_Tile_l69_63;
+  wire                when_Tile_l68;
+  wire                when_Tile_l68_1;
+  wire                when_Tile_l68_2;
+  wire                when_Tile_l68_3;
+  wire                when_Tile_l68_4;
+  wire                when_Tile_l68_5;
+  wire                when_Tile_l68_6;
+  wire                when_Tile_l68_7;
+  wire                when_Tile_l68_8;
+  wire                when_Tile_l68_9;
+  wire                when_Tile_l68_10;
+  wire                when_Tile_l68_11;
+  wire                when_Tile_l68_12;
+  wire                when_Tile_l68_13;
+  wire                when_Tile_l68_14;
+  wire                when_Tile_l68_15;
+  wire                when_Tile_l68_16;
+  wire                when_Tile_l68_17;
+  wire                when_Tile_l68_18;
+  wire                when_Tile_l68_19;
+  wire                when_Tile_l68_20;
+  wire                when_Tile_l68_21;
+  wire                when_Tile_l68_22;
+  wire                when_Tile_l68_23;
+  wire                when_Tile_l68_24;
+  wire                when_Tile_l68_25;
+  wire                when_Tile_l68_26;
+  wire                when_Tile_l68_27;
+  wire                when_Tile_l68_28;
+  wire                when_Tile_l68_29;
+  wire                when_Tile_l68_30;
+  wire                when_Tile_l68_31;
+  wire                when_Tile_l68_32;
+  wire                when_Tile_l68_33;
+  wire                when_Tile_l68_34;
+  wire                when_Tile_l68_35;
+  wire                when_Tile_l68_36;
+  wire                when_Tile_l68_37;
+  wire                when_Tile_l68_38;
+  wire                when_Tile_l68_39;
+  wire                when_Tile_l68_40;
+  wire                when_Tile_l68_41;
+  wire                when_Tile_l68_42;
+  wire                when_Tile_l68_43;
+  wire                when_Tile_l68_44;
+  wire                when_Tile_l68_45;
+  wire                when_Tile_l68_46;
+  wire                when_Tile_l68_47;
+  wire                when_Tile_l68_48;
+  wire                when_Tile_l68_49;
+  wire                when_Tile_l68_50;
+  wire                when_Tile_l68_51;
+  wire                when_Tile_l68_52;
+  wire                when_Tile_l68_53;
+  wire                when_Tile_l68_54;
+  wire                when_Tile_l68_55;
+  wire                when_Tile_l68_56;
+  wire                when_Tile_l68_57;
+  wire                when_Tile_l68_58;
+  wire                when_Tile_l68_59;
+  wire                when_Tile_l68_60;
+  wire                when_Tile_l68_61;
+  wire                when_Tile_l68_62;
+  wire                when_Tile_l68_63;
 
   PE pE_64 (
     .activate  (pE_64_activate[7:0]), //i
@@ -593,7 +663,7 @@ module Tile (
   PE left (
     .activate  (left_activate[7:0]), //i
     .weight    (pE_64_bcount[7:0] ), //i
-    .vaild     (a_Valid_1         ), //i
+    .vaild     (left_vaild        ), //i
     .signCount (signCount[15:0]   ), //i
     .acount    (left_acount[7:0]  ), //o
     .bcount    (left_bcount[7:0]  ), //o
@@ -605,7 +675,7 @@ module Tile (
   PE left_1 (
     .activate  (left_1_activate[7:0]), //i
     .weight    (left_bcount[7:0]    ), //i
-    .vaild     (a_Valid_2           ), //i
+    .vaild     (left_1_vaild        ), //i
     .signCount (signCount[15:0]     ), //i
     .acount    (left_1_acount[7:0]  ), //o
     .bcount    (left_1_bcount[7:0]  ), //o
@@ -617,7 +687,7 @@ module Tile (
   PE left_2 (
     .activate  (left_2_activate[7:0]), //i
     .weight    (left_1_bcount[7:0]  ), //i
-    .vaild     (a_Valid_3           ), //i
+    .vaild     (left_2_vaild        ), //i
     .signCount (signCount[15:0]     ), //i
     .acount    (left_2_acount[7:0]  ), //o
     .bcount    (left_2_bcount[7:0]  ), //o
@@ -629,7 +699,7 @@ module Tile (
   PE left_3 (
     .activate  (left_3_activate[7:0]), //i
     .weight    (left_2_bcount[7:0]  ), //i
-    .vaild     (a_Valid_4           ), //i
+    .vaild     (left_3_vaild        ), //i
     .signCount (signCount[15:0]     ), //i
     .acount    (left_3_acount[7:0]  ), //o
     .bcount    (left_3_bcount[7:0]  ), //o
@@ -641,7 +711,7 @@ module Tile (
   PE left_4 (
     .activate  (left_4_activate[7:0]), //i
     .weight    (left_3_bcount[7:0]  ), //i
-    .vaild     (a_Valid_5           ), //i
+    .vaild     (left_4_vaild        ), //i
     .signCount (signCount[15:0]     ), //i
     .acount    (left_4_acount[7:0]  ), //o
     .bcount    (left_4_bcount[7:0]  ), //o
@@ -653,7 +723,7 @@ module Tile (
   PE left_5 (
     .activate  (left_5_activate[7:0]), //i
     .weight    (left_4_bcount[7:0]  ), //i
-    .vaild     (a_Valid_6           ), //i
+    .vaild     (left_5_vaild        ), //i
     .signCount (signCount[15:0]     ), //i
     .acount    (left_5_acount[7:0]  ), //o
     .bcount    (left_5_bcount[7:0]  ), //o
@@ -665,7 +735,7 @@ module Tile (
   PE left_6 (
     .activate  (left_6_activate[7:0]), //i
     .weight    (left_5_bcount[7:0]  ), //i
-    .vaild     (a_Valid_7           ), //i
+    .vaild     (left_6_vaild        ), //i
     .signCount (signCount[15:0]     ), //i
     .acount    (left_6_acount[7:0]  ), //o
     .bcount    (left_6_bcount[7:0]  ), //o
@@ -677,7 +747,7 @@ module Tile (
   PE top (
     .activate  (pE_64_acount[7:0]), //i
     .weight    (_zz_weight[7:0]  ), //i
-    .vaild     (b_Valid_1_delay_1), //i
+    .vaild     (top_vaild        ), //i
     .signCount (signCount[15:0]  ), //i
     .acount    (top_acount[7:0]  ), //o
     .bcount    (top_bcount[7:0]  ), //o
@@ -689,7 +759,7 @@ module Tile (
   PE top_1 (
     .activate  (top_acount[7:0]   ), //i
     .weight    (_zz_weight_2[7:0] ), //i
-    .vaild     (b_Valid_2_delay_2 ), //i
+    .vaild     (top_1_vaild       ), //i
     .signCount (signCount[15:0]   ), //i
     .acount    (top_1_acount[7:0] ), //o
     .bcount    (top_1_bcount[7:0] ), //o
@@ -701,7 +771,7 @@ module Tile (
   PE top_2 (
     .activate  (top_1_acount[7:0] ), //i
     .weight    (_zz_weight_5[7:0] ), //i
-    .vaild     (b_Valid_3_delay_3 ), //i
+    .vaild     (top_2_vaild       ), //i
     .signCount (signCount[15:0]   ), //i
     .acount    (top_2_acount[7:0] ), //o
     .bcount    (top_2_bcount[7:0] ), //o
@@ -713,7 +783,7 @@ module Tile (
   PE top_3 (
     .activate  (top_2_acount[7:0] ), //i
     .weight    (_zz_weight_9[7:0] ), //i
-    .vaild     (b_Valid_4_delay_4 ), //i
+    .vaild     (top_3_vaild       ), //i
     .signCount (signCount[15:0]   ), //i
     .acount    (top_3_acount[7:0] ), //o
     .bcount    (top_3_bcount[7:0] ), //o
@@ -725,7 +795,7 @@ module Tile (
   PE top_4 (
     .activate  (top_3_acount[7:0] ), //i
     .weight    (_zz_weight_14[7:0]), //i
-    .vaild     (b_Valid_5_delay_5 ), //i
+    .vaild     (top_4_vaild       ), //i
     .signCount (signCount[15:0]   ), //i
     .acount    (top_4_acount[7:0] ), //o
     .bcount    (top_4_bcount[7:0] ), //o
@@ -737,7 +807,7 @@ module Tile (
   PE top_5 (
     .activate  (top_4_acount[7:0] ), //i
     .weight    (_zz_weight_20[7:0]), //i
-    .vaild     (b_Valid_6_delay_6 ), //i
+    .vaild     (top_5_vaild       ), //i
     .signCount (signCount[15:0]   ), //i
     .acount    (top_5_acount[7:0] ), //o
     .bcount    (top_5_bcount[7:0] ), //o
@@ -749,7 +819,7 @@ module Tile (
   PE top_6 (
     .activate  (top_5_acount[7:0] ), //i
     .weight    (_zz_weight_27[7:0]), //i
-    .vaild     (b_Valid_7_delay_7 ), //i
+    .vaild     (top_6_vaild       ), //i
     .signCount (signCount[15:0]   ), //i
     .acount    (top_6_acount[7:0] ), //o
     .bcount    (top_6_bcount[7:0] ), //o
@@ -1348,448 +1418,448 @@ module Tile (
   );
   always @(*) begin
     PE_OUT_0 = 20'h0;
-    if(when_Tile_l69) begin
+    if(when_Tile_l68) begin
       PE_OUT_0 = pE_64_PE_OUT;
     end
-    if(when_Tile_l69_1) begin
+    if(when_Tile_l68_1) begin
       PE_OUT_0 = top_PE_OUT;
     end
-    if(when_Tile_l69_2) begin
+    if(when_Tile_l68_2) begin
       PE_OUT_0 = top_1_PE_OUT;
     end
-    if(when_Tile_l69_3) begin
+    if(when_Tile_l68_3) begin
       PE_OUT_0 = top_2_PE_OUT;
     end
-    if(when_Tile_l69_4) begin
+    if(when_Tile_l68_4) begin
       PE_OUT_0 = top_3_PE_OUT;
     end
-    if(when_Tile_l69_5) begin
+    if(when_Tile_l68_5) begin
       PE_OUT_0 = top_4_PE_OUT;
     end
-    if(when_Tile_l69_6) begin
+    if(when_Tile_l68_6) begin
       PE_OUT_0 = top_5_PE_OUT;
     end
-    if(when_Tile_l69_7) begin
+    if(when_Tile_l68_7) begin
       PE_OUT_0 = top_6_PE_OUT;
     end
   end
 
   always @(*) begin
     resultVaild_0 = 1'b0;
-    if(when_Tile_l69) begin
+    if(when_Tile_l68) begin
       resultVaild_0 = pE_64_finish;
     end
-    if(when_Tile_l69_1) begin
+    if(when_Tile_l68_1) begin
       resultVaild_0 = top_finish;
     end
-    if(when_Tile_l69_2) begin
+    if(when_Tile_l68_2) begin
       resultVaild_0 = top_1_finish;
     end
-    if(when_Tile_l69_3) begin
+    if(when_Tile_l68_3) begin
       resultVaild_0 = top_2_finish;
     end
-    if(when_Tile_l69_4) begin
+    if(when_Tile_l68_4) begin
       resultVaild_0 = top_3_finish;
     end
-    if(when_Tile_l69_5) begin
+    if(when_Tile_l68_5) begin
       resultVaild_0 = top_4_finish;
     end
-    if(when_Tile_l69_6) begin
+    if(when_Tile_l68_6) begin
       resultVaild_0 = top_5_finish;
     end
-    if(when_Tile_l69_7) begin
+    if(when_Tile_l68_7) begin
       resultVaild_0 = top_6_finish;
     end
   end
 
   always @(*) begin
     PE_OUT_1 = 20'h0;
-    if(when_Tile_l69_8) begin
+    if(when_Tile_l68_8) begin
       PE_OUT_1 = left_PE_OUT;
     end
-    if(when_Tile_l69_9) begin
+    if(when_Tile_l68_9) begin
       PE_OUT_1 = mid_PE_OUT;
     end
-    if(when_Tile_l69_10) begin
+    if(when_Tile_l68_10) begin
       PE_OUT_1 = mid_1_PE_OUT;
     end
-    if(when_Tile_l69_11) begin
+    if(when_Tile_l68_11) begin
       PE_OUT_1 = mid_2_PE_OUT;
     end
-    if(when_Tile_l69_12) begin
+    if(when_Tile_l68_12) begin
       PE_OUT_1 = mid_3_PE_OUT;
     end
-    if(when_Tile_l69_13) begin
+    if(when_Tile_l68_13) begin
       PE_OUT_1 = mid_4_PE_OUT;
     end
-    if(when_Tile_l69_14) begin
+    if(when_Tile_l68_14) begin
       PE_OUT_1 = mid_5_PE_OUT;
     end
-    if(when_Tile_l69_15) begin
+    if(when_Tile_l68_15) begin
       PE_OUT_1 = mid_6_PE_OUT;
     end
   end
 
   always @(*) begin
     resultVaild_1 = 1'b0;
-    if(when_Tile_l69_8) begin
+    if(when_Tile_l68_8) begin
       resultVaild_1 = left_finish;
     end
-    if(when_Tile_l69_9) begin
+    if(when_Tile_l68_9) begin
       resultVaild_1 = mid_finish;
     end
-    if(when_Tile_l69_10) begin
+    if(when_Tile_l68_10) begin
       resultVaild_1 = mid_1_finish;
     end
-    if(when_Tile_l69_11) begin
+    if(when_Tile_l68_11) begin
       resultVaild_1 = mid_2_finish;
     end
-    if(when_Tile_l69_12) begin
+    if(when_Tile_l68_12) begin
       resultVaild_1 = mid_3_finish;
     end
-    if(when_Tile_l69_13) begin
+    if(when_Tile_l68_13) begin
       resultVaild_1 = mid_4_finish;
     end
-    if(when_Tile_l69_14) begin
+    if(when_Tile_l68_14) begin
       resultVaild_1 = mid_5_finish;
     end
-    if(when_Tile_l69_15) begin
+    if(when_Tile_l68_15) begin
       resultVaild_1 = mid_6_finish;
     end
   end
 
   always @(*) begin
     PE_OUT_2 = 20'h0;
-    if(when_Tile_l69_16) begin
+    if(when_Tile_l68_16) begin
       PE_OUT_2 = left_1_PE_OUT;
     end
-    if(when_Tile_l69_17) begin
+    if(when_Tile_l68_17) begin
       PE_OUT_2 = mid_7_PE_OUT;
     end
-    if(when_Tile_l69_18) begin
+    if(when_Tile_l68_18) begin
       PE_OUT_2 = mid_8_PE_OUT;
     end
-    if(when_Tile_l69_19) begin
+    if(when_Tile_l68_19) begin
       PE_OUT_2 = mid_9_PE_OUT;
     end
-    if(when_Tile_l69_20) begin
+    if(when_Tile_l68_20) begin
       PE_OUT_2 = mid_10_PE_OUT;
     end
-    if(when_Tile_l69_21) begin
+    if(when_Tile_l68_21) begin
       PE_OUT_2 = mid_11_PE_OUT;
     end
-    if(when_Tile_l69_22) begin
+    if(when_Tile_l68_22) begin
       PE_OUT_2 = mid_12_PE_OUT;
     end
-    if(when_Tile_l69_23) begin
+    if(when_Tile_l68_23) begin
       PE_OUT_2 = mid_13_PE_OUT;
     end
   end
 
   always @(*) begin
     resultVaild_2 = 1'b0;
-    if(when_Tile_l69_16) begin
+    if(when_Tile_l68_16) begin
       resultVaild_2 = left_1_finish;
     end
-    if(when_Tile_l69_17) begin
+    if(when_Tile_l68_17) begin
       resultVaild_2 = mid_7_finish;
     end
-    if(when_Tile_l69_18) begin
+    if(when_Tile_l68_18) begin
       resultVaild_2 = mid_8_finish;
     end
-    if(when_Tile_l69_19) begin
+    if(when_Tile_l68_19) begin
       resultVaild_2 = mid_9_finish;
     end
-    if(when_Tile_l69_20) begin
+    if(when_Tile_l68_20) begin
       resultVaild_2 = mid_10_finish;
     end
-    if(when_Tile_l69_21) begin
+    if(when_Tile_l68_21) begin
       resultVaild_2 = mid_11_finish;
     end
-    if(when_Tile_l69_22) begin
+    if(when_Tile_l68_22) begin
       resultVaild_2 = mid_12_finish;
     end
-    if(when_Tile_l69_23) begin
+    if(when_Tile_l68_23) begin
       resultVaild_2 = mid_13_finish;
     end
   end
 
   always @(*) begin
     PE_OUT_3 = 20'h0;
-    if(when_Tile_l69_24) begin
+    if(when_Tile_l68_24) begin
       PE_OUT_3 = left_2_PE_OUT;
     end
-    if(when_Tile_l69_25) begin
+    if(when_Tile_l68_25) begin
       PE_OUT_3 = mid_14_PE_OUT;
     end
-    if(when_Tile_l69_26) begin
+    if(when_Tile_l68_26) begin
       PE_OUT_3 = mid_15_PE_OUT;
     end
-    if(when_Tile_l69_27) begin
+    if(when_Tile_l68_27) begin
       PE_OUT_3 = mid_16_PE_OUT;
     end
-    if(when_Tile_l69_28) begin
+    if(when_Tile_l68_28) begin
       PE_OUT_3 = mid_17_PE_OUT;
     end
-    if(when_Tile_l69_29) begin
+    if(when_Tile_l68_29) begin
       PE_OUT_3 = mid_18_PE_OUT;
     end
-    if(when_Tile_l69_30) begin
+    if(when_Tile_l68_30) begin
       PE_OUT_3 = mid_19_PE_OUT;
     end
-    if(when_Tile_l69_31) begin
+    if(when_Tile_l68_31) begin
       PE_OUT_3 = mid_20_PE_OUT;
     end
   end
 
   always @(*) begin
     resultVaild_3 = 1'b0;
-    if(when_Tile_l69_24) begin
+    if(when_Tile_l68_24) begin
       resultVaild_3 = left_2_finish;
     end
-    if(when_Tile_l69_25) begin
+    if(when_Tile_l68_25) begin
       resultVaild_3 = mid_14_finish;
     end
-    if(when_Tile_l69_26) begin
+    if(when_Tile_l68_26) begin
       resultVaild_3 = mid_15_finish;
     end
-    if(when_Tile_l69_27) begin
+    if(when_Tile_l68_27) begin
       resultVaild_3 = mid_16_finish;
     end
-    if(when_Tile_l69_28) begin
+    if(when_Tile_l68_28) begin
       resultVaild_3 = mid_17_finish;
     end
-    if(when_Tile_l69_29) begin
+    if(when_Tile_l68_29) begin
       resultVaild_3 = mid_18_finish;
     end
-    if(when_Tile_l69_30) begin
+    if(when_Tile_l68_30) begin
       resultVaild_3 = mid_19_finish;
     end
-    if(when_Tile_l69_31) begin
+    if(when_Tile_l68_31) begin
       resultVaild_3 = mid_20_finish;
     end
   end
 
   always @(*) begin
     PE_OUT_4 = 20'h0;
-    if(when_Tile_l69_32) begin
+    if(when_Tile_l68_32) begin
       PE_OUT_4 = left_3_PE_OUT;
     end
-    if(when_Tile_l69_33) begin
+    if(when_Tile_l68_33) begin
       PE_OUT_4 = mid_21_PE_OUT;
     end
-    if(when_Tile_l69_34) begin
+    if(when_Tile_l68_34) begin
       PE_OUT_4 = mid_22_PE_OUT;
     end
-    if(when_Tile_l69_35) begin
+    if(when_Tile_l68_35) begin
       PE_OUT_4 = mid_23_PE_OUT;
     end
-    if(when_Tile_l69_36) begin
+    if(when_Tile_l68_36) begin
       PE_OUT_4 = mid_24_PE_OUT;
     end
-    if(when_Tile_l69_37) begin
+    if(when_Tile_l68_37) begin
       PE_OUT_4 = mid_25_PE_OUT;
     end
-    if(when_Tile_l69_38) begin
+    if(when_Tile_l68_38) begin
       PE_OUT_4 = mid_26_PE_OUT;
     end
-    if(when_Tile_l69_39) begin
+    if(when_Tile_l68_39) begin
       PE_OUT_4 = mid_27_PE_OUT;
     end
   end
 
   always @(*) begin
     resultVaild_4 = 1'b0;
-    if(when_Tile_l69_32) begin
+    if(when_Tile_l68_32) begin
       resultVaild_4 = left_3_finish;
     end
-    if(when_Tile_l69_33) begin
+    if(when_Tile_l68_33) begin
       resultVaild_4 = mid_21_finish;
     end
-    if(when_Tile_l69_34) begin
+    if(when_Tile_l68_34) begin
       resultVaild_4 = mid_22_finish;
     end
-    if(when_Tile_l69_35) begin
+    if(when_Tile_l68_35) begin
       resultVaild_4 = mid_23_finish;
     end
-    if(when_Tile_l69_36) begin
+    if(when_Tile_l68_36) begin
       resultVaild_4 = mid_24_finish;
     end
-    if(when_Tile_l69_37) begin
+    if(when_Tile_l68_37) begin
       resultVaild_4 = mid_25_finish;
     end
-    if(when_Tile_l69_38) begin
+    if(when_Tile_l68_38) begin
       resultVaild_4 = mid_26_finish;
     end
-    if(when_Tile_l69_39) begin
+    if(when_Tile_l68_39) begin
       resultVaild_4 = mid_27_finish;
     end
   end
 
   always @(*) begin
     PE_OUT_5 = 20'h0;
-    if(when_Tile_l69_40) begin
+    if(when_Tile_l68_40) begin
       PE_OUT_5 = left_4_PE_OUT;
     end
-    if(when_Tile_l69_41) begin
+    if(when_Tile_l68_41) begin
       PE_OUT_5 = mid_28_PE_OUT;
     end
-    if(when_Tile_l69_42) begin
+    if(when_Tile_l68_42) begin
       PE_OUT_5 = mid_29_PE_OUT;
     end
-    if(when_Tile_l69_43) begin
+    if(when_Tile_l68_43) begin
       PE_OUT_5 = mid_30_PE_OUT;
     end
-    if(when_Tile_l69_44) begin
+    if(when_Tile_l68_44) begin
       PE_OUT_5 = mid_31_PE_OUT;
     end
-    if(when_Tile_l69_45) begin
+    if(when_Tile_l68_45) begin
       PE_OUT_5 = mid_32_PE_OUT;
     end
-    if(when_Tile_l69_46) begin
+    if(when_Tile_l68_46) begin
       PE_OUT_5 = mid_33_PE_OUT;
     end
-    if(when_Tile_l69_47) begin
+    if(when_Tile_l68_47) begin
       PE_OUT_5 = mid_34_PE_OUT;
     end
   end
 
   always @(*) begin
     resultVaild_5 = 1'b0;
-    if(when_Tile_l69_40) begin
+    if(when_Tile_l68_40) begin
       resultVaild_5 = left_4_finish;
     end
-    if(when_Tile_l69_41) begin
+    if(when_Tile_l68_41) begin
       resultVaild_5 = mid_28_finish;
     end
-    if(when_Tile_l69_42) begin
+    if(when_Tile_l68_42) begin
       resultVaild_5 = mid_29_finish;
     end
-    if(when_Tile_l69_43) begin
+    if(when_Tile_l68_43) begin
       resultVaild_5 = mid_30_finish;
     end
-    if(when_Tile_l69_44) begin
+    if(when_Tile_l68_44) begin
       resultVaild_5 = mid_31_finish;
     end
-    if(when_Tile_l69_45) begin
+    if(when_Tile_l68_45) begin
       resultVaild_5 = mid_32_finish;
     end
-    if(when_Tile_l69_46) begin
+    if(when_Tile_l68_46) begin
       resultVaild_5 = mid_33_finish;
     end
-    if(when_Tile_l69_47) begin
+    if(when_Tile_l68_47) begin
       resultVaild_5 = mid_34_finish;
     end
   end
 
   always @(*) begin
     PE_OUT_6 = 20'h0;
-    if(when_Tile_l69_48) begin
+    if(when_Tile_l68_48) begin
       PE_OUT_6 = left_5_PE_OUT;
     end
-    if(when_Tile_l69_49) begin
+    if(when_Tile_l68_49) begin
       PE_OUT_6 = mid_35_PE_OUT;
     end
-    if(when_Tile_l69_50) begin
+    if(when_Tile_l68_50) begin
       PE_OUT_6 = mid_36_PE_OUT;
     end
-    if(when_Tile_l69_51) begin
+    if(when_Tile_l68_51) begin
       PE_OUT_6 = mid_37_PE_OUT;
     end
-    if(when_Tile_l69_52) begin
+    if(when_Tile_l68_52) begin
       PE_OUT_6 = mid_38_PE_OUT;
     end
-    if(when_Tile_l69_53) begin
+    if(when_Tile_l68_53) begin
       PE_OUT_6 = mid_39_PE_OUT;
     end
-    if(when_Tile_l69_54) begin
+    if(when_Tile_l68_54) begin
       PE_OUT_6 = mid_40_PE_OUT;
     end
-    if(when_Tile_l69_55) begin
+    if(when_Tile_l68_55) begin
       PE_OUT_6 = mid_41_PE_OUT;
     end
   end
 
   always @(*) begin
     resultVaild_6 = 1'b0;
-    if(when_Tile_l69_48) begin
+    if(when_Tile_l68_48) begin
       resultVaild_6 = left_5_finish;
     end
-    if(when_Tile_l69_49) begin
+    if(when_Tile_l68_49) begin
       resultVaild_6 = mid_35_finish;
     end
-    if(when_Tile_l69_50) begin
+    if(when_Tile_l68_50) begin
       resultVaild_6 = mid_36_finish;
     end
-    if(when_Tile_l69_51) begin
+    if(when_Tile_l68_51) begin
       resultVaild_6 = mid_37_finish;
     end
-    if(when_Tile_l69_52) begin
+    if(when_Tile_l68_52) begin
       resultVaild_6 = mid_38_finish;
     end
-    if(when_Tile_l69_53) begin
+    if(when_Tile_l68_53) begin
       resultVaild_6 = mid_39_finish;
     end
-    if(when_Tile_l69_54) begin
+    if(when_Tile_l68_54) begin
       resultVaild_6 = mid_40_finish;
     end
-    if(when_Tile_l69_55) begin
+    if(when_Tile_l68_55) begin
       resultVaild_6 = mid_41_finish;
     end
   end
 
   always @(*) begin
     PE_OUT_7 = 20'h0;
-    if(when_Tile_l69_56) begin
+    if(when_Tile_l68_56) begin
       PE_OUT_7 = left_6_PE_OUT;
     end
-    if(when_Tile_l69_57) begin
+    if(when_Tile_l68_57) begin
       PE_OUT_7 = mid_42_PE_OUT;
     end
-    if(when_Tile_l69_58) begin
+    if(when_Tile_l68_58) begin
       PE_OUT_7 = mid_43_PE_OUT;
     end
-    if(when_Tile_l69_59) begin
+    if(when_Tile_l68_59) begin
       PE_OUT_7 = mid_44_PE_OUT;
     end
-    if(when_Tile_l69_60) begin
+    if(when_Tile_l68_60) begin
       PE_OUT_7 = mid_45_PE_OUT;
     end
-    if(when_Tile_l69_61) begin
+    if(when_Tile_l68_61) begin
       PE_OUT_7 = mid_46_PE_OUT;
     end
-    if(when_Tile_l69_62) begin
+    if(when_Tile_l68_62) begin
       PE_OUT_7 = mid_47_PE_OUT;
     end
-    if(when_Tile_l69_63) begin
+    if(when_Tile_l68_63) begin
       PE_OUT_7 = mid_48_PE_OUT;
     end
   end
 
   always @(*) begin
     resultVaild_7 = 1'b0;
-    if(when_Tile_l69_56) begin
+    if(when_Tile_l68_56) begin
       resultVaild_7 = left_6_finish;
     end
-    if(when_Tile_l69_57) begin
+    if(when_Tile_l68_57) begin
       resultVaild_7 = mid_42_finish;
     end
-    if(when_Tile_l69_58) begin
+    if(when_Tile_l68_58) begin
       resultVaild_7 = mid_43_finish;
     end
-    if(when_Tile_l69_59) begin
+    if(when_Tile_l68_59) begin
       resultVaild_7 = mid_44_finish;
     end
-    if(when_Tile_l69_60) begin
+    if(when_Tile_l68_60) begin
       resultVaild_7 = mid_45_finish;
     end
-    if(when_Tile_l69_61) begin
+    if(when_Tile_l68_61) begin
       resultVaild_7 = mid_46_finish;
     end
-    if(when_Tile_l69_62) begin
+    if(when_Tile_l68_62) begin
       resultVaild_7 = mid_47_finish;
     end
-    if(when_Tile_l69_63) begin
+    if(when_Tile_l68_63) begin
       resultVaild_7 = mid_48_finish;
     end
   end
@@ -1798,12 +1868,26 @@ module Tile (
   assign pE_64_activate = activate[7 : 0];
   assign pE_64_vaild = (a_Valid_0 && b_Valid_0);
   assign left_activate = activate[15 : 8];
+  assign left_vaild = (a_Valid_1 && b_Valid_0_delay_1);
   assign left_1_activate = activate[23 : 16];
+  assign left_1_vaild = (a_Valid_2 && b_Valid_0_delay_2);
   assign left_2_activate = activate[31 : 24];
+  assign left_2_vaild = (a_Valid_3 && b_Valid_0_delay_3);
   assign left_3_activate = activate[39 : 32];
+  assign left_3_vaild = (a_Valid_4 && b_Valid_0_delay_4);
   assign left_4_activate = activate[47 : 40];
+  assign left_4_vaild = (a_Valid_5 && b_Valid_0_delay_5);
   assign left_5_activate = activate[55 : 48];
+  assign left_5_vaild = (a_Valid_6 && b_Valid_0_delay_6);
   assign left_6_activate = activate[63 : 56];
+  assign left_6_vaild = (a_Valid_7 && b_Valid_0_delay_7);
+  assign top_vaild = (b_Valid_1_delay_1 && a_Valid_0_delay_1);
+  assign top_1_vaild = (b_Valid_2_delay_2 && a_Valid_0_delay_2);
+  assign top_2_vaild = (b_Valid_3_delay_3 && a_Valid_0_delay_3);
+  assign top_3_vaild = (b_Valid_4_delay_4 && a_Valid_0_delay_4);
+  assign top_4_vaild = (b_Valid_5_delay_5 && a_Valid_0_delay_5);
+  assign top_5_vaild = (b_Valid_6_delay_6 && a_Valid_0_delay_6);
+  assign top_6_vaild = (b_Valid_7_delay_7 && a_Valid_0_delay_7);
   assign mid_vaild = (left_vaild_delay_1 && top_vaild_delay_1);
   assign mid_1_vaild = (mid_vaild_delay_1 && top_1_vaild_delay_1);
   assign mid_2_vaild = (mid_1_vaild_delay_1 && top_2_vaild_delay_1);
@@ -1853,83 +1937,117 @@ module Tile (
   assign mid_46_vaild = (mid_45_vaild_delay_1 && mid_39_vaild_delay_1_1);
   assign mid_47_vaild = (mid_46_vaild_delay_1 && mid_40_vaild_delay_1_1);
   assign mid_48_vaild = (mid_47_vaild_delay_1 && mid_41_vaild_delay_1);
-  assign when_Tile_l69 = (pE_64_finish == 1'b1);
-  assign when_Tile_l69_1 = (top_finish == 1'b1);
-  assign when_Tile_l69_2 = (top_1_finish == 1'b1);
-  assign when_Tile_l69_3 = (top_2_finish == 1'b1);
-  assign when_Tile_l69_4 = (top_3_finish == 1'b1);
-  assign when_Tile_l69_5 = (top_4_finish == 1'b1);
-  assign when_Tile_l69_6 = (top_5_finish == 1'b1);
-  assign when_Tile_l69_7 = (top_6_finish == 1'b1);
-  assign when_Tile_l69_8 = (left_finish == 1'b1);
-  assign when_Tile_l69_9 = (mid_finish == 1'b1);
-  assign when_Tile_l69_10 = (mid_1_finish == 1'b1);
-  assign when_Tile_l69_11 = (mid_2_finish == 1'b1);
-  assign when_Tile_l69_12 = (mid_3_finish == 1'b1);
-  assign when_Tile_l69_13 = (mid_4_finish == 1'b1);
-  assign when_Tile_l69_14 = (mid_5_finish == 1'b1);
-  assign when_Tile_l69_15 = (mid_6_finish == 1'b1);
-  assign when_Tile_l69_16 = (left_1_finish == 1'b1);
-  assign when_Tile_l69_17 = (mid_7_finish == 1'b1);
-  assign when_Tile_l69_18 = (mid_8_finish == 1'b1);
-  assign when_Tile_l69_19 = (mid_9_finish == 1'b1);
-  assign when_Tile_l69_20 = (mid_10_finish == 1'b1);
-  assign when_Tile_l69_21 = (mid_11_finish == 1'b1);
-  assign when_Tile_l69_22 = (mid_12_finish == 1'b1);
-  assign when_Tile_l69_23 = (mid_13_finish == 1'b1);
-  assign when_Tile_l69_24 = (left_2_finish == 1'b1);
-  assign when_Tile_l69_25 = (mid_14_finish == 1'b1);
-  assign when_Tile_l69_26 = (mid_15_finish == 1'b1);
-  assign when_Tile_l69_27 = (mid_16_finish == 1'b1);
-  assign when_Tile_l69_28 = (mid_17_finish == 1'b1);
-  assign when_Tile_l69_29 = (mid_18_finish == 1'b1);
-  assign when_Tile_l69_30 = (mid_19_finish == 1'b1);
-  assign when_Tile_l69_31 = (mid_20_finish == 1'b1);
-  assign when_Tile_l69_32 = (left_3_finish == 1'b1);
-  assign when_Tile_l69_33 = (mid_21_finish == 1'b1);
-  assign when_Tile_l69_34 = (mid_22_finish == 1'b1);
-  assign when_Tile_l69_35 = (mid_23_finish == 1'b1);
-  assign when_Tile_l69_36 = (mid_24_finish == 1'b1);
-  assign when_Tile_l69_37 = (mid_25_finish == 1'b1);
-  assign when_Tile_l69_38 = (mid_26_finish == 1'b1);
-  assign when_Tile_l69_39 = (mid_27_finish == 1'b1);
-  assign when_Tile_l69_40 = (left_4_finish == 1'b1);
-  assign when_Tile_l69_41 = (mid_28_finish == 1'b1);
-  assign when_Tile_l69_42 = (mid_29_finish == 1'b1);
-  assign when_Tile_l69_43 = (mid_30_finish == 1'b1);
-  assign when_Tile_l69_44 = (mid_31_finish == 1'b1);
-  assign when_Tile_l69_45 = (mid_32_finish == 1'b1);
-  assign when_Tile_l69_46 = (mid_33_finish == 1'b1);
-  assign when_Tile_l69_47 = (mid_34_finish == 1'b1);
-  assign when_Tile_l69_48 = (left_5_finish == 1'b1);
-  assign when_Tile_l69_49 = (mid_35_finish == 1'b1);
-  assign when_Tile_l69_50 = (mid_36_finish == 1'b1);
-  assign when_Tile_l69_51 = (mid_37_finish == 1'b1);
-  assign when_Tile_l69_52 = (mid_38_finish == 1'b1);
-  assign when_Tile_l69_53 = (mid_39_finish == 1'b1);
-  assign when_Tile_l69_54 = (mid_40_finish == 1'b1);
-  assign when_Tile_l69_55 = (mid_41_finish == 1'b1);
-  assign when_Tile_l69_56 = (left_6_finish == 1'b1);
-  assign when_Tile_l69_57 = (mid_42_finish == 1'b1);
-  assign when_Tile_l69_58 = (mid_43_finish == 1'b1);
-  assign when_Tile_l69_59 = (mid_44_finish == 1'b1);
-  assign when_Tile_l69_60 = (mid_45_finish == 1'b1);
-  assign when_Tile_l69_61 = (mid_46_finish == 1'b1);
-  assign when_Tile_l69_62 = (mid_47_finish == 1'b1);
-  assign when_Tile_l69_63 = (mid_48_finish == 1'b1);
+  assign when_Tile_l68 = (pE_64_finish == 1'b1);
+  assign when_Tile_l68_1 = (top_finish == 1'b1);
+  assign when_Tile_l68_2 = (top_1_finish == 1'b1);
+  assign when_Tile_l68_3 = (top_2_finish == 1'b1);
+  assign when_Tile_l68_4 = (top_3_finish == 1'b1);
+  assign when_Tile_l68_5 = (top_4_finish == 1'b1);
+  assign when_Tile_l68_6 = (top_5_finish == 1'b1);
+  assign when_Tile_l68_7 = (top_6_finish == 1'b1);
+  assign when_Tile_l68_8 = (left_finish == 1'b1);
+  assign when_Tile_l68_9 = (mid_finish == 1'b1);
+  assign when_Tile_l68_10 = (mid_1_finish == 1'b1);
+  assign when_Tile_l68_11 = (mid_2_finish == 1'b1);
+  assign when_Tile_l68_12 = (mid_3_finish == 1'b1);
+  assign when_Tile_l68_13 = (mid_4_finish == 1'b1);
+  assign when_Tile_l68_14 = (mid_5_finish == 1'b1);
+  assign when_Tile_l68_15 = (mid_6_finish == 1'b1);
+  assign when_Tile_l68_16 = (left_1_finish == 1'b1);
+  assign when_Tile_l68_17 = (mid_7_finish == 1'b1);
+  assign when_Tile_l68_18 = (mid_8_finish == 1'b1);
+  assign when_Tile_l68_19 = (mid_9_finish == 1'b1);
+  assign when_Tile_l68_20 = (mid_10_finish == 1'b1);
+  assign when_Tile_l68_21 = (mid_11_finish == 1'b1);
+  assign when_Tile_l68_22 = (mid_12_finish == 1'b1);
+  assign when_Tile_l68_23 = (mid_13_finish == 1'b1);
+  assign when_Tile_l68_24 = (left_2_finish == 1'b1);
+  assign when_Tile_l68_25 = (mid_14_finish == 1'b1);
+  assign when_Tile_l68_26 = (mid_15_finish == 1'b1);
+  assign when_Tile_l68_27 = (mid_16_finish == 1'b1);
+  assign when_Tile_l68_28 = (mid_17_finish == 1'b1);
+  assign when_Tile_l68_29 = (mid_18_finish == 1'b1);
+  assign when_Tile_l68_30 = (mid_19_finish == 1'b1);
+  assign when_Tile_l68_31 = (mid_20_finish == 1'b1);
+  assign when_Tile_l68_32 = (left_3_finish == 1'b1);
+  assign when_Tile_l68_33 = (mid_21_finish == 1'b1);
+  assign when_Tile_l68_34 = (mid_22_finish == 1'b1);
+  assign when_Tile_l68_35 = (mid_23_finish == 1'b1);
+  assign when_Tile_l68_36 = (mid_24_finish == 1'b1);
+  assign when_Tile_l68_37 = (mid_25_finish == 1'b1);
+  assign when_Tile_l68_38 = (mid_26_finish == 1'b1);
+  assign when_Tile_l68_39 = (mid_27_finish == 1'b1);
+  assign when_Tile_l68_40 = (left_4_finish == 1'b1);
+  assign when_Tile_l68_41 = (mid_28_finish == 1'b1);
+  assign when_Tile_l68_42 = (mid_29_finish == 1'b1);
+  assign when_Tile_l68_43 = (mid_30_finish == 1'b1);
+  assign when_Tile_l68_44 = (mid_31_finish == 1'b1);
+  assign when_Tile_l68_45 = (mid_32_finish == 1'b1);
+  assign when_Tile_l68_46 = (mid_33_finish == 1'b1);
+  assign when_Tile_l68_47 = (mid_34_finish == 1'b1);
+  assign when_Tile_l68_48 = (left_5_finish == 1'b1);
+  assign when_Tile_l68_49 = (mid_35_finish == 1'b1);
+  assign when_Tile_l68_50 = (mid_36_finish == 1'b1);
+  assign when_Tile_l68_51 = (mid_37_finish == 1'b1);
+  assign when_Tile_l68_52 = (mid_38_finish == 1'b1);
+  assign when_Tile_l68_53 = (mid_39_finish == 1'b1);
+  assign when_Tile_l68_54 = (mid_40_finish == 1'b1);
+  assign when_Tile_l68_55 = (mid_41_finish == 1'b1);
+  assign when_Tile_l68_56 = (left_6_finish == 1'b1);
+  assign when_Tile_l68_57 = (mid_42_finish == 1'b1);
+  assign when_Tile_l68_58 = (mid_43_finish == 1'b1);
+  assign when_Tile_l68_59 = (mid_44_finish == 1'b1);
+  assign when_Tile_l68_60 = (mid_45_finish == 1'b1);
+  assign when_Tile_l68_61 = (mid_46_finish == 1'b1);
+  assign when_Tile_l68_62 = (mid_47_finish == 1'b1);
+  assign when_Tile_l68_63 = (mid_48_finish == 1'b1);
   always @(posedge clk) begin
+    b_Valid_0_delay_1 <= b_Valid_0;
+    b_Valid_0_delay_1_1 <= b_Valid_0;
+    b_Valid_0_delay_2 <= b_Valid_0_delay_1_1;
+    b_Valid_0_delay_1_2 <= b_Valid_0;
+    b_Valid_0_delay_2_1 <= b_Valid_0_delay_1_2;
+    b_Valid_0_delay_3 <= b_Valid_0_delay_2_1;
+    b_Valid_0_delay_1_3 <= b_Valid_0;
+    b_Valid_0_delay_2_2 <= b_Valid_0_delay_1_3;
+    b_Valid_0_delay_3_1 <= b_Valid_0_delay_2_2;
+    b_Valid_0_delay_4 <= b_Valid_0_delay_3_1;
+    b_Valid_0_delay_1_4 <= b_Valid_0;
+    b_Valid_0_delay_2_3 <= b_Valid_0_delay_1_4;
+    b_Valid_0_delay_3_2 <= b_Valid_0_delay_2_3;
+    b_Valid_0_delay_4_1 <= b_Valid_0_delay_3_2;
+    b_Valid_0_delay_5 <= b_Valid_0_delay_4_1;
+    b_Valid_0_delay_1_5 <= b_Valid_0;
+    b_Valid_0_delay_2_4 <= b_Valid_0_delay_1_5;
+    b_Valid_0_delay_3_3 <= b_Valid_0_delay_2_4;
+    b_Valid_0_delay_4_2 <= b_Valid_0_delay_3_3;
+    b_Valid_0_delay_5_1 <= b_Valid_0_delay_4_2;
+    b_Valid_0_delay_6 <= b_Valid_0_delay_5_1;
+    b_Valid_0_delay_1_6 <= b_Valid_0;
+    b_Valid_0_delay_2_5 <= b_Valid_0_delay_1_6;
+    b_Valid_0_delay_3_4 <= b_Valid_0_delay_2_5;
+    b_Valid_0_delay_4_3 <= b_Valid_0_delay_3_4;
+    b_Valid_0_delay_5_2 <= b_Valid_0_delay_4_3;
+    b_Valid_0_delay_6_1 <= b_Valid_0_delay_5_2;
+    b_Valid_0_delay_7 <= b_Valid_0_delay_6_1;
     _zz_weight <= weight[15 : 8];
     b_Valid_1_delay_1 <= b_Valid_1;
+    a_Valid_0_delay_1 <= a_Valid_0;
     _zz_weight_1 <= weight[23 : 16];
     _zz_weight_2 <= _zz_weight_1;
     b_Valid_2_delay_1 <= b_Valid_2;
     b_Valid_2_delay_2 <= b_Valid_2_delay_1;
+    a_Valid_0_delay_1_1 <= a_Valid_0;
+    a_Valid_0_delay_2 <= a_Valid_0_delay_1_1;
     _zz_weight_3 <= weight[31 : 24];
     _zz_weight_4 <= _zz_weight_3;
     _zz_weight_5 <= _zz_weight_4;
     b_Valid_3_delay_1 <= b_Valid_3;
     b_Valid_3_delay_2 <= b_Valid_3_delay_1;
     b_Valid_3_delay_3 <= b_Valid_3_delay_2;
+    a_Valid_0_delay_1_2 <= a_Valid_0;
+    a_Valid_0_delay_2_1 <= a_Valid_0_delay_1_2;
+    a_Valid_0_delay_3 <= a_Valid_0_delay_2_1;
     _zz_weight_6 <= weight[39 : 32];
     _zz_weight_7 <= _zz_weight_6;
     _zz_weight_8 <= _zz_weight_7;
@@ -1938,6 +2056,10 @@ module Tile (
     b_Valid_4_delay_2 <= b_Valid_4_delay_1;
     b_Valid_4_delay_3 <= b_Valid_4_delay_2;
     b_Valid_4_delay_4 <= b_Valid_4_delay_3;
+    a_Valid_0_delay_1_3 <= a_Valid_0;
+    a_Valid_0_delay_2_2 <= a_Valid_0_delay_1_3;
+    a_Valid_0_delay_3_1 <= a_Valid_0_delay_2_2;
+    a_Valid_0_delay_4 <= a_Valid_0_delay_3_1;
     _zz_weight_10 <= weight[47 : 40];
     _zz_weight_11 <= _zz_weight_10;
     _zz_weight_12 <= _zz_weight_11;
@@ -1948,6 +2070,11 @@ module Tile (
     b_Valid_5_delay_3 <= b_Valid_5_delay_2;
     b_Valid_5_delay_4 <= b_Valid_5_delay_3;
     b_Valid_5_delay_5 <= b_Valid_5_delay_4;
+    a_Valid_0_delay_1_4 <= a_Valid_0;
+    a_Valid_0_delay_2_3 <= a_Valid_0_delay_1_4;
+    a_Valid_0_delay_3_2 <= a_Valid_0_delay_2_3;
+    a_Valid_0_delay_4_1 <= a_Valid_0_delay_3_2;
+    a_Valid_0_delay_5 <= a_Valid_0_delay_4_1;
     _zz_weight_15 <= weight[55 : 48];
     _zz_weight_16 <= _zz_weight_15;
     _zz_weight_17 <= _zz_weight_16;
@@ -1960,6 +2087,12 @@ module Tile (
     b_Valid_6_delay_4 <= b_Valid_6_delay_3;
     b_Valid_6_delay_5 <= b_Valid_6_delay_4;
     b_Valid_6_delay_6 <= b_Valid_6_delay_5;
+    a_Valid_0_delay_1_5 <= a_Valid_0;
+    a_Valid_0_delay_2_4 <= a_Valid_0_delay_1_5;
+    a_Valid_0_delay_3_3 <= a_Valid_0_delay_2_4;
+    a_Valid_0_delay_4_2 <= a_Valid_0_delay_3_3;
+    a_Valid_0_delay_5_1 <= a_Valid_0_delay_4_2;
+    a_Valid_0_delay_6 <= a_Valid_0_delay_5_1;
     _zz_weight_21 <= weight[63 : 56];
     _zz_weight_22 <= _zz_weight_21;
     _zz_weight_23 <= _zz_weight_22;
@@ -1974,21 +2107,28 @@ module Tile (
     b_Valid_7_delay_5 <= b_Valid_7_delay_4;
     b_Valid_7_delay_6 <= b_Valid_7_delay_5;
     b_Valid_7_delay_7 <= b_Valid_7_delay_6;
-    left_vaild_delay_1 <= a_Valid_1;
-    top_vaild_delay_1 <= b_Valid_1_delay_1;
+    a_Valid_0_delay_1_6 <= a_Valid_0;
+    a_Valid_0_delay_2_5 <= a_Valid_0_delay_1_6;
+    a_Valid_0_delay_3_4 <= a_Valid_0_delay_2_5;
+    a_Valid_0_delay_4_3 <= a_Valid_0_delay_3_4;
+    a_Valid_0_delay_5_2 <= a_Valid_0_delay_4_3;
+    a_Valid_0_delay_6_1 <= a_Valid_0_delay_5_2;
+    a_Valid_0_delay_7 <= a_Valid_0_delay_6_1;
+    left_vaild_delay_1 <= left_vaild;
+    top_vaild_delay_1 <= top_vaild;
     mid_vaild_delay_1 <= mid_vaild;
-    top_1_vaild_delay_1 <= b_Valid_2_delay_2;
+    top_1_vaild_delay_1 <= top_1_vaild;
     mid_1_vaild_delay_1 <= mid_1_vaild;
-    top_2_vaild_delay_1 <= b_Valid_3_delay_3;
+    top_2_vaild_delay_1 <= top_2_vaild;
     mid_2_vaild_delay_1 <= mid_2_vaild;
-    top_3_vaild_delay_1 <= b_Valid_4_delay_4;
+    top_3_vaild_delay_1 <= top_3_vaild;
     mid_3_vaild_delay_1 <= mid_3_vaild;
-    top_4_vaild_delay_1 <= b_Valid_5_delay_5;
+    top_4_vaild_delay_1 <= top_4_vaild;
     mid_4_vaild_delay_1 <= mid_4_vaild;
-    top_5_vaild_delay_1 <= b_Valid_6_delay_6;
+    top_5_vaild_delay_1 <= top_5_vaild;
     mid_5_vaild_delay_1 <= mid_5_vaild;
-    top_6_vaild_delay_1 <= b_Valid_7_delay_7;
-    left_1_vaild_delay_1 <= a_Valid_2;
+    top_6_vaild_delay_1 <= top_6_vaild;
+    left_1_vaild_delay_1 <= left_1_vaild;
     mid_vaild_delay_1_1 <= mid_vaild;
     mid_7_vaild_delay_1 <= mid_7_vaild;
     mid_1_vaild_delay_1_1 <= mid_1_vaild;
@@ -2002,7 +2142,7 @@ module Tile (
     mid_5_vaild_delay_1_1 <= mid_5_vaild;
     mid_12_vaild_delay_1 <= mid_12_vaild;
     mid_6_vaild_delay_1 <= mid_6_vaild;
-    left_2_vaild_delay_1 <= a_Valid_3;
+    left_2_vaild_delay_1 <= left_2_vaild;
     mid_7_vaild_delay_1_1 <= mid_7_vaild;
     mid_14_vaild_delay_1 <= mid_14_vaild;
     mid_8_vaild_delay_1_1 <= mid_8_vaild;
@@ -2016,7 +2156,7 @@ module Tile (
     mid_12_vaild_delay_1_1 <= mid_12_vaild;
     mid_19_vaild_delay_1 <= mid_19_vaild;
     mid_13_vaild_delay_1 <= mid_13_vaild;
-    left_3_vaild_delay_1 <= a_Valid_4;
+    left_3_vaild_delay_1 <= left_3_vaild;
     mid_14_vaild_delay_1_1 <= mid_14_vaild;
     mid_21_vaild_delay_1 <= mid_21_vaild;
     mid_15_vaild_delay_1_1 <= mid_15_vaild;
@@ -2030,7 +2170,7 @@ module Tile (
     mid_19_vaild_delay_1_1 <= mid_19_vaild;
     mid_26_vaild_delay_1 <= mid_26_vaild;
     mid_20_vaild_delay_1 <= mid_20_vaild;
-    left_4_vaild_delay_1 <= a_Valid_5;
+    left_4_vaild_delay_1 <= left_4_vaild;
     mid_21_vaild_delay_1_1 <= mid_21_vaild;
     mid_28_vaild_delay_1 <= mid_28_vaild;
     mid_22_vaild_delay_1_1 <= mid_22_vaild;
@@ -2044,7 +2184,7 @@ module Tile (
     mid_26_vaild_delay_1_1 <= mid_26_vaild;
     mid_33_vaild_delay_1 <= mid_33_vaild;
     mid_27_vaild_delay_1 <= mid_27_vaild;
-    left_5_vaild_delay_1 <= a_Valid_6;
+    left_5_vaild_delay_1 <= left_5_vaild;
     mid_28_vaild_delay_1_1 <= mid_28_vaild;
     mid_35_vaild_delay_1 <= mid_35_vaild;
     mid_29_vaild_delay_1_1 <= mid_29_vaild;
@@ -2058,7 +2198,7 @@ module Tile (
     mid_33_vaild_delay_1_1 <= mid_33_vaild;
     mid_40_vaild_delay_1 <= mid_40_vaild;
     mid_34_vaild_delay_1 <= mid_34_vaild;
-    left_6_vaild_delay_1 <= a_Valid_7;
+    left_6_vaild_delay_1 <= left_6_vaild;
     mid_35_vaild_delay_1_1 <= mid_35_vaild;
     mid_42_vaild_delay_1 <= mid_42_vaild;
     mid_36_vaild_delay_1_1 <= mid_36_vaild;
@@ -2223,8 +2363,7 @@ module PE (
   reg                 vaild_regNext_1;
   reg                 vaild_regNext_1_regNext;
   reg        [15:0]   finishCnt_count;
-  reg                 finishCnt_valid;
-  wire                when_WaCounter_l14;
+  wire                finishCnt_valid;
   reg        [7:0]    activate_regNext;
   reg        [7:0]    weight_regNext;
 
@@ -2235,15 +2374,7 @@ module PE (
     .B   (weight[7:0]  ), //i
     .P   (dsp_P[15:0]  )  //o
   );
-  assign when_WaCounter_l14 = (finishCnt_count == signCount);
-  always @(*) begin
-    if(when_WaCounter_l14) begin
-      finishCnt_valid = 1'b1;
-    end else begin
-      finishCnt_valid = 1'b0;
-    end
-  end
-
+  assign finishCnt_valid = ((finishCnt_count == signCount) && vaild_regNext_1_regNext);
   assign finish = finishCnt_valid;
   always @(*) begin
     if(finishCnt_valid) begin
@@ -2264,9 +2395,10 @@ module PE (
         reg1 <= ($signed(_zz_reg1) + $signed(reg1));
       end
       if(vaild_regNext_1_regNext) begin
-        finishCnt_count <= (finishCnt_count + 16'h0001);
         if(finishCnt_valid) begin
           finishCnt_count <= 16'h0;
+        end else begin
+          finishCnt_count <= (finishCnt_count + 16'h0001);
         end
       end
       if(finishCnt_valid) begin

@@ -152,20 +152,21 @@ class Weight_Cache extends Component{
     Fsm.SA_Computed:=io.LayerEnd
 
 
-
+    val MatrixCol_Switch=UInt(Config.SA_COL bits)
     switch(OutCol_Cnt.count) {
         for(i<-1 to Config.SA_COL-1){
             is(i) {
-                io.MatrixCol_Switch(i-1 downto 0).setAll()
-                io.MatrixCol_Switch(Config.SA_COL-1 downto i).clearAll()
+                MatrixCol_Switch(i-1 downto 0).setAll()
+                MatrixCol_Switch(Config.SA_COL-1 downto i).clearAll()
             }
         } 
 
 
         default {
-            io.MatrixCol_Switch.setAll()
+            MatrixCol_Switch.setAll()
         }
     }
+    io.MatrixCol_Switch:=RegNext(MatrixCol_Switch)
 }
 class WeightCache_Stream extends Component{
     val Config=new TopConfig
