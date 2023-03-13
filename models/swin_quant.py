@@ -447,12 +447,12 @@ class PatchMerging(nn.Module):
         """
         x: B, H*W, C
         """
-        H, W = self.input_resolution
-        B, L, C = x.shape
+        H, W = self.input_resolution#高和宽
+        B, L, C = x.shape#矩阵的行高
         assert L == H * W, 'input feature has wrong size'
-        assert H % 2 == 0 and W % 2 == 0, f'x size ({H}*{W}) are not even.'
+        assert H % 2 == 0 and W % 2 == 0, f'x size ({H}*{W}) are not even.'#这里如果不满足2的整数倍，可以padding，但是我们目前不考虑 https://www.bilibili.com/video/BV1yg411K7Yc/?spm_id_from=333.337.search-card.all.click&vd_source=e266528bb2c5162eb121b6299a644f52
 
-        x = x.view(B, H, W, C)
+        x = x.view(B, H, W, C)#又将矩阵变回3D图片
 
         x0 = x[:, 0::2, 0::2, :]  # B H/2 W/2 C
         x1 = x[:, 1::2, 0::2, :]  # B H/2 W/2 C
@@ -541,7 +541,7 @@ class BasicLayer(nn.Module):
 
         # patch merging layer
         if downsample is not None:
-            self.downsample = downsample(input_resolution,
+            self.downsample = downsample(input_resolution,#输入分辨率，56*56
                                          dim=dim,
                                          norm_layer=norm_layer,
                                          quant=quant,
@@ -877,6 +877,7 @@ def swin_base_patch4_window7_224(pretrained=False,
                                  quant=False,
                                  calibrate=False,
                                  cfg=None,
+                                 input_quant=True,
                                  **kwargs):
     """ Swin-B @ 224x224, trained ImageNet-1k
     """
@@ -888,7 +889,7 @@ def swin_base_patch4_window7_224(pretrained=False,
                             norm_layer=QIntLayerNorm,
                             quant=quant,
                             calibrate=calibrate,
-                            input_quant=True,
+                            input_quant=input_quant,
                             cfg=cfg,
                             **kwargs)
     if pretrained:
