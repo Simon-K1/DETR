@@ -2,7 +2,7 @@ package TestSpace
 import spinal.core._
 import utils.TopConfig
 import spinal.lib.StreamFifo
-import java.util.concurrent.SubmissionPublisher
+
 class Xq2C extends BlackBox{
     //XQC=C*X_q计算
     val Config=TopConfig()
