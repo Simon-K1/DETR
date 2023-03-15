@@ -6,6 +6,7 @@ import utils.TopConfig
 import xip.xil_SimpleDualBram
 import spinal.lib.StreamFifoInterface
 import spinal.lib.StreamFifo
+import spinal.lib.master
 
 //需要一个状态机来做控制调度
 object CONVOUTPUT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
@@ -51,16 +52,22 @@ class ConvOutput extends Component{
         val sData= Vec(slave Stream(UInt(8 bits)),Config.SA_ROW)//
         val Matrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
         val Matrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
+        val mData= master Stream(UInt(64 bits))
     }
     noIoPrefix()
 
 
     //构建SA_Row个Mem作为缓存,外面再挂一个WidthConverter
+    //构建SA_Row个Mem作为缓存,由于现在输入通道都是8的倍数，所以即使输出通道不是8的倍数，在数据整理模块中也应该将数据补成8通道的倍数
     val OutFeature_Cache=Array.tabulate(Config.SA_COL){
         i=>def gen()={
             //4096*64bit是一个Bram资源，32K
             val OutFeature=new StreamFifo(UInt(8 bits),1024)//bram的深度必须正确配置,只能大不能小
-            
+            when(OutFeature.io.pop.valid){
+                io.mData.payload((i+1)*8-1 downto i*8):=OutFeature.io.pop.payload
+            }otherwise{
+                io.mData.payload((i+1)*8-1 downto i*8):=0//非8的倍数补零
+            }
         }
         gen()
     }
