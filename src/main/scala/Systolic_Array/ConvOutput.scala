@@ -7,6 +7,7 @@ import xip.xil_SimpleDualBram
 import spinal.lib.StreamFifoInterface
 import spinal.lib.StreamFifo
 import spinal.lib.master
+import utils.ForLoopCounter
 
 //需要一个状态机来做控制调度
 object CONVOUTPUT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
@@ -56,6 +57,8 @@ class ConvOutput extends Component{
     }
     noIoPrefix()
 
+    val In_Col_Cnt=ForLoopCounter(io.sData(0).fire,Config.MATRIXC_COL_WIDTH,io.Matrix_Col)//输入列计数器
+    val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Row)//输入行计数器
 
     //构建SA_Row个Mem作为缓存,外面再挂一个WidthConverter
     //构建SA_Row个Mem作为缓存,由于现在输入通道都是8的倍数，所以即使输出通道不是8的倍数，在数据整理模块中也应该将数据补成8通道的倍数
@@ -63,6 +66,9 @@ class ConvOutput extends Component{
         i=>def gen()={
             //4096*64bit是一个Bram资源，32K
             val OutFeature=new StreamFifo(UInt(8 bits),1024)//bram的深度必须正确配置,只能大不能小
+            OutFeature.setDefinitionName("ConvOutput_Fifo")
+            OutFeature.io.push<>io.sData(i)
+            OutFeature.io.pop.ready:=False
             when(OutFeature.io.pop.valid){
                 io.mData.payload((i+1)*8-1 downto i*8):=OutFeature.io.pop.payload
             }otherwise{
@@ -71,12 +77,14 @@ class ConvOutput extends Component{
         }
         gen()
     }
-    for(i<-0 to Config.SA_ROW-1){
-        io.sData(i).ready:=False
-    }
-
+    // for(i<-0 to Config.SA_ROW-1){
+    //     io.sData(i).ready:=False
+    // }
+    io.mData.valid:=False
 
 }
+
+
 object ConvOutput extends App { 
     val verilog_path="./Simulation/SimSystolic/verilog" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ConvOutput)

@@ -29,7 +29,7 @@ class WaCounter(en: Bool, width: Int, cnt: UInt,Stride:UInt) extends Area {
 }
 object ForLoopCounter{
     //For循环累加器，相比于WaCounter，valid只会拉高一下
-    //适用场景：3个及以上的个For循环映射到硬件上（两个或两个以下还是WaCounter比较保守）
+    //适用场景：3个及以上的个For循环映射到硬件上
     def apply(en:Bool,width:Int,end:UInt)=new ForLoopCounter(en, width, end)
     //def apply(en:Bool,width:Int,stride:UInt,subs:Boolean)=new ForLoopCounter(en,width,stride)
 }
