@@ -146,6 +146,7 @@ class Block(nn.Module):
                               attn_drop=attn_drop,
                               proj_drop=drop,
                               cfg=cfg)
+        # self.attn=torch.nn.MultiheadAttention(embed_dim=dim,num_heads=num_heads,add_bias_kv=True,batch_first=True)
         # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
         self.drop_path = DropPath(
             drop_path) if drop_path > 0.0 else nn.Identity()
@@ -179,6 +180,9 @@ class Block(nn.Module):
 
     def forward(self, x, last_quantizer=None):
         Norm_Out=self.norm1(x, last_quantizer,self.qact1.quantizer)
+        
+        QKV=self.qact1(Norm_Out)
+        # Attn_Out,_=self.attn(QKV,QKV,QKV)
         Attn_Out=self.attn(self.qact1(Norm_Out))
         x=x + self.drop_path(Attn_Out)
         x = self.qact2(x)
@@ -441,6 +445,39 @@ def deit_tiny_patch16_224(pretrained=False,
             check_hash=True,
         )
         model.load_state_dict(checkpoint['model'], strict=False)
+    return model
+
+def My_Tiny_Vit(pretrained=False,
+                          quant=False,
+                          calibrate=False,
+                          cfg=None,
+                          **kwargs):
+    model = VisionTransformer(
+        patch_size=16,
+        embed_dim=384,
+        depth=6,
+        num_heads=6,
+        mlp_ratio=4,
+        qkv_bias=True,
+        norm_layer=partial(QIntLayerNorm, eps=1e-6),
+        quant=quant,
+        calibrate=calibrate,
+        input_quant=False,
+        num_classes=3,
+        cfg=cfg,
+        drop_rate=0.1,
+        attn_drop_rate=0.1,
+        drop_path_rate=0.1,
+        **kwargs,
+    )
+    # if pretrained:
+    #     checkpoint = torch.hub.load_state_dict_from_url(
+    #         url=
+    #         'https://dl.fbaipublicfiles.com/deit/deit_tiny_patch16_224-a1311bcf.pth',
+    #         map_location='cpu',
+    #         check_hash=True,
+    #     )
+    #     model.load_state_dict(checkpoint['model'], strict=False)
     return model
 
 

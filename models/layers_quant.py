@@ -120,7 +120,7 @@ class Mlp(nn.Module):
                  in_features,
                  hidden_features=None,
                  out_features=None,
-                 act_layer=nn.GELU,
+                 act_layer=nn.ReLU,#nn.GELU,
                  drop=0.0,
                  quant=False,
                  calibrate=False,
