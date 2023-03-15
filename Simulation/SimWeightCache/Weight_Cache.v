@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : Weight_Cache
-// Git hash  : 1793850d2e2a29cad12658c7e3e366685fe59e2a
+// Git hash  : 3b157106ed24daa76b3bfa08310617b5dfdb5a5b
 
 `timescale 1ns/1ps
 
@@ -15,7 +15,7 @@ module Weight_Cache (
   input               Raddr_Valid,
   output              Weight_Cached,
   input               LayerEnd,
-  output reg [7:0]    MatrixCol_Switch,
+  output     [7:0]    MatrixCol_Switch,
   input               clk,
   input               reset
 );
@@ -121,6 +121,8 @@ module Weight_Cache (
   wire                sData_fire_6;
   wire                sData_fire_7;
   wire                sData_fire_8;
+  reg        [7:0]    MatrixCol_Switch_1;
+  reg        [7:0]    MatrixCol_Switch_1_regNext;
   `ifndef SYNTHESIS
   reg [95:0] Fsm_currentState_string;
   reg [95:0] Fsm_nextState_string;
@@ -363,39 +365,40 @@ module Weight_Cache (
   always @(*) begin
     case(OutCol_Cnt_count)
       16'h0001 : begin
-        MatrixCol_Switch[0 : 0] = 1'b1;
-        MatrixCol_Switch[7 : 1] = 7'h0;
+        MatrixCol_Switch_1[0 : 0] = 1'b1;
+        MatrixCol_Switch_1[7 : 1] = 7'h0;
       end
       16'h0002 : begin
-        MatrixCol_Switch[1 : 0] = 2'b11;
-        MatrixCol_Switch[7 : 2] = 6'h0;
+        MatrixCol_Switch_1[1 : 0] = 2'b11;
+        MatrixCol_Switch_1[7 : 2] = 6'h0;
       end
       16'h0003 : begin
-        MatrixCol_Switch[2 : 0] = 3'b111;
-        MatrixCol_Switch[7 : 3] = 5'h0;
+        MatrixCol_Switch_1[2 : 0] = 3'b111;
+        MatrixCol_Switch_1[7 : 3] = 5'h0;
       end
       16'h0004 : begin
-        MatrixCol_Switch[3 : 0] = 4'b1111;
-        MatrixCol_Switch[7 : 4] = 4'b0000;
+        MatrixCol_Switch_1[3 : 0] = 4'b1111;
+        MatrixCol_Switch_1[7 : 4] = 4'b0000;
       end
       16'h0005 : begin
-        MatrixCol_Switch[4 : 0] = 5'h1f;
-        MatrixCol_Switch[7 : 5] = 3'b000;
+        MatrixCol_Switch_1[4 : 0] = 5'h1f;
+        MatrixCol_Switch_1[7 : 5] = 3'b000;
       end
       16'h0006 : begin
-        MatrixCol_Switch[5 : 0] = 6'h3f;
-        MatrixCol_Switch[7 : 6] = 2'b00;
+        MatrixCol_Switch_1[5 : 0] = 6'h3f;
+        MatrixCol_Switch_1[7 : 6] = 2'b00;
       end
       16'h0007 : begin
-        MatrixCol_Switch[6 : 0] = 7'h7f;
-        MatrixCol_Switch[7 : 7] = 1'b0;
+        MatrixCol_Switch_1[6 : 0] = 7'h7f;
+        MatrixCol_Switch_1[7 : 7] = 1'b0;
       end
       default : begin
-        MatrixCol_Switch = 8'hff;
+        MatrixCol_Switch_1 = 8'hff;
       end
     endcase
   end
 
+  assign MatrixCol_Switch = MatrixCol_Switch_1_regNext;
   always @(posedge clk or posedge reset) begin
     if(reset) begin
       Fsm_currentState <= WEIGHT_CACHE_STATUS_IDLE;
@@ -465,6 +468,10 @@ module Weight_Cache (
         Write_Row_Base_Addr <= (Write_Row_Base_Addr + _zz_Write_Row_Base_Addr);
       end
     end
+  end
+
+  always @(posedge clk) begin
+    MatrixCol_Switch_1_regNext <= MatrixCol_Switch_1;
   end
 
 

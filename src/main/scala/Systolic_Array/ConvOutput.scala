@@ -8,11 +8,12 @@ import spinal.lib.StreamFifoInterface
 import spinal.lib.StreamFifo
 import spinal.lib.master
 import utils.ForLoopCounter
+import utils.AxisDataConverter
 
 //需要一个状态机来做控制调度
 object CONVOUTPUT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT,DATA_ARRANGEMENT= newElement
-    //DATA_ARRANGEMENT:数据排列
+    //DATA_ARRANGEMENT:数据排列(输入缓存+输出排列)
 }
 case class ConvOutput_Fsm(start:Bool)extends Area{
     val currentState = Reg(CONVOUTPUT_ENUM()) init CONVOUTPUT_ENUM.IDLE
@@ -22,7 +23,7 @@ case class ConvOutput_Fsm(start:Bool)extends Area{
     val Inited=Bool()
     val LayerEnd=Bool()
     switch(currentState){
-        is(CONVOUTPUT_ENUM.INIT){
+        is(CONVOUTPUT_ENUM.IDLE){
             when(start){
                 nextState:=CONVOUTPUT_ENUM.INIT
             }otherwise{
@@ -45,7 +46,32 @@ case class ConvOutput_Fsm(start:Bool)extends Area{
         }
     }
 }
-
+object ARRANGE_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
+    val IDLE, DATA_OUTPUT= newElement
+    //DATA_OUTPUT:数据输出
+}
+case class Arrange_Fsm(start:Bool)extends Area{
+    val currentState = Reg(ARRANGE_ENUM()) init ARRANGE_ENUM.IDLE
+    val nextState = ARRANGE_ENUM()
+    currentState := nextState
+    val OutEnd=Bool()//完整的8行输出结束
+    switch(currentState){
+        is(ARRANGE_ENUM.IDLE){
+            when(start){
+                nextState:=ARRANGE_ENUM.DATA_OUTPUT
+            }otherwise{
+                nextState:=ARRANGE_ENUM.IDLE
+            }
+        }
+        is(ARRANGE_ENUM.DATA_OUTPUT){
+            when(OutEnd){
+                nextState:=ARRANGE_ENUM.IDLE
+            }otherwise{
+                nextState:=ARRANGE_ENUM.DATA_OUTPUT
+            }
+        }
+    }
+}
 //实现思路：构建SA_Row个Fifo缓存8行完整的数据后依次输出第一行，第二行...第8行的数据
 class ConvOutput extends Component{
     val Config=TopConfig()
@@ -54,35 +80,57 @@ class ConvOutput extends Component{
         val Matrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
         val Matrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
         val mData= master Stream(UInt(64 bits))
+        val start=in Bool()
     }
     noIoPrefix()
+    val Fsm=ConvOutput_Fsm(io.start)
+    
+    val Init_Cnt=ForLoopCounter(Fsm.currentState===CONVOUTPUT_ENUM.INIT,3,5)
+    Fsm.Inited:=Init_Cnt.valid
 
-    val In_Col_Cnt=ForLoopCounter(io.sData(0).fire,Config.MATRIXC_COL_WIDTH,io.Matrix_Col)//输入列计数器
-    val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Row)//输入行计数器
+    val InChannel_Cnt=ForLoopCounter(io.sData(0).fire,Config.MATRIXC_COL_WIDTH,io.Matrix_Col)//通道计数器
+    val InPixel_Cnt=ForLoopCounter(InChannel_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Row)//像素计数器
+    val In_Col_Cnt=ForLoopCounter(InPixel_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Row)//图片列计数器
+    val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Row)//图片行计数器
+
+    val OutChannel_Cnt=ForLoopCounter(io.sData(0).fire,Config.MATRIXC_COL_WIDTH,io.Matrix_Col)//通道计数器
+    val OutPixel_Cnt=ForLoopCounter(OutChannel_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Row)//像素计数器
+    val Out_Col_Cnt=ForLoopCounter(OutPixel_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Row)//图片列计数器
 
     //构建SA_Row个Mem作为缓存,外面再挂一个WidthConverter
     //构建SA_Row个Mem作为缓存,由于现在输入通道都是8的倍数，所以即使输出通道不是8的倍数，在数据整理模块中也应该将数据补成8通道的倍数
+    val ArrangeFsm=Arrange_Fsm(In_Col_Cnt.valid)//当进完一行后就可以开始往外面pop数据了
+    ArrangeFsm.OutEnd:=Out_Col_Cnt.valid//输出完一行就继续等待完整的一行被缓存下来
+    io.mData.payload:=0
+    io.mData.valid:=False
+    val OutSwitch=Reg(UInt(8 bits))init(1)
+    when(Out_Col_Cnt.valid){
+        OutSwitch:=OutSwitch.rotateLeft(1)
+    }
     val OutFeature_Cache=Array.tabulate(Config.SA_COL){
         i=>def gen()={
             //4096*64bit是一个Bram资源，32K
-            val OutFeature=new StreamFifo(UInt(8 bits),1024)//bram的深度必须正确配置,只能大不能小
-            OutFeature.setDefinitionName("ConvOutput_Fifo")
-            OutFeature.io.push<>io.sData(i)
-            OutFeature.io.pop.ready:=False
-            when(OutFeature.io.pop.valid){
-                io.mData.payload((i+1)*8-1 downto i*8):=OutFeature.io.pop.payload
-            }otherwise{
-                io.mData.payload((i+1)*8-1 downto i*8):=0//非8的倍数补零
+            val OutFeature_Fifo=new StreamFifo(UInt(64 bits),512)//bram的深度必须正确配置,只能大不能小
+            //这个fifo必须至少能缓存输出矩阵完整的一行
+            val DataConverter=new AxisDataConverter(8,64)
+            DataConverter.setDefinitionName("ConvOutput_Converter")
+            OutFeature_Fifo.setDefinitionName("ConvOutput_Fifo")
+            DataConverter.inStream<>io.sData(i)
+            OutFeature_Fifo.io.push<>DataConverter.outStream
+
+            OutFeature_Fifo.io.pop.ready:=False
+            when(OutSwitch(i downto i).asBool){
+                io.mData.payload:=OutFeature_Fifo.io.pop.payload
+                io.mData.valid:=OutFeature_Fifo.io.pop.valid
+                OutFeature_Fifo.io.pop.ready:=io.mData.ready
             }
         }
         gen()
     }
-    // for(i<-0 to Config.SA_ROW-1){
-    //     io.sData(i).ready:=False
-    // }
-    io.mData.valid:=False
+    // io.mData.valid:=False
 
 }
+
 
 
 object ConvOutput extends App { 
