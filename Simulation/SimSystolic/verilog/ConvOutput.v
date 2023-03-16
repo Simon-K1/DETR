@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : ConvOutput
-// Git hash  : a29e563cfb9d97b5cef211c66b49959a0f11a730
+// Git hash  : 1327eefc5a3869a7a129faaf31454f1f76d3e07d
 
 `timescale 1ns/1ps
 
@@ -114,19 +114,21 @@ module ConvOutput (
   wire       [11:0]   _zz_InChannel_Cnt_valid;
   wire       [9:0]    _zz_InChannel_Cnt_valid_1;
   wire       [11:0]   _zz_In_Col_Cnt_valid;
+  wire       [11:0]   _zz_In_Col_Cnt_count_1;
   wire       [11:0]   _zz_In_Row_Cnt_valid;
   wire       [8:0]    _zz_OutChannel_Cnt_valid;
   wire       [6:0]    _zz_OutChannel_Cnt_valid_1;
   wire       [6:0]    _zz_OutChannel_Cnt_valid_2;
   wire       [11:0]   _zz_Out_Col_Cnt_valid;
-  wire       [0:0]    _zz_when_ConvOutput_l138;
-  wire       [0:0]    _zz_when_ConvOutput_l138_1;
-  wire       [0:0]    _zz_when_ConvOutput_l138_2;
-  wire       [0:0]    _zz_when_ConvOutput_l138_3;
-  wire       [0:0]    _zz_when_ConvOutput_l138_4;
-  wire       [0:0]    _zz_when_ConvOutput_l138_5;
-  wire       [0:0]    _zz_when_ConvOutput_l138_6;
-  wire       [0:0]    _zz_when_ConvOutput_l138_7;
+  wire       [11:0]   _zz_Out_Row_Cnt_valid;
+  wire       [0:0]    _zz_when_ConvOutput_l146;
+  wire       [0:0]    _zz_when_ConvOutput_l146_1;
+  wire       [0:0]    _zz_when_ConvOutput_l146_2;
+  wire       [0:0]    _zz_when_ConvOutput_l146_3;
+  wire       [0:0]    _zz_when_ConvOutput_l146_4;
+  wire       [0:0]    _zz_when_ConvOutput_l146_5;
+  wire       [0:0]    _zz_when_ConvOutput_l146_6;
+  wire       [0:0]    _zz_when_ConvOutput_l146_7;
   reg        [3:0]    Fsm_currentState;
   reg        [3:0]    Fsm_nextState;
   wire                Fsm_Inited;
@@ -138,6 +140,7 @@ module ConvOutput (
   wire                when_WaCounter_l39_1;
   reg        [11:0]   InChannel_Cnt_count;
   wire                InChannel_Cnt_valid;
+  wire       [3:0]    _zz_In_Col_Cnt_count;
   reg        [11:0]   In_Col_Cnt_count;
   wire                In_Col_Cnt_valid;
   reg        [11:0]   In_Row_Cnt_count;
@@ -147,17 +150,17 @@ module ConvOutput (
   wire                OutChannel_Cnt_valid;
   reg        [11:0]   Out_Col_Cnt_count;
   wire                Out_Col_Cnt_valid;
-  reg        [2:0]    Out_8Row_Cnt_count;
-  wire                Out_8Row_Cnt_valid;
+  reg        [11:0]   Out_Row_Cnt_count;
+  wire                Out_Row_Cnt_valid;
   reg        [7:0]    OutSwitch;
-  wire                when_ConvOutput_l138;
-  wire                when_ConvOutput_l138_1;
-  wire                when_ConvOutput_l138_2;
-  wire                when_ConvOutput_l138_3;
-  wire                when_ConvOutput_l138_4;
-  wire                when_ConvOutput_l138_5;
-  wire                when_ConvOutput_l138_6;
-  wire                when_ConvOutput_l138_7;
+  wire                when_ConvOutput_l146;
+  wire                when_ConvOutput_l146_1;
+  wire                when_ConvOutput_l146_2;
+  wire                when_ConvOutput_l146_3;
+  wire                when_ConvOutput_l146_4;
+  wire                when_ConvOutput_l146_5;
+  wire                when_ConvOutput_l146_6;
+  wire                when_ConvOutput_l146_7;
   `ifndef SYNTHESIS
   reg [127:0] Fsm_currentState_string;
   reg [127:0] Fsm_nextState_string;
@@ -166,20 +169,22 @@ module ConvOutput (
 
   assign _zz_InChannel_Cnt_valid_1 = (In_Channel - 10'h001);
   assign _zz_InChannel_Cnt_valid = {2'd0, _zz_InChannel_Cnt_valid_1};
-  assign _zz_In_Col_Cnt_valid = (Matrix_Col - 12'h001);
+  assign _zz_In_Col_Cnt_valid = {8'd0, _zz_In_Col_Cnt_count};
+  assign _zz_In_Col_Cnt_count_1 = {8'd0, _zz_In_Col_Cnt_count};
   assign _zz_In_Row_Cnt_valid = (Matrix_Row - 12'h001);
   assign _zz_OutChannel_Cnt_valid_1 = (_zz_OutChannel_Cnt_valid_2 - 7'h01);
   assign _zz_OutChannel_Cnt_valid = {2'd0, _zz_OutChannel_Cnt_valid_1};
   assign _zz_OutChannel_Cnt_valid_2 = (In_Channel >>> 3);
   assign _zz_Out_Col_Cnt_valid = (Matrix_Row - 12'h001);
-  assign _zz_when_ConvOutput_l138 = OutSwitch[0 : 0];
-  assign _zz_when_ConvOutput_l138_1 = OutSwitch[1 : 1];
-  assign _zz_when_ConvOutput_l138_2 = OutSwitch[2 : 2];
-  assign _zz_when_ConvOutput_l138_3 = OutSwitch[3 : 3];
-  assign _zz_when_ConvOutput_l138_4 = OutSwitch[4 : 4];
-  assign _zz_when_ConvOutput_l138_5 = OutSwitch[5 : 5];
-  assign _zz_when_ConvOutput_l138_6 = OutSwitch[6 : 6];
-  assign _zz_when_ConvOutput_l138_7 = OutSwitch[7 : 7];
+  assign _zz_Out_Row_Cnt_valid = (Matrix_Row - 12'h001);
+  assign _zz_when_ConvOutput_l146 = OutSwitch[0 : 0];
+  assign _zz_when_ConvOutput_l146_1 = OutSwitch[1 : 1];
+  assign _zz_when_ConvOutput_l146_2 = OutSwitch[2 : 2];
+  assign _zz_when_ConvOutput_l146_3 = OutSwitch[3 : 3];
+  assign _zz_when_ConvOutput_l146_4 = OutSwitch[4 : 4];
+  assign _zz_when_ConvOutput_l146_5 = OutSwitch[5 : 5];
+  assign _zz_when_ConvOutput_l146_6 = OutSwitch[6 : 6];
+  assign _zz_when_ConvOutput_l146_7 = OutSwitch[7 : 7];
   ConvOutput_Fifo streamFifo (
     .io_push_valid   (axisDataConverter_outStream_valid        ), //i
     .io_push_ready   (streamFifo_io_push_ready                 ), //o
@@ -422,68 +427,69 @@ module ConvOutput (
   assign when_WaCounter_l39 = ((Fsm_currentState & CONVOUTPUT_ENUM_INIT) != 4'b0000);
   assign Init_Cnt_valid = ((Init_Cnt_count == 3'b101) && when_WaCounter_l39);
   assign Fsm_Inited = Init_Cnt_valid;
-  assign Fsm_Data_AllOut = 1'b0;
-  assign when_WaCounter_l39_1 = (((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000) && (sReady && sValid));
+  assign when_WaCounter_l39_1 = (sReady && sValid);
   assign InChannel_Cnt_valid = ((InChannel_Cnt_count == _zz_InChannel_Cnt_valid) && when_WaCounter_l39_1);
-  assign In_Col_Cnt_valid = ((In_Col_Cnt_count == _zz_In_Col_Cnt_valid) && InChannel_Cnt_valid);
+  assign _zz_In_Col_Cnt_count = 4'b1000;
+  assign In_Col_Cnt_valid = ((In_Col_Cnt_count <= _zz_In_Col_Cnt_valid) && InChannel_Cnt_valid);
   assign In_Row_Cnt_valid = ((In_Row_Cnt_count == _zz_In_Row_Cnt_valid) && In_Col_Cnt_valid);
   assign Fsm_LayerEnd = In_Row_Cnt_valid;
   assign mData_fire = (mData_valid && mData_ready);
   assign OutChannel_Cnt_valid = ((OutChannel_Cnt_count == _zz_OutChannel_Cnt_valid) && mData_fire);
   assign Out_Col_Cnt_valid = ((Out_Col_Cnt_count == _zz_Out_Col_Cnt_valid) && OutChannel_Cnt_valid);
-  assign Out_8Row_Cnt_valid = ((Out_8Row_Cnt_count == 3'b111) && Out_Col_Cnt_valid);
+  assign Out_Row_Cnt_valid = ((Out_Row_Cnt_count == _zz_Out_Row_Cnt_valid) && Out_Col_Cnt_valid);
+  assign Fsm_Data_AllOut = Out_Row_Cnt_valid;
   always @(*) begin
     mData_payload = 64'h0;
-    if(when_ConvOutput_l138) begin
+    if(when_ConvOutput_l146) begin
       mData_payload = streamFifo_io_pop_payload;
     end
-    if(when_ConvOutput_l138_1) begin
+    if(when_ConvOutput_l146_1) begin
       mData_payload = streamFifo_1_io_pop_payload;
     end
-    if(when_ConvOutput_l138_2) begin
+    if(when_ConvOutput_l146_2) begin
       mData_payload = streamFifo_2_io_pop_payload;
     end
-    if(when_ConvOutput_l138_3) begin
+    if(when_ConvOutput_l146_3) begin
       mData_payload = streamFifo_3_io_pop_payload;
     end
-    if(when_ConvOutput_l138_4) begin
+    if(when_ConvOutput_l146_4) begin
       mData_payload = streamFifo_4_io_pop_payload;
     end
-    if(when_ConvOutput_l138_5) begin
+    if(when_ConvOutput_l146_5) begin
       mData_payload = streamFifo_5_io_pop_payload;
     end
-    if(when_ConvOutput_l138_6) begin
+    if(when_ConvOutput_l146_6) begin
       mData_payload = streamFifo_6_io_pop_payload;
     end
-    if(when_ConvOutput_l138_7) begin
+    if(when_ConvOutput_l146_7) begin
       mData_payload = streamFifo_7_io_pop_payload;
     end
   end
 
   always @(*) begin
     mData_valid = 1'b0;
-    if(when_ConvOutput_l138) begin
+    if(when_ConvOutput_l146) begin
       mData_valid = streamFifo_io_pop_valid;
     end
-    if(when_ConvOutput_l138_1) begin
+    if(when_ConvOutput_l146_1) begin
       mData_valid = streamFifo_1_io_pop_valid;
     end
-    if(when_ConvOutput_l138_2) begin
+    if(when_ConvOutput_l146_2) begin
       mData_valid = streamFifo_2_io_pop_valid;
     end
-    if(when_ConvOutput_l138_3) begin
+    if(when_ConvOutput_l146_3) begin
       mData_valid = streamFifo_3_io_pop_valid;
     end
-    if(when_ConvOutput_l138_4) begin
+    if(when_ConvOutput_l146_4) begin
       mData_valid = streamFifo_4_io_pop_valid;
     end
-    if(when_ConvOutput_l138_5) begin
+    if(when_ConvOutput_l146_5) begin
       mData_valid = streamFifo_5_io_pop_valid;
     end
-    if(when_ConvOutput_l138_6) begin
+    if(when_ConvOutput_l146_6) begin
       mData_valid = streamFifo_6_io_pop_valid;
     end
-    if(when_ConvOutput_l138_7) begin
+    if(when_ConvOutput_l146_7) begin
       mData_valid = streamFifo_7_io_pop_valid;
     end
   end
@@ -493,92 +499,92 @@ module ConvOutput (
   assign axisDataConverter_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l138) begin
+    if(when_ConvOutput_l146) begin
       streamFifo_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l138 = _zz_when_ConvOutput_l138[0];
+  assign when_ConvOutput_l146 = _zz_when_ConvOutput_l146[0];
   assign axisDataConverter_1_inStream_payload = sData[15 : 8];
   assign axisDataConverter_1_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_1_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l138_1) begin
+    if(when_ConvOutput_l146_1) begin
       streamFifo_1_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l138_1 = _zz_when_ConvOutput_l138_1[0];
+  assign when_ConvOutput_l146_1 = _zz_when_ConvOutput_l146_1[0];
   assign axisDataConverter_2_inStream_payload = sData[23 : 16];
   assign axisDataConverter_2_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_2_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l138_2) begin
+    if(when_ConvOutput_l146_2) begin
       streamFifo_2_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l138_2 = _zz_when_ConvOutput_l138_2[0];
+  assign when_ConvOutput_l146_2 = _zz_when_ConvOutput_l146_2[0];
   assign axisDataConverter_3_inStream_payload = sData[31 : 24];
   assign axisDataConverter_3_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_3_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l138_3) begin
+    if(when_ConvOutput_l146_3) begin
       streamFifo_3_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l138_3 = _zz_when_ConvOutput_l138_3[0];
+  assign when_ConvOutput_l146_3 = _zz_when_ConvOutput_l146_3[0];
   assign axisDataConverter_4_inStream_payload = sData[39 : 32];
   assign axisDataConverter_4_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_4_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l138_4) begin
+    if(when_ConvOutput_l146_4) begin
       streamFifo_4_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l138_4 = _zz_when_ConvOutput_l138_4[0];
+  assign when_ConvOutput_l146_4 = _zz_when_ConvOutput_l146_4[0];
   assign axisDataConverter_5_inStream_payload = sData[47 : 40];
   assign axisDataConverter_5_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_5_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l138_5) begin
+    if(when_ConvOutput_l146_5) begin
       streamFifo_5_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l138_5 = _zz_when_ConvOutput_l138_5[0];
+  assign when_ConvOutput_l146_5 = _zz_when_ConvOutput_l146_5[0];
   assign axisDataConverter_6_inStream_payload = sData[55 : 48];
   assign axisDataConverter_6_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_6_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l138_6) begin
+    if(when_ConvOutput_l146_6) begin
       streamFifo_6_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l138_6 = _zz_when_ConvOutput_l138_6[0];
+  assign when_ConvOutput_l146_6 = _zz_when_ConvOutput_l146_6[0];
   assign axisDataConverter_7_inStream_payload = sData[63 : 56];
   assign axisDataConverter_7_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_7_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l138_7) begin
+    if(when_ConvOutput_l146_7) begin
       streamFifo_7_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l138_7 = _zz_when_ConvOutput_l138_7[0];
+  assign when_ConvOutput_l146_7 = _zz_when_ConvOutput_l146_7[0];
   always @(posedge clk or posedge reset) begin
     if(reset) begin
       Fsm_currentState <= CONVOUTPUT_ENUM_IDLE;
       Init_Cnt_count <= 3'b000;
       InChannel_Cnt_count <= 12'h0;
-      In_Col_Cnt_count <= 12'h0;
+      In_Col_Cnt_count <= Matrix_Col;
       In_Row_Cnt_count <= 12'h0;
       OutChannel_Cnt_count <= 9'h0;
       Out_Col_Cnt_count <= 12'h0;
-      Out_8Row_Cnt_count <= 3'b000;
+      Out_Row_Cnt_count <= 12'h0;
       OutSwitch <= 8'h01;
     end else begin
       Fsm_currentState <= Fsm_nextState;
@@ -598,9 +604,9 @@ module ConvOutput (
       end
       if(InChannel_Cnt_valid) begin
         if(In_Col_Cnt_valid) begin
-          In_Col_Cnt_count <= 12'h0;
+          In_Col_Cnt_count <= Matrix_Col;
         end else begin
-          In_Col_Cnt_count <= (In_Col_Cnt_count + 12'h001);
+          In_Col_Cnt_count <= (In_Col_Cnt_count - _zz_In_Col_Cnt_count_1);
         end
       end
       if(In_Col_Cnt_valid) begin
@@ -625,14 +631,18 @@ module ConvOutput (
         end
       end
       if(Out_Col_Cnt_valid) begin
-        if(Out_8Row_Cnt_valid) begin
-          Out_8Row_Cnt_count <= 3'b000;
+        if(Out_Row_Cnt_valid) begin
+          Out_Row_Cnt_count <= 12'h0;
         end else begin
-          Out_8Row_Cnt_count <= (Out_8Row_Cnt_count + 3'b001);
+          Out_Row_Cnt_count <= (Out_Row_Cnt_count + 12'h001);
         end
       end
       if(Out_Col_Cnt_valid) begin
-        OutSwitch <= {OutSwitch[6 : 0],OutSwitch[7 : 7]};
+        OutSwitch <= 8'h01;
+      end else begin
+        if(OutChannel_Cnt_valid) begin
+          OutSwitch <= {OutSwitch[6 : 0],OutSwitch[7 : 7]};
+        end
       end
     end
   end

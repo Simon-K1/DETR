@@ -9,6 +9,7 @@ import spinal.lib.StreamFifo
 import spinal.lib.master
 import utils.ForLoopCounter
 import utils.AxisDataConverter
+import utils.SubstractLoopCounter
 
 //需要一个状态机来做控制调度
 object CONVOUTPUT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
@@ -100,23 +101,30 @@ class ConvOutput extends Component{
 
     val Init_Cnt=ForLoopCounter(Fsm.currentState===CONVOUTPUT_ENUM.INIT,3,5)
     Fsm.Inited:=Init_Cnt.valid
-    Fsm.Data_AllOut:=False
-    val InChannel_Cnt=ForLoopCounter(Fsm.currentState===CONVOUTPUT_ENUM.DATA_ARRANGEMENT&&(io.sReady&&io.sValid),Config.MATRIXC_COL_WIDTH,io.In_Channel-1)//输入通道计数器，每行一下进一个点，也就是图片的一个通道
-    val In_Col_Cnt=ForLoopCounter(InChannel_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Col-1)//图片列计数器
+    
+    val InChannel_Cnt=ForLoopCounter((io.sReady&&io.sValid),Config.MATRIXC_COL_WIDTH,io.In_Channel-1)//输入通道计数器，每行一下进一个点，也就是图片的一个通道
+    val In_Col_Cnt=SubstractLoopCounter(InChannel_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Col,8)//图片列计数器,做减法这里io.Matrix_Col不需要减1
+    //In_Channel_Cnt每次Valid代表已经缓存好了8个点的完整通道，所以这里需要除8
     val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Row-1)//图片行计数器
     Fsm.LayerEnd:=In_Row_Cnt.valid
-    //val ArrangeFsm=Arrange_Fsm(In_Col_Cnt.valid)//当进完一行后就可以开始往外面pop数据了
-    //存在一个问题：数据还没有输出完下一轮的数据已经被缓存好了，所以存在错过In_Col_Cnt的可能，，，这怎么办呢？
+    //分析：这里好绕
+    //一开始第一个fifo接收输出图片（0，0）点的所有通道，第二个fifo接收（0，1）点的所有通道，，，第8个fifo接收（0，7）点的所有通道
+    // 由于脉动阵列一下只能出8个通道，假如输出通道是32，那么fifo要缓存4次才能凑齐一个点的完整通道
+    //图片排列格式按通道优先来，所以必须第一个fifo输出完一个点的32通道，第二个fifo才能开始输出，以此类推
+    //
     val OutChannel_Cnt=ForLoopCounter(io.mData.fire,Config.MATRIXC_COL_WIDTH-3,(io.In_Channel>>3)-1)//输出通道计数器，一下出8个点，也就是一下出8个通道
+    // Outchannel_Cnt valid拉高，代表一个像素点被处理完了，这时就要切换到下一个fifo
     val Out_Col_Cnt=ForLoopCounter(OutChannel_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Row-1)//图片列计数器
-    val Out_8Row_Cnt=ForLoopCounter(Out_Col_Cnt.valid,3,7)//输出完8行需要复位
-
+    val Out_Row_Cnt=ForLoopCounter(Out_Col_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Row-1)
+    Fsm.Data_AllOut:=Out_Row_Cnt.valid
     //构建SA_Row个Mem作为缓存,外面再挂一个WidthConverter
     //构建SA_Row个Mem作为缓存,由于现在输入通道都是8的倍数，所以即使输出通道不是8的倍数，在数据整理模块中也应该将数据补成8通道的倍数
     io.mData.payload:=0
     io.mData.valid:=False
     val OutSwitch=Reg(UInt(8 bits))init(1)
     when(Out_Col_Cnt.valid){
+        OutSwitch:=1//得到完整的一行数据，则重新开始循环输出
+    }elsewhen(OutChannel_Cnt.valid){//得到完整的一个输出点，切换下一个fifo
         OutSwitch:=OutSwitch.rotateLeft(1)
     }
     val OutFeature_Cache=Array.tabulate(Config.SA_COL){

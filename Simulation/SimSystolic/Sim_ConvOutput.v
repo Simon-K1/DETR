@@ -157,7 +157,7 @@ parameter Mem2_Width=64;
     end
     else
     begin
-      mValid<=0;
+      mValid<=1;
       sReady<=1;
     end
   end
@@ -234,7 +234,7 @@ ConvOutput ConvOutput(
   
 .In_Channel                    (32),
   .Matrix_Col                    (14),
-  .Matrix_Row                    (2),
+  .Matrix_Row                    (14),
   
   .mData_valid(),
   .mData_ready(1),

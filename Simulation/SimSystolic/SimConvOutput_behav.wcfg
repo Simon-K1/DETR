@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="272342000000fs"></ZoomStartTime>
-      <ZoomEndTime time="272511400001fs"></ZoomEndTime>
-      <Cursor1Time time="272455000000fs"></Cursor1Time>
+      <ZoomStartTime time="199956000000fs"></ZoomStartTime>
+      <ZoomEndTime time="200840000001fs"></ZoomEndTime>
+      <Cursor1Time time="200065000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="201"></NameColumnWidth>
       <ValueColumnWidth column_width="58"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="22" />
+   <WVObjectSize size="19" />
    <wvobject fp_name="group3526" type="group">
       <obj_property name="label">SimTop</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -641,14 +641,6 @@
          <obj_property name="ElementShortName">Out_Col_Cnt_valid</obj_property>
          <obj_property name="ObjectShortName">Out_Col_Cnt_valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/SimConvOutput/ConvOutput/Out_8Row_Cnt_count" type="array">
-         <obj_property name="ElementShortName">Out_8Row_Cnt_count[2:0]</obj_property>
-         <obj_property name="ObjectShortName">Out_8Row_Cnt_count[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimConvOutput/ConvOutput/Out_8Row_Cnt_valid" type="logic">
-         <obj_property name="ElementShortName">Out_8Row_Cnt_valid</obj_property>
-         <obj_property name="ObjectShortName">Out_8Row_Cnt_valid</obj_property>
-      </wvobject>
       <wvobject fp_name="/SimConvOutput/ConvOutput/OutSwitch" type="array">
          <obj_property name="ElementShortName">OutSwitch[7:0]</obj_property>
          <obj_property name="ObjectShortName">OutSwitch[7:0]</obj_property>
@@ -732,15 +724,6 @@
       <obj_property name="ElementShortName">Out_Col_Cnt_valid</obj_property>
       <obj_property name="ObjectShortName">Out_Col_Cnt_valid</obj_property>
    </wvobject>
-   <wvobject fp_name="/SimConvOutput/ConvOutput/Out_8Row_Cnt_count" type="array">
-      <obj_property name="ElementShortName">Out_8Row_Cnt_count[2:0]</obj_property>
-      <obj_property name="ObjectShortName">Out_8Row_Cnt_count[2:0]</obj_property>
-      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimConvOutput/ConvOutput/Out_8Row_Cnt_valid" type="logic">
-      <obj_property name="ElementShortName">Out_8Row_Cnt_valid</obj_property>
-      <obj_property name="ObjectShortName">Out_8Row_Cnt_valid</obj_property>
-   </wvobject>
    <wvobject fp_name="/SimConvOutput/ConvOutput/OutSwitch" type="array">
       <obj_property name="ElementShortName">OutSwitch[7:0]</obj_property>
       <obj_property name="ObjectShortName">OutSwitch[7:0]</obj_property>
@@ -749,10 +732,6 @@
    <wvobject fp_name="/SimConvOutput/ConvOutput/mData_valid" type="logic">
       <obj_property name="ElementShortName">mData_valid</obj_property>
       <obj_property name="ObjectShortName">mData_valid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/SimConvOutput/ConvOutput/axisDataConverter/inStream_valid" type="logic">
-      <obj_property name="ElementShortName">inStream_valid</obj_property>
-      <obj_property name="ObjectShortName">inStream_valid</obj_property>
    </wvobject>
    <wvobject fp_name="/SimConvOutput/ConvOutput/streamFifo/io_push_valid" type="logic">
       <obj_property name="ElementShortName">io_push_valid</obj_property>
