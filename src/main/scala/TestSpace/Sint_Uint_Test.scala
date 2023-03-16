@@ -1,7 +1,7 @@
 package TestSpace
 import spinal.core._
 import utils.TopConfig
-import spinal.lib.StreamFifo
+
 
 class Xq2C extends BlackBox{
     //XQC=C*X_q计算
