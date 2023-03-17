@@ -21,10 +21,13 @@ class Tile (Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PEConfi
     val resultVaild = out Vec(Bool,Tile_Size)
   }
   noIoPrefix()
-
+  val PE_OUT=Vec(SInt (dataWidthOut bits),Tile_Size)
+  val resultVaild = Vec(Bool,Tile_Size)
   for(k <- 0 to Tile_Size-1){
-    io.PE_OUT(k):=0
-    io.resultVaild(k) := False
+    PE_OUT(k):=0
+    resultVaild(k) := False
+    io.PE_OUT(k):=Delay(PE_OUT(k),Tile_Size-k)
+    io.resultVaild(k):=Delay(resultVaild(k),Tile_Size-k)
   }
 
   val PEArry = Array.ofDim[PE](8, 8)
@@ -66,12 +69,14 @@ class Tile (Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PEConfi
   for(i <- 0 to Tile_Size-1) {
     for (j <- 0 to Tile_Size - 1) {
       when(PEArry(i)(j).io.finish === True) {
-        io.PE_OUT(i) <> PEArry(i)(j).io.PE_OUT
-        io.resultVaild(i)<>PEArry(i)(j).io.finish
+        PE_OUT(i) <> PEArry(i)(j).io.PE_OUT
+        resultVaild(i):=PEArry(i)(j).io.finish
+        
       }
     }
   }
 
+  
 
 
   }

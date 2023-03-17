@@ -63,8 +63,8 @@ parameter Mem2_Width=64;
   begin
   
 //    $readmemh("E:/Transformer/Sim_File/Xq_LayerNorm_未处理掩码.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K33\\S1_O35\\img2Col随机输入测试数据.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K33\\S1_O35\\WeightData.txt",mem2);//高8bit为Scale，低8bit为Bias
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K1616\\S16\\阵列输出仿真数据.txt",mem);//_Modified
+//    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K33\\S1_O35\\WeightData.txt",mem2);//高8bit为Scale，低8bit为Bias
     clk=0;
     start=0;
     rst=1;

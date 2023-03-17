@@ -56,32 +56,32 @@ case class ConvOutput_Fsm(start:Bool)extends Area{
         }
     }
 }
-object ARRANGE_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val IDLE, DATA_OUTPUT= newElement
-    //DATA_OUTPUT:数据输出
-}
-case class Arrange_Fsm(start:Bool)extends Area{
-    val currentState = Reg(ARRANGE_ENUM()) init ARRANGE_ENUM.IDLE
-    val nextState = ARRANGE_ENUM()
-    currentState := nextState
-    val OutEnd=Bool()//完整的8行输出结束
-    switch(currentState){
-        is(ARRANGE_ENUM.IDLE){
-            when(start){
-                nextState:=ARRANGE_ENUM.DATA_OUTPUT
-            }otherwise{
-                nextState:=ARRANGE_ENUM.IDLE
-            }
-        }
-        is(ARRANGE_ENUM.DATA_OUTPUT){
-            when(OutEnd){
-                nextState:=ARRANGE_ENUM.IDLE
-            }otherwise{
-                nextState:=ARRANGE_ENUM.DATA_OUTPUT
-            }
-        }
-    }
-}
+// object ARRANGE_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
+//     val IDLE, DATA_OUTPUT= newElement
+//     //DATA_OUTPUT:数据输出
+// }
+// case class Arrange_Fsm(start:Bool)extends Area{
+//     val currentState = Reg(ARRANGE_ENUM()) init ARRANGE_ENUM.IDLE
+//     val nextState = ARRANGE_ENUM()
+//     currentState := nextState
+//     val OutEnd=Bool()//完整的8行输出结束
+//     switch(currentState){
+//         is(ARRANGE_ENUM.IDLE){
+//             when(start){
+//                 nextState:=ARRANGE_ENUM.DATA_OUTPUT
+//             }otherwise{
+//                 nextState:=ARRANGE_ENUM.IDLE
+//             }
+//         }
+//         is(ARRANGE_ENUM.DATA_OUTPUT){
+//             when(OutEnd){
+//                 nextState:=ARRANGE_ENUM.IDLE
+//             }otherwise{
+//                 nextState:=ARRANGE_ENUM.DATA_OUTPUT
+//             }
+//         }
+//     }
+// }
 //实现思路：构建SA_Row个Fifo缓存8行完整的数据后依次输出第一行，第二行...第8行的数据
 class ConvOutput extends Component{
     val Config=TopConfig()
@@ -102,6 +102,7 @@ class ConvOutput extends Component{
     val Init_Cnt=ForLoopCounter(Fsm.currentState===CONVOUTPUT_ENUM.INIT,3,5)
     Fsm.Inited:=Init_Cnt.valid
     
+    //注意这里的InChannel实际上是脉动阵列输出图片的通道，也就是卷积完后图片的通道，也可以认为是卷积层的输出通道，只是这里需要知道一个通道参数进行数据缓存和输出
     val InChannel_Cnt=ForLoopCounter((io.sReady&&io.sValid),Config.MATRIXC_COL_WIDTH,io.In_Channel-1)//输入通道计数器，每行一下进一个点，也就是图片的一个通道
     val In_Col_Cnt=SubstractLoopCounter(InChannel_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Col,8)//图片列计数器,做减法这里io.Matrix_Col不需要减1
     //In_Channel_Cnt每次Valid代表已经缓存好了8个点的完整通道，所以这里需要除8

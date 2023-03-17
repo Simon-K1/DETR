@@ -11,12 +11,12 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="281112833333fs"></ZoomStartTime>
-      <ZoomEndTime time="281379433334fs"></ZoomEndTime>
-      <Cursor1Time time="281335000000fs"></Cursor1Time>
+      <ZoomStartTime time="259686666667fs"></ZoomStartTime>
+      <ZoomEndTime time="260036666668fs"></ZoomEndTime>
+      <Cursor1Time time="259745000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="223"></NameColumnWidth>
+      <NameColumnWidth column_width="219"></NameColumnWidth>
       <ValueColumnWidth column_width="58"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="124" />
@@ -2310,6 +2310,7 @@
    <wvobject fp_name="group3441" type="group">
       <obj_property name="label">PE11</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/activate" type="array">
          <obj_property name="ElementShortName">activate[7:0]</obj_property>
          <obj_property name="ObjectShortName">activate[7:0]</obj_property>
@@ -2322,14 +2323,6 @@
          <obj_property name="ElementShortName">signCount[15:0]</obj_property>
          <obj_property name="ObjectShortName">signCount[15:0]</obj_property>
          <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/acount" type="array">
-         <obj_property name="ElementShortName">acount[7:0]</obj_property>
-         <obj_property name="ObjectShortName">acount[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/bcount" type="array">
-         <obj_property name="ElementShortName">bcount[7:0]</obj_property>
-         <obj_property name="ObjectShortName">bcount[7:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/SimSystolicArray/SystolicArray/pE_64/PE_OUT" type="array">
          <obj_property name="ElementShortName">PE_OUT[19:0]</obj_property>
