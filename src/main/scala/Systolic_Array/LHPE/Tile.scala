@@ -2,6 +2,7 @@ package Systolic_Array
 import spinal.core._
 import spinal.lib.Delay
 import utils.WaCounter
+import utils.TopConfig
 //======================================
 case class PEConfig(count:Int,Reg_WIDTH:Int){
 
@@ -75,18 +76,10 @@ class Tile (Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PEConfi
       }
     }
   }
-
-  
-
-
-  }
+}
 
 
 
 object Tile extends App{
   SpinalVerilog(new Tile(8,8,20,PEConfig(767,20)))
 }
-
-
-
-

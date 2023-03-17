@@ -315,20 +315,20 @@ Tile SystolicArray(
 );
 
 
-ConvOutput ConvOutput(
-  .sData(mem[mem_addr]),
-  .sReady(mReady),
-  .sValid(mValid),
+// ConvOutput ConvOutput(
+//   .sData(mem[mem_addr]),
+//   .sReady(mReady),
+//   .sValid(mValid),
   
-.In_Channel                    (32),
-  .Matrix_Col                    (14),
-  .Matrix_Row                    (14),
+// .In_Channel                    (32),
+//   .Matrix_Col                    (14),
+//   .Matrix_Row                    (14),
   
-  .mData_valid(),
-  .mData_ready(1),
-  .mData_payload(),
-  .start(start),
-  .clk(clk),
-  .reset(rst)
-);
+//   .mData_valid(),
+//   .mData_ready(1),
+//   .mData_payload(),
+//   .start(start),
+//   .clk(clk),
+//   .reset(rst)
+// );
 endmodule

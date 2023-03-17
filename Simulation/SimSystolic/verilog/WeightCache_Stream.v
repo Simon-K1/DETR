@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : WeightCache_Stream
-// Git hash  : a6f22ca39ac25fca69035cf75dee9fa7f266f0c0
+// Git hash  : 88eef0684bbeda6728d9af569627c686f4911a06
 
 `timescale 1ns/1ps
 
@@ -69,30 +69,30 @@ module Weight_Cache (
   localparam WEIGHT_CACHE_STATUS_CACHE_WEIGHT = 4'd4;
   localparam WEIGHT_CACHE_STATUS_SA_COMPUTE = 4'd8;
 
-  wire       [8:0]    xil_SimpleDualBram_addra;
+  wire       [10:0]   xil_SimpleDualBram_addra;
   wire                xil_SimpleDualBram_ena;
-  wire       [11:0]   xil_SimpleDualBram_addrb;
-  wire       [8:0]    xil_SimpleDualBram_1_addra;
+  wire       [13:0]   xil_SimpleDualBram_addrb;
+  wire       [10:0]   xil_SimpleDualBram_1_addra;
   wire                xil_SimpleDualBram_1_ena;
-  wire       [11:0]   xil_SimpleDualBram_1_addrb;
-  wire       [8:0]    xil_SimpleDualBram_2_addra;
+  wire       [13:0]   xil_SimpleDualBram_1_addrb;
+  wire       [10:0]   xil_SimpleDualBram_2_addra;
   wire                xil_SimpleDualBram_2_ena;
-  wire       [11:0]   xil_SimpleDualBram_2_addrb;
-  wire       [8:0]    xil_SimpleDualBram_3_addra;
+  wire       [13:0]   xil_SimpleDualBram_2_addrb;
+  wire       [10:0]   xil_SimpleDualBram_3_addra;
   wire                xil_SimpleDualBram_3_ena;
-  wire       [11:0]   xil_SimpleDualBram_3_addrb;
-  wire       [8:0]    xil_SimpleDualBram_4_addra;
+  wire       [13:0]   xil_SimpleDualBram_3_addrb;
+  wire       [10:0]   xil_SimpleDualBram_4_addra;
   wire                xil_SimpleDualBram_4_ena;
-  wire       [11:0]   xil_SimpleDualBram_4_addrb;
-  wire       [8:0]    xil_SimpleDualBram_5_addra;
+  wire       [13:0]   xil_SimpleDualBram_4_addrb;
+  wire       [10:0]   xil_SimpleDualBram_5_addra;
   wire                xil_SimpleDualBram_5_ena;
-  wire       [11:0]   xil_SimpleDualBram_5_addrb;
-  wire       [8:0]    xil_SimpleDualBram_6_addra;
+  wire       [13:0]   xil_SimpleDualBram_5_addrb;
+  wire       [10:0]   xil_SimpleDualBram_6_addra;
   wire                xil_SimpleDualBram_6_ena;
-  wire       [11:0]   xil_SimpleDualBram_6_addrb;
-  wire       [8:0]    xil_SimpleDualBram_7_addra;
+  wire       [13:0]   xil_SimpleDualBram_6_addrb;
+  wire       [10:0]   xil_SimpleDualBram_7_addra;
   wire                xil_SimpleDualBram_7_ena;
-  wire       [11:0]   xil_SimpleDualBram_7_addrb;
+  wire       [13:0]   xil_SimpleDualBram_7_addrb;
   wire       [7:0]    xil_SimpleDualBram_doutb;
   wire       [7:0]    xil_SimpleDualBram_1_doutb;
   wire       [7:0]    xil_SimpleDualBram_2_doutb;
@@ -207,81 +207,81 @@ module Weight_Cache (
   assign _zz_ena_7 = InData_Switch[7 : 7];
   Weight_Bram xil_SimpleDualBram (
     .clka  (clk                           ), //i
-    .addra (xil_SimpleDualBram_addra[8:0] ), //i
+    .addra (xil_SimpleDualBram_addra[10:0]), //i
     .dina  (sData_payload[63:0]           ), //i
     .ena   (xil_SimpleDualBram_ena        ), //i
     .wea   (1'b1                          ), //i
-    .addrb (xil_SimpleDualBram_addrb[11:0]), //i
+    .addrb (xil_SimpleDualBram_addrb[13:0]), //i
     .doutb (xil_SimpleDualBram_doutb[7:0] ), //o
     .clkb  (clk                           )  //i
   );
   Weight_Bram xil_SimpleDualBram_1 (
     .clka  (clk                             ), //i
-    .addra (xil_SimpleDualBram_1_addra[8:0] ), //i
+    .addra (xil_SimpleDualBram_1_addra[10:0]), //i
     .dina  (sData_payload[63:0]             ), //i
     .ena   (xil_SimpleDualBram_1_ena        ), //i
     .wea   (1'b1                            ), //i
-    .addrb (xil_SimpleDualBram_1_addrb[11:0]), //i
+    .addrb (xil_SimpleDualBram_1_addrb[13:0]), //i
     .doutb (xil_SimpleDualBram_1_doutb[7:0] ), //o
     .clkb  (clk                             )  //i
   );
   Weight_Bram xil_SimpleDualBram_2 (
     .clka  (clk                             ), //i
-    .addra (xil_SimpleDualBram_2_addra[8:0] ), //i
+    .addra (xil_SimpleDualBram_2_addra[10:0]), //i
     .dina  (sData_payload[63:0]             ), //i
     .ena   (xil_SimpleDualBram_2_ena        ), //i
     .wea   (1'b1                            ), //i
-    .addrb (xil_SimpleDualBram_2_addrb[11:0]), //i
+    .addrb (xil_SimpleDualBram_2_addrb[13:0]), //i
     .doutb (xil_SimpleDualBram_2_doutb[7:0] ), //o
     .clkb  (clk                             )  //i
   );
   Weight_Bram xil_SimpleDualBram_3 (
     .clka  (clk                             ), //i
-    .addra (xil_SimpleDualBram_3_addra[8:0] ), //i
+    .addra (xil_SimpleDualBram_3_addra[10:0]), //i
     .dina  (sData_payload[63:0]             ), //i
     .ena   (xil_SimpleDualBram_3_ena        ), //i
     .wea   (1'b1                            ), //i
-    .addrb (xil_SimpleDualBram_3_addrb[11:0]), //i
+    .addrb (xil_SimpleDualBram_3_addrb[13:0]), //i
     .doutb (xil_SimpleDualBram_3_doutb[7:0] ), //o
     .clkb  (clk                             )  //i
   );
   Weight_Bram xil_SimpleDualBram_4 (
     .clka  (clk                             ), //i
-    .addra (xil_SimpleDualBram_4_addra[8:0] ), //i
+    .addra (xil_SimpleDualBram_4_addra[10:0]), //i
     .dina  (sData_payload[63:0]             ), //i
     .ena   (xil_SimpleDualBram_4_ena        ), //i
     .wea   (1'b1                            ), //i
-    .addrb (xil_SimpleDualBram_4_addrb[11:0]), //i
+    .addrb (xil_SimpleDualBram_4_addrb[13:0]), //i
     .doutb (xil_SimpleDualBram_4_doutb[7:0] ), //o
     .clkb  (clk                             )  //i
   );
   Weight_Bram xil_SimpleDualBram_5 (
     .clka  (clk                             ), //i
-    .addra (xil_SimpleDualBram_5_addra[8:0] ), //i
+    .addra (xil_SimpleDualBram_5_addra[10:0]), //i
     .dina  (sData_payload[63:0]             ), //i
     .ena   (xil_SimpleDualBram_5_ena        ), //i
     .wea   (1'b1                            ), //i
-    .addrb (xil_SimpleDualBram_5_addrb[11:0]), //i
+    .addrb (xil_SimpleDualBram_5_addrb[13:0]), //i
     .doutb (xil_SimpleDualBram_5_doutb[7:0] ), //o
     .clkb  (clk                             )  //i
   );
   Weight_Bram xil_SimpleDualBram_6 (
     .clka  (clk                             ), //i
-    .addra (xil_SimpleDualBram_6_addra[8:0] ), //i
+    .addra (xil_SimpleDualBram_6_addra[10:0]), //i
     .dina  (sData_payload[63:0]             ), //i
     .ena   (xil_SimpleDualBram_6_ena        ), //i
     .wea   (1'b1                            ), //i
-    .addrb (xil_SimpleDualBram_6_addrb[11:0]), //i
+    .addrb (xil_SimpleDualBram_6_addrb[13:0]), //i
     .doutb (xil_SimpleDualBram_6_doutb[7:0] ), //o
     .clkb  (clk                             )  //i
   );
   Weight_Bram xil_SimpleDualBram_7 (
     .clka  (clk                             ), //i
-    .addra (xil_SimpleDualBram_7_addra[8:0] ), //i
+    .addra (xil_SimpleDualBram_7_addra[10:0]), //i
     .dina  (sData_payload[63:0]             ), //i
     .ena   (xil_SimpleDualBram_7_ena        ), //i
     .wea   (1'b1                            ), //i
-    .addrb (xil_SimpleDualBram_7_addrb[11:0]), //i
+    .addrb (xil_SimpleDualBram_7_addrb[13:0]), //i
     .doutb (xil_SimpleDualBram_7_doutb[7:0] ), //o
     .clkb  (clk                             )  //i
   );
@@ -362,8 +362,8 @@ module Weight_Cache (
   assign Col_In_8_Cnt_valid = ((Col_In_8_Cnt_count == 3'b111) && In_Row_Cnt_valid);
   assign Fsm_Weight_All_Cached = In_Col_Cnt_valid;
   assign Weight_Cached = In_Col_Cnt_valid;
-  assign xil_SimpleDualBram_addra = _zz_addra[8:0];
-  assign xil_SimpleDualBram_addrb = _zz_addrb[11:0];
+  assign xil_SimpleDualBram_addra = _zz_addra[10:0];
+  assign xil_SimpleDualBram_addrb = _zz_addrb[13:0];
   assign sData_fire_1 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_ena = (_zz_ena[0] && sData_fire_1);
   always @(*) begin
@@ -377,32 +377,32 @@ module Weight_Cache (
     mData[63 : 56] = xil_SimpleDualBram_7_doutb;
   end
 
-  assign xil_SimpleDualBram_1_addra = _zz_addra_1[8:0];
-  assign xil_SimpleDualBram_1_addrb = _zz_addrb_1[11:0];
+  assign xil_SimpleDualBram_1_addra = _zz_addra_1[10:0];
+  assign xil_SimpleDualBram_1_addrb = _zz_addrb_1[13:0];
   assign sData_fire_2 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_1_ena = (_zz_ena_1[0] && sData_fire_2);
-  assign xil_SimpleDualBram_2_addra = _zz_addra_2[8:0];
-  assign xil_SimpleDualBram_2_addrb = _zz_addrb_2[11:0];
+  assign xil_SimpleDualBram_2_addra = _zz_addra_2[10:0];
+  assign xil_SimpleDualBram_2_addrb = _zz_addrb_2[13:0];
   assign sData_fire_3 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_2_ena = (_zz_ena_2[0] && sData_fire_3);
-  assign xil_SimpleDualBram_3_addra = _zz_addra_3[8:0];
-  assign xil_SimpleDualBram_3_addrb = _zz_addrb_3[11:0];
+  assign xil_SimpleDualBram_3_addra = _zz_addra_3[10:0];
+  assign xil_SimpleDualBram_3_addrb = _zz_addrb_3[13:0];
   assign sData_fire_4 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_3_ena = (_zz_ena_3[0] && sData_fire_4);
-  assign xil_SimpleDualBram_4_addra = _zz_addra_4[8:0];
-  assign xil_SimpleDualBram_4_addrb = _zz_addrb_4[11:0];
+  assign xil_SimpleDualBram_4_addra = _zz_addra_4[10:0];
+  assign xil_SimpleDualBram_4_addrb = _zz_addrb_4[13:0];
   assign sData_fire_5 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_4_ena = (_zz_ena_4[0] && sData_fire_5);
-  assign xil_SimpleDualBram_5_addra = _zz_addra_5[8:0];
-  assign xil_SimpleDualBram_5_addrb = _zz_addrb_5[11:0];
+  assign xil_SimpleDualBram_5_addra = _zz_addra_5[10:0];
+  assign xil_SimpleDualBram_5_addrb = _zz_addrb_5[13:0];
   assign sData_fire_6 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_5_ena = (_zz_ena_5[0] && sData_fire_6);
-  assign xil_SimpleDualBram_6_addra = _zz_addra_6[8:0];
-  assign xil_SimpleDualBram_6_addrb = _zz_addrb_6[11:0];
+  assign xil_SimpleDualBram_6_addra = _zz_addra_6[10:0];
+  assign xil_SimpleDualBram_6_addrb = _zz_addrb_6[13:0];
   assign sData_fire_7 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_6_ena = (_zz_ena_6[0] && sData_fire_7);
-  assign xil_SimpleDualBram_7_addra = _zz_addra_7[8:0];
-  assign xil_SimpleDualBram_7_addrb = _zz_addrb_7[11:0];
+  assign xil_SimpleDualBram_7_addra = _zz_addra_7[10:0];
+  assign xil_SimpleDualBram_7_addrb = _zz_addrb_7[13:0];
   assign sData_fire_8 = (sData_valid && sData_ready);
   assign xil_SimpleDualBram_7_ena = (_zz_ena_7[0] && sData_fire_8);
   assign sData_ready = ((Fsm_currentState & WEIGHT_CACHE_STATUS_CACHE_WEIGHT) != 4'b0000);

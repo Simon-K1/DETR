@@ -1,6 +1,6 @@
 package top
 import spinal.core._
-import Systolic_Array.{Tile,WeightCache_Stream,PEConfig,Img2Col_Top}
+import Systolic_Array.{Tile,WeightCache_Stream,PEConfig,Img2Col_Top,ConvOutput}
 import RegTable.RegTable
 import utils.{TopConfig,WaCounter,WidthConvert}
 import spinal.lib.StreamFifo
@@ -110,7 +110,43 @@ class Img2ColStreamV2 extends Component{
     //     In_Data_Counter.clear
     // }
 }
+class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PEConfig) extends  Component{
+  val Config=new TopConfig
+  val io = new Bundle {
+    val activate = in SInt (Tile_Size * dataWidthIn bits)
+    val a_Valid = in Vec(Bool,Tile_Size)
+    val weight = in SInt (Tile_Size * dataWidthIn bits)
+    val b_Valid = in Vec(Bool,Tile_Size)
 
+   
+    val signCount = in UInt (16 bits) //卷积核16*16  signCoun就是t256
+    // val resultVaild = out Vec(Bool,Tile_Size)
+    val In_Channel=in UInt(Config.DATA_GENERATE_CONV_OUT_CHANNEL_WIDTH bits)
+    val Matrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
+    val Matrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
+    val start=in Bool()
+  }
+  noIoPrefix()
+  val Tile=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)
+//   Tile.setDefinitionName("SA_Conv_Tile")
+  val Tile_Output=new ConvOutput
+//   Tile_Output.setDefinitionName("SA_Conv_ConvOutput")
+  io.activate    <>Tile.io.activate
+  io.a_Valid     <>Tile.io.a_Valid 
+  io.weight      <>Tile.io.weight 
+  io.b_Valid     <>Tile.io.b_Valid 
+  io.signCount   <>Tile.io.signCount
+
+  io.In_Channel <>Tile_Output.io.In_Channel
+  io.Matrix_Col <>Tile_Output.io.Matrix_Col
+  io.Matrix_Row <>Tile_Output.io.Matrix_Row 
+  io.start      <>Tile_Output.io.start
+
+  for(i<-0 to Tile_Size-1){
+    Tile.io.PE_OUT(i)(7 downto 0).asUInt<>Tile_Output.io.sData((i+1)*8-1 downto i*8)
+  }
+  Tile.io.resultVaild(0)<>Tile_Output.io.sValid
+}
 
 
 
@@ -123,7 +159,7 @@ object Top extends App {
     
     
     // printf("=================%d===============",log2Up(7))
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Tile(8,8,20,PEConfig(4*4*32,20)))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_Conv(8,8,20,PEConfig(4*4*32,20)))
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Img2ColStreamV2)
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new WeightCache_Stream)
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new RegTable)

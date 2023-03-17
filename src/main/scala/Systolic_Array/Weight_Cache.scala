@@ -133,7 +133,7 @@ class Weight_Cache extends Component{
     val Weight_Cache=Array.tabulate(Config.SA_COL){
         i=>def gen()={
             //4096*64bit是一个Bram资源，32K
-            val Weight_Bram=new xil_SimpleDualBram(64,512,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
+            val Weight_Bram=new xil_SimpleDualBram(64,2048,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
             Weight_Bram.io.addra:=(In_Row_Cnt.count+Write_Row_Base_Addr).resized
             Weight_Bram.io.addrb:=(Read_Row_Base_Addr+OutRow_Cnt.count).resized
             // Weight_Bram.io.doutb:=0
