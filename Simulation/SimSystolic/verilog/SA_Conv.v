@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : SA_Conv
-// Git hash  : 529b64cfc1fb3cac1e141c2162cd226166390d88
+// Git hash  : e3c5b9d3b476b7e35e5f497321ba2eb54cc379c0
 
 `timescale 1ns/1ps
 
@@ -28,12 +28,15 @@ module SA_Conv (
   input      [11:0]   Matrix_Col,
   input      [11:0]   Matrix_Row,
   input               start,
+  output              LayerEnd,
+  output              mData_valid,
+  input               mData_ready,
+  output     [63:0]   mData_payload,
   input               clk,
   input               reset
 );
 
   reg        [63:0]   Tile_Output_sData;
-  wire                Tile_Output_mData_ready;
   wire       [19:0]   Tile_1_PE_OUT_0;
   wire       [19:0]   Tile_1_PE_OUT_1;
   wire       [19:0]   Tile_1_PE_OUT_2;
@@ -53,6 +56,8 @@ module SA_Conv (
   wire                Tile_Output_sReady;
   wire                Tile_Output_mData_valid;
   wire       [63:0]   Tile_Output_mData_payload;
+  wire                Tile_Output_mLast;
+  wire                Tile_Output_LayerEnd;
   wire       [7:0]    _zz_sData;
   wire       [7:0]    _zz_sData_1;
   wire       [7:0]    _zz_sData_2;
@@ -117,8 +122,10 @@ module SA_Conv (
     .Matrix_Col    (Matrix_Col[11:0]               ), //i
     .Matrix_Row    (Matrix_Row[11:0]               ), //i
     .mData_valid   (Tile_Output_mData_valid        ), //o
-    .mData_ready   (Tile_Output_mData_ready        ), //i
+    .mData_ready   (mData_ready                    ), //i
     .mData_payload (Tile_Output_mData_payload[63:0]), //o
+    .mLast         (Tile_Output_mLast              ), //o
+    .LayerEnd      (Tile_Output_LayerEnd           ), //o
     .start         (start                          ), //i
     .clk           (clk                            ), //i
     .reset         (reset                          )  //i
@@ -134,6 +141,9 @@ module SA_Conv (
     Tile_Output_sData[63 : 56] = _zz_sData_7;
   end
 
+  assign LayerEnd = Tile_Output_LayerEnd;
+  assign mData_valid = Tile_Output_mData_valid;
+  assign mData_payload = Tile_Output_mData_payload;
 
 endmodule
 
@@ -147,6 +157,8 @@ module ConvOutput (
   output reg          mData_valid,
   input               mData_ready,
   output reg [63:0]   mData_payload,
+  output              mLast,
+  output              LayerEnd,
   input               start,
   input               clk,
   input               reset
@@ -254,14 +266,14 @@ module ConvOutput (
   wire       [6:0]    _zz_OutChannel_Cnt_valid_2;
   wire       [11:0]   _zz_Out_Col_Cnt_valid;
   wire       [11:0]   _zz_Out_Row_Cnt_valid;
-  wire       [0:0]    _zz_when_ConvOutput_l147;
-  wire       [0:0]    _zz_when_ConvOutput_l147_1;
-  wire       [0:0]    _zz_when_ConvOutput_l147_2;
-  wire       [0:0]    _zz_when_ConvOutput_l147_3;
-  wire       [0:0]    _zz_when_ConvOutput_l147_4;
-  wire       [0:0]    _zz_when_ConvOutput_l147_5;
-  wire       [0:0]    _zz_when_ConvOutput_l147_6;
-  wire       [0:0]    _zz_when_ConvOutput_l147_7;
+  wire       [0:0]    _zz_when_ConvOutput_l150;
+  wire       [0:0]    _zz_when_ConvOutput_l150_1;
+  wire       [0:0]    _zz_when_ConvOutput_l150_2;
+  wire       [0:0]    _zz_when_ConvOutput_l150_3;
+  wire       [0:0]    _zz_when_ConvOutput_l150_4;
+  wire       [0:0]    _zz_when_ConvOutput_l150_5;
+  wire       [0:0]    _zz_when_ConvOutput_l150_6;
+  wire       [0:0]    _zz_when_ConvOutput_l150_7;
   reg        [3:0]    Fsm_currentState;
   reg        [3:0]    Fsm_nextState;
   wire                Fsm_Inited;
@@ -286,14 +298,14 @@ module ConvOutput (
   reg        [11:0]   Out_Row_Cnt_count;
   wire                Out_Row_Cnt_valid;
   reg        [7:0]    OutSwitch;
-  wire                when_ConvOutput_l147;
-  wire                when_ConvOutput_l147_1;
-  wire                when_ConvOutput_l147_2;
-  wire                when_ConvOutput_l147_3;
-  wire                when_ConvOutput_l147_4;
-  wire                when_ConvOutput_l147_5;
-  wire                when_ConvOutput_l147_6;
-  wire                when_ConvOutput_l147_7;
+  wire                when_ConvOutput_l150;
+  wire                when_ConvOutput_l150_1;
+  wire                when_ConvOutput_l150_2;
+  wire                when_ConvOutput_l150_3;
+  wire                when_ConvOutput_l150_4;
+  wire                when_ConvOutput_l150_5;
+  wire                when_ConvOutput_l150_6;
+  wire                when_ConvOutput_l150_7;
   `ifndef SYNTHESIS
   reg [127:0] Fsm_currentState_string;
   reg [127:0] Fsm_nextState_string;
@@ -310,14 +322,14 @@ module ConvOutput (
   assign _zz_OutChannel_Cnt_valid_2 = (In_Channel >>> 3);
   assign _zz_Out_Col_Cnt_valid = (Matrix_Row - 12'h001);
   assign _zz_Out_Row_Cnt_valid = (Matrix_Row - 12'h001);
-  assign _zz_when_ConvOutput_l147 = OutSwitch[0 : 0];
-  assign _zz_when_ConvOutput_l147_1 = OutSwitch[1 : 1];
-  assign _zz_when_ConvOutput_l147_2 = OutSwitch[2 : 2];
-  assign _zz_when_ConvOutput_l147_3 = OutSwitch[3 : 3];
-  assign _zz_when_ConvOutput_l147_4 = OutSwitch[4 : 4];
-  assign _zz_when_ConvOutput_l147_5 = OutSwitch[5 : 5];
-  assign _zz_when_ConvOutput_l147_6 = OutSwitch[6 : 6];
-  assign _zz_when_ConvOutput_l147_7 = OutSwitch[7 : 7];
+  assign _zz_when_ConvOutput_l150 = OutSwitch[0 : 0];
+  assign _zz_when_ConvOutput_l150_1 = OutSwitch[1 : 1];
+  assign _zz_when_ConvOutput_l150_2 = OutSwitch[2 : 2];
+  assign _zz_when_ConvOutput_l150_3 = OutSwitch[3 : 3];
+  assign _zz_when_ConvOutput_l150_4 = OutSwitch[4 : 4];
+  assign _zz_when_ConvOutput_l150_5 = OutSwitch[5 : 5];
+  assign _zz_when_ConvOutput_l150_6 = OutSwitch[6 : 6];
+  assign _zz_when_ConvOutput_l150_7 = OutSwitch[7 : 7];
   ConvOutput_Fifo streamFifo (
     .io_push_valid   (axisDataConverter_outStream_valid        ), //i
     .io_push_ready   (streamFifo_io_push_ready                 ), //o
@@ -573,56 +585,56 @@ module ConvOutput (
   assign Fsm_Data_AllOut = Out_Row_Cnt_valid;
   always @(*) begin
     mData_payload = 64'h0;
-    if(when_ConvOutput_l147) begin
+    if(when_ConvOutput_l150) begin
       mData_payload = streamFifo_io_pop_payload;
     end
-    if(when_ConvOutput_l147_1) begin
+    if(when_ConvOutput_l150_1) begin
       mData_payload = streamFifo_1_io_pop_payload;
     end
-    if(when_ConvOutput_l147_2) begin
+    if(when_ConvOutput_l150_2) begin
       mData_payload = streamFifo_2_io_pop_payload;
     end
-    if(when_ConvOutput_l147_3) begin
+    if(when_ConvOutput_l150_3) begin
       mData_payload = streamFifo_3_io_pop_payload;
     end
-    if(when_ConvOutput_l147_4) begin
+    if(when_ConvOutput_l150_4) begin
       mData_payload = streamFifo_4_io_pop_payload;
     end
-    if(when_ConvOutput_l147_5) begin
+    if(when_ConvOutput_l150_5) begin
       mData_payload = streamFifo_5_io_pop_payload;
     end
-    if(when_ConvOutput_l147_6) begin
+    if(when_ConvOutput_l150_6) begin
       mData_payload = streamFifo_6_io_pop_payload;
     end
-    if(when_ConvOutput_l147_7) begin
+    if(when_ConvOutput_l150_7) begin
       mData_payload = streamFifo_7_io_pop_payload;
     end
   end
 
   always @(*) begin
     mData_valid = 1'b0;
-    if(when_ConvOutput_l147) begin
+    if(when_ConvOutput_l150) begin
       mData_valid = streamFifo_io_pop_valid;
     end
-    if(when_ConvOutput_l147_1) begin
+    if(when_ConvOutput_l150_1) begin
       mData_valid = streamFifo_1_io_pop_valid;
     end
-    if(when_ConvOutput_l147_2) begin
+    if(when_ConvOutput_l150_2) begin
       mData_valid = streamFifo_2_io_pop_valid;
     end
-    if(when_ConvOutput_l147_3) begin
+    if(when_ConvOutput_l150_3) begin
       mData_valid = streamFifo_3_io_pop_valid;
     end
-    if(when_ConvOutput_l147_4) begin
+    if(when_ConvOutput_l150_4) begin
       mData_valid = streamFifo_4_io_pop_valid;
     end
-    if(when_ConvOutput_l147_5) begin
+    if(when_ConvOutput_l150_5) begin
       mData_valid = streamFifo_5_io_pop_valid;
     end
-    if(when_ConvOutput_l147_6) begin
+    if(when_ConvOutput_l150_6) begin
       mData_valid = streamFifo_6_io_pop_valid;
     end
-    if(when_ConvOutput_l147_7) begin
+    if(when_ConvOutput_l150_7) begin
       mData_valid = streamFifo_7_io_pop_valid;
     end
   end
@@ -632,82 +644,84 @@ module ConvOutput (
   assign axisDataConverter_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l147) begin
+    if(when_ConvOutput_l150) begin
       streamFifo_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l147 = _zz_when_ConvOutput_l147[0];
+  assign when_ConvOutput_l150 = _zz_when_ConvOutput_l150[0];
   assign axisDataConverter_1_inStream_payload = sData[15 : 8];
   assign axisDataConverter_1_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_1_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l147_1) begin
+    if(when_ConvOutput_l150_1) begin
       streamFifo_1_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l147_1 = _zz_when_ConvOutput_l147_1[0];
+  assign when_ConvOutput_l150_1 = _zz_when_ConvOutput_l150_1[0];
   assign axisDataConverter_2_inStream_payload = sData[23 : 16];
   assign axisDataConverter_2_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_2_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l147_2) begin
+    if(when_ConvOutput_l150_2) begin
       streamFifo_2_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l147_2 = _zz_when_ConvOutput_l147_2[0];
+  assign when_ConvOutput_l150_2 = _zz_when_ConvOutput_l150_2[0];
   assign axisDataConverter_3_inStream_payload = sData[31 : 24];
   assign axisDataConverter_3_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_3_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l147_3) begin
+    if(when_ConvOutput_l150_3) begin
       streamFifo_3_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l147_3 = _zz_when_ConvOutput_l147_3[0];
+  assign when_ConvOutput_l150_3 = _zz_when_ConvOutput_l150_3[0];
   assign axisDataConverter_4_inStream_payload = sData[39 : 32];
   assign axisDataConverter_4_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_4_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l147_4) begin
+    if(when_ConvOutput_l150_4) begin
       streamFifo_4_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l147_4 = _zz_when_ConvOutput_l147_4[0];
+  assign when_ConvOutput_l150_4 = _zz_when_ConvOutput_l150_4[0];
   assign axisDataConverter_5_inStream_payload = sData[47 : 40];
   assign axisDataConverter_5_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_5_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l147_5) begin
+    if(when_ConvOutput_l150_5) begin
       streamFifo_5_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l147_5 = _zz_when_ConvOutput_l147_5[0];
+  assign when_ConvOutput_l150_5 = _zz_when_ConvOutput_l150_5[0];
   assign axisDataConverter_6_inStream_payload = sData[55 : 48];
   assign axisDataConverter_6_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_6_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l147_6) begin
+    if(when_ConvOutput_l150_6) begin
       streamFifo_6_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l147_6 = _zz_when_ConvOutput_l147_6[0];
+  assign when_ConvOutput_l150_6 = _zz_when_ConvOutput_l150_6[0];
   assign axisDataConverter_7_inStream_payload = sData[63 : 56];
   assign axisDataConverter_7_inStream_valid = (sValid && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
   always @(*) begin
     streamFifo_7_io_pop_ready = 1'b0;
-    if(when_ConvOutput_l147_7) begin
+    if(when_ConvOutput_l150_7) begin
       streamFifo_7_io_pop_ready = mData_ready;
     end
   end
 
-  assign when_ConvOutput_l147_7 = _zz_when_ConvOutput_l147_7[0];
+  assign when_ConvOutput_l150_7 = _zz_when_ConvOutput_l150_7[0];
+  assign mLast = Fsm_Data_AllOut;
+  assign LayerEnd = Fsm_Data_AllOut;
   always @(posedge clk or posedge reset) begin
     if(reset) begin
       Fsm_currentState <= CONVOUTPUT_ENUM_IDLE;

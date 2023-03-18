@@ -93,7 +93,10 @@ class ConvOutput extends Component{
         val Matrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
         val Matrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
         val mData= master Stream(UInt(64 bits))
+        val mLast=out Bool()
+        val LayerEnd=out Bool()
         val start=in Bool()
+    
     }
     noIoPrefix()
     val Fsm=ConvOutput_Fsm(io.start)
@@ -153,6 +156,8 @@ class ConvOutput extends Component{
         gen()
     }
     // io.mData.valid:=False
+    io.mLast:=Fsm.Data_AllOut
+    io.LayerEnd:=Fsm.Data_AllOut
 
 }
 
