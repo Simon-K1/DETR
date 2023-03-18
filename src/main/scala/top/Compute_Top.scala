@@ -69,13 +69,17 @@ class Img2ColStreamV2 extends Component{
         Converter(i)=new AxisDataConverter(64,8)
         WidthConvert_Fifo(i).io.push.payload:=SubModule.io.mData
         WidthConvert_Fifo(i).io.push.valid:=(OutData_Switch(i downto i).asBool)&&SubModule.io.mValid
-        WidthConvert_Fifo(i).setDefinitionName("WidthConverter_Fifo")
+        WidthConvert_Fifo(i).setDefinitionName("Img2Col_WidthConverter_Fifo")
         Converter(i).inStream<>WidthConvert_Fifo(i).io.pop
         Converter(i).outStream.ready:=True
         io.mData((i+1)*8-1 downto i*8):=RegNext(Converter(i).outStream.payload)//valid拉高，数据应该在valid拉高的下一个周期出去，这是为了与weightCache对上
         io.mValid(i):=RegNext(Converter(i).outStream.valid)//这个valid信号给到脉动阵列
         //io.mData(i):=RegNext(Converter(i).outStream.payload)//valid拉高，数据应该在valid拉高的下一个周期出去，这是为了与weightCache对上
     }
+    //存在一个问题：如果现在只激活了脉动阵列的1~6行，那么还剩两行没有激活
+    //在进入第二轮计算时，也就是处理输出图片的第二行，一开始1~6行的fifo中还有保留有数据没有出去，但是7~8行的fifo没有数据，这时就会出现7~8行提前计算，这样7~8行的激活就没有和权重对齐，
+    //导致7~8行提前输出并且结果还不对，，，，
+    //，，，，，很难改，
     
     io.Raddr_Valid:=Converter(0).outStream.valid
     // val WeightCached_Flag=Bool
@@ -98,7 +102,7 @@ class Img2ColStreamV2 extends Component{
     SubModule.io.OutRow_Count_Times             <>io.OutRow_Count_Times             
     SubModule.io.OutFeature_Channel_Count_Times <>io.OutFeature_Channel_Count_Times 
     SubModule.io.Sliding_Size                   <>io.Sliding_Size                   
-
+    SubModule.io.Fifo_Clear                     <>(!WidthConvert_Fifo(0).io.pop.valid)
 
     SubModule.io.mReady                         :=WidthConvert_Fifo(0).io.push.ready
     io.LayerEnd:=Delay(SubModule.io.LayerEnd,3)

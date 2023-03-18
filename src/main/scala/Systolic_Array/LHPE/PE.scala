@@ -49,7 +49,7 @@ class PE(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int,peConfig:PEConfig) extends Com
 
   when(finishCnt.valid){
     io.PE_OUT:=reg1
-    reg1:=dsp.io.P.resized    //U(0,4 bits)@@(dsp.io.P)
+    reg1:=io.vaild?(dsp.io.P.resized)|S(0,peConfig.Reg_WIDTH bits)    //U(0,4 bits)@@(dsp.io.P)
   }otherwise{
     io.PE_OUT:=0
   }

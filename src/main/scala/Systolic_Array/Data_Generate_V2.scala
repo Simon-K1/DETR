@@ -94,6 +94,7 @@ class Img2Col_Top extends Component{
         val mData=out UInt(Config.DATA_GENERATE_BRAM_OUT_WIDTH bits)
         val mReady=in Bool()//下层准备好的信号
         val mValid=out Bool()
+        val Fifo_Clear=in Bool()
         val mLast=out Bool()
 
         val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
@@ -245,6 +246,7 @@ class Img2Col_Top extends Component{
     Img2Col_SubModule.io.Sliding_Size:=io.Sliding_Size
     Img2Col_SubModule.io.LayerEnd:=Fsm.Layer_End
     Img2Col_SubModule.io.mReady:=io.mReady
+    Img2Col_SubModule.io.Fifo_Clear:=io.Fifo_Clear
     Img2Col_SubModule.io.SA_Row_Cnt_Valid<>io.SA_Row_Cnt_Valid
 
     io.LayerEnd:=Fsm.Layer_End
@@ -290,9 +292,12 @@ class Img2Col_Top extends Component{
 }
 
 object IMG2COL_OUTPUT_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot){
-    val IDLE, INIT, INIT_ADDR,SA_COMPUTE,UPDATE_ADDR,WAIT_NEXT_READY= newElement
-    //WAIT_NEXT_READY:最最最最后加的一个状态,因为img2Col处理了冗余计算，那么img2Col出数据的速度会比WeightCache模块出数据的速度快很多
+    val IDLE, INIT, INIT_ADDR,SA_COMPUTE,UPDATE_ADDR,WAIT_NEXT_READY,WAIT_FIFO_CLEAR= newElement
+    //WAIT_NEXT_READY:最后加的一个状态,因为img2Col处理了冗余计算，那么img2Col出数据的速度会比WeightCache模块出数据的速度快很多
     //所以img2COl模块可能会要等一下WeightCache模块，这是就需要处理数据反压
+    //WAIT_FIFO_CLEAR:最最后加的一个状态，因为如果最后只激活了脉动阵列的6行，那么FIFO进数比出数快，所以最后FIFIO中一定有残留的数据没有被完全输出
+    //这样的话如果直接开启第二行的计算，一定会出现7~8行FIFO提前出数导致出去的数和权重无法对齐。
+    //所以最后一定要等FIFO中的数据都被清空才行。
 }
 case class Img2Col_Output_Fsm(start:Bool) extends Area{
     val currentState = Reg(IMG2COL_OUTPUT_ENUM()) init IMG2COL_OUTPUT_ENUM.IDLE
@@ -305,6 +310,7 @@ case class Img2Col_Output_Fsm(start:Bool) extends Area{
     val Addr_Updated=Bool()
     val LayerEnd=Bool()
     val NextReady=Bool()
+    val Fifo_Clear=Bool()
     switch(currentState){
         is(IMG2COL_OUTPUT_ENUM.IDLE){
             when(start){
@@ -328,7 +334,7 @@ case class Img2Col_Output_Fsm(start:Bool) extends Area{
             }
         }
         is(IMG2COL_OUTPUT_ENUM.WAIT_NEXT_READY){
-            when(NextReady){
+            when(NextReady){//可以认为一开始FIFO都是空的，那么NextReady就一直是拉高的
                 nextState:=IMG2COL_OUTPUT_ENUM.SA_COMPUTE
             }otherwise{
                 nextState:=IMG2COL_OUTPUT_ENUM.WAIT_NEXT_READY
@@ -337,12 +343,19 @@ case class Img2Col_Output_Fsm(start:Bool) extends Area{
         is(IMG2COL_OUTPUT_ENUM.SA_COMPUTE){
             when(LayerEnd){//当前网络层计算完了，就结束计算进入IDLE状态
                 nextState:=IMG2COL_OUTPUT_ENUM.IDLE
-            }elsewhen(SA_Computed){
-                nextState:=IMG2COL_OUTPUT_ENUM.UPDATE_ADDR
+            }elsewhen(SA_Computed){//SA_Computed实际是数据发送完成的信号
+                nextState:=IMG2COL_OUTPUT_ENUM.WAIT_FIFO_CLEAR//数据发送完了就得等待FIFO清空
             }elsewhen(!NextReady){
                 nextState:=IMG2COL_OUTPUT_ENUM.WAIT_NEXT_READY
             }otherwise{
                 nextState:=IMG2COL_OUTPUT_ENUM.SA_COMPUTE
+            }
+        }
+        is(IMG2COL_OUTPUT_ENUM.WAIT_FIFO_CLEAR){
+            when(Fifo_Clear){
+                nextState:=IMG2COL_OUTPUT_ENUM.UPDATE_ADDR//FIFO清空了就可以更新下一轮计算的地址了
+            }otherwise{
+                nextState:=IMG2COL_OUTPUT_ENUM.WAIT_FIFO_CLEAR
             }
         }
         is(IMG2COL_OUTPUT_ENUM.UPDATE_ADDR){
@@ -381,6 +394,7 @@ class  Img2Col_OutPut extends Component{
         val Sliding_Size=in UInt(13 bits)//滑动长度，包含了步长信息，比如输入通道是32，步长为2，那么Kernel_Addr+=32/8*2,其中Sliding_Size=32/8*2
         
         val mReady=in Bool()//下层准备好接收数据的信号
+        val Fifo_Clear=in Bool()//Img2Col和脉动阵列之间连接的fifo清空的信号
         val AddrReceived=out Bool()//地址初始化完成
         val LayerEnd=in Bool()
 
@@ -394,7 +408,7 @@ class  Img2Col_OutPut extends Component{
     val Fsm=Img2Col_Output_Fsm(io.start&&(~RegNext(io.start)))
     val Init_Count=WaCounter(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT,3,5)//数5下进行初始化
     Fsm.Init_End:=Init_Count.valid
-    
+    Fsm.Fifo_Clear:=io.Fifo_Clear
     //初始化循环基地址=====================================================================
     io.NewAddrIn.ready:=(Fsm.currentState===IMG2COL_OUTPUT_ENUM.INIT_ADDR||Fsm.currentState===IMG2COL_OUTPUT_ENUM.UPDATE_ADDR)//位于更新Addr或初始化Addr状态则可以获取Addr
     

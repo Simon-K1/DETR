@@ -55,7 +55,7 @@ parameter Total_Input_Times=224*224*4;//发完2224*224*64bit数据后mValid需要拉低
   begin
   
 //    $readmemh("E:/Transformer/Sim_File/Xq_LayerNorm_未处理掩码.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K33\\S1_O35\\img2Col随机输入测试数据.txt",mem);//_Modified
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K1616\\S16\\img2Col随机输入测试数据.txt",mem);//_Modified
     $readmemh("E:/Transformer/Sim_File/Scale_Bias.txt",Scale_Bias_Mem);//高8bit为Scale，低8bit为Bias
     clk=0;
     start=0;
@@ -211,18 +211,18 @@ Img2Col_Top DG(
 //.OutCol_Count_Times('d2),
 //.OutRow_Count_Times('d14),
 //.InCol_Count_Times('d896),
-.Stride                        (1),
-.Kernel_Size                   (3),
-.Window_Size                   (18),
-.InFeature_Size                (225),
-.InFeature_Channel             (48),
-.OutFeature_Channel            (35),
-.OutFeature_Size               (223),
-.OutCol_Count_Times            (28),
-.InCol_Count_Times             (1350),
-.OutRow_Count_Times            (223),
-.OutFeature_Channel_Count_Times(5),
-.Sliding_Size                  (6),
+.Stride                        (16),
+.Kernel_Size                   (16),
+.Window_Size                   (16),
+.InFeature_Size                (224),
+.InFeature_Channel             (8),
+.OutFeature_Channel            (32),
+.OutFeature_Size               (14),
+.OutCol_Count_Times            (2),
+.InCol_Count_Times             (224),
+.OutRow_Count_Times            (14),
+.OutFeature_Channel_Count_Times(4),
+.Sliding_Size                  (16),
 
 .clk(clk),
 .reset(rst),
@@ -230,11 +230,11 @@ Img2Col_Top DG(
 .mData(sData),
 .mValid(sValid),
 .mLast(sLast),
-.mReady(sReady),
-
+.mReady(1'b1),
+.Fifo_Clear(1'b1),
 .Test_Signal(Write_Txt_En),
 .Test_End(Write_Txt_End),
-.Test_Generate_Period('d14)//要对比第几行就输入几，比如2就是第二行，起始行数为1
+.Test_Generate_Period('d2)//要对比第几行就输入几，比如2就是第二行，起始行数为1
 );
 
 endmodule

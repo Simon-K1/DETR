@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : WeightCache_Stream
-// Git hash  : 88eef0684bbeda6728d9af569627c686f4911a06
+// Git hash  : 529b64cfc1fb3cac1e141c2162cd226166390d88
 
 `timescale 1ns/1ps
 
