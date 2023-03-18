@@ -8,6 +8,7 @@ import utils.AxisDataConverter
 import spinal.lib.Delay
 import utils.Axis_Switch_1s
 import utils.Axis_Switch_2s
+import spinal.lib.master
 
 
 class Img2ColStreamV2 extends Component{
@@ -129,6 +130,8 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
     val Matrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
     val Matrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
     val start=in Bool()
+    val LayerEnd=out Bool()
+    val mData=master Stream(UInt(64 bits))
   }
   noIoPrefix()
   val Tile=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)
@@ -150,6 +153,8 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
     Tile.io.PE_OUT(i)(7 downto 0).asUInt<>Tile_Output.io.sData((i+1)*8-1 downto i*8)
   }
   Tile.io.resultVaild(0)<>Tile_Output.io.sValid
+  io.LayerEnd:=Tile_Output.io.LayerEnd
+  io.mData<>Tile_Output.io.mData
 }
 
 
