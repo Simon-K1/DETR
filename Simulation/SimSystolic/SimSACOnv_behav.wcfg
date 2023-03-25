@@ -11,9 +11,9 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="339040866667fs"></ZoomStartTime>
-      <ZoomEndTime time="339185666668fs"></ZoomEndTime>
-      <Cursor1Time time="339065000000fs"></Cursor1Time>
+      <ZoomStartTime time="2615264500000fs"></ZoomStartTime>
+      <ZoomEndTime time="2615398800001fs"></ZoomEndTime>
+      <Cursor1Time time="2615295000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="195"></NameColumnWidth>
@@ -33,6 +33,7 @@
    <wvobject fp_name="group680" type="group">
       <obj_property name="label">Tile</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_1/PE_OUT_0" type="array">
          <obj_property name="ElementShortName">PE_OUT_0[19:0]</obj_property>
          <obj_property name="ObjectShortName">PE_OUT_0[19:0]</obj_property>
@@ -258,7 +259,6 @@
    <wvobject fp_name="group54" type="group">
       <obj_property name="label">PE11</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_1/pE_64/activate" type="array">
          <obj_property name="ElementShortName">activate[7:0]</obj_property>
          <obj_property name="ObjectShortName">activate[7:0]</obj_property>
@@ -1121,6 +1121,7 @@
       <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/mData_payload" type="array">
          <obj_property name="ElementShortName">mData_payload[63:0]</obj_property>
          <obj_property name="ObjectShortName">mData_payload[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
       </wvobject>
       <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/start" type="logic">
          <obj_property name="ElementShortName">start</obj_property>
