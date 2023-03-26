@@ -8,12 +8,15 @@ import spinal.lib.slave
 import spinal.lib.master
 import utils.WaCounter
 import java.text.Normalizer.Form
+import spinal.lib.bus.amba4.axilite.AxiLite4SpecRenamer
 object DMACtrl_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val IDLE, INIT,CHECK_DMA_STATUS,WAIT_NEXT_CHECK,START_RECEIVE,START_SEND,WAIT_INTR= newElement
+    val IDLE, INIT,READ_DMA_REG,CHECK_DMA_STATUS,WAIT_NEXT_CHECK,START_RECEIVE,START_SEND,WAIT_INTR= newElement
     //发送和接收数据，将Bram 0号地址空间数据搬运到1号地址空间，也就是需要同时启动Dma读写
         //从0号地址空间读出数据，并且写入1号地址空间
     //CHECK_DMA_STATUS:检查DMA状态，每次需要从DMA的0x4地址中读出dma的状态，读出dma状态后，如果状态是IDLE，则启动DMA收发数据
         //如果读出来的状态不是IDLE，那么等10个周期后再查询一下，直到DMA 的状态是IDLE
+        //在检查DMA状态中，需要先发送一个读读地址，当DMA接收到有效的读地址后，还需要等待DMA返回有效的读数据
+    //WAIT_READ_BACK:等待DMA发回读取到的数据
     //在等待DMA_Ready的过程中需要轮询DMA的状态，读取DMA的0x4寄存器，每10个周期读一下
     //START_RECEIVE:启动接收，
     //START_SEND:启动发送
@@ -26,7 +29,8 @@ case class DmaCtrl_Fsm(start:Bool)extends Area{
 
     val Inited=Bool()//初始化完成
     val Dma_Idle=Bool()//查询到的DMA IDLE状态
-    val AxiLite_rValid_DMA_Status=Bool()//通过Axilite读回了有效的DMA状态
+    val AxiLite_arready=Bool()//读地址发送完成
+    val AxiLite_rValid=Bool()//通过Axilite读回了有效的DMA状态
 
     val Wait_Check_Cnt_Valid=Bool()
 
@@ -43,25 +47,33 @@ case class DmaCtrl_Fsm(start:Bool)extends Area{
         }
         is(DMACtrl_ENUM.INIT){
             when(Inited){
-                nextState:=DMACtrl_ENUM.CHECK_DMA_STATUS
+                nextState:=DMACtrl_ENUM.READ_DMA_REG
             }otherwise{
                 nextState:=DMACtrl_ENUM.INIT
             }
         }
+        is(DMACtrl_ENUM.READ_DMA_REG){//读取DMA寄存器
+
+            when(AxiLite_arready){
+                nextState:=DMACtrl_ENUM.CHECK_DMA_STATUS
+            }otherwise{
+                nextState:=DMACtrl_ENUM.READ_DMA_REG
+            }
+        }
         is(DMACtrl_ENUM.CHECK_DMA_STATUS){
-            when(AxiLite_rValid_DMA_Status){//如果读回了DMA的有效状态，那么判断DMA的状态是IDLE还是不是IDLE，不是IDLE就等10个周期后再查询一下
+            when(AxiLite_rValid){
                 when(Dma_Idle){
                     nextState:=DMACtrl_ENUM.START_RECEIVE
                 }otherwise{
-                    nextState:=DMACtrl_ENUM.WAIT_NEXT_CHECK
-                }
+                    nextState:=DMACtrl_ENUM.WAIT_NEXT_CHECK//读地址1发送完成，下一步等待DMA返回最新状态
+                } 
             }otherwise{
                 nextState:=DMACtrl_ENUM.CHECK_DMA_STATUS
             }
         }
         is(DMACtrl_ENUM.WAIT_NEXT_CHECK){
             when(Wait_Check_Cnt_Valid){
-                nextState:=DMACtrl_ENUM.CHECK_DMA_STATUS
+                nextState:=DMACtrl_ENUM.READ_DMA_REG
             }otherwise{
                 nextState:=DMACtrl_ENUM.WAIT_NEXT_CHECK
             }
@@ -92,6 +104,7 @@ case class DmaCtrl_Fsm(start:Bool)extends Area{
 //自己控制DMA
 class DmaCtrl extends  Component{
     val AxiLite=master(AxiLite4(AxiLite4Config(addressWidth=10,dataWidth=32)))
+    AxiLite4SpecRenamer(AxiLite)
     val io=new Bundle{
         val Read_Addr=in UInt(32 bits)//读地址
         val Read_Length=in UInt(32 bits)//读长度
@@ -100,6 +113,7 @@ class DmaCtrl extends  Component{
         val Write_Length=in UInt(32 bits)//写长度
         val start=in Bool()//启动Dma读写数据，搬运数据 
     }
+    noIoPrefix()
     AxiLite.aw.valid    :=False//Reg(Bool())init(False)
     AxiLite.w.valid     :=False//Reg(Bool())init(False)
 
@@ -116,13 +130,16 @@ class DmaCtrl extends  Component{
     Fsm.Wait_Check_Cnt_Valid:=Wait_Check_Cnt.valid
 
     //检查DMA状态
-    Fsm.Dma_Idle:=AxiLite.r.payload.data(0 downto 0)===1
-    Fsm.AxiLite_rValid_DMA_Status:=AxiLite.r.valid
-
-    when(Fsm.currentState===DMACtrl_ENUM.CHECK_DMA_STATUS){
-        AxiLite.ar.valid:=(!RegNext(AxiLite.ar.ready))//读地址valid拉高
+    Fsm.Dma_Idle:=AxiLite.r.payload.data(0 downto 0).asBool//DMA IDLE状态
+    Fsm.AxiLite_rValid:=AxiLite.r.valid
+    Fsm.AxiLite_arready:=AxiLite.ar.ready
+    when(Fsm.currentState===DMACtrl_ENUM.READ_DMA_REG){
+        AxiLite.ar.valid:=True//读地址valid拉高
     //如果arready拉低,那么arvalid拉高,如果arready拉高,那么arvalid与arready握手一下
         AxiLite.ar.addr:=0x4//读取0x4寄存器
+        //AxiLite.r.ready:=True//读数据通道准备好接收数据
+    }
+    when(Fsm.currentState===DMACtrl_ENUM.CHECK_DMA_STATUS){
         AxiLite.r.ready:=True//读数据通道准备好接收数据
     }
     AxiLite.ar.payload.prot:=6//.assignBigInt(6)
