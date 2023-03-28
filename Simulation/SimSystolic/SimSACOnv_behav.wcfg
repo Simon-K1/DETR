@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="2615264500000fs"></ZoomStartTime>
-      <ZoomEndTime time="2615398800001fs"></ZoomEndTime>
-      <Cursor1Time time="2615295000000fs"></Cursor1Time>
+      <ZoomStartTime time="2733974800000fs"></ZoomStartTime>
+      <ZoomEndTime time="2734129800001fs"></ZoomEndTime>
+      <Cursor1Time time="2734065000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="195"></NameColumnWidth>
-      <ValueColumnWidth column_width="58"></ValueColumnWidth>
+      <NameColumnWidth column_width="297"></NameColumnWidth>
+      <ValueColumnWidth column_width="131"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="10" />
+   <WVObjectSize size="21" />
    <wave_markers>
       <marker time="400485000000" label="" />
       <marker time="503045000000" label="" />
@@ -33,7 +33,6 @@
    <wvobject fp_name="group680" type="group">
       <obj_property name="label">Tile</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_1/PE_OUT_0" type="array">
          <obj_property name="ElementShortName">PE_OUT_0[19:0]</obj_property>
          <obj_property name="ObjectShortName">PE_OUT_0[19:0]</obj_property>
@@ -329,7 +328,6 @@
    <wvobject fp_name="group192" type="group">
       <obj_property name="label">WeightCache</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/SimSA_Conv/Weight_Cache/sData_payload" type="array">
          <obj_property name="ElementShortName">sData_payload[63:0]</obj_property>
          <obj_property name="ObjectShortName">sData_payload[63:0]</obj_property>
@@ -419,9 +417,11 @@
    <wvobject fp_name="group1084" type="group">
       <obj_property name="label">Img2Col</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="group387" type="group">
          <obj_property name="label">Img2Col</obj_property>
          <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/SimSA_Conv/Img2ComStream/mData" type="array">
             <obj_property name="ElementShortName">mData[63:0]</obj_property>
             <obj_property name="ObjectShortName">mData[63:0]</obj_property>
@@ -437,14 +437,6 @@
          <wvobject fp_name="/SimSA_Conv/Img2ComStream/s_axis_s2mm_tdata" type="array">
             <obj_property name="ElementShortName">s_axis_s2mm_tdata[63:0]</obj_property>
             <obj_property name="ObjectShortName">s_axis_s2mm_tdata[63:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/SimSA_Conv/Img2ComStream/s_axis_s2mm_tkeep" type="array">
-            <obj_property name="ElementShortName">s_axis_s2mm_tkeep[7:0]</obj_property>
-            <obj_property name="ObjectShortName">s_axis_s2mm_tkeep[7:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/SimSA_Conv/Img2ComStream/s_axis_s2mm_tlast" type="logic">
-            <obj_property name="ElementShortName">s_axis_s2mm_tlast</obj_property>
-            <obj_property name="ObjectShortName">s_axis_s2mm_tlast</obj_property>
          </wvobject>
          <wvobject fp_name="/SimSA_Conv/Img2ComStream/s_axis_s2mm_tready" type="logic">
             <obj_property name="ElementShortName">s_axis_s2mm_tready</obj_property>
@@ -853,6 +845,7 @@
          <wvobject fp_name="/SimSA_Conv/Img2ComStream/OutData_Switch" type="array">
             <obj_property name="ElementShortName">OutData_Switch[7:0]</obj_property>
             <obj_property name="ObjectShortName">OutData_Switch[7:0]</obj_property>
+            <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
          </wvobject>
          <wvobject fp_name="/SimSA_Conv/Img2ComStream/Switch_Reset" type="logic">
             <obj_property name="ElementShortName">Switch_Reset</obj_property>
@@ -1082,7 +1075,6 @@
    <wvobject fp_name="group1088" type="group">
       <obj_property name="label">ConvOutput</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/sData" type="array">
          <obj_property name="ElementShortName">sData[63:0]</obj_property>
          <obj_property name="ObjectShortName">sData[63:0]</obj_property>
@@ -1655,5 +1647,61 @@
          <obj_property name="ElementShortName">CONVOUTPUT_ENUM_WAIT_END[3:0]</obj_property>
          <obj_property name="ObjectShortName">CONVOUTPUT_ENUM_WAIT_END[3:0]</obj_property>
       </wvobject>
+   </wvobject>
+   <wvobject fp_name="/SimSA_Conv/Img2ComStream/s_axis_s2mm_tlast" type="logic">
+      <obj_property name="ElementShortName">s_axis_s2mm_tlast</obj_property>
+      <obj_property name="ObjectShortName">s_axis_s2mm_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSA_Conv/Img2ComStream/SubModule_mLast" type="logic">
+      <obj_property name="ElementShortName">SubModule_mLast</obj_property>
+      <obj_property name="ObjectShortName">SubModule_mLast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output_mLast" type="logic">
+      <obj_property name="ElementShortName">Tile_Output_mLast</obj_property>
+      <obj_property name="ObjectShortName">Tile_Output_mLast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSA_Conv/Img2ComStream/start" type="logic">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">start</obj_property>
+      <obj_property name="ObjectShortName">start</obj_property>
+      <obj_property name="label">starImg2colt</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSA_Conv/Img2ComStream/SubModule/Fsm_currentState" type="array">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">Fsm_currentState[6:0]</obj_property>
+      <obj_property name="ObjectShortName">Fsm_currentState[6:0]</obj_property>
+      <obj_property name="label">Img2Col</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSA_Conv/Weight_Cache/start" type="logic">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">start</obj_property>
+      <obj_property name="ObjectShortName">start</obj_property>
+      <obj_property name="label">WeightStart</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSA_Conv/Weight_Cache/Fsm_currentState" type="array">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">Fsm_currentState[3:0]</obj_property>
+      <obj_property name="ObjectShortName">Fsm_currentState[3:0]</obj_property>
+      <obj_property name="label">WeightCache</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSA_Conv/SA_Conv/start" type="logic">
+      <obj_property name="ElementShortName">start</obj_property>
+      <obj_property name="ObjectShortName">start</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/Fsm_currentState" type="array">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">Fsm_currentState[3:0]</obj_property>
+      <obj_property name="ObjectShortName">Fsm_currentState[3:0]</obj_property>
+      <obj_property name="label">SAOutput</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSA_Conv/mem_addr" type="array">
+      <obj_property name="ElementShortName">mem_addr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mem_addr[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimSA_Conv/mem_addr2" type="array">
+      <obj_property name="ElementShortName">mem_addr2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mem_addr2[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
 </wave_config>

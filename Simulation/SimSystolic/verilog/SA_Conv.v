@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : SA_Conv
-// Git hash  : e3c5b9d3b476b7e35e5f497321ba2eb54cc379c0
+// Git hash  : 339ff44f5278d9c9cd8b7fccf970c9c1bc8763b7
 
 `timescale 1ns/1ps
 
@@ -32,6 +32,7 @@ module SA_Conv (
   output              mData_valid,
   input               mData_ready,
   output     [63:0]   mData_payload,
+  output              mLast,
   input               clk,
   input               reset
 );
@@ -144,6 +145,7 @@ module SA_Conv (
   assign LayerEnd = Tile_Output_LayerEnd;
   assign mData_valid = Tile_Output_mData_valid;
   assign mData_payload = Tile_Output_mData_payload;
+  assign mLast = Tile_Output_mLast;
 
 endmodule
 

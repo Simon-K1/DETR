@@ -132,6 +132,8 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
     val start=in Bool()
     val LayerEnd=out Bool()
     val mData=master Stream(UInt(64 bits))
+
+    val mLast=out Bool()
   }
   noIoPrefix()
   val Tile=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)
@@ -155,6 +157,7 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
   Tile.io.resultVaild(0)<>Tile_Output.io.sValid
   io.LayerEnd:=Tile_Output.io.LayerEnd
   io.mData<>Tile_Output.io.mData
+  io.mLast:=Tile_Output.io.mLast
 }
 
 

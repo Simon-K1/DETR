@@ -1,4 +1,4 @@
-package Spinal_Sim
+package MyDma
 
 import  spinal.core._
 import  spinal.lib.bus.amba4._
@@ -10,7 +10,7 @@ import utils.WaCounter
 import java.text.Normalizer.Form
 import spinal.lib.bus.amba4.axilite.AxiLite4SpecRenamer
 object DMACtrl_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val IDLE, INIT,READ_DMA_REG,CHECK_DMA_STATUS,WAIT_NEXT_CHECK,START_RECEIVE,START_SEND,WAIT_INTR= newElement
+    val IDLE, INIT,READ_DMA_REG,CHECK_DMA_STATUS,WAIT_NEXT_CHECK,START_RECEIVE,START_SEND,WAIT_INTR,WRITE_RW_ADDR,WRITE_RW_LEN= newElement
     //发送和接收数据，将Bram 0号地址空间数据搬运到1号地址空间，也就是需要同时启动Dma读写
         //从0号地址空间读出数据，并且写入1号地址空间
     //CHECK_DMA_STATUS:检查DMA状态，每次需要从DMA的0x4地址中读出dma的状态，读出dma状态后，如果状态是IDLE，则启动DMA收发数据
@@ -20,6 +20,8 @@ object DMACtrl_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取
     //在等待DMA_Ready的过程中需要轮询DMA的状态，读取DMA的0x4寄存器，每10个周期读一下
     //START_RECEIVE:启动接收，
     //START_SEND:启动发送
+    //WRITE_RW_ADDR:向对应寄存器 写入 读写地址(pht addr)
+    //WRITE_RW_LEN:写入 读写长度(字节)
     //WAIT_INTR:等待中断
 }
 case class DmaCtrl_Fsm(start:Bool)extends Area{
@@ -65,34 +67,35 @@ case class DmaCtrl_Fsm(start:Bool)extends Area{
                 when(Dma_Idle){
                     nextState:=DMACtrl_ENUM.START_RECEIVE
                 }otherwise{
-                    nextState:=DMACtrl_ENUM.WAIT_NEXT_CHECK//读地址1发送完成，下一步等待DMA返回最新状态
+                    nextState:=DMACtrl_ENUM.WAIT_NEXT_CHECK//读地址发送完成，下一步等待DMA返回最新状态
                 } 
             }otherwise{
                 nextState:=DMACtrl_ENUM.CHECK_DMA_STATUS
             }
         }
-        is(DMACtrl_ENUM.WAIT_NEXT_CHECK){
+        is(DMACtrl_ENUM.WAIT_NEXT_CHECK){//计数器，数10下再读一下DMA的寄存器，因为没必要一直读寄存器
             when(Wait_Check_Cnt_Valid){
                 nextState:=DMACtrl_ENUM.READ_DMA_REG
             }otherwise{
                 nextState:=DMACtrl_ENUM.WAIT_NEXT_CHECK
             }
         }
-        is(DMACtrl_ENUM.START_RECEIVE){
+        is(DMACtrl_ENUM.START_RECEIVE){//启动DMA接收
+            //这时需要先像DMA的控制寄存器中写入启动信号,这比读更简单一些,因为只需要等待wready拉高即可
             when(Receive_Started){
                 nextState:=DMACtrl_ENUM.START_SEND
             }otherwise{
                 nextState:=DMACtrl_ENUM.START_RECEIVE
             }
         }
-        is(DMACtrl_ENUM.START_SEND){
+        is(DMACtrl_ENUM.START_SEND){//启动DMA发送
             when(Send_Started){
                 nextState:=DMACtrl_ENUM.WAIT_INTR
             }otherwise{
                 nextState:=DMACtrl_ENUM.START_SEND
             }
         }
-        is(DMACtrl_ENUM.WAIT_INTR){
+        is(DMACtrl_ENUM.WAIT_INTR){//等待DMA中断
             when(Intr_Detected){
                 nextState:=DMACtrl_ENUM.IDLE
             }otherwise{
@@ -113,6 +116,14 @@ class DmaCtrl extends  Component{
         val Write_Length=in UInt(32 bits)//写长度
         val start=in Bool()//启动Dma读写数据，搬运数据 
     }
+
+    //写数据
+    AxiLite.aw.payload.prot :=6//0110
+    AxiLite.w.payload.strb  :=15//1111
+    AxiLite.aw.payload.addr :=0
+    AxiLite.w.payload.data  :=0
+
+
     noIoPrefix()
     AxiLite.aw.valid    :=False//Reg(Bool())init(False)
     AxiLite.w.valid     :=False//Reg(Bool())init(False)
@@ -142,19 +153,27 @@ class DmaCtrl extends  Component{
     when(Fsm.currentState===DMACtrl_ENUM.CHECK_DMA_STATUS){
         AxiLite.r.ready:=True//读数据通道准备好接收数据
     }
-    AxiLite.ar.payload.prot:=6//.assignBigInt(6)
+
+    Fsm.Receive_Started :=False//AxiLite.aw.ready//启动DMA接收数据完成
+    when(Fsm.currentState===DMACtrl_ENUM.START_RECEIVE){
+        //启动DMA接收数据(这里实现的是DMA回环,实现数据搬运)
+        AxiLite.aw.payload.addr:=0x30//S2MM_DMACR,s2mm,实际上是写数据
+        AxiLite.aw.valid:=True
+        AxiLite.w.valid:=True//通过仿真看到的如果只拉高awvalid而不拉高wvalid,awready和wready都不会拉高
+        //除了要写入启动信号,还要写入目标地址,字节数量,也就是说至少要写3次axilite
+    }
+
+
+    AxiLite.ar.payload.prot:=6//这也不知道在干啥
     
 
-//写数据
-    AxiLite.aw.payload.prot :=6//0110
-    AxiLite.w.payload.strb  :=15//1111
-    AxiLite.aw.payload.addr :=0
-    AxiLite.w.payload.data  :=0
 
-    Fsm.Receive_Started :=False//启动DMA接收数据完成
+    
     Fsm.Send_Started    :=False//启动DMA发送数据完成
     Fsm.Intr_Detected   :=False//检测到DMA中断
 }
+
+
 
 
 object Top extends App { 
