@@ -32,7 +32,7 @@ reg start;
     clk=0;
     rst=1;
     start=0;
-    #200000
+    #20000
      rst=0;
      start=1;
      #20

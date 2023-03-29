@@ -174,17 +174,18 @@ class DmaCtrl extends  Component{
         AxiLite.w.valid:=True//通过仿真看到的如果只拉高awvalid而不拉高wvalid,awready和wready都不会拉高
         //除了要写入启动信号,还要写入目标地址,字节数量,也就是说至少要写3次axilite
         when(S2MM_Steps(0 downto 0).asBool){
-            AxiLite.aw.payload.addr:=0x48//S2MM_DA,S2MM Destination Address. Lower 32 bit address.
-            AxiLite.w.payload.data:=B"32'hC0000000"
-        }elsewhen(S2MM_Steps(1 downto 1).asBool){
-            AxiLite.aw.payload.addr:=0x4C//S2MM_DA_MSB,S2MM Destination Address. Upper 32 bit address.
-            AxiLite.w.payload.data:=0
-        }elsewhen(S2MM_Steps(2 downto 2).asBool){
-            AxiLite.aw.payload.addr:=0x58//S2MM_LENGTH,S2MM Buffer Length (Bytes)
-            AxiLite.w.payload.data:=0x400//
-        }elsewhen(S2MM_Steps(3 downto 3).asBool){
             AxiLite.aw.payload.addr:=0x30
             AxiLite.w.payload.data:=1
+
+        }elsewhen(S2MM_Steps(1 downto 1).asBool){
+            AxiLite.aw.payload.addr:=0x48//S2MM_DA,S2MM Destination Address. Lower 32 bit address.
+            AxiLite.w.payload.data:=B"32'hC0000000"
+        }elsewhen(S2MM_Steps(2 downto 2).asBool){
+            AxiLite.aw.payload.addr:=0x4C//S2MM_DA_MSB,S2MM Destination Address. Upper 32 bit address.
+            AxiLite.w.payload.data:=0
+        }elsewhen(S2MM_Steps(3 downto 3).asBool){
+            AxiLite.aw.payload.addr:=0x58//S2MM_LENGTH,S2MM Buffer Length (Bytes)
+            AxiLite.w.payload.data:=0x400//
         }otherwise{
             AxiLite.aw.payload.addr:=0x30
             AxiLite.w.payload.data:=0
@@ -210,17 +211,17 @@ class DmaCtrl extends  Component{
         //除了要写入启动信号,还要写入目标地址,字节数量,也就是说至少要写3次axilite
 
         when(MM2S_Steps(0 downto 0).asBool){
-            AxiLite.aw.payload.addr:=0x18//MM2S Source Address. Lower 32 bits of address.
-            AxiLite.w.payload.data:=B"32'hC0000500"
+            AxiLite.aw.payload.addr:=0x00
+            AxiLite.w.payload.data:=B"32'h00011003"
         }elsewhen(MM2S_Steps(1 downto 1).asBool){
-            AxiLite.aw.payload.addr:=0x1C//MM2S Source Address. Upper 32 bits of address.
-            AxiLite.w.payload.data:=0
+            AxiLite.aw.payload.addr:=0x18//MM2S Source Address. Upper 32 bits of address.
+            AxiLite.w.payload.data:=B"32'hC0000500"
         }elsewhen(MM2S_Steps(2 downto 2).asBool){
             AxiLite.aw.payload.addr:=0x28//MM2S Transfer Length (Bytes)
             AxiLite.w.payload.data:=0x400//
         }elsewhen(MM2S_Steps(3 downto 3).asBool){
-            AxiLite.aw.payload.addr:=0x00
-            AxiLite.w.payload.data:=1
+            AxiLite.aw.payload.addr:=0x1C//MM2S Source Address. Lower 32 bits of address.
+            AxiLite.w.payload.data:=0
         }otherwise{
             AxiLite.aw.payload.addr:=0x0
             AxiLite.w.payload.data:=1
