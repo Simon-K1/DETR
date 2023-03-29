@@ -36,7 +36,7 @@ reg start;
      rst=0;
      start=1;
      #20
-     start=0;//start 拉高2个周期
+     start=1;//start 拉高2个周期
      
      
      //读取DMA状态

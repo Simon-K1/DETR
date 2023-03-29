@@ -10,7 +10,7 @@ import utils.WaCounter
 import java.text.Normalizer.Form
 import spinal.lib.bus.amba4.axilite.AxiLite4SpecRenamer
 object DMACtrl_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val IDLE, INIT,READ_DMA_REG,CHECK_DMA_STATUS,WAIT_NEXT_CHECK,START_RECEIVE,START_SEND,WAIT_INTR= newElement
+    val IDLE, INIT,READ_DMA_REG,CHECK_DMA_STATUS,WAIT_NEXT_CHECK,START_RECEIVE,START_SEND,WAIT_INTR,CLEAR_INTR= newElement
     //发送和接收数据，将Bram 0号地址空间数据搬运到1号地址空间，也就是需要同时启动Dma读写
         //从0号地址空间读出数据，并且写入1号地址空间
     //CHECK_DMA_STATUS:检查DMA状态，每次需要从DMA的0x4地址中读出dma的状态，读出dma状态后，如果状态是IDLE，则启动DMA收发数据
@@ -20,9 +20,8 @@ object DMACtrl_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取
     //在等待DMA_Ready的过程中需要轮询DMA的状态，读取DMA的0x4寄存器，每10个周期读一下
     //START_RECEIVE:启动接收，
     //START_SEND:启动发送
-    //WRITE_RW_ADDR:向对应寄存器 写入 读写地址(pht addr)
-    //WRITE_RW_LEN:写入 读写长度(字节)
     //WAIT_INTR:等待中断
+    //CLEAR_INTR：清理DMA中断
 }
 case class DmaCtrl_Fsm(start:Bool)extends Area{
     val currentState = Reg(DMACtrl_ENUM()) init DMACtrl_ENUM.IDLE
@@ -39,6 +38,8 @@ case class DmaCtrl_Fsm(start:Bool)extends Area{
     val Receive_Started=Bool()//启动DMA接收数据完成
     val Send_Started=Bool()//启动DMA发送数据完成
     val Intr_Detected=Bool()//检测到DMA中断
+
+    val Intr_Cleared=Bool()//中断清除
     switch(currentState){
         is(DMACtrl_ENUM.IDLE){
             when(start){
@@ -97,9 +98,16 @@ case class DmaCtrl_Fsm(start:Bool)extends Area{
         }
         is(DMACtrl_ENUM.WAIT_INTR){//等待DMA中断
             when(Intr_Detected){
-                nextState:=DMACtrl_ENUM.IDLE
+                nextState:=DMACtrl_ENUM.CLEAR_INTR
             }otherwise{
                 nextState:=DMACtrl_ENUM.WAIT_INTR
+            }
+        }
+        is(DMACtrl_ENUM.CLEAR_INTR){
+            when(Intr_Cleared){
+                nextState:=DMACtrl_ENUM.IDLE
+            }otherwise{
+                nextState:=DMACtrl_ENUM.CLEAR_INTR
             }
         }
     }
@@ -159,9 +167,9 @@ class DmaCtrl extends  Component{
 
     
             
-    //启动DMA接收数据(这里实现的是DMA回环,实现数据搬运)
+//启动DMA写数据(这里实现的是DMA回环,实现数据搬运)========================================================
     //应该先写入ddr地址，数据量，最后才启动DMA
-    val S2MM_Steps=Reg(Bits(4 bits))init(B"4'b0001").allowUnsetRegToAvoidLatch
+    val S2MM_Steps=Reg(Bits(4 bits))init(B"4'b0001")
     //0001:写入搬运目的地址Lower，0010，写入目的地址upper
     //0100:写入dma搬运长度，100：写入启动信号
     when(AxiLite.w.fire&&Fsm.currentState===DMACtrl_ENUM.START_RECEIVE){
@@ -171,7 +179,7 @@ class DmaCtrl extends  Component{
 
 
     when(Fsm.currentState===DMACtrl_ENUM.START_RECEIVE){
-        AxiLite.w.payload.data:=0
+        //AxiLite.w.payload.data:=0
         //AxiLite.aw.payload.addr:=0x30//S2MM_DMACR,s2mm,stream流到内存映射，控制寄存器
         AxiLite.aw.valid:=True//wready和awready拉高后，valid信号应该拉低
         AxiLite.w.valid:=True//通过仿真看到的如果只拉高awvalid而不拉高wvalid,awready和wready都不会拉高
@@ -196,8 +204,8 @@ class DmaCtrl extends  Component{
     }
  
 
-    //启动DMA发送数据，mm2s，内存映射->stream流
-   val MM2S_Steps=Reg(Bits(4 bits))init(B"4'b0001").allowUnsetRegToAvoidLatch
+//启动DMA读数据，mm2s，内存映射->stream流==============================================================
+   val MM2S_Steps=Reg(Bits(4 bits))init(B"4'b0001")
     //0001:写入搬运目的地址Lower，0010，写入目的地址upper
     //0100:写入dma搬运长度，100：写入启动信号
     when(AxiLite.w.fire&&Fsm.currentState===DMACtrl_ENUM.START_SEND){
@@ -207,7 +215,7 @@ class DmaCtrl extends  Component{
 
 
     when(Fsm.currentState===DMACtrl_ENUM.START_SEND){
-        AxiLite.w.payload.data:=0
+        //AxiLite.w.payload.data:=0
         //AxiLite.aw.payload.addr:=0x30//S2MM_DMACR,s2mm,stream流到内存映射，控制寄存器
         AxiLite.aw.valid:=True//wready和awready拉高后，valid信号应该拉低
         AxiLite.w.valid:=True//通过仿真看到的如果只拉高awvalid而不拉高wvalid,awready和wready都不会拉高
@@ -230,13 +238,32 @@ class DmaCtrl extends  Component{
             AxiLite.w.payload.data:=1
         }
     }
-
+//清理中断===================================================================================
+    val IntrClear_Steps=Reg(Bits(2 bits))init(B"2'b01")
+    when(AxiLite.w.fire&&Fsm.currentState===DMACtrl_ENUM.CLEAR_INTR){
+        IntrClear_Steps:=IntrClear_Steps.rotateLeft(1)
+    }
+    Fsm.Intr_Cleared:=AxiLite.w.fire&&IntrClear_Steps(1 downto 1).asBool
+    when(Fsm.currentState===DMACtrl_ENUM.CLEAR_INTR){//这里的when有没有必要整合到上面变成elsewhen？
+        AxiLite.aw.valid:=True//wready和awready拉高后，valid信号应该拉低
+        AxiLite.w.valid:=True
+        when(IntrClear_Steps(0 downto 0).asBool){
+            AxiLite.aw.payload.addr:=0x0
+            AxiLite.w.payload.data:=B"32'h00010002"
+        }elsewhen(IntrClear_Steps(1 downto 1).asBool){
+            AxiLite.aw.payload.addr:=0x30
+            AxiLite.w.payload.data:=B"32'h00010002"
+        }otherwise{
+            AxiLite.aw.payload.addr:=0x0
+            AxiLite.w.payload.data:=0
+        }
+    }
 
 
     AxiLite.ar.payload.prot:=6//这也不知道在干啥
-
     Fsm.Intr_Detected   :=io.RIntr&&io.WIntr//检测到DMA中断
 }
+
 
 
 
