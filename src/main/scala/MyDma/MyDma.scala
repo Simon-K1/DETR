@@ -10,7 +10,7 @@ import utils.WaCounter
 import java.text.Normalizer.Form
 import spinal.lib.bus.amba4.axilite.AxiLite4SpecRenamer
 object DMACtrl_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val IDLE, INIT,READ_DMA_REG,CHECK_DMA_STATUS,WAIT_NEXT_CHECK,START_RECEIVE,START_SEND,WAIT_INTR,WRITE_RW_ADDR,WRITE_RW_LEN= newElement
+    val IDLE, INIT,READ_DMA_REG,CHECK_DMA_STATUS,WAIT_NEXT_CHECK,START_RECEIVE,START_SEND,WAIT_INTR= newElement
     //发送和接收数据，将Bram 0号地址空间数据搬运到1号地址空间，也就是需要同时启动Dma读写
         //从0号地址空间读出数据，并且写入1号地址空间
     //CHECK_DMA_STATUS:检查DMA状态，每次需要从DMA的0x4地址中读出dma的状态，读出dma状态后，如果状态是IDLE，则启动DMA收发数据
@@ -62,7 +62,7 @@ case class DmaCtrl_Fsm(start:Bool)extends Area{
                 nextState:=DMACtrl_ENUM.READ_DMA_REG
             }
         }
-        is(DMACtrl_ENUM.CHECK_DMA_STATUS){
+        is(DMACtrl_ENUM.CHECK_DMA_STATUS){//检查DMA状态
             when(AxiLite_rValid){
                 when(Dma_Idle){
                     nextState:=DMACtrl_ENUM.START_RECEIVE
@@ -154,22 +154,83 @@ class DmaCtrl extends  Component{
         AxiLite.r.ready:=True//读数据通道准备好接收数据
     }
 
-    Fsm.Receive_Started :=False//AxiLite.aw.ready//启动DMA接收数据完成
+    
+            
+    //启动DMA接收数据(这里实现的是DMA回环,实现数据搬运)
+    //应该先写入ddr地址，数据量，最后才启动DMA
+    val S2MM_Steps=Reg(Bits(4 bits))init(B"4'b0001").allowUnsetRegToAvoidLatch
+    //0001:写入搬运目的地址Lower，0010，写入目的地址upper
+    //0100:写入dma搬运长度，100：写入启动信号
+    when(AxiLite.w.fire&&Fsm.currentState===DMACtrl_ENUM.START_RECEIVE){
+        S2MM_Steps:=S2MM_Steps.rotateLeft(1)
+    }
+    Fsm.Receive_Started :=(AxiLite.w.ready)&&S2MM_Steps(3 downto 3).asBool//写响应回来了，一次写传输结束
+
+
     when(Fsm.currentState===DMACtrl_ENUM.START_RECEIVE){
-        //启动DMA接收数据(这里实现的是DMA回环,实现数据搬运)
-        AxiLite.aw.payload.addr:=0x30//S2MM_DMACR,s2mm,实际上是写数据
-        AxiLite.aw.valid:=True
+        AxiLite.w.payload.data:=0
+        //AxiLite.aw.payload.addr:=0x30//S2MM_DMACR,s2mm,stream流到内存映射，控制寄存器
+        AxiLite.aw.valid:=True//wready和awready拉高后，valid信号应该拉低
         AxiLite.w.valid:=True//通过仿真看到的如果只拉高awvalid而不拉高wvalid,awready和wready都不会拉高
         //除了要写入启动信号,还要写入目标地址,字节数量,也就是说至少要写3次axilite
+        when(S2MM_Steps(0 downto 0).asBool){
+            AxiLite.aw.payload.addr:=0x48//S2MM_DA,S2MM Destination Address. Lower 32 bit address.
+            AxiLite.w.payload.data:=B"32'hC0000000"
+        }elsewhen(S2MM_Steps(1 downto 1).asBool){
+            AxiLite.aw.payload.addr:=0x4C//S2MM_DA_MSB,S2MM Destination Address. Upper 32 bit address.
+            AxiLite.w.payload.data:=0
+        }elsewhen(S2MM_Steps(2 downto 2).asBool){
+            AxiLite.aw.payload.addr:=0x58//S2MM_LENGTH,S2MM Buffer Length (Bytes)
+            AxiLite.w.payload.data:=0x400//
+        }elsewhen(S2MM_Steps(3 downto 3).asBool){
+            AxiLite.aw.payload.addr:=0x30
+            AxiLite.w.payload.data:=1
+        }otherwise{
+            AxiLite.aw.payload.addr:=0x30
+            AxiLite.w.payload.data:=0
+        }
+    }
+ 
+
+    //启动DMA发送数据，mm2s，内存映射->stream流
+   val MM2S_Steps=Reg(Bits(4 bits))init(B"4'b0001").allowUnsetRegToAvoidLatch
+    //0001:写入搬运目的地址Lower，0010，写入目的地址upper
+    //0100:写入dma搬运长度，100：写入启动信号
+    when(AxiLite.w.fire&&Fsm.currentState===DMACtrl_ENUM.START_SEND){
+        MM2S_Steps:=MM2S_Steps.rotateLeft(1)
+    }
+    Fsm.Send_Started :=(AxiLite.w.ready)&&MM2S_Steps(3 downto 3).asBool//写响应回来了，一次写传输结束
+
+
+    when(Fsm.currentState===DMACtrl_ENUM.START_SEND){
+        AxiLite.w.payload.data:=0
+        //AxiLite.aw.payload.addr:=0x30//S2MM_DMACR,s2mm,stream流到内存映射，控制寄存器
+        AxiLite.aw.valid:=True//wready和awready拉高后，valid信号应该拉低
+        AxiLite.w.valid:=True//通过仿真看到的如果只拉高awvalid而不拉高wvalid,awready和wready都不会拉高
+        //除了要写入启动信号,还要写入目标地址,字节数量,也就是说至少要写3次axilite
+
+        when(MM2S_Steps(0 downto 0).asBool){
+            AxiLite.aw.payload.addr:=0x18//MM2S Source Address. Lower 32 bits of address.
+            AxiLite.w.payload.data:=B"32'hC0000500"
+        }elsewhen(MM2S_Steps(1 downto 1).asBool){
+            AxiLite.aw.payload.addr:=0x1C//MM2S Source Address. Upper 32 bits of address.
+            AxiLite.w.payload.data:=0
+        }elsewhen(MM2S_Steps(2 downto 2).asBool){
+            AxiLite.aw.payload.addr:=0x28//MM2S Transfer Length (Bytes)
+            AxiLite.w.payload.data:=0x400//
+        }elsewhen(MM2S_Steps(3 downto 3).asBool){
+            AxiLite.aw.payload.addr:=0x00
+            AxiLite.w.payload.data:=1
+        }otherwise{
+            AxiLite.aw.payload.addr:=0x0
+            AxiLite.w.payload.data:=1
+        }
     }
 
 
+
     AxiLite.ar.payload.prot:=6//这也不知道在干啥
-    
 
-
-    
-    Fsm.Send_Started    :=False//启动DMA发送数据完成
     Fsm.Intr_Detected   :=False//检测到DMA中断
 }
 
