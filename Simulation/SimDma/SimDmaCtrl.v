@@ -65,8 +65,6 @@ always@(posedge clk)begin
 end
 
 
- 
-
   Dma_Ctrl SimDma_i
        (.start(start),
         .clk(clk),

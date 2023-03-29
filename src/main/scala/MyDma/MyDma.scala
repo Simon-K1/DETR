@@ -115,6 +115,9 @@ class DmaCtrl extends  Component{
         val Write_Addr=in UInt(32 bits)//写地址
         val Write_Length=in UInt(32 bits)//写长度
         val start=in Bool()//启动Dma读写数据，搬运数据 
+
+        val RIntr=in Bool()
+        val WIntr=in Bool()
     }
 
     //写数据
@@ -175,7 +178,7 @@ class DmaCtrl extends  Component{
         //除了要写入启动信号,还要写入目标地址,字节数量,也就是说至少要写3次axilite
         when(S2MM_Steps(0 downto 0).asBool){
             AxiLite.aw.payload.addr:=0x30
-            AxiLite.w.payload.data:=1
+            AxiLite.w.payload.data:=B"32'h00011003"
 
         }elsewhen(S2MM_Steps(1 downto 1).asBool){
             AxiLite.aw.payload.addr:=0x48//S2MM_DA,S2MM Destination Address. Lower 32 bit address.
@@ -232,7 +235,7 @@ class DmaCtrl extends  Component{
 
     AxiLite.ar.payload.prot:=6//这也不知道在干啥
 
-    Fsm.Intr_Detected   :=False//检测到DMA中断
+    Fsm.Intr_Detected   :=io.RIntr&&io.WIntr//检测到DMA中断
 }
 
 
