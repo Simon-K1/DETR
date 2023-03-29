@@ -243,10 +243,10 @@ class DmaCtrl extends  Component{
     when(AxiLite.w.fire&&Fsm.currentState===DMACtrl_ENUM.CLEAR_INTR){
         IntrClear_Steps:=IntrClear_Steps.rotateLeft(1)
     }
-    Fsm.Intr_Cleared:=AxiLite.w.fire&&IntrClear_Steps(1 downto 1).asBool
+    Fsm.Intr_Cleared:=True//AxiLite.w.fire&&IntrClear_Steps(1 downto 1).asBool
     when(Fsm.currentState===DMACtrl_ENUM.CLEAR_INTR){//这里的when有没有必要整合到上面变成elsewhen？
-        AxiLite.aw.valid:=True//wready和awready拉高后，valid信号应该拉低
-        AxiLite.w.valid:=True
+        AxiLite.aw.valid:=False//wready和awready拉高后，valid信号应该拉低
+        AxiLite.w.valid:=False
         when(IntrClear_Steps(0 downto 0).asBool){
             AxiLite.aw.payload.addr:=0x0
             AxiLite.w.payload.data:=B"32'h00010002"
