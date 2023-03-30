@@ -115,7 +115,7 @@ class Axis_Switch_1s(Master_Port_Num:Int,Data_Width:Int) extends Component{
 
 class Axis_Switch_2s(Slave_Port_Num:Int,Data_Width:Int) extends Component{
     val io=new Bundle{//多个s口一个m口
-        val Switch=in Bits(log2Up(Slave_Port_Num) bits)
+        val Switch=in Bits(2 bits)
     }
     noIoPrefix()
     val m0_axis_mm2s=new Bundle{//一个主接口，多个从接口
