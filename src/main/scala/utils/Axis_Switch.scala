@@ -79,7 +79,7 @@ case class Stream_Switch(Enum_Num:Int) extends SpinalEnum(defaultEncoding = bina
 }
 class Axis_Switch_1s(Master_Port_Num:Int,Data_Width:Int) extends Component{
     val io=new Bundle{//一个s口多个m口
-        val Switch=in UInt(2 bits)
+        val Switch=in Bits(2 bits)
     }
         noIoPrefix()
     val s0_axis_s2mm=new Bundle{//一个从接口，两个主接口

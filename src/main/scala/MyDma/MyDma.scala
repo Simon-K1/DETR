@@ -228,11 +228,11 @@ class DmaCtrl extends  Component{
             AxiLite.aw.payload.addr:=0x18//MM2S Source Address. Upper 32 bits of address.
             AxiLite.w.payload.data:=B"32'hC0000500"
         }elsewhen(MM2S_Steps(2 downto 2).asBool){
-            AxiLite.aw.payload.addr:=0x28//MM2S Transfer Length (Bytes)
-            AxiLite.w.payload.data:=0x400//
-        }elsewhen(MM2S_Steps(3 downto 3).asBool){
             AxiLite.aw.payload.addr:=0x1C//MM2S Source Address. Lower 32 bits of address.
             AxiLite.w.payload.data:=0
+        }elsewhen(MM2S_Steps(3 downto 3).asBool){
+            AxiLite.aw.payload.addr:=0x28//MM2S Transfer Length (Bytes),数据长度必须放在最后
+            AxiLite.w.payload.data:=0x400//
         }otherwise{
             AxiLite.aw.payload.addr:=0x0
             AxiLite.w.payload.data:=1
@@ -243,7 +243,7 @@ class DmaCtrl extends  Component{
     when(AxiLite.w.fire&&Fsm.currentState===DMACtrl_ENUM.CLEAR_INTR){
         IntrClear_Steps:=IntrClear_Steps.rotateLeft(1)
     }
-    Fsm.Intr_Cleared:=True//AxiLite.w.fire&&IntrClear_Steps(1 downto 1).asBool
+    Fsm.Intr_Cleared:=AxiLite.w.fire&&IntrClear_Steps(1 downto 1).asBool
     when(Fsm.currentState===DMACtrl_ENUM.CLEAR_INTR){//这里的when有没有必要整合到上面变成elsewhen？
         AxiLite.aw.valid:=False//wready和awready拉高后，valid信号应该拉低
         AxiLite.w.valid:=False
