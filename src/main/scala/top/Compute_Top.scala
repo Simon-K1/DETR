@@ -165,15 +165,68 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
 }
 
 
+object TopCtrl_Enum extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
+    val IDLE, INIT, WEIGHT_CACHE,RECEIVE_PICTURE,WAIT_COMPUTE_END= newElement
+    //WEIGHT_CACHE:缓存权重
+    //RECEIVE_PICTURE:接收图片数据
+    //WAITEND:等待计算结束
 
+}
+case class TopCtrl_Fsm(start:Bool)extends Area{
+    val currentState = Reg(TopCtrl_Enum()) init TopCtrl_Enum.IDLE
+    val nextState = TopCtrl_Enum()
+    currentState := nextState
 
+    val Inited=Bool()
+    val WeightCached=Bool()
+    val Picture_Received=Bool()
+    val Compute_End=Bool()
+    switch(currentState){
+      is(TopCtrl_Enum.IDLE){
+        when(start){
+          nextState:=TopCtrl_Enum.INIT
+        }otherwise{
+          nextState:=TopCtrl_Enum.IDLE
+        }
+      }
+      is(TopCtrl_Enum.INIT){
+        when(Inited){
+          nextState:=TopCtrl_Enum.WEIGHT_CACHE
+        }otherwise{
+          nextState:=TopCtrl_Enum.INIT
+        }
+      }
+      is(TopCtrl_Enum.WEIGHT_CACHE){
+        when(WeightCached){
+          nextState:=TopCtrl_Enum.RECEIVE_PICTURE
+        }otherwise{
+          nextState:=TopCtrl_Enum.WEIGHT_CACHE
+        }
+      }
+      is(TopCtrl_Enum.RECEIVE_PICTURE){
+        when(Picture_Received){
+          nextState:=TopCtrl_Enum.WAIT_COMPUTE_END
+        }otherwise{
+          nextState:=TopCtrl_Enum.RECEIVE_PICTURE
+        }
+      }
+
+      is(TopCtrl_Enum.WAIT_COMPUTE_END){
+        when(Compute_End){
+          nextState:=TopCtrl_Enum.IDLE
+        }otherwise{
+          nextState:=TopCtrl_Enum.WAIT_COMPUTE_END
+        }
+      }
+    }
+}
 
 class Conv extends Component{
   val Config=TopConfig()
   val Control=new Bundle{
     val start=in Bool()
-    val Inswitch=in Bits(2 bits)
-    val OutSwitch=in Bits(2 bits)
+    //val Inswitch=in UInt(2 bits)
+    val OutSwitch=in UInt(2 bits)
   }
   val s_axis_s2mm=new Bundle{//一个从接口，两个主接口
     val Data_Width=64
@@ -211,6 +264,9 @@ class Conv extends Component{
     val OutMatrix_Col                   =in UInt(Config.MATRIXC_COL_WIDTH bits)
     val OutMatrix_Row                   =in UInt(Config.MATRIXC_ROW_WIDTH bits)
   }
+  val Fsm=TopCtrl_Fsm(Control.start)
+  val InitCnt=WaCounter(Fsm.currentState===TopCtrl_Enum.INIT,3,5)
+  Fsm.Inited:=InitCnt.valid
 
   val InputSwitch=new Axis_Switch_1s(2,64)//1个从接口，一个给img2col，一个给weight
   InputSwitch.setDefinitionName("Conv_DataIn_Switch")
@@ -219,7 +275,12 @@ class Conv extends Component{
 
   InputSwitch.s0_axis_s2mm<>s_axis_s2mm
   OutputSwitch.m0_axis_mm2s<>m_axis_mm2s
-  InputSwitch.io.Switch:=Control.Inswitch
+  when(Fsm.currentState===TopCtrl_Enum.WEIGHT_CACHE){
+    InputSwitch.io.Switch:=0
+  }otherwise{
+    InputSwitch.io.Switch:=1
+  }
+  //InputSwitch.io.Switch:=Control.Inswitch
   OutputSwitch.io.Switch:=Control.OutSwitch
   //整合img2col，脉动阵列以及数据输出
   val Compute_Unit=new SA_Conv(8,8,20,PEConfig(4*4*32,20))//计算单元
@@ -246,17 +307,18 @@ class Conv extends Component{
   Img2Col_Unit.io.OutFeature_Channel_Count_Times  <>Img2Col_Instru.OutFeature_Channel_Count_Times  //
   Img2Col_Unit.io.Sliding_Size                    <>Img2Col_Instru.Sliding_Size                    //
  
-  Img2Col_Unit.io.start                           :=Weight_Unit.io.Weight_Cached//权重缓存完了才启动img2col以及卷积计算
-
+  Img2Col_Unit.io.start                           :=Delay(Weight_Unit.io.Weight_Cached,3)//权重缓存完了才启动img2col以及卷积计算
+  Fsm.Picture_Received                            :=Img2Col_Unit.io.LayerEnd
 
 
 
   Weight_Unit.io.Matrix_Row :=Img2Col_Instru.WeightMatrix_Row
   Weight_Unit.io.Matrix_Col :=Img2Col_Instru.OutFeature_Channel
-  Weight_Unit.io.start      :=Control.start
+  Weight_Unit.io.start      :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE,3)
   Weight_Unit.io.Raddr_Valid:=Img2Col_Unit.io.Raddr_Valid
   Weight_Unit.io.LayerEnd   :=Compute_Unit.io.LayerEnd
-
+  Fsm.WeightCached          :=Weight_Unit.io.Weight_Cached
+  Fsm.Compute_End           :=Compute_Unit.io.LayerEnd
   Weight_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(1).axis_mm2s_tdata
   Weight_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(1).axis_mm2s_tkeep
   Weight_Unit.io.s_axis_s2mm_tlast <>InputSwitch.m(1).axis_mm2s_tlast
@@ -265,7 +327,7 @@ class Conv extends Component{
 
 
   //==================================================================================
-  Compute_Unit.io.start       :=Control.start
+  Compute_Unit.io.start       :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE,3)
 
   Compute_Unit.io.In_Channel  :=Img2Col_Instru.InFeature_Channel.resized//这里的位宽可以小一点
   Compute_Unit.io.Matrix_Col  :=Img2Col_Instru.OutMatrix_Col

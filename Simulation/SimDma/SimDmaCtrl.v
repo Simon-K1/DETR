@@ -68,6 +68,11 @@ end
   Dma_Ctrl SimDma_i
        (.start(start),
         .clk(clk),
+        
+       .Read_Addr('hC0000000),
+       .Read_Length('d4096),
+       .Write_Addr('hC0001000),
+       .Write_Length('d4096),
         .rst(rst));
 
 endmodule

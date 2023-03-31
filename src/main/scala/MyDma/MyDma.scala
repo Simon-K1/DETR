@@ -9,6 +9,9 @@ import spinal.lib.master
 import utils.WaCounter
 import java.text.Normalizer.Form
 import spinal.lib.bus.amba4.axilite.AxiLite4SpecRenamer
+
+//需要注意的问题：读写地址不能超内存映射的地址范围，比如Bram大小为8k，基地址为0xc0000000，那么读写地址的范围在0xc0000000~0xc000ffff之间
+    //这版DMA代码没有对错误进行处理
 object DMACtrl_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT,READ_DMA_REG,CHECK_DMA_STATUS,WAIT_NEXT_CHECK,START_RECEIVE,START_SEND,WAIT_INTR,CLEAR_INTR= newElement
     //发送和接收数据，将Bram 0号地址空间数据搬运到1号地址空间，也就是需要同时启动Dma读写
@@ -117,11 +120,11 @@ class DmaCtrl extends  Component{
     val AxiLite=master(AxiLite4(AxiLite4Config(addressWidth=10,dataWidth=32)))
     AxiLite4SpecRenamer(AxiLite)
     val io=new Bundle{
-        val Read_Addr=in UInt(32 bits)//读地址
-        val Read_Length=in UInt(32 bits)//读长度
+        val Read_Addr=in Bits(32 bits)//读地址
+        val Read_Length=in Bits(32 bits)//读长度
 
-        val Write_Addr=in UInt(32 bits)//写地址
-        val Write_Length=in UInt(32 bits)//写长度
+        val Write_Addr=in Bits(32 bits)//写地址
+        val Write_Length=in Bits(32 bits)//写长度
         val start=in Bool()//启动Dma读写数据，搬运数据 
 
         val RIntr=in Bool()
@@ -191,13 +194,13 @@ class DmaCtrl extends  Component{
 
         }elsewhen(S2MM_Steps(1 downto 1).asBool){
             AxiLite.aw.payload.addr:=0x48//S2MM_DA,S2MM Destination Address. Lower 32 bit address.
-            AxiLite.w.payload.data:=B"32'hC0000000"
+            AxiLite.w.payload.data:=io.Read_Addr
         }elsewhen(S2MM_Steps(2 downto 2).asBool){
             AxiLite.aw.payload.addr:=0x4C//S2MM_DA_MSB,S2MM Destination Address. Upper 32 bit address.
             AxiLite.w.payload.data:=0
         }elsewhen(S2MM_Steps(3 downto 3).asBool){
             AxiLite.aw.payload.addr:=0x58//S2MM_LENGTH,S2MM Buffer Length (Bytes)
-            AxiLite.w.payload.data:=0x400//
+            AxiLite.w.payload.data:=io.Read_Length//
         }otherwise{
             AxiLite.aw.payload.addr:=0x30
             AxiLite.w.payload.data:=0
@@ -227,13 +230,13 @@ class DmaCtrl extends  Component{
             AxiLite.w.payload.data:=B"32'h00017003"
         }elsewhen(MM2S_Steps(1 downto 1).asBool){
             AxiLite.aw.payload.addr:=0x18//MM2S Source Address. Upper 32 bits of address.
-            AxiLite.w.payload.data:=B"32'hC0000500"
+            AxiLite.w.payload.data:=io.Write_Addr
         }elsewhen(MM2S_Steps(2 downto 2).asBool){
             AxiLite.aw.payload.addr:=0x1C//MM2S Source Address. Lower 32 bits of address.
             AxiLite.w.payload.data:=0
         }elsewhen(MM2S_Steps(3 downto 3).asBool){
             AxiLite.aw.payload.addr:=0x28//MM2S Transfer Length (Bytes),数据长度必须放在最后
-            AxiLite.w.payload.data:=0x400//
+            AxiLite.w.payload.data:=io.Write_Length//
         }otherwise{
             AxiLite.aw.payload.addr:=0x0
             AxiLite.w.payload.data:=1
@@ -252,15 +255,17 @@ class DmaCtrl extends  Component{
         when(IntrClear_Steps(0 downto 0).asBool){//禁用中断
             AxiLite.aw.payload.addr:=0x0
             AxiLite.w.payload.data:=B"32'h00014003"
+
         }elsewhen(IntrClear_Steps(1 downto 1).asBool){//禁用中断
             AxiLite.aw.payload.addr:=0x30
-            AxiLite.w.payload.data:=B"32'h00014003"
+            AxiLite.w.payload.data:=B"32'h00001000"
+
         }elsewhen(IntrClear_Steps(2 downto 2).asBool){
             AxiLite.aw.payload.addr:=0x4
             AxiLite.w.payload.data:=B"32'h0"
         }elsewhen(IntrClear_Steps(3 downto 3).asBool){
             AxiLite.aw.payload.addr:=0x34
-            AxiLite.w.payload.data:=B"32'h0"
+            AxiLite.w.payload.data:=B"32'h0001000"
         }otherwise{
             AxiLite.aw.payload.addr:=0x0
             AxiLite.w.payload.data:=0
