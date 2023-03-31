@@ -11,13 +11,13 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="11196667000fs"></ZoomStartTime>
-      <ZoomEndTime time="23791196667001fs"></ZoomEndTime>
-      <Cursor1Time time="5031196667000fs"></Cursor1Time>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="574000000001fs"></ZoomEndTime>
+      <Cursor1Time time="135130000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="246"></NameColumnWidth>
-      <ValueColumnWidth column_width="161"></ValueColumnWidth>
+      <ValueColumnWidth column_width="157"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="18" />
    <wave_markers>
@@ -85,6 +85,18 @@
       <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_1_resultVaild_2" type="logic">
          <obj_property name="ElementShortName">Tile_1_resultVaild_2</obj_property>
          <obj_property name="ObjectShortName">Tile_1_resultVaild_2</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/mData_ready" type="logic">
+         <obj_property name="ElementShortName">mData_ready</obj_property>
+         <obj_property name="ObjectShortName">mData_ready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/mData_valid" type="logic">
+         <obj_property name="ElementShortName">mData_valid</obj_property>
+         <obj_property name="ObjectShortName">mData_valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/mData_payload" type="array">
+         <obj_property name="ElementShortName">mData_payload[63:0]</obj_property>
+         <obj_property name="ObjectShortName">mData_payload[63:0]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject fp_name="group298" type="group">

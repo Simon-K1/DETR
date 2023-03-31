@@ -119,9 +119,9 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
   val Config=new TopConfig
   val io = new Bundle {
     val activate = in SInt (Tile_Size * dataWidthIn bits)
-    val a_Valid = in Vec(Bool,Tile_Size)
+    val a_Valid = in Bits(Tile_Size bits)
     val weight = in SInt (Tile_Size * dataWidthIn bits)
-    val b_Valid = in Vec(Bool,Tile_Size)
+    val b_Valid = in Bits(Tile_Size bits)
 
    
     val signCount = in UInt (16 bits) //卷积核16*16  signCoun就是t256
@@ -141,10 +141,14 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
   val Tile_Output=new ConvOutput
 //   Tile_Output.setDefinitionName("SA_Conv_ConvOutput")
   io.activate    <>Tile.io.activate
-  io.a_Valid     <>Tile.io.a_Valid 
+  // io.a_Valid     <>Tile.io.a_Valid 
   io.weight      <>Tile.io.weight 
-  io.b_Valid     <>Tile.io.b_Valid 
+  // io.b_Valid     <>Tile.io.b_Valid 
   io.signCount   <>Tile.io.signCount
+  for(i<-0 to 7){
+    Tile.io.a_Valid(i):=io.a_Valid(i downto i).asBool
+    Tile.io.b_Valid(i):=io.b_Valid(i downto i).asBool
+  }
 
   io.In_Channel <>Tile_Output.io.In_Channel
   io.Matrix_Col <>Tile_Output.io.Matrix_Col
@@ -152,7 +156,7 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
   io.start      <>Tile_Output.io.start
 
   for(i<-0 to Tile_Size-1){
-    Tile.io.PE_OUT(i)(7 downto 0).asUInt<>Tile_Output.io.sData((i+1)*8-1 downto i*8)
+    Tile.io.PE_OUT(i)(7 downto 0).asUInt<>Tile_Output.io.sData((i+1)*8-1 downto i*8)//还没量化，所以只能截取低8位
   }
   Tile.io.resultVaild(0)<>Tile_Output.io.sValid
   io.LayerEnd:=Tile_Output.io.LayerEnd
@@ -286,9 +290,6 @@ class Conv extends Component{
   Compute_Unit.io.mData.valid   <>OutputSwitch.s(0).axis_s2mm_tvalid
 
 }
-
-
-
 
 
 object Top extends App { 
