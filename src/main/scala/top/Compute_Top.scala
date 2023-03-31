@@ -119,9 +119,9 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
   val Config=new TopConfig
   val io = new Bundle {
     val activate = in SInt (Tile_Size * dataWidthIn bits)
-    val a_Valid = in Vec(Bool,Tile_Size)
+    val a_Valid = in Bits(Tile_Size bits)
     val weight = in SInt (Tile_Size * dataWidthIn bits)
-    val b_Valid = in Vec(Bool,Tile_Size)
+    val b_Valid = in Bits(Tile_Size bits)
 
    
     val signCount = in UInt (16 bits) //卷积核16*16  signCoun就是t256
@@ -132,6 +132,8 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
     val start=in Bool()
     val LayerEnd=out Bool()
     val mData=master Stream(UInt(64 bits))
+
+    val mLast=out Bool()
   }
   noIoPrefix()
   val Tile=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)
@@ -139,10 +141,14 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
   val Tile_Output=new ConvOutput
 //   Tile_Output.setDefinitionName("SA_Conv_ConvOutput")
   io.activate    <>Tile.io.activate
-  io.a_Valid     <>Tile.io.a_Valid 
+  // io.a_Valid     <>Tile.io.a_Valid 
   io.weight      <>Tile.io.weight 
-  io.b_Valid     <>Tile.io.b_Valid 
+  // io.b_Valid     <>Tile.io.b_Valid 
   io.signCount   <>Tile.io.signCount
+  for(i<-0 to 7){
+    Tile.io.a_Valid(i):=io.a_Valid(i downto i).asBool
+    Tile.io.b_Valid(i):=io.b_Valid(i downto i).asBool
+  }
 
   io.In_Channel <>Tile_Output.io.In_Channel
   io.Matrix_Col <>Tile_Output.io.Matrix_Col
@@ -150,17 +156,144 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
   io.start      <>Tile_Output.io.start
 
   for(i<-0 to Tile_Size-1){
-    Tile.io.PE_OUT(i)(7 downto 0).asUInt<>Tile_Output.io.sData((i+1)*8-1 downto i*8)
+    Tile.io.PE_OUT(i)(7 downto 0).asUInt<>Tile_Output.io.sData((i+1)*8-1 downto i*8)//还没量化，所以只能截取低8位
   }
   Tile.io.resultVaild(0)<>Tile_Output.io.sValid
   io.LayerEnd:=Tile_Output.io.LayerEnd
   io.mData<>Tile_Output.io.mData
+  io.mLast:=Tile_Output.io.mLast
 }
 
 
 
+
+
+class Conv extends Component{
+  val Config=TopConfig()
+  val Control=new Bundle{
+    val start=in Bool()
+    val Inswitch=in Bits(2 bits)
+    val OutSwitch=in Bits(2 bits)
+  }
+  val s_axis_s2mm=new Bundle{//一个从接口，两个主接口
+    val Data_Width=64
+    val tdata=in UInt(Data_Width bits)
+    val tkeep=in Bits(Data_Width/8 bits)
+    val tlast=in Bool()
+    val tready=out Bool()
+    val tvalid=in Bool()
+  }
+  val m_axis_mm2s=new Bundle{//一个从接口，两个主接口
+    val Data_Width=64
+    val tdata=out UInt(Data_Width bits)
+    val tkeep=out Bits(Data_Width/8 bits)
+    val tlast=out Bool()
+    val tready=in Bool()
+    val tvalid=out Bool()
+  }
+  val Img2Col_Instru=new Bundle{
+    val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
+    val Kernel_Size                     =in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
+    val Window_Size                     =in UInt(16 bits)
+    val InFeature_Size                  =in UInt(16 bits)//图片多大就输入多大的数据
+    val InFeature_Channel               =in UInt(16 bits)//输入通道的信息已经包含在WindowSize中，可能以后用不到了
+    val OutFeature_Channel              =in UInt(16 bits)
+    val OutFeature_Size                 =in UInt(16 bits)//输出特征图的大小     
+    val Sliding_Size                    =in UInt(16-3 bits)                                       
+    val OutCol_Count_Times              =in UInt(16 bits)
+    val InCol_Count_Times               =in UInt(16 bits)//这玩意又是啥？
+    val OutRow_Count_Times              =in UInt(16 bits)
+    val OutFeature_Channel_Count_Times  =in UInt(16 bits)
+    
+
+    val WeightMatrix_Row                =in UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits)
+
+    val OutMatrix_Col                   =in UInt(Config.MATRIXC_COL_WIDTH bits)
+    val OutMatrix_Row                   =in UInt(Config.MATRIXC_ROW_WIDTH bits)
+  }
+
+  val InputSwitch=new Axis_Switch_1s(2,64)//1个从接口，一个给img2col，一个给weight
+  InputSwitch.setDefinitionName("Conv_DataIn_Switch")
+  val OutputSwitch=new Axis_Switch_2s(1,64)//2个从接口
+  OutputSwitch.setDefinitionName("COnv_DataOut_Switch")
+
+  InputSwitch.s0_axis_s2mm<>s_axis_s2mm
+  OutputSwitch.m0_axis_mm2s<>m_axis_mm2s
+  InputSwitch.io.Switch:=Control.Inswitch
+  OutputSwitch.io.Switch:=Control.OutSwitch
+  //整合img2col，脉动阵列以及数据输出
+  val Compute_Unit=new SA_Conv(8,8,20,PEConfig(4*4*32,20))//计算单元
+  val Weight_Unit=new WeightCache_Stream//权重缓存单元
+  val Img2Col_Unit=new Img2ColStreamV2//img2col数据排列单元
+  
+
+  Img2Col_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(0).axis_mm2s_tdata
+  Img2Col_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(0).axis_mm2s_tkeep
+  Img2Col_Unit.io.s_axis_s2mm_tlast <>InputSwitch.m(0).axis_mm2s_tlast
+  Img2Col_Unit.io.s_axis_s2mm_tready<>InputSwitch.m(0).axis_mm2s_tready
+  Img2Col_Unit.io.s_axis_s2mm_tvalid<>InputSwitch.m(0).axis_mm2s_tvalid
+
+  Img2Col_Unit.io.Stride                          <>Img2Col_Instru.Stride                          //置步长//DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
+  Img2Col_Unit.io.Kernel_Size                     <>Img2Col_Instru.Kernel_Size                     ////DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
+  Img2Col_Unit.io.Window_Size                     <>Img2Col_Instru.Window_Size                     //
+  Img2Col_Unit.io.InFeature_Size                  <>Img2Col_Instru.InFeature_Size                  //输入多大的数据
+  Img2Col_Unit.io.InFeature_Channel               <>Img2Col_Instru.InFeature_Channel               //能以后用不到了//)//输入通道的信息已经包含在WindowSize中，可能以后用不到了
+  Img2Col_Unit.io.OutFeature_Channel              <>Img2Col_Instru.OutFeature_Channel              //
+  Img2Col_Unit.io.OutFeature_Size                 <>Img2Col_Instru.OutFeature_Size                 //                    //)//输出特征图的大小                                            
+  Img2Col_Unit.io.OutCol_Count_Times              <>Img2Col_Instru.OutCol_Count_Times              //
+  Img2Col_Unit.io.InCol_Count_Times               <>Img2Col_Instru.InCol_Count_Times               //
+  Img2Col_Unit.io.OutRow_Count_Times              <>Img2Col_Instru.OutRow_Count_Times              //
+  Img2Col_Unit.io.OutFeature_Channel_Count_Times  <>Img2Col_Instru.OutFeature_Channel_Count_Times  //
+  Img2Col_Unit.io.Sliding_Size                    <>Img2Col_Instru.Sliding_Size                    //
+ 
+  Img2Col_Unit.io.start                           :=Weight_Unit.io.Weight_Cached//权重缓存完了才启动img2col以及卷积计算
+
+
+
+
+  Weight_Unit.io.Matrix_Row :=Img2Col_Instru.WeightMatrix_Row
+  Weight_Unit.io.Matrix_Col :=Img2Col_Instru.OutFeature_Channel
+  Weight_Unit.io.start      :=Control.start
+  Weight_Unit.io.Raddr_Valid:=Img2Col_Unit.io.Raddr_Valid
+  Weight_Unit.io.LayerEnd   :=Compute_Unit.io.LayerEnd
+
+  Weight_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(1).axis_mm2s_tdata
+  Weight_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(1).axis_mm2s_tkeep
+  Weight_Unit.io.s_axis_s2mm_tlast <>InputSwitch.m(1).axis_mm2s_tlast
+  Weight_Unit.io.s_axis_s2mm_tready<>InputSwitch.m(1).axis_mm2s_tready
+  Weight_Unit.io.s_axis_s2mm_tvalid<>InputSwitch.m(1).axis_mm2s_tvalid
+
+
+  //==================================================================================
+  Compute_Unit.io.start       :=Control.start
+
+  Compute_Unit.io.In_Channel  :=Img2Col_Instru.InFeature_Channel.resized//这里的位宽可以小一点
+  Compute_Unit.io.Matrix_Col  :=Img2Col_Instru.OutMatrix_Col
+  Compute_Unit.io.Matrix_Row  :=Img2Col_Instru.OutMatrix_Row
+  Compute_Unit.io.signCount   :=Img2Col_Instru.WeightMatrix_Row-1
+
+  Compute_Unit.io.activate    :=Img2Col_Unit.io.mData.asSInt
+  Compute_Unit.io.weight      :=Weight_Unit.io.mData.asSInt
+  for(i<-0 to 7){
+    Compute_Unit.io.a_Valid(i):=Img2Col_Unit.io.mValid(i downto i).asBool
+    Compute_Unit.io.b_Valid(i):=Weight_Unit.io.MatrixCol_Switch(i downto i).asBool
+  }
+  
+
+
+  
+  // OutputSwitch.s(1).axis_s2mm_tkeep.setAll 
+  OutputSwitch.s(0).axis_s2mm_tkeep.setAll    
+  Compute_Unit.io.mData.payload <>OutputSwitch.s(0).axis_s2mm_tdata        
+  Compute_Unit.io.mLast         <>OutputSwitch.s(0).axis_s2mm_tlast
+  Compute_Unit.io.mData.ready   <>OutputSwitch.s(0).axis_s2mm_tready
+  Compute_Unit.io.mData.valid   <>OutputSwitch.s(0).axis_s2mm_tvalid
+
+}
+
+
 object Top extends App { 
-    val OnBoard=false
+    val OnBoard=true
     var verilog_path="./Simulation/SimSystolic/verilog" 
     if(OnBoard){
         verilog_path="./OnBoard"
@@ -174,5 +307,6 @@ object Top extends App {
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new RegTable)
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Axis_Switch_2s(3,64))
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Axis_Switch_1s(3,64))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Conv)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

@@ -53,7 +53,7 @@ case class Img2Col_Fsm(start:Bool)extends Area{
             }
         }
         is(IMG2COL_ENUM.DATA_CACHE){
-            when(Data_Cached||Cache_End){
+            when(Data_Cached){
                 nextState:=IMG2COL_ENUM.WAIT_COMPUTE
             }otherwise{
                 nextState:=IMG2COL_ENUM.DATA_CACHE
@@ -78,6 +78,8 @@ case class Img2Col_Fsm(start:Bool)extends Area{
         is(IMG2COL_ENUM.START_COMPUTE){//这个状态没啥用
             when(Layer_End){
                 nextState:=IMG2COL_ENUM.IDLE
+            }elsewhen(Cache_End){//缓存结束了就不用再进入缓存状态，直接等待计算结束即可
+                nextState:=IMG2COL_ENUM.WAIT_COMPUTE
             }otherwise{
                 nextState:=IMG2COL_ENUM.DATA_CACHE
             }

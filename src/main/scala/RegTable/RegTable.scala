@@ -6,8 +6,9 @@ import spinal.lib.bus.misc.SizeMapping
 import spinal.lib.bus.regif._
 import spinal.lib.bus.regif.AccessType._
 import scala.collection.script.Start
+import utils.TopConfig
 class RegTable extends Component{
-
+	val Config=TopConfig()
 	val regSData = slave(AxiLite4(log2Up(1 MiB), 32))//地址位宽-数据位宽
 	AxiLite4SpecRenamer(regSData)
 	val bus = BusInterface(regSData, sizeMap = SizeMapping(0x43C00000, 1 MiB))//创建一个总线接口,映射范围是0~1MiB
@@ -19,9 +20,48 @@ class RegTable extends Component{
 	val LD4567=LED_Reg.field(Bits(4 bit),WO,doc="O:接外面的灯，测试").asOutput() 
 
 
-	val Img2Col_Reg=bus.newReg(doc="Img2Col_Start")
-	val Start=Img2Col_Reg.field(Bits(1 bits),WO,doc="Ps Start Img2Col_Start(only for test)").asOutput()
-	val Switch=Img2Col_Reg.field(Bits(2 bits),WO,doc="01:Start Weight Cache\n 10:Start Img2Col\n").asOutput()
+	val ConvControl_Reg=bus.newReg(doc="Img2Col_Start")
+	val Start=ConvControl_Reg.field(Bits(1 bits),WO,doc="Ps Start Img2Col_Start(only for test)").asOutput()
+	val InSwitch=ConvControl_Reg.field(Bits(2 bits),WO,doc="01:Start Weight Cache\n 10:Start Img2Col\n").asOutput()
+	val OutSwitch=ConvControl_Reg.field(Bits(2 bits),WO,doc="ConvOutput Switch").asOutput()
+
+
+	val Img2Col_Instru1	=bus.newReg(doc="[Kernel_Size,Stride]")
+	val Stride			=Img2Col_Instru1.field(Bits(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits),WO).asOutput()
+	val Kernel_Size		=Img2Col_Instru1.field(Bits(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits),WO).asOutput()
+
+	val Img2Col_Instru2	=bus.newReg(doc="[InFeature_Size,Window_Size]")
+	val Window_Size		=Img2Col_Instru2.field(Bits(16 bits),WO).asOutput()
+	val InFeature_Size	=Img2Col_Instru2.field(Bits(16 bits),WO).asOutput()
+
+
+	val Img2Col_Instru3 		=bus.newReg(doc="[OutFeature_Channel,InFeature_Channel]")
+	val InFeature_Channel		=Img2Col_Instru3.field(Bits(16 bits),WO).asOutput()
+	val OutFeature_Channel		=Img2Col_Instru3.field(Bits(16 bits),WO).asOutput()
+
+	val Img2Col_Instru4 		=bus.newReg(doc="[Sliding_Size,OutFeature_Size]")
+	val OutFeature_Size			=Img2Col_Instru4.field(Bits(16 bits),WO).asOutput()
+	val Sliding_Size			=Img2Col_Instru4.field(Bits(16-3 bits),WO).asOutput()
+
+
+	val Img2Col_Instru5 		=bus.newReg(doc="[InCol_Count_Times,OutCol_Count_Times]")
+	val OutCol_Count_Times			=Img2Col_Instru5.field(Bits(16 bits),WO).asOutput()
+	val InCol_Count_Times			=Img2Col_Instru5.field(Bits(16 bits),WO).asOutput()
+
+	val Img2Col_Instru6 		=bus.newReg(doc="[OutFeature_Channel_Count_Times,OutRow_Count_Times]")
+	val OutRow_Count_Times						=Img2Col_Instru6.field(Bits(16 bits),WO).asOutput()
+	val OutFeature_Channel_Count_Times			=Img2Col_Instru6.field(Bits(16 bits),WO).asOutput()
+
+
+	val Img2Col_Instru7			=bus.newReg(doc="[OutFeature_Channel_Count_Times,WeightMatrix_Row]")
+	val WeightMatrix_Row		=Img2Col_Instru7.field(Bits(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits),WO).asOutput()
+
+	val Img2Col_Instru8			=bus.newReg(doc="[OutMatrix_Row,OutMatrix_Col]")
+	val OutMatrix_Col			=Img2Col_Instru8.field(Bits(Config.MATRIXC_COL_WIDTH bits),WO).asOutput()
+	val OutMatrix_Row			=Img2Col_Instru8.field(Bits(Config.MATRIXC_ROW_WIDTH bits),WO).asOutput()
+
+
+
 	bus.accept(HtmlGenerator("regif", "RegTable V1"))
 }
 

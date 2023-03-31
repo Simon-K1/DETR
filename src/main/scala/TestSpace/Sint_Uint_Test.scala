@@ -1,6 +1,7 @@
 package TestSpace
 import spinal.core._
 import utils.TopConfig
+import spinal.lib
 
 
 class Xq2C extends BlackBox{
@@ -22,7 +23,7 @@ class Test extends Component{
     hh.io.A:=a
     hh.io.B:=b
 }
-class Scale_A_Fifo(dataType:spinal.core.Bits,depth: Int) extends StreamFifo(dataType,depth)
+class Scale_A_Fifo(dataType:spinal.core.Bits,depth: Int) extends lib.StreamFifo(dataType,depth)
 class ExtendsTest extends Component{
     val A=new Scale_A_Fifo(UInt(32 bits).asBits,32)
 }
