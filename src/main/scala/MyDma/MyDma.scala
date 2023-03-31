@@ -152,7 +152,8 @@ class DmaCtrl extends  Component{
     Fsm.Wait_Check_Cnt_Valid:=Wait_Check_Cnt.valid
 
     //检查DMA状态
-    Fsm.Dma_Idle:=AxiLite.r.payload.data(0 downto 0).asBool//DMA IDLE状态
+    Fsm.Dma_Idle:=AxiLite.r.payload.data(0 downto 0).asBool||AxiLite.r.payload.data(1 downto 1).asBool//DMA HATLed状态
+    //dma的初始状态为halted，启动dma后如果不复位再次发送数据需要检查idle状态。
     Fsm.AxiLite_rValid:=AxiLite.r.valid
     Fsm.AxiLite_arready:=AxiLite.ar.ready
     when(Fsm.currentState===DMACtrl_ENUM.READ_DMA_REG){
@@ -186,7 +187,7 @@ class DmaCtrl extends  Component{
         //除了要写入启动信号,还要写入目标地址,字节数量,也就是说至少要写3次axilite
         when(S2MM_Steps(0 downto 0).asBool){
             AxiLite.aw.payload.addr:=0x30
-            AxiLite.w.payload.data:=B"32'h00011003"
+            AxiLite.w.payload.data:=B"32'h00017003"
 
         }elsewhen(S2MM_Steps(1 downto 1).asBool){
             AxiLite.aw.payload.addr:=0x48//S2MM_DA,S2MM Destination Address. Lower 32 bit address.
@@ -223,7 +224,7 @@ class DmaCtrl extends  Component{
 
         when(MM2S_Steps(0 downto 0).asBool){
             AxiLite.aw.payload.addr:=0x00
-            AxiLite.w.payload.data:=B"32'h00011003"
+            AxiLite.w.payload.data:=B"32'h00017003"
         }elsewhen(MM2S_Steps(1 downto 1).asBool){
             AxiLite.aw.payload.addr:=0x18//MM2S Source Address. Upper 32 bits of address.
             AxiLite.w.payload.data:=B"32'hC0000500"
@@ -239,20 +240,27 @@ class DmaCtrl extends  Component{
         }
     }
 //清理中断===================================================================================
-    val IntrClear_Steps=Reg(Bits(2 bits))init(B"2'b01")
+    //为了清理首先要disable中断，再清理中断。
+    val IntrClear_Steps=Reg(Bits(4 bits))init(B"4'b01")
     when(AxiLite.w.fire&&Fsm.currentState===DMACtrl_ENUM.CLEAR_INTR){
         IntrClear_Steps:=IntrClear_Steps.rotateLeft(1)
     }
-    Fsm.Intr_Cleared:=AxiLite.w.fire&&IntrClear_Steps(1 downto 1).asBool
+    Fsm.Intr_Cleared:=AxiLite.w.fire&&IntrClear_Steps(3 downto 3).asBool
     when(Fsm.currentState===DMACtrl_ENUM.CLEAR_INTR){//这里的when有没有必要整合到上面变成elsewhen？
-        AxiLite.aw.valid:=False//wready和awready拉高后，valid信号应该拉低
-        AxiLite.w.valid:=False
-        when(IntrClear_Steps(0 downto 0).asBool){
+        AxiLite.aw.valid:=True//wready和awready拉高后，valid信号应该拉低
+        AxiLite.w.valid:=True
+        when(IntrClear_Steps(0 downto 0).asBool){//禁用中断
             AxiLite.aw.payload.addr:=0x0
-            AxiLite.w.payload.data:=B"32'h00010002"
-        }elsewhen(IntrClear_Steps(1 downto 1).asBool){
+            AxiLite.w.payload.data:=B"32'h00014003"
+        }elsewhen(IntrClear_Steps(1 downto 1).asBool){//禁用中断
             AxiLite.aw.payload.addr:=0x30
-            AxiLite.w.payload.data:=B"32'h00010002"
+            AxiLite.w.payload.data:=B"32'h00014003"
+        }elsewhen(IntrClear_Steps(2 downto 2).asBool){
+            AxiLite.aw.payload.addr:=0x4
+            AxiLite.w.payload.data:=B"32'h0"
+        }elsewhen(IntrClear_Steps(3 downto 3).asBool){
+            AxiLite.aw.payload.addr:=0x34
+            AxiLite.w.payload.data:=B"32'h0"
         }otherwise{
             AxiLite.aw.payload.addr:=0x0
             AxiLite.w.payload.data:=0
