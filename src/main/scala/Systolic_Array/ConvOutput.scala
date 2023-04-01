@@ -109,6 +109,9 @@ class ConvOutput extends Component{
     val InChannel_Cnt=ForLoopCounter((io.sReady&&io.sValid),Config.MATRIXC_COL_WIDTH,io.In_Channel-1)//输入通道计数器，每行一下进一个点，也就是图片的一个通道
     val In_Col_Cnt=SubstractLoopCounter(InChannel_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Col,8)//图片列计数器,做减法这里io.Matrix_Col不需要减1
     //In_Channel_Cnt每次Valid代表已经缓存好了8个点的完整通道，所以这里需要除8
+    when(io.start){
+        In_Col_Cnt.reset
+    }
     val In_Row_Cnt=ForLoopCounter(In_Col_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.Matrix_Row-1)//图片行计数器
     Fsm.LayerEnd:=In_Row_Cnt.valid
     //分析：这里好绕

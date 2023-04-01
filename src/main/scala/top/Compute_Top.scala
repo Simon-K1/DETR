@@ -276,9 +276,9 @@ class Conv extends Component{
   InputSwitch.s0_axis_s2mm<>s_axis_s2mm
   OutputSwitch.m0_axis_mm2s<>m_axis_mm2s
   when(Fsm.currentState===TopCtrl_Enum.WEIGHT_CACHE){
-    InputSwitch.io.Switch:=0
-  }otherwise{
     InputSwitch.io.Switch:=1
+  }otherwise{
+    InputSwitch.io.Switch:=0
   }
   //InputSwitch.io.Switch:=Control.Inswitch
   OutputSwitch.io.Switch:=Control.OutSwitch
@@ -329,7 +329,7 @@ class Conv extends Component{
   //==================================================================================
   Compute_Unit.io.start       :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE,3)
 
-  Compute_Unit.io.In_Channel  :=Img2Col_Instru.InFeature_Channel.resized//这里的位宽可以小一点
+  Compute_Unit.io.In_Channel  :=Img2Col_Instru.OutFeature_Channel.resized//这里的位宽可以小一点
   Compute_Unit.io.Matrix_Col  :=Img2Col_Instru.OutMatrix_Col
   Compute_Unit.io.Matrix_Row  :=Img2Col_Instru.OutMatrix_Row
   Compute_Unit.io.signCount   :=Img2Col_Instru.WeightMatrix_Row-1

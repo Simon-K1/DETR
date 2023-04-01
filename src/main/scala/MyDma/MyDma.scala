@@ -194,13 +194,13 @@ class DmaCtrl extends  Component{
 
         }elsewhen(S2MM_Steps(1 downto 1).asBool){
             AxiLite.aw.payload.addr:=0x48//S2MM_DA,S2MM Destination Address. Lower 32 bit address.
-            AxiLite.w.payload.data:=io.Read_Addr
+            AxiLite.w.payload.data:=io.Write_Addr
         }elsewhen(S2MM_Steps(2 downto 2).asBool){
             AxiLite.aw.payload.addr:=0x4C//S2MM_DA_MSB,S2MM Destination Address. Upper 32 bit address.
             AxiLite.w.payload.data:=0
         }elsewhen(S2MM_Steps(3 downto 3).asBool){
             AxiLite.aw.payload.addr:=0x58//S2MM_LENGTH,S2MM Buffer Length (Bytes)
-            AxiLite.w.payload.data:=io.Read_Length//
+            AxiLite.w.payload.data:=io.Write_Length
         }otherwise{
             AxiLite.aw.payload.addr:=0x30
             AxiLite.w.payload.data:=0
@@ -230,13 +230,13 @@ class DmaCtrl extends  Component{
             AxiLite.w.payload.data:=B"32'h00017003"
         }elsewhen(MM2S_Steps(1 downto 1).asBool){
             AxiLite.aw.payload.addr:=0x18//MM2S Source Address. Upper 32 bits of address.
-            AxiLite.w.payload.data:=io.Write_Addr
+            AxiLite.w.payload.data:=io.Read_Addr
         }elsewhen(MM2S_Steps(2 downto 2).asBool){
             AxiLite.aw.payload.addr:=0x1C//MM2S Source Address. Lower 32 bits of address.
             AxiLite.w.payload.data:=0
         }elsewhen(MM2S_Steps(3 downto 3).asBool){
             AxiLite.aw.payload.addr:=0x28//MM2S Transfer Length (Bytes),数据长度必须放在最后
-            AxiLite.w.payload.data:=io.Write_Length//
+            AxiLite.w.payload.data:=io.Read_Length//内存映射到stream流就是读
         }otherwise{
             AxiLite.aw.payload.addr:=0x0
             AxiLite.w.payload.data:=1
@@ -252,20 +252,22 @@ class DmaCtrl extends  Component{
     when(Fsm.currentState===DMACtrl_ENUM.CLEAR_INTR){//这里的when有没有必要整合到上面变成elsewhen？
         AxiLite.aw.valid:=True//wready和awready拉高后，valid信号应该拉低
         AxiLite.w.valid:=True
-        when(IntrClear_Steps(0 downto 0).asBool){//禁用中断
+        when(IntrClear_Steps(0 downto 0).asBool){
+            AxiLite.aw.payload.addr:=0x4
+            AxiLite.w.payload.data:=B"32'h0001000"
+
+        }elsewhen(IntrClear_Steps(1 downto 1).asBool){
+            AxiLite.aw.payload.addr:=0x34
+            AxiLite.w.payload.data:=B"32'h0001000"
+
+        }elsewhen(IntrClear_Steps(2 downto 2).asBool){//禁用中断
             AxiLite.aw.payload.addr:=0x0
             AxiLite.w.payload.data:=B"32'h00014003"
 
-        }elsewhen(IntrClear_Steps(1 downto 1).asBool){//禁用中断
+        }elsewhen(IntrClear_Steps(3 downto 3).asBool){//禁用中断
             AxiLite.aw.payload.addr:=0x30
-            AxiLite.w.payload.data:=B"32'h00001000"
+            AxiLite.w.payload.data:=B"32'h00014003"
 
-        }elsewhen(IntrClear_Steps(2 downto 2).asBool){
-            AxiLite.aw.payload.addr:=0x4
-            AxiLite.w.payload.data:=B"32'h0"
-        }elsewhen(IntrClear_Steps(3 downto 3).asBool){
-            AxiLite.aw.payload.addr:=0x34
-            AxiLite.w.payload.data:=B"32'h0001000"
         }otherwise{
             AxiLite.aw.payload.addr:=0x0
             AxiLite.w.payload.data:=0

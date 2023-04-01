@@ -11,19 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0fs"></ZoomStartTime>
-      <ZoomEndTime time="574000000001fs"></ZoomEndTime>
-      <Cursor1Time time="135130000000fs"></Cursor1Time>
+      <ZoomStartTime time="482336000000fs"></ZoomStartTime>
+      <ZoomEndTime time="482690000001fs"></ZoomEndTime>
+      <Cursor1Time time="482505000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="246"></NameColumnWidth>
-      <ValueColumnWidth column_width="157"></ValueColumnWidth>
+      <ValueColumnWidth column_width="153"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="18" />
-   <wave_markers>
-      <marker time="400485000000" label="" />
-      <marker time="503045000000" label="" />
-   </wave_markers>
    <wvobject fp_name="group678" type="group">
       <obj_property name="label">SimTop</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -33,7 +29,6 @@
    <wvobject fp_name="group680" type="group">
       <obj_property name="label">Tile</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_1_PE_OUT_0" type="array">
          <obj_property name="ElementShortName">Tile_1_PE_OUT_0[19:0]</obj_property>
          <obj_property name="ObjectShortName">Tile_1_PE_OUT_0[19:0]</obj_property>
@@ -199,7 +194,6 @@
    <wvobject fp_name="group810" type="group">
       <obj_property name="label">Img2Col</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="group809" type="group">
          <obj_property name="label">Img2Col Loop</obj_property>
          <obj_property name="DisplayName">label</obj_property>
@@ -1276,6 +1270,74 @@
    <wvobject fp_name="group1088" type="group">
       <obj_property name="label">ConvOutput</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/Fsm_currentState" type="array">
+         <obj_property name="ElementShortName">Fsm_currentState[3:0]</obj_property>
+         <obj_property name="ObjectShortName">Fsm_currentState[3:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/InChannel_Cnt_count" type="array">
+         <obj_property name="ElementShortName">InChannel_Cnt_count[11:0]</obj_property>
+         <obj_property name="ObjectShortName">InChannel_Cnt_count[11:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/InChannel_Cnt_valid" type="logic">
+         <obj_property name="ElementShortName">InChannel_Cnt_valid</obj_property>
+         <obj_property name="ObjectShortName">InChannel_Cnt_valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/In_Col_Cnt_count" type="array">
+         <obj_property name="ElementShortName">In_Col_Cnt_count[11:0]</obj_property>
+         <obj_property name="ObjectShortName">In_Col_Cnt_count[11:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/In_Col_Cnt_valid" type="logic">
+         <obj_property name="ElementShortName">In_Col_Cnt_valid</obj_property>
+         <obj_property name="ObjectShortName">In_Col_Cnt_valid</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/In_Row_Cnt_count" type="array">
+         <obj_property name="ElementShortName">In_Row_Cnt_count[11:0]</obj_property>
+         <obj_property name="ObjectShortName">In_Row_Cnt_count[11:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/In_Row_Cnt_valid" type="logic">
+         <obj_property name="ElementShortName">In_Row_Cnt_valid</obj_property>
+         <obj_property name="ObjectShortName">In_Row_Cnt_valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/OutChannel_Cnt_count" type="array">
+         <obj_property name="ElementShortName">OutChannel_Cnt_count[8:0]</obj_property>
+         <obj_property name="ObjectShortName">OutChannel_Cnt_count[8:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/OutChannel_Cnt_valid" type="logic">
+         <obj_property name="ElementShortName">OutChannel_Cnt_valid</obj_property>
+         <obj_property name="ObjectShortName">OutChannel_Cnt_valid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/Out_Col_Cnt_count" type="array">
+         <obj_property name="ElementShortName">Out_Col_Cnt_count[11:0]</obj_property>
+         <obj_property name="ObjectShortName">Out_Col_Cnt_count[11:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+         <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/Out_Col_Cnt_valid" type="logic">
+         <obj_property name="ElementShortName">Out_Col_Cnt_valid</obj_property>
+         <obj_property name="ObjectShortName">Out_Col_Cnt_valid</obj_property>
+         <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/Out_Row_Cnt_count" type="array">
+         <obj_property name="ElementShortName">Out_Row_Cnt_count[11:0]</obj_property>
+         <obj_property name="ObjectShortName">Out_Row_Cnt_count[11:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/SimSA_Conv/SA_Conv/Tile_Output/Out_Row_Cnt_valid" type="logic">
+         <obj_property name="ElementShortName">Out_Row_Cnt_valid</obj_property>
+         <obj_property name="ObjectShortName">Out_Row_Cnt_valid</obj_property>
+      </wvobject>
    </wvobject>
    <wvobject fp_name="/SimSA_Conv/Img2ComStream/s_axis_s2mm_tlast" type="logic">
       <obj_property name="ElementShortName">s_axis_s2mm_tlast</obj_property>
