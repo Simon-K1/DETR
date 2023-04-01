@@ -106,7 +106,9 @@ class Weight_Cache extends Component{
     val OutRow_Cnt=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,(io.Matrix_Row)-1)//输出行计数器,（要求输出通道必须是8的倍数）
 
     val OutCol_Cnt=SubstractLoopCounter(OutRow_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col,Config.SA_COL)
-    
+    when(io.start){
+        OutCol_Cnt.reset
+    }
 
     //举个栗子：比如16*16*32入，32出的卷积展平成2D矩阵，那么这个2D矩阵一共有8192行，32列，脉动阵列一共有8列,
     //所以一次能输出8192*（8列）的数据，要将8192*（32列）的数据全部输出，那么只需要4次即可，输输完4次8192*（8列）数据后，读基地址（Read_Row_Base_Addr）需要归位
