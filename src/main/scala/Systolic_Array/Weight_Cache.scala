@@ -88,7 +88,7 @@ class Weight_Cache extends Component{
     }
     noIoPrefix()
     //val Col_Lefted=Reg(UInt(Config.WEIGHT_CACHE_MATRIX_COL_WIDTH bits))init(0)//剩余待处理的列数
-    val Fsm=WeightCache_Fsm(io.start)
+    val Fsm=WeightCache_Fsm(io.start&&(~RegNext(io.start)))
     val Init_Count=WaCounter(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT,3,5)//数5下进行初始化
     Fsm.Init_End:=Init_Count.valid
 

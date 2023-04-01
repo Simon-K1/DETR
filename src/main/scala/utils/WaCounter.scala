@@ -64,7 +64,7 @@ class SubstractLoopCounter(en:Bool,width:Int,start:UInt,stride:UInt)extends Area
         }
     }
     def reset = {
-        count := start
+        count := start//这个reset应该在每次启动时reset
         valid := False
     }
 }
