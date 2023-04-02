@@ -11,16 +11,17 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="200584166667fs"></ZoomStartTime>
-      <ZoomEndTime time="204549166668fs"></ZoomEndTime>
-      <Cursor1Time time="201245000000fs"></Cursor1Time>
+      <ZoomStartTime time="200957500000fs"></ZoomStartTime>
+      <ZoomEndTime time="201390500001fs"></ZoomEndTime>
+      <Cursor1Time time="201065000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="197"></NameColumnWidth>
+      <NameColumnWidth column_width="193"></NameColumnWidth>
       <ValueColumnWidth column_width="58"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="23" />
+   <WVObjectSize size="27" />
    <wave_markers>
+      <marker time="205085000000" label="" />
       <marker time="201245000000" label="" />
    </wave_markers>
    <wvobject fp_name="group3526" type="group">
@@ -682,6 +683,10 @@
       <obj_property name="ElementShortName">Fsm_currentState[3:0]</obj_property>
       <obj_property name="ObjectShortName">Fsm_currentState[3:0]</obj_property>
    </wvobject>
+   <wvobject fp_name="/SimConvOutput/ConvOutput/start" type="logic">
+      <obj_property name="ElementShortName">start</obj_property>
+      <obj_property name="ObjectShortName">start</obj_property>
+   </wvobject>
    <wvobject fp_name="/SimConvOutput/ConvOutput/OutChannel_Cnt_count" type="array">
       <obj_property name="ElementShortName">OutChannel_Cnt_count[8:0]</obj_property>
       <obj_property name="ObjectShortName">OutChannel_Cnt_count[8:0]</obj_property>
@@ -760,5 +765,17 @@
    <wvobject fp_name="/SimConvOutput/ConvOutput/In_Row_Cnt_valid" type="logic">
       <obj_property name="ElementShortName">In_Row_Cnt_valid</obj_property>
       <obj_property name="ObjectShortName">In_Row_Cnt_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimConvOutput/ConvOutput/mData_payload" type="array">
+      <obj_property name="ElementShortName">mData_payload[63:0]</obj_property>
+      <obj_property name="ObjectShortName">mData_payload[63:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimConvOutput/ConvOutput/mData_valid" type="logic">
+      <obj_property name="ElementShortName">mData_valid</obj_property>
+      <obj_property name="ObjectShortName">mData_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/SimConvOutput/ConvOutput/mData_ready" type="logic">
+      <obj_property name="ElementShortName">mData_ready</obj_property>
+      <obj_property name="ObjectShortName">mData_ready</obj_property>
    </wvobject>
 </wave_config>
