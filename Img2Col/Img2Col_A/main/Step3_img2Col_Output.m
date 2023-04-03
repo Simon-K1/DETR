@@ -6,7 +6,7 @@ load('matlab.mat')
 fid=fopen('C:\Users\25073\Desktop\compare\Matlab输出数据.txt','w');
 %% ============开关（只改这里）===========
 Compare_By_Row=1;%逐行对比，如果关闭就是直接生成全部的对比数据
-Compare_Row=14;%需要修改
+Compare_Row=1;%需要修改
 %% =======================================
 
 

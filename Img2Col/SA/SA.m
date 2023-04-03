@@ -20,7 +20,7 @@ end
 
 Row=size(Matrix_B,1);
 Col=size(Matrix_B,2);
-Matrix_B=randi([-128,127],Row,Col)
+Matrix_B=randi([0,255],Row,Col)
 
 Matrix_C=Matrix_A*Matrix_B';
 

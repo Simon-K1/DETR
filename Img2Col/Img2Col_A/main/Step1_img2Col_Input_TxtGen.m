@@ -1,12 +1,12 @@
 %% 第一步： 生成8x输入通道的测试数据，包含32输入通道的图片和32输出通道的卷积权重
     % 图片大小，步长等相关信息需要手动配置
 clear
-Feature_Size=225;%图片大小224*224
-Feature_Channel=48;%图片通道32
-Out_Channel=35;
+Feature_Size=224;%图片大小224*224
+Feature_Channel=8;%图片通道32
+Out_Channel=32;
 
-Stride=1;%要修改
-KernelSize=3;%要修改
+Stride=16;%要修改
+KernelSize=16;%要修改
 OutFeatureSize=75;%无需修改，在后面自动推理出来
 %Strdie1
 if Stride==KernelSize
@@ -92,5 +92,4 @@ Shape=size(Matrix_Flattened);
   fprintf(fid_raw_W,'%02x%02x%02x%02x%02x%02x%02x%02x\n',Matrix_Flattened(i),Matrix_Flattened(i-1),Matrix_Flattened(i-2),Matrix_Flattened(i-3),Matrix_Flattened(i-4),Matrix_Flattened(i-5),Matrix_Flattened(i-6),Matrix_Flattened(i-7));%低位第一个点，高位第二个点，
  end
 fclose(fid_raw_W);
-
 save('matlab')
