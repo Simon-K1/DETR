@@ -148,7 +148,9 @@ class Img2Col_Top extends Component{
         // AddrFifo.io.push.payload:=WaddrOffset
     }
     //这里判定的优先级比较重要
-    when(AddrFifo.io.pop.fire){
+    when(Fsm.currentState===IMG2COL_ENUM.INIT){
+        WaddrOffset:=0//初始化为0，防止第二次启动出现问题（上板第二次启动不对的问题bug出处）
+    }elsewhen(AddrFifo.io.pop.fire){
         WaddrOffset:=AddrFifo.io.pop.payload
     }elsewhen(Fsm.currentState===IMG2COL_ENUM.INIT_ADDR){
         WaddrOffset:=WaddrOffset+io.InCol_Count_Times
