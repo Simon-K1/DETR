@@ -158,7 +158,7 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
   for(i<-0 to Tile_Size-1){
     Tile.io.PE_OUT(i)(7 downto 0).asUInt<>Tile_Output.io.sData((i+1)*8-1 downto i*8)//还没量化，所以只能截取低8位
   }
-  Tile.io.resultVaild(0)<>Tile_Output.io.sValid
+  Tile.io.resultVaild<>Tile_Output.io.sValid
   io.LayerEnd:=Tile_Output.io.LayerEnd
   io.mData<>Tile_Output.io.mData
   io.mLast:=Tile_Output.io.mLast
@@ -352,6 +352,7 @@ class Conv extends Component{
   Compute_Unit.io.mData.valid   <>OutputSwitch.s(0).axis_s2mm_tvalid
 
 }
+
 
 
 object Top extends App { 
