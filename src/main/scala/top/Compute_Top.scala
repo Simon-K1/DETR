@@ -9,6 +9,7 @@ import spinal.lib.Delay
 import utils.Axis_Switch_1s
 import utils.Axis_Switch_2s
 import spinal.lib.master
+import gemm.GemmCache
 
 
 class Img2ColStreamV2 extends Component{
@@ -17,7 +18,7 @@ class Img2ColStreamV2 extends Component{
         
         val mData=out UInt(64 bits)//out UInt(64 bits)//Vec(UInt(8 bits),8)
         val mReady=in Bool()
-        val mValid=out UInt(Config.SA_ROW bits)
+        val mValid=out Bits(Config.SA_ROW bits)
 
         def DATA_IN_WIDTH=64
         val s_axis_s2mm_tdata=in UInt(DATA_IN_WIDTH bits)
@@ -166,9 +167,10 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
 
 
 object TopCtrl_Enum extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val IDLE, INIT, WEIGHT_CACHE,RECEIVE_PICTURE,WAIT_COMPUTE_END= newElement
+    val IDLE, INIT, WEIGHT_CACHE,RECEIVE_PICTURE,RECEIVE_MATRIX,WAIT_COMPUTE_END= newElement
     //WEIGHT_CACHE:缓存权重
     //RECEIVE_PICTURE:接收图片数据
+    //RECEIVE_MATRIX:接收矩阵数据
     //WAITEND:等待计算结束
 
 }
@@ -180,7 +182,11 @@ case class TopCtrl_Fsm(start:Bool)extends Area{
     val Inited=Bool()
     val WeightCached=Bool()
     val Picture_Received=Bool()
+    val Matrix_Received=Bool()
     val Compute_End=Bool()
+
+    val Switch_Conv=Bool()
+
     switch(currentState){
       is(TopCtrl_Enum.IDLE){
         when(start){
@@ -197,8 +203,10 @@ case class TopCtrl_Fsm(start:Bool)extends Area{
         }
       }
       is(TopCtrl_Enum.WEIGHT_CACHE){
-        when(WeightCached){
+        when(WeightCached&&Switch_Conv){
           nextState:=TopCtrl_Enum.RECEIVE_PICTURE
+        }elsewhen(WeightCached&&(~Switch_Conv)){
+          nextState:=TopCtrl_Enum.RECEIVE_MATRIX
         }otherwise{
           nextState:=TopCtrl_Enum.WEIGHT_CACHE
         }
@@ -210,7 +218,13 @@ case class TopCtrl_Fsm(start:Bool)extends Area{
           nextState:=TopCtrl_Enum.RECEIVE_PICTURE
         }
       }
-
+      is(TopCtrl_Enum.RECEIVE_MATRIX){
+        when(Matrix_Received){
+          nextState:=TopCtrl_Enum.WAIT_COMPUTE_END
+        }otherwise{
+          nextState:=TopCtrl_Enum.RECEIVE_MATRIX
+        }
+      }
       is(TopCtrl_Enum.WAIT_COMPUTE_END){
         when(Compute_End){
           nextState:=TopCtrl_Enum.IDLE
@@ -226,7 +240,8 @@ class Conv extends Component{
   val Control=new Bundle{
     val start=in Bool()
     //val Inswitch=in UInt(2 bits)
-    val OutSwitch=in UInt(2 bits)
+    //val OutSwitch           =in UInt(2 bits)
+    val Switch_Conv         =in Bool()//切换到卷积计算
   }
   val s_axis_s2mm=new Bundle{//一个从接口，两个主接口
     val Data_Width=64
@@ -263,36 +278,48 @@ class Conv extends Component{
 
     val OutMatrix_Col                   =in UInt(Config.MATRIXC_COL_WIDTH bits)
     val OutMatrix_Row                   =in UInt(Config.MATRIXC_ROW_WIDTH bits)
+    
+  }
+  val GemmInstru=new Bundle{
+    val WIDTH=in UInt(16 bits)
+    val HEIGHT=in UInt(16 bits)
   }
   val Fsm=TopCtrl_Fsm(Control.start)
   val InitCnt=WaCounter(Fsm.currentState===TopCtrl_Enum.INIT,3,5)
   Fsm.Inited:=InitCnt.valid
 
-  val InputSwitch=new Axis_Switch_1s(2,64)//1个从接口，一个给img2col，一个给weight
-  InputSwitch.setDefinitionName("Conv_DataIn_Switch")
+  val InputSwitch=new Axis_Switch_1s(3,64)//1个从接口，一个给img2col，一个给weight
+  InputSwitch.setDefinitionName("Compute_DataIn_Switch")
   val OutputSwitch=new Axis_Switch_2s(1,64)//2个从接口
-  OutputSwitch.setDefinitionName("COnv_DataOut_Switch")
-
+  OutputSwitch.setDefinitionName("Compute_DataOut_Switch")
+  
   InputSwitch.s0_axis_s2mm<>s_axis_s2mm
   OutputSwitch.m0_axis_mm2s<>m_axis_mm2s
-  when(Fsm.currentState===TopCtrl_Enum.WEIGHT_CACHE){
-    InputSwitch.io.Switch:=1
-  }otherwise{
+  when(Fsm.currentState===TopCtrl_Enum.WEIGHT_CACHE){//0：加载权重，1：加载图片，2：加载矩阵
     InputSwitch.io.Switch:=0
+  }elsewhen(Control.Switch_Conv){
+    InputSwitch.io.Switch:=1//切换到卷积通道
+  }otherwise{
+    InputSwitch.io.Switch:=2//切换到Gemm通道
   }
   //InputSwitch.io.Switch:=Control.Inswitch
-  OutputSwitch.io.Switch:=Control.OutSwitch
+  //OutputSwitch.io.Switch:=Control.OutSwitch//
+  when(Control.Switch_Conv){
+    OutputSwitch.io.Switch:=0//因为先实现的卷积，所以这里0选择卷积输出，1选择Gemm输出
+  }otherwise{
+    OutputSwitch.io.Switch:=1
+  }
   //整合img2col，脉动阵列以及数据输出
   val Compute_Unit=new SA_Conv(8,8,20,PEConfig(4*4*32,20))//计算单元
   val Weight_Unit=new WeightCache_Stream//权重缓存单元
   val Img2Col_Unit=new Img2ColStreamV2//img2col数据排列单元
-  
+  val LH_Gemm=new GemmCache
 
-  Img2Col_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(0).axis_mm2s_tdata
-  Img2Col_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(0).axis_mm2s_tkeep
-  Img2Col_Unit.io.s_axis_s2mm_tlast <>InputSwitch.m(0).axis_mm2s_tlast
-  Img2Col_Unit.io.s_axis_s2mm_tready<>InputSwitch.m(0).axis_mm2s_tready
-  Img2Col_Unit.io.s_axis_s2mm_tvalid<>InputSwitch.m(0).axis_mm2s_tvalid
+  Img2Col_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(1).axis_mm2s_tdata
+  Img2Col_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(1).axis_mm2s_tkeep
+  Img2Col_Unit.io.s_axis_s2mm_tlast <>InputSwitch.m(1).axis_mm2s_tlast
+  Img2Col_Unit.io.s_axis_s2mm_tready<>InputSwitch.m(1).axis_mm2s_tready
+  Img2Col_Unit.io.s_axis_s2mm_tvalid<>InputSwitch.m(1).axis_mm2s_tvalid
 
   Img2Col_Unit.io.Stride                          <>Img2Col_Instru.Stride                          //置步长//DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
   Img2Col_Unit.io.Kernel_Size                     <>Img2Col_Instru.Kernel_Size                     ////DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
@@ -308,48 +335,73 @@ class Conv extends Component{
   Img2Col_Unit.io.Sliding_Size                    <>Img2Col_Instru.Sliding_Size                    //
  
   Img2Col_Unit.io.start                           :=Delay(Weight_Unit.io.Weight_Cached,3)//权重缓存完了才启动img2col以及卷积计算
-  Fsm.Picture_Received                            :=Img2Col_Unit.io.LayerEnd
+  Fsm.Picture_Received                            :=Img2Col_Unit.io.LayerEnd||LH_Gemm.io.LayerEnd
 
 
 
   Weight_Unit.io.Matrix_Row :=Img2Col_Instru.WeightMatrix_Row
   Weight_Unit.io.Matrix_Col :=Img2Col_Instru.OutFeature_Channel
   Weight_Unit.io.start      :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE,3)
-  Weight_Unit.io.Raddr_Valid:=Img2Col_Unit.io.Raddr_Valid
-  Weight_Unit.io.LayerEnd   :=Compute_Unit.io.LayerEnd
-  Fsm.WeightCached          :=Weight_Unit.io.Weight_Cached
-  Fsm.Compute_End           :=Compute_Unit.io.LayerEnd
-  Weight_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(1).axis_mm2s_tdata
-  Weight_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(1).axis_mm2s_tkeep
-  Weight_Unit.io.s_axis_s2mm_tlast <>InputSwitch.m(1).axis_mm2s_tlast
-  Weight_Unit.io.s_axis_s2mm_tready<>InputSwitch.m(1).axis_mm2s_tready
-  Weight_Unit.io.s_axis_s2mm_tvalid<>InputSwitch.m(1).axis_mm2s_tvalid
+  Weight_Unit.io.Raddr_Valid:=Img2Col_Unit.io.Raddr_Valid||LH_Gemm.io.bvalid
+  Weight_Unit.io.LayerEnd   :=(Compute_Unit.io.LayerEnd||LH_Gemm.io.LayerEnd)
+  Fsm.WeightCached          :=(Weight_Unit.io.Weight_Cached)
+  Fsm.Compute_End           :=(Compute_Unit.io.LayerEnd||LH_Gemm.io.LayerEnd)
+  Weight_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(0).axis_mm2s_tdata
+  Weight_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(0).axis_mm2s_tkeep
+  Weight_Unit.io.s_axis_s2mm_tlast <>InputSwitch.m(0).axis_mm2s_tlast
+  Weight_Unit.io.s_axis_s2mm_tready<>InputSwitch.m(0).axis_mm2s_tready
+  Weight_Unit.io.s_axis_s2mm_tvalid<>InputSwitch.m(0).axis_mm2s_tvalid
 
 
   //==================================================================================
-  Compute_Unit.io.start       :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE,3)
+  Compute_Unit.io.start       :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE&&Control.Switch_Conv,3)
 
   Compute_Unit.io.In_Channel  :=Img2Col_Instru.OutFeature_Channel.resized//这里的位宽可以小一点
   Compute_Unit.io.Matrix_Col  :=Img2Col_Instru.OutMatrix_Col
   Compute_Unit.io.Matrix_Row  :=Img2Col_Instru.OutMatrix_Row
   Compute_Unit.io.signCount   :=Img2Col_Instru.WeightMatrix_Row-1
-
-  Compute_Unit.io.activate    :=Img2Col_Unit.io.mData.asSInt
-  Compute_Unit.io.weight      :=Weight_Unit.io.mData.asSInt
-  for(i<-0 to 7){
-    Compute_Unit.io.a_Valid(i):=Img2Col_Unit.io.mValid(i downto i).asBool
-    Compute_Unit.io.b_Valid(i):=Weight_Unit.io.MatrixCol_Switch(i downto i).asBool
+  when(Control.Switch_Conv){
+    Compute_Unit.io.activate    :=Img2Col_Unit.io.mData.asSInt
+  }otherwise{
+    Compute_Unit.io.activate    :=LH_Gemm.io.mData.asSInt
   }
   
+  Compute_Unit.io.weight      :=Weight_Unit.io.mData.asSInt
+  for(i<-0 to 7){
+    Compute_Unit.io.b_Valid(i):=Weight_Unit.io.MatrixCol_Switch(i downto i).asBool
+  }
+  when(Control.Switch_Conv){
+    Compute_Unit.io.a_Valid:=Img2Col_Unit.io.mValid
+  }otherwise{
+    for(i<-0 to 7){
+      Compute_Unit.io.a_Valid(i):=LH_Gemm.io.validOut(i)
+    }
+  }
+
 
 
   
   // OutputSwitch.s(1).axis_s2mm_tkeep.setAll 
   OutputSwitch.s(0).axis_s2mm_tkeep.setAll    
+  // OutputSwitch.s(1).axis_s2mm_tkeep.setAll    
   Compute_Unit.io.mData.payload <>OutputSwitch.s(0).axis_s2mm_tdata        
   Compute_Unit.io.mLast         <>OutputSwitch.s(0).axis_s2mm_tlast
   Compute_Unit.io.mData.ready   <>OutputSwitch.s(0).axis_s2mm_tready
   Compute_Unit.io.mData.valid   <>OutputSwitch.s(0).axis_s2mm_tvalid
+  //=====================================================================================
+  Fsm.Matrix_Received:=False
+  Fsm.Switch_Conv:=Control.Switch_Conv
+
+  LH_Gemm.io.start:=Weight_Unit.io.Weight_Cached
+  LH_Gemm.io.sData.payload  <>InputSwitch.m(2).axis_mm2s_tdata
+  LH_Gemm.io.sData.ready    <>InputSwitch.m(2).axis_mm2s_tready
+  LH_Gemm.io.sData.valid    <>InputSwitch.m(2).axis_mm2s_tvalid
+  LH_Gemm.io.WIDTH:=GemmInstru.WIDTH.resized
+  LH_Gemm.io.HIGHT:=GemmInstru.HEIGHT.resized//
+  LH_Gemm.io.WEIGHTCOL:=Img2Col_Instru.OutFeature_Channel.resized
+
+
+
 
 }
 
