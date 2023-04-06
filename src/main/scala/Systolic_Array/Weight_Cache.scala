@@ -121,10 +121,14 @@ class Weight_Cache extends Component{
     }elsewhen(OutRow_Cnt.valid){
         Read_Row_Base_Addr:=Read_Row_Base_Addr+io.Matrix_Row
     }
-    when(In_Row_Cnt.valid){
+    when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
+        InData_Switch:=1
+    }elsewhen(In_Row_Cnt.valid){
         InData_Switch:=InData_Switch.rotateLeft(1)//循环左移1位    
     }
-    when(Col_In_8_Cnt.valid){
+    when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
+        Write_Row_Base_Addr:=0
+    }elsewhen(Col_In_8_Cnt.valid){
         Write_Row_Base_Addr:=Write_Row_Base_Addr+Matrix_In_MaxCnt
     }
     Fsm.Weight_All_Cached:=In_Col_Cnt.valid

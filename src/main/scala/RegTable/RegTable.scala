@@ -20,10 +20,10 @@ class RegTable extends Component{
 	val LD4567=LED_Reg.field(Bits(4 bit),WO,doc="O:接外面的灯，测试").asOutput() 
 
 
-	val ConvControl_Reg=bus.newReg(doc="Img2Col_Start")
-	val Start=ConvControl_Reg.field(Bits(1 bits),WO,doc="Ps Start Img2Col_Start(only for test)").asOutput()
-	val InSwitch=ConvControl_Reg.field(Bits(2 bits),WO,doc="01:Start Weight Cache\n 10:Start Img2Col\n").asOutput()
-	val OutSwitch=ConvControl_Reg.field(Bits(2 bits),WO,doc="ConvOutput Switch").asOutput()
+	val Control_Reg=bus.newReg(doc="Img2Col_Start")
+	val Start=Control_Reg.field(Bits(1 bits),WO,doc="Ps Start Img2Col_Start(only for test)").asOutput()
+	val SwitchConv=Control_Reg.field(Bits(2 bits),WO,doc="1:Start Conv Compute\n").asOutput()
+	//val OutSwitch=Control_Reg.field(Bits(2 bits),WO,doc="ConvOutput Switch").asOutput()
 
 
 	val Img2Col_Instru1	=bus.newReg(doc="[Kernel_Size,Stride]")
@@ -60,7 +60,9 @@ class RegTable extends Component{
 	val OutMatrix_Col			=Img2Col_Instru8.field(Bits(Config.MATRIXC_COL_WIDTH bits),WO).asOutput()
 	val OutMatrix_Row			=Img2Col_Instru8.field(Bits(Config.MATRIXC_ROW_WIDTH bits),WO).asOutput()
 
-
+	val Gemm_Instru				=bus.newReg(doc="Gemm Instru")
+	val Gemm_Width				=Gemm_Instru.field(16 bits,WO).asOutput()
+	val Gemm_Height				=Gemm_Instru.field(16 bits,WO).asOutput()
 
 	bus.accept(HtmlGenerator("regif", "RegTable V1"))
 }
