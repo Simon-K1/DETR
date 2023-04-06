@@ -2,11 +2,11 @@
     % 图片大小，步长等相关信息需要手动配置
 clear
 Feature_Size=224;%图片大小224*224
-Feature_Channel=8;%图片通道32
+Feature_Channel=16;%图片通道32
 Out_Channel=32;
 
-Stride=16;%要修改
-KernelSize=16;%要修改
+Stride=2;%要修改
+KernelSize=3;%要修改
 OutFeatureSize=75;%无需修改，在后面自动推理出来
 %Strdie1
 if Stride==KernelSize

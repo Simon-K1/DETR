@@ -12,14 +12,26 @@ if 0
     fid=fopen("Weight.bin",'w');
     fwrite(fid,WeightMatrix_Flattened,"int8");
     fclose(fid);
-end
+
+%     Picture=reshape(randi(15,[40,40*32*2]),1,[]);
+%     fid=fopen("Picture.bin",'w');
+%     fwrite(fid,Picture,"int8");
+%     fclose(fid);
+%     
+% Picture=reshape(randi(15,[40,40*32*2]),1,[]);
+%     fid=fopen("Picture.txt",'w');
+%     for i=1:size(Picture,2)
+% fprintf(fid,"%x,\n",Picture(i));
+%     end
+%     fclose(fid);
+% end
 %% 也可以将图片和权重拼起来（前期测试的方案，权重放图片前面)
 Weitht_Picture=[WeightMatrix_Flattened,Picture_Flattened];
 fid=fopen("Weight_Picture.bin",'w');
 fwrite(fid,Weitht_Picture,"int8");
 fclose(fid);
 
-%% 发送数据量核收回数据量计算
+%% 发送数据量和收回数据量计算
 SendPicture_Len=size(Feature_In,1)*size(Feature_In,2);%单位：字节
 SendWeight_Len=size(WeightMatrix,1)*size(WeightMatrix,2);
 ReceivePicture_Len=Out_Col*Out_Row*Out_Channel;

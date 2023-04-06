@@ -13,18 +13,18 @@
 %% 第二步：生成对应的指令(用于仿真)
 clear
 load("matlab.mat")
-io_Stride=Stride
-io_KernelSize=KernelSize
-io_Window_Size=KernelSize*Feature_Channel/Compute_OutChannel
-io_InFeature_Size=Feature_Size
-io_InFeature_Channel=Feature_Channel
-io_OutFeature_Channel=Out_Channel
-io_OutFeature_Size=OutFeatureSize
-io_OutCol_Count_Times=ceil(OutFeatureSize/Compute_OutChannel)
-io_InCol_Count_Times=Feature_Channel*Feature_Size/Compute_OutChannel
-io_OutFeature_Channel_Count_Times=Out_Channel/Compute_OutCol
-io_Sliding_Size=Feature_Channel*Stride/Compute_OutChannel
-io_OutRow_Count_Times=OutFeatureSize
+io_Stride=Stride;
+io_KernelSize=KernelSize;
+io_Window_Size=KernelSize*Feature_Channel/Compute_OutChannel;
+io_InFeature_Size=Feature_Size;
+io_InFeature_Channel=Feature_Channel;
+io_OutFeature_Channel=Out_Channel;
+io_OutFeature_Size=OutFeatureSize;
+io_OutCol_Count_Times=ceil(OutFeatureSize/Compute_OutChannel);
+io_InCol_Count_Times=Feature_Channel*Feature_Size/Compute_OutChannel;
+io_OutFeature_Channel_Count_Times=Out_Channel/Compute_OutCol;
+io_Sliding_Size=Feature_Channel*Stride/Compute_OutChannel;
+io_OutRow_Count_Times=OutFeatureSize;
 %% io输入参数
 fprintf(".Stride                        (%d),\n",io_Stride                        )
 fprintf(".Kernel_Size                   (%d),\n",io_KernelSize                    )
@@ -57,7 +57,9 @@ fprintf(".Matrix_Row                    (%d),\n",io_OutMatrix_Row)
 fprintf("===================================================\n")
 %% 生成上板测试数据+指令
 %Instru1:两个5bit拼起来
+ConvTest=1;%如果测试卷积，则生成卷积指令，否则生成MM指令
 
+if ConvTest
 Stride_Bin=sprintf("%05s",dec2bin(io_Stride));
 KernelSize_Bin=sprintf("%05s",dec2bin(io_KernelSize));
 fprintf("Write_Lite(REG_Table_BASE_ADDR,0x8,0x%s);\n",dec2hex(bin2dec([KernelSize_Bin+Stride_Bin])))
@@ -88,6 +90,9 @@ OutMatrix_Row=sprintf("%012s",dec2bin(io_OutMatrix_Row));
 OutMatrix_Col=sprintf("%012s",dec2bin(io_OutMatrix_Col));
 IMG2COL_INSTRU8=dec2hex(bin2dec([OutMatrix_Row+OutMatrix_Col]));
 fprintf("Write_Lite(REG_Table_BASE_ADDR,0x24,0x%s);\n",IMG2COL_INSTRU8)
+else
+    ["在Step7中实现矩阵测试"]
+end
 %发送接收长度
 SendPicture_Len=size(Feature_In,1)*size(Feature_In,2);%单位：字节
 SendWeight_Len=size(WeightMatrix,1)*size(WeightMatrix,2);
