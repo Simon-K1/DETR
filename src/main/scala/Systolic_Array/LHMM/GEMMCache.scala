@@ -129,10 +129,8 @@ val config = new configGemm()
       val WEIGHTCOL  = in UInt(8 bits) //权重矩阵列数
 
       val start = in Bool()  //START信号，开始加载
-
-    val validOut = out Vec(Bool(),8)
-
-    val LayerEnd = out Bool ()  //结束信号
+      val validOut = out Vec(Bool(),8)
+      val LayerEnd = out Bool ()  //结束信号
       val bvalid = out Bool ()
       val mData = out UInt(config.dataWidthOut bits)
   }
@@ -154,7 +152,7 @@ val config = new configGemm()
 
   val writeend = fsm.currentState === GEMM_ENUM.WRITE && fsm.nextState === GEMM_ENUM.READ
 
-  val rwfsm = new RW_Fsm(Switch.fall()||Switch.rise())
+  val rwfsm = new RW_Fsm((Switch.fall()||Switch.rise())&&fsm.currentState=/=GEMM_ENUM.IDLE)
 
   val initCount=ForLoopCounter(fsm.currentState===GEMM_ENUM.INIT,3,5)
   val colCnt = ForLoopCounter(io.sData.fire,config.WH_WIDTH,io.WIDTH-1)
@@ -247,18 +245,22 @@ val config = new configGemm()
 
 
   valid := Vec(False, 8)
-  when(RegNext(fsm.currentState === GEMM_ENUM.READ)) {
-    for (i <- 0 to 7) {
-      when(reg > i) {
-        valid(i) := True
-      } otherwise {
-        valid(i) := False
-      }
+//  when(RegNext(fsm.currentState === GEMM_ENUM.READ)) {
+//    for (i <- 0 to 7) {
+//      when(reg > i) {
+//        valid(i) := True
+//      } otherwise {
+//        valid(i) := False
+//      }
+//
+//    }
+//  }
 
-    }
+  when(RegNext(fsm.currentState === GEMM_ENUM.READ)) {
+    valid := Vec(True, 8)
   }
   for (i <- 0 to 7) {
-    io.validOut(i) := Delay(valid(i),i)
+    io.validOut(i) := Delay(valid(i), i)
   }
 
       for (i <- 0 to 7) {

@@ -220,7 +220,7 @@ case class TopCtrl_Fsm(start:Bool)extends Area{
       }
       is(TopCtrl_Enum.RECEIVE_MATRIX){
         when(Matrix_Received){
-          nextState:=TopCtrl_Enum.WAIT_COMPUTE_END
+          nextState:=TopCtrl_Enum.IDLE
         }otherwise{
           nextState:=TopCtrl_Enum.RECEIVE_MATRIX
         }
@@ -345,7 +345,7 @@ class Conv extends Component{
   Weight_Unit.io.Raddr_Valid:=Img2Col_Unit.io.Raddr_Valid||LH_Gemm.io.bvalid
   Weight_Unit.io.LayerEnd   :=(Compute_Unit.io.LayerEnd||LH_Gemm.io.LayerEnd)
   Fsm.WeightCached          :=(Weight_Unit.io.Weight_Cached)
-  Fsm.Compute_End           :=(Compute_Unit.io.LayerEnd||LH_Gemm.io.LayerEnd)
+  Fsm.Compute_End           :=(Compute_Unit.io.LayerEnd)
   Weight_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(0).axis_mm2s_tdata
   Weight_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(0).axis_mm2s_tkeep
   Weight_Unit.io.s_axis_s2mm_tlast <>InputSwitch.m(0).axis_mm2s_tlast
@@ -389,7 +389,7 @@ class Conv extends Component{
   Compute_Unit.io.mData.ready   <>OutputSwitch.s(0).axis_s2mm_tready
   Compute_Unit.io.mData.valid   <>OutputSwitch.s(0).axis_s2mm_tvalid
   //=====================================================================================
-  Fsm.Matrix_Received:=False
+  Fsm.Matrix_Received:=LH_Gemm.io.LayerEnd
   Fsm.Switch_Conv:=Control.Switch_Conv
 
   LH_Gemm.io.start:=Weight_Unit.io.Weight_Cached

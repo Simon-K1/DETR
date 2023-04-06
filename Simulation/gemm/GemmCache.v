@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.7.0    git head : eca519e78d4e6022e34911ec300a432ed9db8220
 // Component : GemmCache
-// Git hash  : 05b94a8b4080131064b400e702494a64bfb1e889
+// Git hash  : 5c021554a92363f3e077f8514744549a57285a7a
 
 `timescale 1ns/1ps
 
@@ -69,7 +69,7 @@ module GemmCache (
   wire                fsm_writeEnd;
   wire                fsm_judge;
   wire                fsm_otherWrite;
-  wire                when_GEMMCache_l151;
+  wire                when_GEMMCache_l149;
   wire                writeend;
   reg                 Switch_regNext;
   reg                 Switch_regNext_1;
@@ -89,27 +89,19 @@ module GemmCache (
   reg        [2:0]    totalCnt_count;
   wire                totalCnt_valid;
   reg                 finish;
-  wire                when_GEMMCache_l164;
-  wire                when_GEMMCache_l172;
+  wire                when_GEMMCache_l162;
+  wire                when_GEMMCache_l170;
   reg                 writeend_regNext;
   reg                 _zz_1;
   reg                 _zz_2;
   reg                 finish_regNext;
   reg                 finish_regNext_1;
-  wire                when_GEMMCache_l211;
+  wire                when_GEMMCache_l209;
   wire                sData_fire_1;
   wire                sData_fire_2;
-  wire                when_GEMMCache_l237;
-  wire                when_GEMMCache_l243;
+  wire                when_GEMMCache_l235;
+  wire                when_GEMMCache_l241;
   reg                 _zz_3;
-  wire                when_GEMMCache_l252;
-  wire                when_GEMMCache_l252_1;
-  wire                when_GEMMCache_l252_2;
-  wire                when_GEMMCache_l252_3;
-  wire                when_GEMMCache_l252_4;
-  wire                when_GEMMCache_l252_5;
-  wire                when_GEMMCache_l252_6;
-  wire                when_GEMMCache_l252_7;
   reg                 valid_1_delay_1;
   reg                 valid_2_delay_1;
   reg                 valid_2_delay_2;
@@ -166,7 +158,7 @@ module GemmCache (
   reg        [7:0]    _zz_mData_25;
   reg        [7:0]    _zz_mData_26;
   reg        [7:0]    _zz_mData_27;
-  wire                when_GEMMCache_l269;
+  wire                when_GEMMCache_l271;
   `ifndef SYNTHESIS
   reg [39:0] fsm_currentState_string;
   reg [39:0] fsm_nextState_string;
@@ -294,9 +286,9 @@ module GemmCache (
     endcase
   end
 
-  assign when_GEMMCache_l151 = ((fsm_currentState & GEMM_ENUM_IDLE) != 5'b00000);
+  assign when_GEMMCache_l149 = ((fsm_currentState & GEMM_ENUM_IDLE) != 5'b00000);
   assign writeend = (((fsm_currentState & GEMM_ENUM_WRITE) != 5'b00000) && ((fsm_nextState & GEMM_ENUM_READ) != 5'b00000));
-  assign when_GEMMCache_l42 = (((! Switch) && Switch_regNext) || (Switch && (! Switch_regNext_1)));
+  assign when_GEMMCache_l42 = ((((! Switch) && Switch_regNext) || (Switch && (! Switch_regNext_1))) && ((fsm_currentState & GEMM_ENUM_IDLE) == 5'b00000));
   always @(*) begin
     (* parallel_case *)
     case(1) // synthesis parallel_case
@@ -324,19 +316,19 @@ module GemmCache (
   assign when_WaCounter_l39_1 = ((fsm_currentState & GEMM_ENUM_READ) != 5'b00000);
   assign rAddrCnt_valid = ((rAddrCnt_count == _zz_rAddrCnt_valid) && when_WaCounter_l39_1);
   assign totalCnt_valid = ((_zz_totalCnt_valid == _zz_totalCnt_valid_1) && rAddrCnt_valid);
-  assign when_GEMMCache_l164 = (totalCnt_valid && (reg_1 <= 12'h008));
+  assign when_GEMMCache_l162 = (totalCnt_valid && (reg_1 <= 12'h008));
   always @(*) begin
-    if(when_GEMMCache_l164) begin
+    if(when_GEMMCache_l162) begin
       finish = 1'b1;
     end else begin
       finish = 1'b0;
     end
   end
 
-  assign when_GEMMCache_l172 = (totalCnt_valid && (! finish));
+  assign when_GEMMCache_l170 = (totalCnt_valid && (! finish));
   always @(*) begin
     rwfsm_writeEnd = colCnt_valid;
-    if(when_GEMMCache_l243) begin
+    if(when_GEMMCache_l241) begin
       rwfsm_writeEnd = 1'b1;
     end
   end
@@ -349,78 +341,78 @@ module GemmCache (
   assign LayerEnd = finish_regNext_1;
   always @(*) begin
     buffer1_addra = 12'h0;
-    if(when_GEMMCache_l211) begin
+    if(when_GEMMCache_l209) begin
       buffer1_addra = colCnt_count;
     end
   end
 
   always @(*) begin
     buffer1_dina = 64'h0;
-    if(when_GEMMCache_l211) begin
+    if(when_GEMMCache_l209) begin
       buffer1_dina = sData_payload;
     end
   end
 
   always @(*) begin
     buffer1_ena = 1'b0;
-    if(when_GEMMCache_l211) begin
+    if(when_GEMMCache_l209) begin
       buffer1_ena = sData_fire_1;
     end
   end
 
   always @(*) begin
     buffer1_wea = 1'b1;
-    if(when_GEMMCache_l211) begin
+    if(when_GEMMCache_l209) begin
       buffer1_wea = 1'b1;
     end
   end
 
   always @(*) begin
     buffer2_addrb = 12'h0;
-    if(when_GEMMCache_l211) begin
+    if(when_GEMMCache_l209) begin
       buffer2_addrb = rAddrCnt_count;
     end
   end
 
   always @(*) begin
     buffer2_addra = 12'h0;
-    if(!when_GEMMCache_l211) begin
+    if(!when_GEMMCache_l209) begin
       buffer2_addra = colCnt_count;
     end
   end
 
   always @(*) begin
     buffer2_dina = 64'h0;
-    if(!when_GEMMCache_l211) begin
+    if(!when_GEMMCache_l209) begin
       buffer2_dina = sData_payload;
     end
   end
 
   always @(*) begin
     buffer2_ena = 1'b0;
-    if(!when_GEMMCache_l211) begin
+    if(!when_GEMMCache_l209) begin
       buffer2_ena = sData_fire_2;
     end
   end
 
   always @(*) begin
     buffer2_wea = 1'b1;
-    if(!when_GEMMCache_l211) begin
+    if(!when_GEMMCache_l209) begin
       buffer2_wea = 1'b1;
     end
   end
 
   always @(*) begin
     buffer1_addrb = 12'h0;
-    if(!when_GEMMCache_l211) begin
+    if(!when_GEMMCache_l209) begin
       buffer1_addrb = rAddrCnt_count;
     end
   end
 
-  assign when_GEMMCache_l211 = (Switch == 1'b0);
+  assign when_GEMMCache_l209 = (Switch == 1'b0);
   assign sData_fire_1 = (sData_valid && sData_ready);
   always @(*) begin
-    if(when_GEMMCache_l211) begin
+    if(when_GEMMCache_l209) begin
       data = buffer2_doutb;
     end else begin
       data = buffer1_doutb;
@@ -428,112 +420,72 @@ module GemmCache (
   end
 
   assign sData_fire_2 = (sData_valid && sData_ready);
-  assign when_GEMMCache_l237 = (((fsm_currentState & GEMM_ENUM_WRITE) != 5'b00000) || ((rwfsm_currentState & RW_ENUM_WRITE) != 2'b00));
+  assign when_GEMMCache_l235 = (((fsm_currentState & GEMM_ENUM_WRITE) != 5'b00000) || ((rwfsm_currentState & RW_ENUM_WRITE) != 2'b00));
   always @(*) begin
-    if(when_GEMMCache_l237) begin
+    if(when_GEMMCache_l235) begin
       sData_ready = 1'b1;
     end else begin
       sData_ready = 1'b0;
     end
   end
 
-  assign when_GEMMCache_l243 = ((fsm_currentState & GEMM_ENUM_IDLE) != 5'b00000);
+  assign when_GEMMCache_l241 = ((fsm_currentState & GEMM_ENUM_IDLE) != 5'b00000);
   always @(*) begin
     valid_0 = 1'b0;
     if(_zz_3) begin
-      if(when_GEMMCache_l252) begin
-        valid_0 = 1'b1;
-      end else begin
-        valid_0 = 1'b0;
-      end
+      valid_0 = 1'b1;
     end
   end
 
   always @(*) begin
     valid_1 = 1'b0;
     if(_zz_3) begin
-      if(when_GEMMCache_l252_1) begin
-        valid_1 = 1'b1;
-      end else begin
-        valid_1 = 1'b0;
-      end
+      valid_1 = 1'b1;
     end
   end
 
   always @(*) begin
     valid_2 = 1'b0;
     if(_zz_3) begin
-      if(when_GEMMCache_l252_2) begin
-        valid_2 = 1'b1;
-      end else begin
-        valid_2 = 1'b0;
-      end
+      valid_2 = 1'b1;
     end
   end
 
   always @(*) begin
     valid_3 = 1'b0;
     if(_zz_3) begin
-      if(when_GEMMCache_l252_3) begin
-        valid_3 = 1'b1;
-      end else begin
-        valid_3 = 1'b0;
-      end
+      valid_3 = 1'b1;
     end
   end
 
   always @(*) begin
     valid_4 = 1'b0;
     if(_zz_3) begin
-      if(when_GEMMCache_l252_4) begin
-        valid_4 = 1'b1;
-      end else begin
-        valid_4 = 1'b0;
-      end
+      valid_4 = 1'b1;
     end
   end
 
   always @(*) begin
     valid_5 = 1'b0;
     if(_zz_3) begin
-      if(when_GEMMCache_l252_5) begin
-        valid_5 = 1'b1;
-      end else begin
-        valid_5 = 1'b0;
-      end
+      valid_5 = 1'b1;
     end
   end
 
   always @(*) begin
     valid_6 = 1'b0;
     if(_zz_3) begin
-      if(when_GEMMCache_l252_6) begin
-        valid_6 = 1'b1;
-      end else begin
-        valid_6 = 1'b0;
-      end
+      valid_6 = 1'b1;
     end
   end
 
   always @(*) begin
     valid_7 = 1'b0;
     if(_zz_3) begin
-      if(when_GEMMCache_l252_7) begin
-        valid_7 = 1'b1;
-      end else begin
-        valid_7 = 1'b0;
-      end
+      valid_7 = 1'b1;
     end
   end
 
-  assign when_GEMMCache_l252 = (12'h0 < reg_1);
-  assign when_GEMMCache_l252_1 = (12'h001 < reg_1);
-  assign when_GEMMCache_l252_2 = (12'h002 < reg_1);
-  assign when_GEMMCache_l252_3 = (12'h003 < reg_1);
-  assign when_GEMMCache_l252_4 = (12'h004 < reg_1);
-  assign when_GEMMCache_l252_5 = (12'h005 < reg_1);
-  assign when_GEMMCache_l252_6 = (12'h006 < reg_1);
-  assign when_GEMMCache_l252_7 = (12'h007 < reg_1);
   assign validOut_0 = valid_0;
   assign validOut_1 = valid_1_delay_1;
   assign validOut_2 = valid_2_delay_2;
@@ -542,9 +494,9 @@ module GemmCache (
   assign validOut_5 = valid_5_delay_5;
   assign validOut_6 = valid_6_delay_6;
   assign validOut_7 = valid_7_delay_7;
-  assign when_GEMMCache_l269 = ((fsm_currentState & GEMM_ENUM_READ) != 5'b00000);
+  assign when_GEMMCache_l271 = ((fsm_currentState & GEMM_ENUM_READ) != 5'b00000);
   always @(*) begin
-    if(when_GEMMCache_l269) begin
+    if(when_GEMMCache_l271) begin
       bvalid = 1'b1;
     end else begin
       bvalid = 1'b0;
@@ -563,7 +515,7 @@ module GemmCache (
       totalCnt_count <= 3'b000;
     end else begin
       fsm_currentState <= fsm_nextState;
-      if(when_GEMMCache_l151) begin
+      if(when_GEMMCache_l149) begin
         reg_1 <= HIGHT;
       end
       rwfsm_currentState <= rwfsm_nextState;
@@ -595,7 +547,7 @@ module GemmCache (
           totalCnt_count <= (totalCnt_count + 3'b001);
         end
       end
-      if(when_GEMMCache_l172) begin
+      if(when_GEMMCache_l170) begin
         reg_1 <= (reg_1 - 12'h008);
       end
       if(writeend_regNext) begin
