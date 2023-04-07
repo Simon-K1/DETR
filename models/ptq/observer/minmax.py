@@ -9,9 +9,9 @@ class MinmaxObserver(BaseObserver):
     def __init__(self, module_type, bit_type, calibration_mode):
         super(MinmaxObserver, self).__init__(module_type, bit_type,
                                              calibration_mode)
-        self.symmetric = self.bit_type.signed
+        self.symmetric = self.bit_type.signed#无符号的就用非对称量化，有符号就用对称量化，所以权重采用对称量化，激活采用非对称量化
 
-    def update(self, v):
+    def update(self, v):#默认逐通道量化，如果是逐层量化再更新scale和zp即可
         v = self.reshape_tensor(v)
         cur_max = v.max(axis=1).values#第一个维度是通道，第二个维度代表对应通道的数据
         if self.max_val is None:

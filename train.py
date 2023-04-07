@@ -17,12 +17,6 @@ from models.vit_quant import My_Tiny_Vit,vit_base_patch16_224
 from utils.utils import *
 parser = argparse.ArgumentParser(description='FQ-ViT')
 
-# parser.add_argument('model',
-#                     choices=[
-#                         'deit_tiny', 'deit_small', 'deit_base', 'vit_base',
-#                         'vit_large', 'swin_tiny', 'swin_small', 'swin_base'
-#                     ],
-#                     help='model')
 
 parser.add_argument('--quant', default=False, action='store_true')
 parser.add_argument('--ptf', default=False, action='store_true')

@@ -9,8 +9,8 @@ class Config:
         lis stands for Log-Int-Softmax.
         These two are proposed in our "FQ-ViT: Post-Training Quantization for Fully Quantized Vision Transformer".
         '''
-        self.BIT_TYPE_W = BIT_TYPE_DICT['int8']
-        self.BIT_TYPE_A = BIT_TYPE_DICT['uint8']
+        self.BIT_TYPE_W = BIT_TYPE_DICT['int8']#权重有符号int8，--->对称量化
+        self.BIT_TYPE_A = BIT_TYPE_DICT['uint8']#激活无符号int8，--->非对称量化
 
         self.OBSERVER_W = 'minmax'
         self.OBSERVER_A = quant_method

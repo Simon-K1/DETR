@@ -49,8 +49,24 @@ class QConv2d(nn.Conv2d):
                                        self.bit_type, self.calibration_mode)
         self.quantizer = build_quantizer(self.quantizer_str, self.bit_type,
                                          self.observer, self.module_type)
+    #卷积整形前向传播
+    # def Conv_IntForward(x,in_quantizer=None,
+    #             out_quantizer=None):
+    #     #进来时激活x维度为[1,3,224,224]
+    #     #
+    #     print("输入激活的维度:",x.shape)
+    #     print("ScaleIn 维度:",in_quantizer.scale.shape)
+    #     print("ZeroPoint 维度:",in_quantizer.zero_point.shape)
+    #     print("ScaleOut 维度:",out_quantizer.scale.shape)
+    #     print("ZeroPoint_Out 维度:",out_quantizer.zero_point.shape)
+        
+    #     ScaleIn = in_quantizer.scale #ScaleIn
+    #     ScaleOut=out_quantizer.scale#ScaleOut
+        
+    #     print("ConvInt Forward\n")
+    #     return 0
 
-    def forward(self, x):
+    def forward(self, x,in_quantizer=None,out_quantizer=None):
         if self.calibrate:
             self.quantizer.observer.update(self.weight)
             if self.last_calibrate:
@@ -65,9 +81,39 @@ class QConv2d(nn.Conv2d):
                 self.dilation,
                 self.groups,
             )
-        weight = self.quantizer(self.weight)
+        if True:
+            print("输入激活的维度:",x.shape)
+            print("ScaleIn 维度:",in_quantizer.scale.shape)
+            print("ZeroPoint 维度:",in_quantizer.zero_point.shape)
+            print("ScaleOut 维度:",out_quantizer.scale.shape)
+            print("ZeroPoint_Out 维度:",out_quantizer.zero_point.shape)
+            
+
+            #开始实现整形前向传播并计算误差=======2023、3、30==============================
+            S1 = in_quantizer.scale #ScaleIn 
+            Z1   =in_quantizer.zero_point
+            
+            S2=self.quantizer.scale
+            Z2=self.quantizer.zero_point
+
+            S3= out_quantizer.scale #ScaleOut
+            Z3=out_quantizer.zero_point
+            #目前可以暂时认为输入输出的S，Z的维度都是1。
+            
+            Xq=x/S1+Z1#量化后的值
+            Wq=self.weight
+
+
+            print("ConvInt Forward\n")
+        
+        
+        weight = self.quantizer(self.weight)#先对权重量化，再反量化回浮点
         return F.conv2d(x, weight, self.bias, self.stride, self.padding,
                         self.dilation, self.groups)
+    
+
+
+
 
 
 class QLinear(nn.Linear):

@@ -229,13 +229,15 @@ class PatchEmbed(nn.Module):
                              observer_str=cfg.OBSERVER_A,
                              quantizer_str=cfg.QUANTIZER_A)
 
-    def forward(self, x):
+    def forward(self, x,in_quantizer=None):
         B, C, H, W = x.shape
         # FIXME look at relaxing size constraints
         assert (
             H == self.img_size[0] and W == self.img_size[1]
         ), f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
-        x = self.proj(x).flatten(2).transpose(1, 2)
+
+        x = self.proj(x,in_quantizer,self.qact_before_norm.quantizer).flatten(2).transpose(1, 2)
+
         x = self.qact_before_norm(x)
         if isinstance(self.norm, nn.Identity):
             x = self.norm(x)

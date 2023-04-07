@@ -789,8 +789,10 @@ class SwinTransformer(nn.Module):
 
     def forward_features(self, x):
         if self.input_quant:
-            x = self.qact_input(x)
-        x = self.patch_embed(x)
+            x = self.qact_input(x)#激活采用逐层量化
+        x = self.patch_embed(x,self.qact_input.quantizer)#卷积获取scalein和out，实现全整形前向传播
+        #这里不输入outquantizer的原因是patchembed里面已经包含了卷积和卷积后的qact
+
         if self.absolute_pos_embed is not None:
             x = x + self.absolute_pos_embed
             x = self.qact1(x)
