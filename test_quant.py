@@ -14,30 +14,45 @@ from models import *
 
 parser = argparse.ArgumentParser(description='FQ-ViT')
 
-parser.add_argument('model',
+TestCfg=dict(
+    model="vit_base",
+    data="E:/Transformer/DataSets/imagenet/imagenet2012mini",
+    quant=False,
+    ptf=True,
+    lis=True,
+    quant_method="minmax",
+    calib_batchsize=1,
+    calib_iter=10,
+    val_batchsize=16,
+    num_workers=8
+)
+
+
+
+parser.add_argument('--model',
                     choices=[
                         'deit_tiny', 'deit_small', 'deit_base', 'vit_base',
                         'vit_large', 'swin_tiny', 'swin_small', 'swin_base'
-                    ],
+                    ],default=TestCfg['model'],
                     help='model')
-parser.add_argument('data', metavar='DIR', help='path to dataset')
-parser.add_argument('--quant', default=False, action='store_true')
-parser.add_argument('--ptf', default=False, action='store_true')
-parser.add_argument('--lis', default=False, action='store_true')
+parser.add_argument('--data', default=TestCfg['data'],metavar='DIR', help='path to dataset')
+parser.add_argument('--quant',default=TestCfg['quant'])
+parser.add_argument('--ptf', default=TestCfg['ptf'])
+parser.add_argument('--lis', default=TestCfg['lis'])
 parser.add_argument('--quant-method',
-                    default='minmax',
+                    default=TestCfg['quant_method'],
                     choices=['minmax', 'ema', 'omse', 'percentile'])
 parser.add_argument('--calib-batchsize',
-                    default=4,
+                    default=TestCfg['calib_batchsize'],
                     type=int,
                     help='batchsize of calibration set')
-parser.add_argument('--calib-iter', default=100, type=int)
+parser.add_argument('--calib-iter', default=TestCfg['calib_iter'], type=int)
 parser.add_argument('--val-batchsize',
-                    default=16,
+                    default=TestCfg['val_batchsize'],
                     type=int,
                     help='batchsize of validation set')
 parser.add_argument('--num-workers',
-                    default=8,
+                    default=TestCfg['num_workers'],
                     type=int,
                     help='number of data loading workers (default: 16)')
 parser.add_argument('--device', default='cuda', type=str, help='device')

@@ -42,12 +42,12 @@
                 "console": "integratedTerminal",
 //==================================================================================
                 //下面两行很重要
-				"args": [
-					// "deit_small","E:/Transformer/DataSets/imagenet/imagenet2012mini","--quant","--ptf","--lis","--quant-method","minmax"
-					//"deit_small","E:/Transformer/DataSets/imagenet/imagenet2012mini","--val-batchsize","1","--print-freq","1","--ptf","--lis","--quant-method","minmax"
-					//"deit_small","E:/Transformer/DataSets/imagenet/imagenet2012mini","--val-batchsize","1","--quant","--ptf","--lis","--quant-method","minmax"
-					"swin_base","E:/Transformer/DataSets/imagenet/imagenet2012mini","--val-batchsize","1","--quant","--ptf","--lis","--quant-method","minmax"
-				],
+				// "args": [
+				// 	// "deit_small","E:/Transformer/DataSets/imagenet/imagenet2012mini","--quant","--ptf","--lis","--quant-method","minmax"
+				// 	//"deit_small","E:/Transformer/DataSets/imagenet/imagenet2012mini","--val-batchsize","1","--print-freq","1","--ptf","--lis","--quant-method","minmax"
+				// 	//"deit_small","E:/Transformer/DataSets/imagenet/imagenet2012mini","--val-batchsize","1","--quant","--ptf","--lis","--quant-method","minmax"
+				// 	"swin_base","E:/Transformer/DataSets/imagenet/imagenet2012mini","--val-batchsize","1","--quant","--ptf","--lis","--quant-method","minmax"
+				// ],
                 
                 "cwd": "${workspaceFolder}"//debug时可以读取其他目录文件
 //==================================================================================
