@@ -24,7 +24,7 @@ if 0
 % fprintf(fid,"%x,\n",Picture(i));
 %     end
 %     fclose(fid);
-% end
+end
 %% 也可以将图片和权重拼起来（前期测试的方案，权重放图片前面)
 Weitht_Picture=[WeightMatrix_Flattened,Picture_Flattened];
 fid=fopen("Weight_Picture.bin",'w');
@@ -39,6 +39,6 @@ ReceivePicture_Len=Out_Col*Out_Row*Out_Channel;
 
 %% 创建全仿COE文件
 if 0
-    command = 'bin2coe -i Weight.bin -w 64 -o Weight.coe';
+    command = 'bin2coe -i Weight_Picture.bin -w 64 -o Weight_Picture.coe';
     [status,cmdout] = system(command)
 end
