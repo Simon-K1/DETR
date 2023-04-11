@@ -81,35 +81,41 @@ class QConv2d(nn.Conv2d):
                 self.dilation,
                 self.groups,
             )
-        if True:
-            print("输入激活的维度:",x.shape)
-            print("ScaleIn 维度:",in_quantizer.scale.shape)
-            print("ZeroPoint 维度:",in_quantizer.zero_point.shape)
-            print("ScaleOut 维度:",out_quantizer.scale.shape)
-            print("ZeroPoint_Out 维度:",out_quantizer.zero_point.shape)
+        weight = self.quantizer(self.weight)#先对权重量化，再反量化回浮点
+        if True:#模拟硬件量化计算，重写整形前向传播公式，
+            # print("输入激活的维度:",x.shape)
+            # print("ScaleIn 维度:",in_quantizer.scale.shape)
+            # print("ZeroPoint 维度:",in_quantizer.zero_point.shape)
+            # print("ScaleOut 维度:",out_quantizer.scale.shape)
+            # print("ZeroPoint_Out 维度:",out_quantizer.zero_point.shape)
             
 
             #开始实现整形前向传播并计算误差=======2023、3、30==============================
             S1 = in_quantizer.scale #ScaleIn 
             Z1   =in_quantizer.zero_point
             
-            S2=self.quantizer.scale
-            Z2=self.quantizer.zero_point
+            S2=torch.reshape(self.quantizer.scale,[-1,1,1,1])
+            Z2=0#self.quantizer.zero_point
 
             S3= out_quantizer.scale #ScaleOut
             Z3=out_quantizer.zero_point
             #目前可以暂时认为输入输出的S，Z的维度都是1。
             
-            Xq=x/S1+Z1#量化后的值
-            Wq=self.weight
-
-
-            print("ConvInt Forward\n")
+            Xq=x/S1+Z1#量化后的激活值
+            
+            Wq=self.quantizer.quant(self.weight)
+            # print(Wq)
+            
+            Wq=(weight)*(S1)
+            Xq=Xq-Z1
+            self.bias.data=(self.bias.data)
+            Cq=(F.conv2d(Xq, Wq, self.bias, self.stride, self.padding,
+                        self.dilation, self.groups))
+            return (Cq)
         
-        
-        weight = self.quantizer(self.weight)#先对权重量化，再反量化回浮点
-        return F.conv2d(x, weight, self.bias, self.stride, self.padding,
-                        self.dilation, self.groups)
+        else:
+            return (F.conv2d(x, weight, self.bias, self.stride, self.padding,
+                        self.dilation, self.groups))
     
 
 
@@ -217,99 +223,132 @@ class QIntLayerNorm(nn.LayerNorm):
             x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias,
                              self.eps)
         elif self.mode == 'int':#
-            in_scale = in_quantizer.scale
-            if in_scale_expand != 1:
-                in_scale = in_scale.unsqueeze(-1).expand(
-                    -1, in_scale_expand).T.reshape(-1)
-            out_scale = out_quantizer.scale
-            assert in_scale is not None and out_scale is not None
-            channel_nums = x.shape[-1]#获取通道数
-            in_scale = in_scale.reshape(1, 1, -1)#将inscale数放到最后一个维度，对应通道数
-            out_scale = out_scale.reshape(1, 1, -1)
-            x_q = (x / in_scale).round()#注意：Matlab的round(10.5)=11,二pytorch则为10，获取整形
-            in_scale1 = in_scale.min()
-            in_scale_mask = (in_scale / in_scale1).round()
+            if True:
+                in_scale = in_quantizer.scale
+                if in_scale_expand != 1:
+                    in_scale = in_scale.unsqueeze(-1).expand(
+                        -1, in_scale_expand).T.reshape(-1)
+                out_scale = out_quantizer.scale
+                assert in_scale is not None and out_scale is not None
+                channel_nums = x.shape[-1]
+                in_scale = in_scale.reshape(1, 1, -1)
+                out_scale = out_scale.reshape(1, 1, -1)
+                x_q = (x / in_scale).round()
+                in_scale1 = in_scale.min()
+                in_scale_mask = (in_scale / in_scale1).round()
 
-            #行优先生成xq，8bit=================================================================
-            # with open ('Xq_LayerNorm.txt','a') as ff:
-            #     for i in range(x_q.shape[-2]):
-            #         for j in range(x_q.shape[-1]):
-            #             ff.write('%02x'%(int(x_q[0,i,j].item())&0xff))
-            #             ff.write("\n")
-            # ff.close()
-            #=================================================================================
-            x_q = x_q * in_scale_mask#最后一个维度的对应元素相乘，不相加,这个Xq就是上一层量化后的整形（xq-zeropint），in_scale_mask即Ptf量化因子
-            M1=x_q.sum(dim=-1)#按行求和[16,197]
-            Sqrt_In=channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2
-            #行优先生成xq,乘了掩码mask的，12bit=================================================================
-            # with open ('Xq_LayerNorm.txt','w') as ff:
-            #     for i in range(x_q.shape[-2]):
-            #         for j in range(x_q.shape[-1]):
-            #             ff.write('%04x'%(int(x_q[0,i,j].item())&0xffff))
-            #             ff.write("\n")
-            # ff.close()
-            # #=================================================================================
-            std_x_q = torch.sqrt(Sqrt_In)#[B,197]#std标准差也就是加入alpha后每一行的标准差，
-            # print('std_x_q dtype is',std_x_q.dtype)
-            # std_x_q.dtype=torch.float32
-            batch=x_q.shape[0]
-            Shift_Num=32
-            std_x_q_round=((1/std_x_q)*torch.pow(2, torch.tensor(Shift_Num))).floor()#(((1/std_x_q)*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32)))
-            for i in range(M1.shape[-1]):#对于每一行来说，都是[16,384]维，对于M1的每一行来说，都是[16]维
-                x_q[:,i,:]=(channel_nums*x_q[:,i,:]-M1[:,i].reshape(batch,-1))#A
-            Gama=((self.weight.reshape(1, 1, -1)/out_scale*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32))).round()
-            Beta=((self.bias.reshape(1,1,-1)/out_scale*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32))).round()
-            # with open ('Scale_Bias.txt','a') as ff:
-            #     for i in range(Gama.shape[-1]):
-            #         ff.write('%02x%02x'%(int(Gama[0,0,i].item())&0xff,int(Beta[0,0,i].item())&0xff))
-            #         ff.write("\n")
-            # ff.close()
+                x_q = x_q * in_scale_mask
+
+                mean_x_q = x_q.mean(dim=-1) * in_scale1
+                std_x_q = (in_scale1 / channel_nums) * torch.sqrt(
+                    channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2)
+
+                A = (in_scale1 / std_x_q).unsqueeze(-1) * \
+                    self.weight.reshape(1, 1, -1) / out_scale
+                A_sign = A.sign()
+                M, N = self.get_MN(A.abs())
+                B = ((self.bias.reshape(1, 1, -1) -
+                    (mean_x_q / std_x_q).unsqueeze(-1) *
+                    self.weight.reshape(1, 1, -1)) / out_scale *
+                    torch.pow(2, N)).round()
+
+                x_q = ((A_sign * M * x_q + B) / torch.pow(2, N)).round()
+                x = x_q * out_scale
+
+            else:
+                in_scale = in_quantizer.scale
+                if in_scale_expand != 1:
+                    in_scale = in_scale.unsqueeze(-1).expand(
+                        -1, in_scale_expand).T.reshape(-1)
+                out_scale = out_quantizer.scale
+                assert in_scale is not None and out_scale is not None
+                channel_nums = x.shape[-1]#获取通道数
+                in_scale = in_scale.reshape(1, 1, -1)#将inscale数放到最后一个维度，对应通道数
+                out_scale = out_scale.reshape(1, 1, -1)
+                x_q = (x / in_scale).round()#注意：Matlab的round(10.5)=11,二pytorch则为10，获取整形
+                in_scale1 = in_scale.min()
+                in_scale_mask = (in_scale / in_scale1).round()
+
+                #行优先生成xq，8bit=================================================================
+                # with open ('Xq_LayerNorm.txt','a') as ff:
+                #     for i in range(x_q.shape[-2]):
+                #         for j in range(x_q.shape[-1]):
+                #             ff.write('%02x'%(int(x_q[0,i,j].item())&0xff))
+                #             ff.write("\n")
+                # ff.close()
+                #=================================================================================
+                x_q = x_q * in_scale_mask#最后一个维度的对应元素相乘，不相加,这个Xq就是上一层量化后的整形（xq-zeropint），in_scale_mask即Ptf量化因子
+                M1=x_q.sum(dim=-1)#按行求和[16,197]
+                Sqrt_In=channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2
+                #行优先生成xq,乘了掩码mask的，12bit=================================================================
+                # with open ('Xq_LayerNorm.txt','w') as ff:
+                #     for i in range(x_q.shape[-2]):
+                #         for j in range(x_q.shape[-1]):
+                #             ff.write('%04x'%(int(x_q[0,i,j].item())&0xffff))
+                #             ff.write("\n")
+                # ff.close()
+                # #=================================================================================
+                std_x_q = torch.sqrt(Sqrt_In)#[B,197]#std标准差也就是加入alpha后每一行的标准差，
+                # print('std_x_q dtype is',std_x_q.dtype)
+                # std_x_q.dtype=torch.float32
+                batch=x_q.shape[0]
+                Shift_Num=32
+                std_x_q_round=((1/std_x_q)*torch.pow(2, torch.tensor(Shift_Num))).floor()#(((1/std_x_q)*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32)))
+                for i in range(M1.shape[-1]):#对于每一行来说，都是[16,384]维，对于M1的每一行来说，都是[16]维
+                    x_q[:,i,:]=(channel_nums*x_q[:,i,:]-M1[:,i].reshape(batch,-1))#A
+                Gama=((self.weight.reshape(1, 1, -1)/out_scale*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32))).round()
+                Beta=((self.bias.reshape(1,1,-1)/out_scale*torch.pow(2, torch.tensor(32))).round()/torch.pow(2, torch.tensor(32))).round()
+                # with open ('Scale_Bias.txt','a') as ff:
+                #     for i in range(Gama.shape[-1]):
+                #         ff.write('%02x%02x'%(int(Gama[0,0,i].item())&0xff,int(Beta[0,0,i].item())&0xff))
+                #         ff.write("\n")
+                # ff.close()
 
 
 
-            
-            # 验证Scale和Bias的位宽
-            # for i in Gama[0,0,:]:
-            #     if i>127 or i<-128:
-            #         print("Gama is",i,":>255")
-            # for i in Beta[0,0,:]:
-            #     if i>127 or i<-128:
-            #         print("Beta is",i,":>255")               
-            
-            for i in range(x_q.shape[1]):#对于每一行来说
-                x_q[:,i,:]=(((x_q[:,i,:]*Gama)))#+Beta).round()# (((.round()))+Beta).round()#使用放大2^32倍的1/sqrt计算
-            for i in range(M1.shape[-1]):#对于每一行来说，都是[16,384]维，对于M1的每一行来说，都是[16]维
-                x_q[:,i,:]=((x_q[:,i,:]*(std_x_q_round[:,i].reshape(batch,-1))/torch.pow(2, torch.tensor(Shift_Num))).floor()+Beta).floor()
-            
-            #二进制模拟硬件截位计算
-            Recipro_Std_Xq=1/std_x_q
-                #获取尾数部分
-            Recipro_Std_Xq_Frac_Part=Recipro_Std_Xq
-            # for i in range(Recipro_Std_Xq.shape[-1]):
-            #     Recipro_Std_Xq_Frac_Part[:,i]=struct.pack('>f' ,float(s)).hex()
+                
+                # 验证Scale和Bias的位宽
+                # for i in Gama[0,0,:]:
+                #     if i>127 or i<-128:
+                #         print("Gama is",i,":>255")
+                # for i in Beta[0,0,:]:
+                #     if i>127 or i<-128:
+                #         print("Beta is",i,":>255")               
+                
+                for i in range(x_q.shape[1]):#对于每一行来说
+                    x_q[:,i,:]=(((x_q[:,i,:]*Gama)))#+Beta).round()# (((.round()))+Beta).round()#使用放大2^32倍的1/sqrt计算
+                for i in range(M1.shape[-1]):#对于每一行来说，都是[16,384]维，对于M1的每一行来说，都是[16]维
+                    x_q[:,i,:]=((x_q[:,i,:]*(std_x_q_round[:,i].reshape(batch,-1))/torch.pow(2, torch.tensor(Shift_Num))).floor()+Beta).floor()
+                
+                #二进制模拟硬件截位计算
+                Recipro_Std_Xq=1/std_x_q
+                    #获取尾数部分
+                Recipro_Std_Xq_Frac_Part=Recipro_Std_Xq
+                # for i in range(Recipro_Std_Xq.shape[-1]):
+                #     Recipro_Std_Xq_Frac_Part[:,i]=struct.pack('>f' ,float(s)).hex()
 
-            x = x_q * out_scale
-            # mean_x_q = x_q.mean(dim=-1) * in_scale1
-            # std_x_q = (in_scale1 / channel_nums) * torch.sqrt(#std标准差也就是加入alpha后每一行的标准差，
-            #     channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2)#[B,197]
-            # # for i in range(std_x_q.shape[1]):
-            # #     if(std_x_q[0][i]==0):
-            # #         print("detected")
-            # #所以这里的in_scale1可以被约掉。。。。
-            # A = (in_scale1 / std_x_q).unsqueeze(-1) * \
-            #     self.weight.reshape(1, 1, -1) / out_scale#weight就是每个通道的gama，下面还要加一个bias，就是beta
-            # #A=torch.floor(torch.floor(A*1024)/1024),很奇怪，随便动一下精度就没了
-            # A_sign = A.sign()#每一行算标准差，每一通道都有一个gama和beta，所以A是一个[197,384]维的矩阵
-            # M, N = self.get_MN(A.abs())
-            # # N=torch.tensor(32)
-            # # M=torch.floor(A.abs() * torch.pow(2, N))
-            # B = ((self.bias.reshape(1, 1, -1) -
-            #       (mean_x_q / std_x_q).unsqueeze(-1) *
-            #       self.weight.reshape(1, 1, -1)) / out_scale *
-            #      torch.pow(2, N)).round()
+                x = x_q * out_scale
+                # mean_x_q = x_q.mean(dim=-1) * in_scale1
+                # std_x_q = (in_scale1 / channel_nums) * torch.sqrt(#std标准差也就是加入alpha后每一行的标准差，
+                #     channel_nums * (x_q**2).sum(dim=-1) - x_q.sum(dim=-1)**2)#[B,197]
+                # # for i in range(std_x_q.shape[1]):
+                # #     if(std_x_q[0][i]==0):
+                # #         print("detected")
+                # #所以这里的in_scale1可以被约掉。。。。
+                # A = (in_scale1 / std_x_q).unsqueeze(-1) * \
+                #     self.weight.reshape(1, 1, -1) / out_scale#weight就是每个通道的gama，下面还要加一个bias，就是beta
+                # #A=torch.floor(torch.floor(A*1024)/1024),很奇怪，随便动一下精度就没了
+                # A_sign = A.sign()#每一行算标准差，每一通道都有一个gama和beta，所以A是一个[197,384]维的矩阵
+                # M, N = self.get_MN(A.abs())
+                # # N=torch.tensor(32)
+                # # M=torch.floor(A.abs() * torch.pow(2, N))
+                # B = ((self.bias.reshape(1, 1, -1) -
+                #       (mean_x_q / std_x_q).unsqueeze(-1) *
+                #       self.weight.reshape(1, 1, -1)) / out_scale *
+                #      torch.pow(2, N)).round()
 
-            # x_q = ((A_sign * M * x_q + B) / torch.pow(2, N)).round()
-            # x = x_q * out_scale
+                # x_q = ((A_sign * M * x_q + B) / torch.pow(2, N)).round()
+                # x = x_q * out_scale
         else:
             raise NotImplementedError
         return x
@@ -386,7 +425,7 @@ class QIntSoftmax(nn.Module):
         return exp_int, exp_int_sum
 
     def forward(self, x, scale):
-        Pow2=True
+        Pow2=False
         if self.log_i_softmax and scale is not None:
             if not Pow2:
                 exp_int, exp_int_sum = self.int_softmax(x, scale)

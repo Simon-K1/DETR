@@ -17,14 +17,15 @@ parser = argparse.ArgumentParser(description='FQ-ViT')
 TestCfg=dict(
     model="vit_base",
     data="E:/Transformer/DataSets/imagenet/imagenet2012mini",
-    quant=False,
+    quant=True,
     ptf=True,
     lis=True,
     quant_method="minmax",
     calib_batchsize=1,
     calib_iter=10,
-    val_batchsize=16,
-    num_workers=8
+    val_batchsize=1,
+    num_workers=8,
+    print_freq=1
 )
 
 
@@ -57,7 +58,7 @@ parser.add_argument('--num-workers',
                     help='number of data loading workers (default: 16)')
 parser.add_argument('--device', default='cuda', type=str, help='device')
 parser.add_argument('--print-freq',
-                    default=4,
+                    default=TestCfg['print_freq'],
                     type=int,
                     help='print frequency')
 parser.add_argument('--seed', default=0, type=int, help='seed')

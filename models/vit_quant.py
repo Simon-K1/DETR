@@ -389,7 +389,7 @@ class VisionTransformer(nn.Module):
         if self.input_quant:
             x = self.qact_input(x)
 
-        x = self.patch_embed(x)
+        x = self.patch_embed(x,self.qact_input.quantizer)
 
         cls_tokens = self.cls_token.expand(
             B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
@@ -549,7 +549,7 @@ def vit_base_patch16_224(pretrained=False,
                               norm_layer=partial(QIntLayerNorm, eps=1e-6),
                               quant=quant,
                               calibrate=calibrate,
-                              input_quant=False,
+                              input_quant=True,
                               cfg=cfg,
                               **kwargs)
     if pretrained:

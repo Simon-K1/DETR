@@ -204,7 +204,7 @@ class PatchEmbed(nn.Module):
                             calibration_mode=cfg.CALIBRATION_MODE_W,
                             observer_str=cfg.OBSERVER_W,
                             quantizer_str=cfg.QUANTIZER_W)
-        
+
         if norm_layer:
             self.qact_before_norm = QAct(
                 quant=quant,
@@ -213,7 +213,7 @@ class PatchEmbed(nn.Module):
                 calibration_mode=cfg.CALIBRATION_MODE_A,
                 observer_str=cfg.OBSERVER_A,
                 quantizer_str=cfg.QUANTIZER_A)
-            self.ConvOut_Quan=self.qact_before_norm
+            
             self.norm = norm_layer(embed_dim)
             self.qact = QAct(quant=quant,
                              calibrate=calibrate,
@@ -230,7 +230,7 @@ class PatchEmbed(nn.Module):
                              calibration_mode=cfg.CALIBRATION_MODE_A,
                              observer_str=cfg.OBSERVER_A,
                              quantizer_str=cfg.QUANTIZER_A)
-            self.ConvOut_Quan=self.qact
+            
 
     def forward(self, x,in_quantizer=None):
         B, C, H, W = x.shape
@@ -238,13 +238,15 @@ class PatchEmbed(nn.Module):
         assert (
             H == self.img_size[0] and W == self.img_size[1]
         ), f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
-
-        x = self.proj(x,in_quantizer,self.ConvOut_Quan.quantizer).flatten(2).transpose(1, 2)
-
-        x = self.qact_before_norm(x)
+        
+        
         if isinstance(self.norm, nn.Identity):
+            x = self.proj(x,in_quantizer,self.qact.quantizer).flatten(2).transpose(1, 2)
+            x = self.qact_before_norm(x)
             x = self.norm(x)
         else:
+            x = self.proj(x,in_quantizer,self.qact_before_norm.quantizer).flatten(2).transpose(1, 2)
+            x = self.qact_before_norm(x)
             x = self.norm(x, self.qact_before_norm.quantizer,
                           self.qact.quantizer)
         x = self.qact(x)
