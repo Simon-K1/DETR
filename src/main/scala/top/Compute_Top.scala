@@ -278,8 +278,9 @@ class Conv extends Component{
 
     val OutMatrix_Col                   =in UInt(Config.MATRIXC_COL_WIDTH bits)
     val OutMatrix_Row                   =in UInt(Config.MATRIXC_ROW_WIDTH bits)
-    
   }
+  Img2Col_Instru.setName("Img2Col")
+  
   val GemmInstru=new Bundle{
     val WIDTH=in UInt(16 bits)
     val HEIGHT=in UInt(16 bits)
