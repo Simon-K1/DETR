@@ -93,7 +93,7 @@ class Weight_Cache extends Component{
     val In_Row_Cnt=ForLoopCounter(io.sData.fire,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,io.Matrix_Row-1)
     //val In_Col_Cnt=ForLoopCounter(In_Row_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col>>3-1)//因为一下进8列，所以需要除3
     val In_Col_Cnt=SubstractLoopCounter(In_Row_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col,Config.SA_COL)
-    when(io.start){
+    when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
         In_Col_Cnt.reset
     }
 
@@ -104,7 +104,7 @@ class Weight_Cache extends Component{
     val OutRow_Cnt=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,(io.Matrix_Row)-1)//输出行计数器,（要求输出通道必须是8的倍数）
 
     val OutCol_Cnt=SubstractLoopCounter(OutRow_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col,Config.SA_COL)
-    when(io.start){
+    when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
         OutCol_Cnt.reset
     }
     when(OutCol_Cnt.valid){
@@ -131,8 +131,8 @@ class Weight_Cache extends Component{
         i=>def gen()={
             //4096*64bit是一个Bram资源，32K
             val Weight_Bram=new xil_SimpleDualBram(8,Config.WEIGHT_CACHE_MATRIX_MAX_ROW*Config.WEIGHT_CACHE_MATRIX_MAX_COL/8,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
-            Weight_Bram.io.addra:=(In_Row_Cnt.count).resized
-            Weight_Bram.io.addrb:=(OutRow_Cnt.count).resized
+            Weight_Bram.io.addra:=(In_Row_Cnt.count+Write_Row_Base_Addr).resized
+            Weight_Bram.io.addrb:=(OutRow_Cnt.count+Read_Row_Base_Addr).resized
             // Weight_Bram.io.doutb:=0
             Weight_Bram.io.dina:=io.sData.payload((i+1)*8-1 downto i*8)
             Weight_Bram.io.ena:=io.sData.fire

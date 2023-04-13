@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : Weight_Cache
-// Git hash  : a653350aa150c74719ae18f588ed205272e9bf60
+// Git hash  : 962e6395a568a18aef701636bb9d2a5dfce85690
 
 `timescale 1ns/1ps
 
@@ -79,6 +79,7 @@ module Weight_Cache (
   wire       [3:0]    _zz_In_Col_Cnt_count;
   reg        [15:0]   In_Col_Cnt_count;
   reg                 In_Col_Cnt_valid;
+  wire                when_Weight_CacheV2_l96;
   reg        [15:0]   Read_Row_Base_Addr;
   reg        [15:0]   Write_Row_Base_Addr;
   wire                when_WaCounter_l39;
@@ -87,9 +88,8 @@ module Weight_Cache (
   wire       [3:0]    _zz_OutCol_Cnt_count;
   reg        [15:0]   OutCol_Cnt_count;
   reg                 OutCol_Cnt_valid;
+  wire                when_Weight_CacheV2_l107;
   wire                when_Weight_CacheV2_l116;
-  reg        [2:0]    Col_In_8_Cnt_count;
-  wire                Col_In_8_Cnt_valid;
   wire                sData_fire_1;
   wire                sData_fire_2;
   wire                sData_fire_3;
@@ -264,23 +264,24 @@ module Weight_Cache (
   assign _zz_In_Col_Cnt_count = 4'b1000;
   always @(*) begin
     In_Col_Cnt_valid = ((In_Col_Cnt_count <= _zz_In_Col_Cnt_valid) && In_Row_Cnt_valid);
-    if(start) begin
+    if(when_Weight_CacheV2_l96) begin
       In_Col_Cnt_valid = 1'b0;
     end
   end
 
+  assign when_Weight_CacheV2_l96 = ((Fsm_currentState & WEIGHT_CACHE_STATUS_INIT) != 4'b0000);
   assign when_WaCounter_l39 = (Raddr_Valid && ((Fsm_currentState & WEIGHT_CACHE_STATUS_SA_COMPUTE) != 4'b0000));
   assign OutRow_Cnt_valid = ((OutRow_Cnt_count == _zz_OutRow_Cnt_valid) && when_WaCounter_l39);
   assign _zz_OutCol_Cnt_count = 4'b1000;
   always @(*) begin
     OutCol_Cnt_valid = ((OutCol_Cnt_count <= _zz_OutCol_Cnt_valid) && OutRow_Cnt_valid);
-    if(start) begin
+    if(when_Weight_CacheV2_l107) begin
       OutCol_Cnt_valid = 1'b0;
     end
   end
 
+  assign when_Weight_CacheV2_l107 = ((Fsm_currentState & WEIGHT_CACHE_STATUS_INIT) != 4'b0000);
   assign when_Weight_CacheV2_l116 = ((Fsm_currentState & WEIGHT_CACHE_STATUS_INIT) != 4'b0000);
-  assign Col_In_8_Cnt_valid = ((Col_In_8_Cnt_count == 3'b111) && In_Row_Cnt_valid);
   assign Fsm_Weight_All_Cached = In_Col_Cnt_valid;
   assign Weight_Cached = In_Col_Cnt_valid;
   assign xil_SimpleDualBram_addra = In_Row_Cnt_count[13:0];
@@ -380,7 +381,6 @@ module Weight_Cache (
       Write_Row_Base_Addr <= 16'h0;
       OutRow_Cnt_count <= 16'h0;
       OutCol_Cnt_count <= Matrix_Col;
-      Col_In_8_Cnt_count <= 3'b000;
     end else begin
       Fsm_currentState <= Fsm_nextState;
       if(when_WaCounter_l19) begin
@@ -403,7 +403,7 @@ module Weight_Cache (
           In_Col_Cnt_count <= (In_Col_Cnt_count - _zz_In_Col_Cnt_count_1);
         end
       end
-      if(start) begin
+      if(when_Weight_CacheV2_l96) begin
         In_Col_Cnt_count <= Matrix_Col;
       end
       if(when_WaCounter_l39) begin
@@ -420,7 +420,7 @@ module Weight_Cache (
           OutCol_Cnt_count <= (OutCol_Cnt_count - _zz_OutCol_Cnt_count_1);
         end
       end
-      if(start) begin
+      if(when_Weight_CacheV2_l107) begin
         OutCol_Cnt_count <= Matrix_Col;
       end
       if(OutCol_Cnt_valid) begin
@@ -435,13 +435,6 @@ module Weight_Cache (
       end else begin
         if(In_Row_Cnt_valid) begin
           Write_Row_Base_Addr <= (Write_Row_Base_Addr + Matrix_Row);
-        end
-      end
-      if(In_Row_Cnt_valid) begin
-        if(Col_In_8_Cnt_valid) begin
-          Col_In_8_Cnt_count <= 3'b000;
-        end else begin
-          Col_In_8_Cnt_count <= (Col_In_8_Cnt_count + 3'b001);
         end
       end
     end
