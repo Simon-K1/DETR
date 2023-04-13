@@ -103,6 +103,10 @@ case class TopConfig(){
     val WEIGHT_CACHE_MATRIX_COL_WIDTH=16//权重缓存模块支持的权重矩阵的最大列数为2^16(一般达不到这么大，以后可以改小一点)
     val WEIGHT_CACHE_MATRIX_ROW_WIDTH=16//最大行数，也是2^16,最大输出图片大小为512*512
 
+    val WEIGHT_CACHE_MATRIX_MAX_ROW=2048//最大可支持的权重矩阵的行数
+    val WEIGHT_CACHE_MATRIX_MAX_COL=64//最大可支持的权重矩阵的列数
+        //可以推出每个权重缓存bram的深度就是MAX_ROW*MAX_COL/8,这里的8是脉动阵列的列数
+
     //用于卷积之后的数据排列模块===================================================================================
     val MATRIXC_COL_WIDTH=12//最大可支持的输出矩阵大小为2^12=4096列，也可以认为是4096个输出通道
     val MATRIXC_ROW_WIDTH=12//输出矩阵的行数可能会很大，比如1024*1024，2048*2048
