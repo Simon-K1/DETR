@@ -6,6 +6,30 @@ import spinal.lib.Delay
 import spinal.lib.StreamFifo
 import spinal.core.internals.Operator
 import xip.xil_SimpleDualBram
+class WaddrOffset_Fifo extends StreamFifo(UInt(16 bits),32+1)//必须加一，比如我们需要实现16*16的卷积，如果fifo深度设置为32，32个fifo会被存满，fifo.push.ready会拉低,不能出现这种情况
+class RaddrOffset_Fifo extends StreamFifo(UInt(16 bits),32)
+class DataGen_Bram extends BlackBox{//黑盒，入32bit，出16 bit,Activation Bram，也就是SA左边挂的那块Bram
+    val Config=TopConfig()
+    val io=new Bundle{//component要求out有驱动，但是black box不要求out的驱动
+        val clka=in Bool()
+        val addra=in UInt(log2Up(Config.DATA_GENERATE_BRAM_IN_ADDR_DEPTH) bits)
+        val dina=in UInt(Config.DATA_GENERATE_BRAM_IN_WIDTH bits)
+        val ena=in Bool()
+        val wea=in Bool()
+
+        
+        val addrb=in UInt(log2Up(Config.DATA_GENERATE_BRAM_OUT_ADDR_DEPTH) bits)
+        val doutb=out UInt((Config.DATA_GENERATE_BRAM_OUT_WIDTH) bits)
+        val clkb=in Bool()
+        
+        // val enb=in Bool()        
+    }
+    noIoPrefix()
+    // Clock A is map on a specific clock Domain
+    mapClockDomain(this.clockDomain, io.clka)
+    // Clock B is map on the current clock domain
+    mapCurrentClockDomain(io.clkb)
+}
 
 object IMG2COL_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, INIT_ADDR,DATA_CACHE,WAIT_COMPUTE,UPDATE_ADDR,START_COMPUTE= newElement
@@ -527,7 +551,6 @@ class  Img2Col_OutPut extends Component{
     Fsm.LayerEnd:=io.LayerEnd
     RaddrFifo1.io.flush:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.IDLE
 }
-
 
 
 

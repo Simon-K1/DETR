@@ -1,5 +1,6 @@
-package Systolic_Array
+package Systolic_Array.weight
 
+//重新设计权重缓存，为了适应后面多头矩阵乘法
 import spinal.core._
 import spinal.lib.{slave,master}
 import utils._
@@ -7,11 +8,6 @@ import xip.xil_SimpleDualBram
 import spinal.core
 import scala.tools.reflect.FrontEnd
 import spinal.lib.Delay
-//实现权重矩阵的缓存与输出计算
-//初步思路:在所有计算开始前应该先缓存所有权重,
-    //如果片上资源不够,应该进行矩阵切块,这里将权重矩阵切4块,也就是需要调用计算模块4次
-    //---->768/4=192,也就是每次启动只能算192个输出通道,
-    //192/8=24,激活值循环24次,也可以认为是每个Weight_Bram存24个16*16*8的卷积核,每个Bram应该存储16*16*8*24(12个Bram)个字节
 object WEIGHT_CACHE_STATUS extends SpinalEnum(defaultEncoding = binaryOneHot){
     //权重缓存模块的状态
     val IDLE, INIT, CACHE_WEIGHT,SA_COMPUTE= newElement
@@ -78,8 +74,7 @@ class Weight_Cache extends Component{
 
         val mData=out UInt(64 bits)//out Vec(UInt(8 bits),Config.SA_COL)//out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
         val Raddr_Valid=in Bool()//读Bram使能
-        // val OutMatrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
-        // val OutMatrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
+
         
         val Weight_Cached=out Bool()//权重缓存完了，给Img2Col一个启动型号
         val LayerEnd=in Bool()//当前网络层计算完毕
@@ -93,12 +88,15 @@ class Weight_Cache extends Component{
     Fsm.Init_End:=Init_Count.valid
 
     //缓存数据,写地址写数据控制
-    //按列优先存储数据,有点反直觉，因为我们的矩阵是竖着进脉动阵列的
-    val InData_Switch=Reg(UInt(8 bits))init(1)//这地方的初始化得是1
-    val Matrix_In_MaxCnt=io.Matrix_Row>>3//除8，考虑DMA位宽
-    val In_Row_Cnt=ForLoopCounter(io.sData.fire,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,Matrix_In_MaxCnt-1)//右移的原因：要考虑DMA的位宽
-    val In_Col_Cnt=ForLoopCounter(In_Row_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col-1)//
-    //val Raddr=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,io.Matrix_Row-1)//Bram读地址
+    
+    //注意：现在矩阵的列数应该被统一为8的倍数
+    val In_Row_Cnt=ForLoopCounter(io.sData.fire,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,io.Matrix_Row-1)
+    //val In_Col_Cnt=ForLoopCounter(In_Row_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col>>3-1)//因为一下进8列，所以需要除3
+    val In_Col_Cnt=SubstractLoopCounter(In_Row_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col,Config.SA_COL)
+    when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
+        In_Col_Cnt.reset
+    }
+
     val Read_Row_Base_Addr=Reg(UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits))init(0)//读权重的基地址,一列一列读，
     val Write_Row_Base_Addr=Reg(UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits))init(0)//写权重的基地址，一列一列存
     
@@ -106,48 +104,40 @@ class Weight_Cache extends Component{
     val OutRow_Cnt=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,(io.Matrix_Row)-1)//输出行计数器,（要求输出通道必须是8的倍数）
 
     val OutCol_Cnt=SubstractLoopCounter(OutRow_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col,Config.SA_COL)
-    when(io.start){
+    when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
         OutCol_Cnt.reset
     }
-
-    //举个栗子：比如16*16*32入，32出的卷积展平成2D矩阵，那么这个2D矩阵一共有8192行，32列，脉动阵列一共有8列,
-    //所以一次能输出8192*（8列）的数据，要将8192*（32列）的数据全部输出，那么只需要4次即可，输输完4次8192*（8列）数据后，读基地址（Read_Row_Base_Addr）需要归位
-    //为什么加一个RowBaseAddr？
-    //我们只需要输入Matirx_Row，对于输入数据：只要右移三位就能拿到In_Row_Cnt的End，
-    //同样地，对于输出数据每读完I*Matirx_Row后再从Matrix_Row*(I+1)开始读下一个卷积核的数据
-    val Col_In_8_Cnt=ForLoopCounter(In_Row_Cnt.valid,log2Up(Config.SA_COL),Config.SA_COL-1)//
     when(OutCol_Cnt.valid){
         Read_Row_Base_Addr:=0//输出全部数据后，也就是一个完整的输出通道都算完了，读数据基地址移归位
     }elsewhen(OutRow_Cnt.valid){
         Read_Row_Base_Addr:=Read_Row_Base_Addr+io.Matrix_Row
     }
-    when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
-        InData_Switch:=1
-    }elsewhen(In_Row_Cnt.valid){
-        InData_Switch:=InData_Switch.rotateLeft(1)//循环左移1位    
-    }
+
     when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
         Write_Row_Base_Addr:=0
-    }elsewhen(Col_In_8_Cnt.valid){
-        Write_Row_Base_Addr:=Write_Row_Base_Addr+Matrix_In_MaxCnt
+    }elsewhen(In_Row_Cnt.valid){
+        Write_Row_Base_Addr:=Write_Row_Base_Addr+io.Matrix_Row
     }
+
+
+
+
     Fsm.Weight_All_Cached:=In_Col_Cnt.valid
     io.Weight_Cached:=In_Col_Cnt.valid
 
     //构建8列权重缓存
     
     val Weight_Cache=Array.tabulate(Config.SA_COL){
-        i=>def gen()={//这里用了8个4KB的Bram
+        i=>def gen()={
             //4096*64bit是一个Bram资源，32K
-            val Weight_Bram=new xil_SimpleDualBram(64,2048,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
+            val Weight_Bram=new xil_SimpleDualBram(8,Config.WEIGHT_CACHE_MATRIX_MAX_ROW*Config.WEIGHT_CACHE_MATRIX_MAX_COL/8,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
             Weight_Bram.io.addra:=(In_Row_Cnt.count+Write_Row_Base_Addr).resized
-            Weight_Bram.io.addrb:=(Read_Row_Base_Addr+OutRow_Cnt.count).resized
+            Weight_Bram.io.addrb:=(OutRow_Cnt.count+Read_Row_Base_Addr).resized
             // Weight_Bram.io.doutb:=0
-            Weight_Bram.io.dina:=io.sData.payload
-            Weight_Bram.io.ena:=InData_Switch(i downto i).asBool&&io.sData.fire
+            Weight_Bram.io.dina:=io.sData.payload((i+1)*8-1 downto i*8)
+            Weight_Bram.io.ena:=io.sData.fire
             Weight_Bram.io.wea:=True
-            io.mData((i+1)*8-1 downto i*8):=Weight_Bram.io.doutb//Delay(,i)
-            // io.mData(i):=Delay(Weight_Bram.io.doutb,i)
+            io.mData((i+1)*8-1 downto i*8):=Weight_Bram.io.doutb
         }
         gen()
     }
