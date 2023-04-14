@@ -20,10 +20,10 @@ TestCfg=dict(
     quant=True,
     ptf=True,
     lis=True,
-    quant_method="minmax",
+    quant_method="ema",
     calib_batchsize=1,
-    calib_iter=10,
-    val_batchsize=1,
+    calib_iter=100,
+    val_batchsize=16,
     num_workers=8,
     print_freq=1
 )

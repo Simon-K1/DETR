@@ -106,12 +106,12 @@ class QConv2d(nn.Conv2d):
             Wq=self.quantizer.quant(self.weight)
             # print(Wq)
             
-            Wq=(weight)*(S1)
+            Wq=(weight*S1)/S3
             Xq=Xq-Z1
-            self.bias.data=(self.bias.data)
-            Cq=(F.conv2d(Xq, Wq, self.bias, self.stride, self.padding,
+            #self.bias.data=(self.bias.data/S3+Z3)
+            Cq=(F.conv2d(Xq, Wq, self.bias/S3+Z3, self.stride, self.padding,
                         self.dilation, self.groups))
-            return (Cq)
+            return (Cq-Z3)*S3
         
         else:
             return (F.conv2d(x, weight, self.bias, self.stride, self.padding,
