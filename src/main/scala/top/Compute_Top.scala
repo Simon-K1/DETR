@@ -1,6 +1,6 @@
 package top
 import spinal.core._
-import Systolic_Array.{Tile,PEConfig,Img2Col_Top,ConvOutput}
+import Systolic_Array.{Tile,PEConfig,Img2Col_Top,ConvArrange}
 import Systolic_Array.weight.WeightCache_Stream
 import RegTable.RegTable
 import utils.{TopConfig,WaCounter,WidthConvert}
@@ -11,6 +11,7 @@ import utils.Axis_Switch_1s
 import utils.Axis_Switch_2s
 import spinal.lib.master
 import gemm.GemmCache
+
 
 
 class Img2ColStreamV2 extends Component{
@@ -128,7 +129,7 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
    
     val signCount = in UInt (16 bits) //卷积核16*16  signCoun就是t256
     // val resultVaild = out Vec(Bool,Tile_Size)
-    val In_Channel=in UInt(Config.DATA_GENERATE_CONV_OUT_CHANNEL_WIDTH bits)
+    val OutChannel=in UInt(Config.DATA_GENERATE_CONV_OUT_CHANNEL_WIDTH bits)
     val Matrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
     val Matrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
     val start=in Bool()
@@ -139,20 +140,20 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
   }
   noIoPrefix()
   val Tile=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)
-//   Tile.setDefinitionName("SA_Conv_Tile")
-  val Tile_Output=new ConvOutput
-//   Tile_Output.setDefinitionName("SA_Conv_ConvOutput")
+
+  val Tile_Output=new ConvArrange
+
   io.activate    <>Tile.io.activate
-  // io.a_Valid     <>Tile.io.a_Valid 
+
   io.weight      <>Tile.io.weight 
-  // io.b_Valid     <>Tile.io.b_Valid 
+
   io.signCount   <>Tile.io.signCount
   for(i<-0 to 7){
     Tile.io.a_Valid(i):=io.a_Valid(i downto i).asBool
     Tile.io.b_Valid(i):=io.b_Valid(i downto i).asBool
   }
 
-  io.In_Channel <>Tile_Output.io.In_Channel
+  io.OutChannel <>Tile_Output.io.OutChannel
   io.Matrix_Col <>Tile_Output.io.Matrix_Col
   io.Matrix_Row <>Tile_Output.io.Matrix_Row 
   io.start      <>Tile_Output.io.start
@@ -277,8 +278,8 @@ class Conv extends Component{
 
     val WeightMatrix_Row                =in UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits)
 
-    val OutMatrix_Col                   =in UInt(Config.MATRIXC_COL_WIDTH bits)
-    val OutMatrix_Row                   =in UInt(Config.MATRIXC_ROW_WIDTH bits)
+    val OutMatrix_Col                   =in UInt(Config.MATRIXC_COL_WIDTH bits)//输出矩阵的列数，比如脉动阵列最终的输出矩阵C为196*768，那么行数和列数分别书196*768
+    val OutMatrix_Row                   =in UInt(Config.MATRIXC_ROW_WIDTH bits)//输出矩阵的行数
   }
   Img2Col_Instru.setName("Img2Col")
   
@@ -358,7 +359,7 @@ class Conv extends Component{
   //==================================================================================
   Compute_Unit.io.start       :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE&&Control.Switch_Conv,3)
 
-  Compute_Unit.io.In_Channel  :=Img2Col_Instru.OutFeature_Channel.resized//这里的位宽可以小一点
+  Compute_Unit.io.OutChannel  :=Img2Col_Instru.OutFeature_Channel.resized//这里的位宽可以小一点
   Compute_Unit.io.Matrix_Col  :=Img2Col_Instru.OutMatrix_Col
   Compute_Unit.io.Matrix_Row  :=Img2Col_Instru.OutMatrix_Row
   Compute_Unit.io.signCount   :=Img2Col_Instru.WeightMatrix_Row-1
