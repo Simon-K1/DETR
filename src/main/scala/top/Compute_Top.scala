@@ -11,6 +11,7 @@ import utils.Axis_Switch_1s
 import utils.Axis_Switch_2s
 import spinal.lib.master
 import gemm.GemmCache
+import Systolic_Array.LHMM.MatrixOut
 
 
 
@@ -129,9 +130,13 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
    
     val signCount = in UInt (16 bits) //卷积核16*16  signCoun就是t256
     // val resultVaild = out Vec(Bool,Tile_Size)
+    
+    val OutMatrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
+    val OutMatrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
+
     val OutChannel=in UInt(Config.DATA_GENERATE_CONV_OUT_CHANNEL_WIDTH bits)
-    val Matrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
-    val Matrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
+    val OutFeatureSize=in UInt(16 bits)
+    val Matrix2Img=in Bool()//Matrix to Image 将卷积后的矩阵结果按通道优先的图片格式输出
     val start=in Bool()
     val LayerEnd=out Bool()
     val mData=master Stream(UInt(64 bits))
@@ -139,14 +144,12 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
     val mLast=out Bool()
   }
   noIoPrefix()
-  val Tile=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)
-
-  val Tile_Output=new ConvArrange
+  val Tile=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)//脉动阵列
+  val Tile_Output=new ConvArrange//需要改名字，这里是将矩阵格式转化为图片通道优先格式
+  val MatrixFormat_Output=new MatrixOut(64,64,64)//不管是矩阵还是权重都按矩阵格式输出
 
   io.activate    <>Tile.io.activate
-
   io.weight      <>Tile.io.weight 
-
   io.signCount   <>Tile.io.signCount
   for(i<-0 to 7){
     Tile.io.a_Valid(i):=io.a_Valid(i downto i).asBool
@@ -154,17 +157,27 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
   }
 
   io.OutChannel <>Tile_Output.io.OutChannel
-  io.Matrix_Col <>Tile_Output.io.Matrix_Col
-  io.Matrix_Row <>Tile_Output.io.Matrix_Row 
-  io.start      <>Tile_Output.io.start
+  Tile_Output.io.start:=io.start&&io.Matrix2Img 
+  io.OutFeatureSize <>Tile_Output.io.OutFeatureSize
+
+
+  io.OutMatrix_Col <>MatrixFormat_Output.io.OutMatrix_Col
+  io.OutMatrix_Row <>MatrixFormat_Output.io.OutMatrix_Row
+
+
 
   for(i<-0 to Tile_Size-1){
     Tile.io.PE_OUT(i)(7 downto 0).asUInt<>Tile_Output.io.sData((i+1)*8-1 downto i*8)//还没量化，所以只能截取低8位
+    Tile.io.PE_OUT(i)(7 downto 0).asUInt<>MatrixFormat_Output.io.sData.payload((i+1)*8-1 downto i*8)//还没量化，所以只能截取低8位
   }
-  Tile.io.resultVaild<>Tile_Output.io.sValid
+  Tile.io.resultVaild<>Tile_Output.io.sValid//TODO，优化这里的valid信号数量
+  Tile.io.resultVaild(0)<>MatrixFormat_Output.io.sData.valid
+  
   io.LayerEnd:=Tile_Output.io.LayerEnd
   io.mData<>Tile_Output.io.mData
   io.mLast:=Tile_Output.io.mLast
+
+  
 }
 
 
@@ -244,6 +257,7 @@ class Conv extends Component{
     //val Inswitch=in UInt(2 bits)
     //val OutSwitch           =in UInt(2 bits)
     val Switch_Conv         =in Bool()//切换到卷积计算
+    val Matrix2Img          =in Bool()
   }
   val s_axis_s2mm=new Bundle{//一个从接口，两个主接口
     val Data_Width=64
@@ -357,12 +371,13 @@ class Conv extends Component{
 
 
   //==================================================================================
-  Compute_Unit.io.start       :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE&&Control.Switch_Conv,3)
-
-  Compute_Unit.io.OutChannel  :=Img2Col_Instru.OutFeature_Channel.resized//这里的位宽可以小一点
-  Compute_Unit.io.Matrix_Col  :=Img2Col_Instru.OutMatrix_Col
-  Compute_Unit.io.Matrix_Row  :=Img2Col_Instru.OutMatrix_Row
-  Compute_Unit.io.signCount   :=Img2Col_Instru.WeightMatrix_Row-1
+  Compute_Unit.io.start           :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE&&Control.Switch_Conv,3)
+  Compute_Unit.io.Matrix2Img      :=Control.Matrix2Img
+  Compute_Unit.io.OutChannel      :=Img2Col_Instru.OutFeature_Channel.resized//这里的位宽可以小一点
+  Compute_Unit.io.OutMatrix_Col   :=Img2Col_Instru.OutMatrix_Col
+  Compute_Unit.io.OutMatrix_Row   :=Img2Col_Instru.OutMatrix_Row
+  Compute_Unit.io.OutFeatureSize  :=Img2Col_Instru.OutFeature_Size
+  Compute_Unit.io.signCount       :=Img2Col_Instru.WeightMatrix_Row-1
   when(Control.Switch_Conv){
     Compute_Unit.io.activate    :=Img2Col_Unit.io.mData.asSInt
   }otherwise{
@@ -407,8 +422,6 @@ class Conv extends Component{
 
 
 }
-
-
 
 object Top extends App { 
     val OnBoard=true

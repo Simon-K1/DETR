@@ -10,7 +10,7 @@ import utils.TopConfig
 class MatrixOut(dataWidthIn: Int, dataWidthOut: Int,depth:Int) extends Component{
   val Config=TopConfig()
   val io = new Bundle {
-    val input = in Vec(Flow(UInt(dataWidthIn bits)), 8)
+    val sData = slave Flow(UInt(dataWidthIn bits))
     val mData =  master Stream UInt(dataWidthOut bits)
     val mLast =out Bool()
     

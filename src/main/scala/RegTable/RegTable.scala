@@ -23,6 +23,7 @@ class RegTable extends Component{
 	val Control_Reg=bus.newReg(doc="Img2Col_Start")
 	val Start=Control_Reg.field(Bits(1 bits),WO,doc="Ps Start Img2Col_Start(only for test)").asOutput()
 	val SwitchConv=Control_Reg.field(Bits(2 bits),WO,doc="1:Start Conv Compute\n").asOutput()
+	val Matrix2Img=Control_Reg.field(Bits(1 bits),WO,doc="reshape Matrix into 3D Feature\n").asOutput()
 	//val OutSwitch=Control_Reg.field(Bits(2 bits),WO,doc="ConvOutput Switch").asOutput()
 
 
