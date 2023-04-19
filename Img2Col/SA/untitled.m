@@ -14,3 +14,22 @@ for i=1:8:size(Matrix_B,1)
 end
 fclose(fid_raw_W);
 dec2hex(Matrix_B(1:8,1));
+%% 构建随机矩阵
+clear
+Rand_MatrixA=randi(15,[160,40]);
+Rand_MatrixB=randi(15,[40,80]);
+fid=fopen("InputMatrixA.txt","w");
+Matrix_Flattened=reshape(Rand_MatrixA',1,[]);
+for i=1:8:size(Matrix_Flattened,2)
+    fprintf(fid,'%02x%02x%02x%02x%02x%02x%02x%02x\n',Matrix_Flattened(i+7),Matrix_Flattened(i+6),Matrix_Flattened(i+5),Matrix_Flattened(i+4), ...
+        Matrix_Flattened(i+3),Matrix_Flattened(i+2),Matrix_Flattened(i+1),Matrix_Flattened(i));%低位第一个点，高位第二个点，
+end
+fclose(fid);
+fid=fopen("InputMatrixB.txt","w");
+Matrix_Flattened=reshape(Rand_MatrixB,1,[]);
+for i=1:8:size(Matrix_Flattened,2)
+    fprintf(fid,'%02x%02x%02x%02x%02x%02x%02x%02x\n',Matrix_Flattened(i+7),Matrix_Flattened(i+6),Matrix_Flattened(i+5),Matrix_Flattened(i+4), ...
+        Matrix_Flattened(i+3),Matrix_Flattened(i+2),Matrix_Flattened(i+1),Matrix_Flattened(i));%低位第一个点，高位第二个点，
+end
+fclose(fid);
+Matrix_C=Rand_MatrixA*Rand_MatrixB

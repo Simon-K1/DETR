@@ -1,12 +1,13 @@
 %% 第一步： 生成8x输入通道的测试数据，包含32输入通道的图片和32输出通道的卷积权重
     % 图片大小，步长等相关信息需要手动配置
 clear
-Feature_Size=224;%图片大小224*224
+WEIGHT_VERSION=1;%权重缓存模块的版本，可选1（V1），2（V2）
+Feature_Size=322;%图片大小224*224
 Feature_Channel=32;%图片通道32
-Out_Channel=32;
+Out_Channel=64;
 
 Stride=1;%要修改
-KernelSize=4;%要修改
+KernelSize=3;%要修改
 OutFeatureSize=75;%无需修改，在后面自动推理出来
 %Strdie1
 if Stride==KernelSize
@@ -80,18 +81,31 @@ for row=1:Row%遍历矩阵所有行
     Row_Data=round(Row_Data);
     WeightMatrix(row,:)=Row_Data;
 end
-
+save('matlab')
 %% 生成权重仿真txt
 %权重也按通道优先展开,列优先存储
 %先将权重矩阵展平
-Matrix_Flattened=reshape(WeightMatrix,1,[]);%按列优先展平
-fid_raw_W=fopen('WeightData.txt','w');
-Shape=size(Matrix_Flattened);
- for i=8:8:Shape(2)
-  %通道按从低往高排列，比如第一个通道的点放最低位
-  fprintf(fid_raw_W,'%02x%02x%02x%02x%02x%02x%02x%02x\n',Matrix_Flattened(i),Matrix_Flattened(i-1),Matrix_Flattened(i-2),Matrix_Flattened(i-3),Matrix_Flattened(i-4),Matrix_Flattened(i-5),Matrix_Flattened(i-6),Matrix_Flattened(i-7));%低位第一个点，高位第二个点，
- end
-fclose(fid_raw_W);
-save('matlab')
+if WEIGHT_VERSION==1
+    Matrix_Flattened=reshape(WeightMatrix,1,[]);%按列优先展平
+    fid_raw_W=fopen('WeightData.txt','w');
+    Shape=size(Matrix_Flattened);
+    for i=8:8:Shape(2)
+        %通道按从低往高排列，比如第一个通道的点放最低位
+        fprintf(fid_raw_W,'%02x%02x%02x%02x%02x%02x%02x%02x\n',Matrix_Flattened(i),Matrix_Flattened(i-1),Matrix_Flattened(i-2),Matrix_Flattened(i-3),Matrix_Flattened(i-4),Matrix_Flattened(i-5),Matrix_Flattened(i-6),Matrix_Flattened(i-7));%低位第一个点，高位第二个点，
+    end
+    fclose(fid_raw_W);
+else% 权重格式版本2，
+    fid_raw_W=fopen('WeightData.txt','w');
+    Shape=size(WeightMatrix);
+    for i=8:8:Shape(2)
+        for j=1:Shape(1)
+            Matrix_Flattened=WeightMatrix(j,i-7:i);
+            %通道按从低往高排列，比如第一个通道的点放最低位
+            fprintf(fid_raw_W,'%02x%02x%02x%02x%02x%02x%02x%02x\n',Matrix_Flattened(8),Matrix_Flattened(7),Matrix_Flattened(6),Matrix_Flattened(5),Matrix_Flattened(4),Matrix_Flattened(3),Matrix_Flattened(2),Matrix_Flattened(1));%低位第一个点，高位第二个点，
+        end
+    end
+    fclose(fid_raw_W);
+
+end
 
 

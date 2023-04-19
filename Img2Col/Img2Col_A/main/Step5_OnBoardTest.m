@@ -2,7 +2,15 @@
 clear 
 load("matlab.mat")
 Picture_Flattened=reshape(Feature_In',1,[]);
+if WEIGHT_VERSION==1
 WeightMatrix_Flattened=reshape(WeightMatrix,1,[]);
+else
+    %这里先默认权重的列数为8的倍数，或者输出图片的通道为8的倍数
+    WeightMatrix_Flattened=[];
+    for i=8:8:size(WeightMatrix,2)
+        WeightMatrix_Flattened=[WeightMatrix_Flattened,reshape(WeightMatrix(:,i-7:i)',1,[])];
+    end
+end
 %% 单独生成图片和权重
 if 0
     fid=fopen("PictureIn.bin",'w');
