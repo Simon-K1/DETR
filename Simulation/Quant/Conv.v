@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : Conv
-// Git hash  : 3af103489298d03f217a760b1c0da52722668b22
+// Git hash  : 5a82b3aaeac8ddec1e2839309038f89815bb72e0
 
 `timescale 1ns/1ps
 
@@ -33,11 +33,6 @@ module Conv (
   input      [15:0]   GemmInstru_WIDTH,
   input      [15:0]   GemmInstru_HEIGHT,
   input               clk,
-  input      [63:0]   s_axis_quant_tdata,
-  input      [7:0]    s_axis_quant_tkeep,
-  input               s_axis_quant_tlast,
-  output              s_axis_quant_tready,
-  input               s_axis_quant_tvalid,
   input               reset
 );
   localparam TopCtrl_Enum_IDLE = 6'd1;
@@ -48,6 +43,7 @@ module Conv (
   localparam TopCtrl_Enum_WAIT_COMPUTE_END = 6'd32;
 
   reg        [1:0]    InputSwitch_Switch;
+  reg                 InputSwitch_m_0_axis_mm2s_tready;
   reg        [63:0]   Compute_Unit_activate;
   reg        [7:0]    Compute_Unit_a_Valid;
   wire       [63:0]   Compute_Unit_weight;
@@ -110,6 +106,7 @@ module Conv (
   wire                LH_Gemm_bvalid;
   wire       [63:0]   LH_Gemm_mData;
   wire                ConvQuant_1_sData_ready;
+  wire                ConvQuant_1_QuantPara_Cached;
   wire       [63:0]   ConvQuant_1_dataOut;
   wire       [0:0]    _zz_b_Valid;
   wire       [0:0]    _zz_b_Valid_1;
@@ -127,13 +124,13 @@ module Conv (
   wire                Fsm_Matrix_Received;
   wire                Fsm_Compute_End;
   wire                Fsm_Switch_Conv;
-  wire                when_Compute_TopV2_l224;
-  wire                when_Compute_TopV2_l226;
+  wire                when_Compute_TopV2_l225;
+  wire                when_Compute_TopV2_l227;
   wire                when_WaCounter_l19;
   reg        [2:0]    InitCnt_count;
   reg                 InitCnt_valid;
   wire                when_WaCounter_l14;
-  wire                when_Compute_TopV2_l315;
+  wire                when_Compute_TopV2_l316;
   reg                 toplevel_Weight_Unit_Weight_Cached_delay_1;
   reg                 toplevel_Weight_Unit_Weight_Cached_delay_2;
   reg                 toplevel_Weight_Unit_Weight_Cached_delay_3;
@@ -167,7 +164,7 @@ module Conv (
     .m_0_axis_mm2s_tdata  (InputSwitch_m_0_axis_mm2s_tdata[63:0]), //o
     .m_0_axis_mm2s_tkeep  (InputSwitch_m_0_axis_mm2s_tkeep[7:0] ), //o
     .m_0_axis_mm2s_tlast  (InputSwitch_m_0_axis_mm2s_tlast      ), //o
-    .m_0_axis_mm2s_tready (Weight_Unit_s_axis_s2mm_tready       ), //i
+    .m_0_axis_mm2s_tready (InputSwitch_m_0_axis_mm2s_tready     ), //i
     .m_0_axis_mm2s_tvalid (InputSwitch_m_0_axis_mm2s_tvalid     ), //o
     .m_1_axis_mm2s_tdata  (InputSwitch_m_1_axis_mm2s_tdata[63:0]), //o
     .m_1_axis_mm2s_tkeep  (InputSwitch_m_1_axis_mm2s_tkeep[7:0] ), //o
@@ -278,25 +275,26 @@ module Conv (
     .reset         (reset                                )  //i
   );
   ConvQuant ConvQuant_1 (
-    .start          (Control_start                   ), //i
-    .sData_valid    (s_axis_quant_tvalid             ), //i
-    .sData_ready    (ConvQuant_1_sData_ready         ), //o
-    .sData_payload  (s_axis_quant_tdata[63:0]        ), //i
-    .OutMatrix_Col  (Img2Col_OutFeature_Channel[15:0]), //i
-    .LayerEnd       (Control_LayerEnd                ), //i
-    .dataIn_0       (Compute_Unit_mData_0[31:0]      ), //i
-    .dataIn_1       (Compute_Unit_mData_1[31:0]      ), //i
-    .dataIn_2       (Compute_Unit_mData_2[31:0]      ), //i
-    .dataIn_3       (Compute_Unit_mData_3[31:0]      ), //i
-    .dataIn_4       (Compute_Unit_mData_4[31:0]      ), //i
-    .dataIn_5       (Compute_Unit_mData_5[31:0]      ), //i
-    .dataIn_6       (Compute_Unit_mData_6[31:0]      ), //i
-    .dataIn_7       (Compute_Unit_mData_7[31:0]      ), //i
-    .dataOut        (ConvQuant_1_dataOut[63:0]       ), //o
-    .zeroIn         (8'h0                            ), //i
-    .SAOutput_Valid (Compute_Unit_resultVaild_0      ), //i
-    .clk            (clk                             ), //i
-    .reset          (reset                           )  //i
+    .start            (Weight_Unit_Weight_Cached            ), //i
+    .sData_valid      (InputSwitch_m_0_axis_mm2s_tvalid     ), //i
+    .sData_ready      (ConvQuant_1_sData_ready              ), //o
+    .sData_payload    (InputSwitch_m_0_axis_mm2s_tdata[63:0]), //i
+    .OutMatrix_Col    (Img2Col_OutFeature_Channel[15:0]     ), //i
+    .LayerEnd         (Control_LayerEnd                     ), //i
+    .QuantPara_Cached (ConvQuant_1_QuantPara_Cached         ), //o
+    .dataIn_0         (Compute_Unit_mData_0[31:0]           ), //i
+    .dataIn_1         (Compute_Unit_mData_1[31:0]           ), //i
+    .dataIn_2         (Compute_Unit_mData_2[31:0]           ), //i
+    .dataIn_3         (Compute_Unit_mData_3[31:0]           ), //i
+    .dataIn_4         (Compute_Unit_mData_4[31:0]           ), //i
+    .dataIn_5         (Compute_Unit_mData_5[31:0]           ), //i
+    .dataIn_6         (Compute_Unit_mData_6[31:0]           ), //i
+    .dataIn_7         (Compute_Unit_mData_7[31:0]           ), //i
+    .dataOut          (ConvQuant_1_dataOut[63:0]            ), //o
+    .zeroIn           (8'h3b                                ), //i
+    .SAOutput_Valid   (Compute_Unit_resultVaild_0           ), //i
+    .clk              (clk                                  ), //i
+    .reset            (reset                                )  //i
   );
   `ifndef SYNTHESIS
   always @(*) begin
@@ -341,10 +339,10 @@ module Conv (
         end
       end
       (((Fsm_currentState) & TopCtrl_Enum_WEIGHT_CACHE) == TopCtrl_Enum_WEIGHT_CACHE) : begin
-        if(when_Compute_TopV2_l224) begin
+        if(when_Compute_TopV2_l225) begin
           Fsm_nextState = TopCtrl_Enum_RECEIVE_PICTURE;
         end else begin
-          if(when_Compute_TopV2_l226) begin
+          if(when_Compute_TopV2_l227) begin
             Fsm_nextState = TopCtrl_Enum_RECEIVE_MATRIX;
           end else begin
             Fsm_nextState = TopCtrl_Enum_WEIGHT_CACHE;
@@ -375,8 +373,8 @@ module Conv (
     endcase
   end
 
-  assign when_Compute_TopV2_l224 = (Fsm_WeightCached && Fsm_Switch_Conv);
-  assign when_Compute_TopV2_l226 = (Fsm_WeightCached && (! Fsm_Switch_Conv));
+  assign when_Compute_TopV2_l225 = (Fsm_WeightCached && Fsm_Switch_Conv);
+  assign when_Compute_TopV2_l227 = (Fsm_WeightCached && (! Fsm_Switch_Conv));
   assign when_WaCounter_l19 = ((Fsm_currentState & TopCtrl_Enum_INIT) != 6'b000000);
   assign when_WaCounter_l14 = (InitCnt_count == 3'b101);
   always @(*) begin
@@ -389,9 +387,9 @@ module Conv (
 
   assign Fsm_Inited = InitCnt_valid;
   assign s_axis_s2mm_tready = InputSwitch_s0_axis_s2mm_tready;
-  assign when_Compute_TopV2_l315 = ((Fsm_currentState & TopCtrl_Enum_WEIGHT_CACHE) != 6'b000000);
+  assign when_Compute_TopV2_l316 = ((Fsm_currentState & TopCtrl_Enum_WEIGHT_CACHE) != 6'b000000);
   always @(*) begin
-    if(when_Compute_TopV2_l315) begin
+    if(when_Compute_TopV2_l316) begin
       InputSwitch_Switch = 2'b00;
     end else begin
       if(Control_Switch_Conv) begin
@@ -404,8 +402,17 @@ module Conv (
 
   assign Fsm_Picture_Received = (Img2Col_Unit_LayerEnd || LH_Gemm_LayerEnd);
   assign Weight_Unit_Raddr_Valid = (Img2Col_Unit_Raddr_Valid || LH_Gemm_bvalid);
-  assign Fsm_WeightCached = Weight_Unit_Weight_Cached;
+  assign Fsm_WeightCached = ConvQuant_1_QuantPara_Cached;
   assign Fsm_Compute_End = Control_LayerEnd;
+  always @(*) begin
+    InputSwitch_m_0_axis_mm2s_tready = Weight_Unit_s_axis_s2mm_tready;
+    if(Weight_Unit_s_axis_s2mm_tready) begin
+      InputSwitch_m_0_axis_mm2s_tready = Weight_Unit_s_axis_s2mm_tready;
+    end else begin
+      InputSwitch_m_0_axis_mm2s_tready = ConvQuant_1_sData_ready;
+    end
+  end
+
   assign Compute_Unit_OutChannel = Img2Col_OutFeature_Channel[9:0];
   assign Compute_Unit_signCount = (Img2Col_WeightMatrix_Row - 16'h0001);
   always @(*) begin
@@ -448,7 +455,6 @@ module Conv (
   assign LH_Gemm_WIDTH = GemmInstru_WIDTH[11:0];
   assign LH_Gemm_HIGHT = GemmInstru_HEIGHT[11:0];
   assign LH_Gemm_WEIGHTCOL = Img2Col_OutFeature_Channel[7:0];
-  assign s_axis_quant_tready = ConvQuant_1_sData_ready;
   assign mData_payload = ConvQuant_1_dataOut;
   always @(posedge clk or posedge reset) begin
     if(reset) begin
@@ -487,6 +493,7 @@ module ConvQuant (
   input      [63:0]   sData_payload,
   input      [15:0]   OutMatrix_Col,
   input               LayerEnd,
+  output              QuantPara_Cached,
   input      [31:0]   dataIn_0,
   input      [31:0]   dataIn_1,
   input      [31:0]   dataIn_2,
@@ -538,6 +545,14 @@ module ConvQuant (
   wire                InMatrixCol_Cnt_valid;
   reg        [8:0]    OutCol_Cnt_count;
   wire                OutCol_Cnt_valid;
+  reg        [31:0]   dataIn_regNext_0;
+  reg        [31:0]   dataIn_regNext_1;
+  reg        [31:0]   dataIn_regNext_2;
+  reg        [31:0]   dataIn_regNext_3;
+  reg        [31:0]   dataIn_regNext_4;
+  reg        [31:0]   dataIn_regNext_5;
+  reg        [31:0]   dataIn_regNext_6;
+  reg        [31:0]   dataIn_regNext_7;
   `ifndef SYNTHESIS
   reg [79:0] Fsm_currentState_string;
   reg [79:0] Fsm_nextState_string;
@@ -580,14 +595,14 @@ module ConvQuant (
     .clkb  (clk                       )  //i
   );
   Quan Quant_Module (
-    .dataIn_0 (dataIn_0[31:0]            ), //i
-    .dataIn_1 (dataIn_1[31:0]            ), //i
-    .dataIn_2 (dataIn_2[31:0]            ), //i
-    .dataIn_3 (dataIn_3[31:0]            ), //i
-    .dataIn_4 (dataIn_4[31:0]            ), //i
-    .dataIn_5 (dataIn_5[31:0]            ), //i
-    .dataIn_6 (dataIn_6[31:0]            ), //i
-    .dataIn_7 (dataIn_7[31:0]            ), //i
+    .dataIn_0 (dataIn_regNext_0[31:0]    ), //i
+    .dataIn_1 (dataIn_regNext_1[31:0]    ), //i
+    .dataIn_2 (dataIn_regNext_2[31:0]    ), //i
+    .dataIn_3 (dataIn_regNext_3[31:0]    ), //i
+    .dataIn_4 (dataIn_regNext_4[31:0]    ), //i
+    .dataIn_5 (dataIn_regNext_5[31:0]    ), //i
+    .dataIn_6 (dataIn_regNext_6[31:0]    ), //i
+    .dataIn_7 (dataIn_regNext_7[31:0]    ), //i
     .biasIn   (BiasCache_doutb[31:0]     ), //i
     .scaleIn  (ScaleCache_doutb[31:0]    ), //i
     .shiftIn  (ShiftCache_doutb[31:0]    ), //i
@@ -684,17 +699,26 @@ module ConvQuant (
   assign Fsm_LayerEnd = LayerEnd;
   assign sData_fire = (sData_valid && sData_ready);
   assign InMatrixCol_Cnt_valid = ((_zz_InMatrixCol_Cnt_valid == _zz_InMatrixCol_Cnt_valid_1) && sData_fire);
-  assign Fsm_Bias_Loaded = InMatrixCol_Cnt_valid;
-  assign Fsm_Scale_Loaded = InMatrixCol_Cnt_valid;
-  assign Fsm_Shift_Loaded = InMatrixCol_Cnt_valid;
+  assign Fsm_Bias_Loaded = (InMatrixCol_Cnt_valid && ((Fsm_currentState & ConvQuan_ENUM_LOAD_BIAS) != 6'b000000));
+  assign Fsm_Scale_Loaded = (InMatrixCol_Cnt_valid && ((Fsm_currentState & ConvQuan_ENUM_LOAD_SCALE) != 6'b000000));
+  assign Fsm_Shift_Loaded = (InMatrixCol_Cnt_valid && ((Fsm_currentState & ConvQuan_ENUM_LOAD_SHIFT) != 6'b000000));
   assign BiasCache_ena = (((Fsm_currentState & ConvQuan_ENUM_LOAD_BIAS) != 6'b000000) && sData_valid);
   assign ScaleCache_ena = (((Fsm_currentState & ConvQuan_ENUM_LOAD_SCALE) != 6'b000000) && sData_valid);
   assign ShiftCache_ena = (((Fsm_currentState & ConvQuan_ENUM_LOAD_SHIFT) != 6'b000000) && sData_valid);
   assign sData_ready = ((((Fsm_currentState & ConvQuan_ENUM_LOAD_BIAS) != 6'b000000) || ((Fsm_currentState & ConvQuan_ENUM_LOAD_SCALE) != 6'b000000)) || ((Fsm_currentState & ConvQuan_ENUM_LOAD_SHIFT) != 6'b000000));
+  assign QuantPara_Cached = Fsm_Shift_Loaded;
   assign OutCol_Cnt_valid = ((_zz_OutCol_Cnt_valid == _zz_OutCol_Cnt_valid_1) && SAOutput_Valid);
   assign dataOut = Quant_Module_dataOut;
   always @(posedge clk) begin
     start_regNext <= start;
+    dataIn_regNext_0 <= dataIn_0;
+    dataIn_regNext_1 <= dataIn_1;
+    dataIn_regNext_2 <= dataIn_2;
+    dataIn_regNext_3 <= dataIn_3;
+    dataIn_regNext_4 <= dataIn_4;
+    dataIn_regNext_5 <= dataIn_5;
+    dataIn_regNext_6 <= dataIn_6;
+    dataIn_regNext_7 <= dataIn_7;
   end
 
   always @(posedge clk or posedge reset) begin

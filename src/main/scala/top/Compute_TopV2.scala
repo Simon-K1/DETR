@@ -187,6 +187,7 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
 object TopCtrl_Enum extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, WEIGHT_CACHE,RECEIVE_PICTURE,RECEIVE_MATRIX,WAIT_COMPUTE_END= newElement
     //WEIGHT_CACHE:缓存权重
+      //缓存的权重包含B矩阵权重和量化参数
     //RECEIVE_PICTURE:接收图片数据
     //RECEIVE_MATRIX:接收矩阵数据
     //WAITEND:等待计算结束
@@ -362,15 +363,22 @@ class Conv extends Component{
   Weight_Unit.io.start      :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE,3)
   Weight_Unit.io.Raddr_Valid:=Img2Col_Unit.io.Raddr_Valid||LH_Gemm.io.bvalid
   Weight_Unit.io.LayerEnd   :=(Control.LayerEnd)
-  Fsm.WeightCached          :=(Weight_Unit.io.Weight_Cached)
+  Fsm.WeightCached          :=(ConvQuant.io.QuantPara_Cached)
   Fsm.Compute_End           :=(Control.LayerEnd)
-  Weight_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(0).axis_mm2s_tdata
+  // val Weight_Tmp=UInt(64 bits)
+  Weight_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(0).axis_mm2s_tdata//RegNext(InputSwitch.m(0).axis_mm2s_tdata)
   Weight_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(0).axis_mm2s_tkeep
   Weight_Unit.io.s_axis_s2mm_tlast <>InputSwitch.m(0).axis_mm2s_tlast
   Weight_Unit.io.s_axis_s2mm_tready<>InputSwitch.m(0).axis_mm2s_tready
-  Weight_Unit.io.s_axis_s2mm_tvalid<>InputSwitch.m(0).axis_mm2s_tvalid
-
-
+  Weight_Unit.io.s_axis_s2mm_tvalid<>InputSwitch.m(0).axis_mm2s_tvalid//RegNext(InputSwitch.m(0).axis_mm2s_tvalid)
+  //当B矩阵缓存完后应该继续缓存量化参数
+  when(Weight_Unit.io.s_axis_s2mm_tready){
+    InputSwitch.m(0).axis_mm2s_tready:=Weight_Unit.io.s_axis_s2mm_tready
+  }otherwise{
+    InputSwitch.m(0).axis_mm2s_tready:=ConvQuant.io.sData.ready
+  }
+  ConvQuant.io.sData.payload<>InputSwitch.m(0).axis_mm2s_tdata
+  ConvQuant.io.sData.valid<>InputSwitch.m(0).axis_mm2s_tvalid
   //==================================================================================
   Compute_Unit.io.start           :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE&&Control.Switch_Conv,3)
   Compute_Unit.io.Matrix2Img      :=Control.Matrix2Img
@@ -425,18 +433,18 @@ class Conv extends Component{
     //开始连接量化模块
     //应该在外面再开一个数据接口用于输入量化参数
   // val ConvQuant=new ConvQuant
-  val s_axis_quant=new Bundle{//一个从接口，两个主接口
-    val Data_Width=64
-    val tdata=in UInt(Data_Width bits)
-    val tkeep=in Bits(Data_Width/8 bits)
-    val tlast=in Bool()
-    val tready=out Bool()
-    val tvalid=in Bool()
-  }
-  ConvQuant.io.sData.payload<>s_axis_quant.tdata
-  ConvQuant.io.sData.valid<>s_axis_quant.tvalid
-  ConvQuant.io.sData.ready<>s_axis_quant.tready
-  ConvQuant.io.start:=Control.start
+  // val s_axis_quant=new Bundle{//一个从接口，两个主接口
+  //   val Data_Width=64
+  //   val tdata=in UInt(Data_Width bits)
+  //   val tkeep=in Bits(Data_Width/8 bits)
+  //   val tlast=in Bool()
+  //   val tready=out Bool()
+  //   val tvalid=in Bool()
+  // }
+  // ConvQuant.io.sData.payload<>s_axis_quant.tdata
+  // ConvQuant.io.sData.valid<>s_axis_quant.tvalid
+  // ConvQuant.io.sData.ready<>s_axis_quant.tready
+  ConvQuant.io.start:=Weight_Unit.io.Weight_Cached
   
   for(i<-0 to Config.SA_ROW-1){
     
@@ -445,7 +453,7 @@ class Conv extends Component{
   ConvQuant.io.dataOut<>mData.payload
   ConvQuant.io.LayerEnd:=Control.LayerEnd
   ConvQuant.io.OutMatrix_Col:=Img2Col_Instru.OutFeature_Channel//输出矩阵的列数
-  ConvQuant.io.zeroIn:=0
+  ConvQuant.io.zeroIn:=59
   ConvQuant.io.SAOutput_Valid:=Compute_Unit.io.resultVaild(0)
   // mData.valid:=False
 }
@@ -466,6 +474,6 @@ object Top extends App {
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Axis_Switch_2s(3,64))
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Axis_Switch_1s(3,64))
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Conv)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ConvQuant)
+    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ConvQuant)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

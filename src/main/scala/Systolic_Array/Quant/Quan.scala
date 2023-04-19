@@ -87,7 +87,7 @@ class ConvQuant extends Component{
 
         val OutMatrix_Col=in UInt(16 bits)//输出通道数量，也是输出矩阵的列数
         val LayerEnd=in Bool()//待定
-
+        val QuantPara_Cached=out Bool()//量化参数缓存完成
         //=================================
         val dataIn   =in Vec(SInt(Config.addChannelTimesWidth bits),Config.SA_ROW)//sum(q1*q2)的值
         val dataOut  =out UInt (Config.SA_ROW * 8 bits)//一次出8个8bit，因为脉动阵列有8行
@@ -107,9 +107,9 @@ class ConvQuant extends Component{
 
     val InMatrixCol_Cnt=ForLoopCounter(io.sData.fire,log2Up(Config.QUAN_MAX_MATRIX_COL/2),(io.OutMatrix_Col>>1)-1)//列计数器，可以认为是脉动阵列输出矩阵的列数，也可以认为是输出特征图的通道
         //输入位宽是64bit，输出位宽为32bit，比如一共由32列，写地址只需要16个即可。读地址还是32个
-    Fsm.Bias_Loaded:=InMatrixCol_Cnt.valid
-    Fsm.Scale_Loaded:=InMatrixCol_Cnt.valid
-    Fsm.Shift_Loaded:=InMatrixCol_Cnt.valid
+    Fsm.Bias_Loaded:=(InMatrixCol_Cnt.valid)&&Fsm.currentState===ConvQuan_ENUM.LOAD_BIAS
+    Fsm.Scale_Loaded:=(InMatrixCol_Cnt.valid)&&Fsm.currentState===ConvQuan_ENUM.LOAD_SCALE
+    Fsm.Shift_Loaded:=(InMatrixCol_Cnt.valid)&&Fsm.currentState===ConvQuan_ENUM.LOAD_SHIFT
     
     BiasCache.io.addra:=InMatrixCol_Cnt.count
     ScaleCache.io.addra:=InMatrixCol_Cnt.count
@@ -131,7 +131,7 @@ class ConvQuant extends Component{
     // io.Scale   :=ScaleCache.io.doutb
     // io.Shift   :=ShiftCache.io.doutb
     io.sData.ready:=(Fsm.currentState===ConvQuan_ENUM.LOAD_BIAS)||(Fsm.currentState===ConvQuan_ENUM.LOAD_SCALE)||(Fsm.currentState===ConvQuan_ENUM.LOAD_SHIFT)
-
+    io.QuantPara_Cached:=Fsm.Shift_Loaded
 
     //量化参数缓存结束，接下来开始实现量化计算============================================================
     val OutCol_Cnt=ForLoopCounter(io.SAOutput_Valid,log2Up(Config.QUAN_MAX_MATRIX_COL),io.OutMatrix_Col-1)
@@ -140,7 +140,7 @@ class ConvQuant extends Component{
     ShiftCache.io.addrb:=OutCol_Cnt.count
     
     val Quant_Module=new Quan(Config)
-    Quant_Module.io.dataIn:=io.dataIn
+    Quant_Module.io.dataIn:=RegNext(io.dataIn)//因为进来一个脉动阵列的输出，还要花一个周期读出Scale，Bias等参数，这里加一个RegNext是为了对齐
     Quant_Module.io.biasIn:=BiasCache.io.doutb
     Quant_Module.io.scaleIn:=ScaleCache.io.doutb
     Quant_Module.io.shiftIn:=ShiftCache.io.doutb
