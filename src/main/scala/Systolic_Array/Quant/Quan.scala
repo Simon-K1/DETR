@@ -81,14 +81,17 @@ class ConvQuant extends Component{
         val start=in Bool()
         val sData=slave Stream(UInt(64 bits))//DMA位宽应该是64bits
 
-        val Bias    =out UInt(32 bits)//输出Bias，Scale，Shift等量化参数
-        val Scale   =out UInt(32 bits)
-        val Shift   =out UInt(32 bits)
+        // val Bias    =out UInt(32 bits)//输出Bias，Scale，Shift等量化参数
+        // val Scale   =out UInt(32 bits)
+        // val Shift   =out UInt(32 bits)
 
         val OutMatrix_Col=in UInt(16 bits)//输出通道数量，也是输出矩阵的列数
         val LayerEnd=in Bool()//待定
 
         //=================================
+        val dataIn   =in Vec(SInt(Config.addChannelTimesWidth bits),Config.SA_ROW)//sum(q1*q2)的值
+        val dataOut  =out UInt (Config.SA_ROW * 8 bits)//一次出8个8bit，因为脉动阵列有8行
+        val zeroIn   =in UInt(8 bits)
         val SAOutput_Valid=in Bool()//脉动阵列输出的数据有效标志，用于将量化参数从
     }
     
@@ -124,9 +127,9 @@ class ConvQuant extends Component{
     ScaleCache.io.wea:=True
     ShiftCache.io.wea:=True
 
-    io.Bias    :=BiasCache.io.doutb
-    io.Scale   :=ScaleCache.io.doutb
-    io.Shift   :=ShiftCache.io.doutb
+    // io.Bias    :=BiasCache.io.doutb
+    // io.Scale   :=ScaleCache.io.doutb
+    // io.Shift   :=ShiftCache.io.doutb
     io.sData.ready:=(Fsm.currentState===ConvQuan_ENUM.LOAD_BIAS)||(Fsm.currentState===ConvQuan_ENUM.LOAD_SCALE)||(Fsm.currentState===ConvQuan_ENUM.LOAD_SHIFT)
 
 
@@ -136,15 +139,22 @@ class ConvQuant extends Component{
     ScaleCache.io.addrb:=OutCol_Cnt.count
     ShiftCache.io.addrb:=OutCol_Cnt.count
     
+    val Quant_Module=new Quan(Config)
+    Quant_Module.io.dataIn:=io.dataIn
+    Quant_Module.io.biasIn:=BiasCache.io.doutb
+    Quant_Module.io.scaleIn:=ScaleCache.io.doutb
+    Quant_Module.io.shiftIn:=ShiftCache.io.doutb
+    Quant_Module.io.zeroIn:=io.zeroIn
+    io.dataOut:=Quant_Module.io.dataOut
 }
 
 object QuantGen extends App { 
-    val verilog_path="./Simulation/SimQuant" 
+    val verilog_path="./Simulation/Quant" 
     (0 to 8).foreach(i=>{
         printf("%d\n",i)
     })
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ConvQuant)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Quan(TopConfig()))
+    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Quan(TopConfig()))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

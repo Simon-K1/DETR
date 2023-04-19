@@ -12,9 +12,9 @@ class Quan(convConfig: TopConfig) extends Component {
         val scaleIn = in UInt (convConfig.QUANT_FACTOR_WIDTH bits)
         val shiftIn = in UInt (convConfig.QUANT_FACTOR_WIDTH bits)
         val zeroIn = in UInt (8 bits)
-        val activationEn = in Bool()
+        // val activationEn = in Bool()
         val dataOut = out UInt (convConfig.SA_ROW * 8 bits)//一次出8个8bit，因为脉动阵列有8行
-        val amendReg = in Bits (32 bits)
+        //val amendReg = in Bits (32 bits)
     }
     noIoPrefix()
     val bias = new Bias(convConfig)
