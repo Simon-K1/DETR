@@ -1,7 +1,7 @@
 package top
 import spinal.core._
 import Systolic_Array.{Tile,PEConfig,Img2Col_Top,ConvArrange}
-import Systolic_Array.weight.WeightCache_Stream
+import Systolic_Array.weightV1.WeightCache_Stream
 import RegTable.RegTable
 import utils.{TopConfig,WaCounter,WidthConvert}
 import spinal.lib.StreamFifo
