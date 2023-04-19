@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : ConvQuant
-// Git hash  : e51a1482973fa7c0bb2c614f5c658a69503ba147
+// Git hash  : 3af103489298d03f217a760b1c0da52722668b22
 
 `timescale 1ns/1ps
 
