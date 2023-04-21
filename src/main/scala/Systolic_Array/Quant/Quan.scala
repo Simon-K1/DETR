@@ -140,7 +140,8 @@ class ConvQuant extends Component{
     ShiftCache.io.addrb:=OutCol_Cnt.count
     
     val Quant_Module=new Quan(Config)
-    Quant_Module.io.dataIn:=RegNext(io.dataIn)//因为进来一个脉动阵列的输出，还要花一个周期读出Scale，Bias等参数，这里加一个RegNext是为了对齐
+    Quant_Module.io.dataIn:=io.dataIn//
+        //↑这里不再Regnext的原因是Quant内部已经做了RegNext对齐
     Quant_Module.io.biasIn:=BiasCache.io.doutb
     Quant_Module.io.scaleIn:=ScaleCache.io.doutb
     Quant_Module.io.shiftIn:=ShiftCache.io.doutb

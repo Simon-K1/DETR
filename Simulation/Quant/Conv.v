@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : Conv
-// Git hash  : 5a82b3aaeac8ddec1e2839309038f89815bb72e0
+// Git hash  : 8b732f386b6c6c5e4593e679c58d3a2aaee62c68
 
 `timescale 1ns/1ps
 
@@ -545,14 +545,6 @@ module ConvQuant (
   wire                InMatrixCol_Cnt_valid;
   reg        [8:0]    OutCol_Cnt_count;
   wire                OutCol_Cnt_valid;
-  reg        [31:0]   dataIn_regNext_0;
-  reg        [31:0]   dataIn_regNext_1;
-  reg        [31:0]   dataIn_regNext_2;
-  reg        [31:0]   dataIn_regNext_3;
-  reg        [31:0]   dataIn_regNext_4;
-  reg        [31:0]   dataIn_regNext_5;
-  reg        [31:0]   dataIn_regNext_6;
-  reg        [31:0]   dataIn_regNext_7;
   `ifndef SYNTHESIS
   reg [79:0] Fsm_currentState_string;
   reg [79:0] Fsm_nextState_string;
@@ -595,14 +587,14 @@ module ConvQuant (
     .clkb  (clk                       )  //i
   );
   Quan Quant_Module (
-    .dataIn_0 (dataIn_regNext_0[31:0]    ), //i
-    .dataIn_1 (dataIn_regNext_1[31:0]    ), //i
-    .dataIn_2 (dataIn_regNext_2[31:0]    ), //i
-    .dataIn_3 (dataIn_regNext_3[31:0]    ), //i
-    .dataIn_4 (dataIn_regNext_4[31:0]    ), //i
-    .dataIn_5 (dataIn_regNext_5[31:0]    ), //i
-    .dataIn_6 (dataIn_regNext_6[31:0]    ), //i
-    .dataIn_7 (dataIn_regNext_7[31:0]    ), //i
+    .dataIn_0 (dataIn_0[31:0]            ), //i
+    .dataIn_1 (dataIn_1[31:0]            ), //i
+    .dataIn_2 (dataIn_2[31:0]            ), //i
+    .dataIn_3 (dataIn_3[31:0]            ), //i
+    .dataIn_4 (dataIn_4[31:0]            ), //i
+    .dataIn_5 (dataIn_5[31:0]            ), //i
+    .dataIn_6 (dataIn_6[31:0]            ), //i
+    .dataIn_7 (dataIn_7[31:0]            ), //i
     .biasIn   (BiasCache_doutb[31:0]     ), //i
     .scaleIn  (ScaleCache_doutb[31:0]    ), //i
     .shiftIn  (ShiftCache_doutb[31:0]    ), //i
@@ -711,14 +703,6 @@ module ConvQuant (
   assign dataOut = Quant_Module_dataOut;
   always @(posedge clk) begin
     start_regNext <= start;
-    dataIn_regNext_0 <= dataIn_0;
-    dataIn_regNext_1 <= dataIn_1;
-    dataIn_regNext_2 <= dataIn_2;
-    dataIn_regNext_3 <= dataIn_3;
-    dataIn_regNext_4 <= dataIn_4;
-    dataIn_regNext_5 <= dataIn_5;
-    dataIn_regNext_6 <= dataIn_6;
-    dataIn_regNext_7 <= dataIn_7;
   end
 
   always @(posedge clk or posedge reset) begin
