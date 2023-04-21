@@ -16,13 +16,13 @@ parser = argparse.ArgumentParser(description='FQ-ViT')
 
 TestCfg=dict(
     model="vit_base",
-    data="E:/Transformer/DataSets/imageValfull",#"E:/Transformer/DataSets/imagenet/imagenet2012mini",
+    data="E:/Transformer/DataSets/imagenet/imagenet2012mini",#"E:/Transformer/DataSets/imageValfull",
     quant=True,
     ptf=True,
     lis=True,
     quant_method="ema",
     calib_batchsize=1,
-    calib_iter=100,
+    calib_iter=10,
     val_batchsize=16,
     num_workers=8,
     print_freq=1
@@ -185,6 +185,8 @@ def main():
                 output = model(image)
         model.model_close_calibrate()
         model.model_quant()
+        # torch.save(model.state_dict(),"Test.pth")
+        # exit()
 
     print('Validating...')
     val_loss, val_prec1, val_prec5 = validate(args, val_loader, model,

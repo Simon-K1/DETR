@@ -81,8 +81,9 @@ class QConv2d(nn.Conv2d):
                 self.dilation,
                 self.groups,
             )
-        weight = self.quantizer(self.weight)#先对权重量化，再反量化回浮点
+        weight =self.quantizer(self.weight)#先对权重量化，再反量化回浮点
         if True:#模拟硬件量化计算，重写整形前向传播公式，
+            Shift_Num=torch.tensor(32)#放大移位
             # print("输入激活的维度:",x.shape)
             # print("ScaleIn 维度:",in_quantizer.scale.shape)
             # print("ZeroPoint 维度:",in_quantizer.zero_point.shape)
@@ -106,13 +107,35 @@ class QConv2d(nn.Conv2d):
             Wq=self.quantizer.quant(self.weight)
             # print(Wq)
             
-            Wq=(weight*S1)/S3
+            Wq=torch.pow(2,Shift_Num)*(weight*S1)/S3#[768,3,16,16]
             Xq=Xq-Z1
             #self.bias.data=(self.bias.data/S3+Z3)
-            Cq=(F.conv2d(Xq, Wq, self.bias/S3+Z3, self.stride, self.padding,
-                        self.dilation, self.groups))
-            return (Cq-Z3)*S3
-        
+            Cq=(F.conv2d(Xq, Wq.round(), ((self.bias/S3+Z3)*torch.pow(2,Shift_Num)).round(), self.stride, self.padding,
+                        self.dilation, self.groups))/torch.pow(2,Shift_Num)
+            
+            #获取量化后的权重和激活值==================================================================================
+            if False:
+                with open (r'E:\Transformer\Transformer_Arithmatic\Transformer_Main\TxT\Weight.txt','w') as ff:
+                    #Wq的维度：[OC,IC,K,K]
+                    for OC in range(Wq.shape[0]):#遍历全部输出通道
+                        for K_Row in range(Wq.shape[2]):#遍历行
+                            for K_Col in range(Wq.shape[3]):#遍历列
+                                for IC in range(0,Wq.shape[1],8):#遍历通道
+                                    Hex0=Wq[OC,IC,K_Row,K_Col].item()&0xff
+                                    Hex1=Wq[OC,IC+1,K_Row,K_Col].item()&0xff
+                                    Hex2=Wq[OC,IC+2,K_Row,K_Col].item()&0xff
+                                    Hex3=Wq[OC,IC+3,K_Row,K_Col].item()&0xff
+                                    Hex4=Wq[OC,IC+4,K_Row,K_Col].item()&0xff
+                                    Hex5=Wq[OC,IC+5,K_Row,K_Col].item()&0xff
+                                    Hex6=Wq[OC,IC+6,K_Row,K_Col].item()&0xff
+                                    Hex7=Wq[OC,IC+7,K_Row,K_Col].item()&0xff
+                                    #print('%02x%02x%02x%02x%02x%02x%02x%02x'%(Hex7,Hex6,Hex5,Hex4,Hex3,Hex2,Hex1,Hex0))
+                                    ff.write('%02x%02x%02x%02x%02x%02x%02x%02x'%(Hex7,Hex6,Hex5,Hex4,Hex3,Hex2,Hex1,Hex0))
+                                    ff.write("\n")
+                    ff.close()
+
+            return (Cq.round()-Z3)*S3
+
         else:
             return (F.conv2d(x, weight, self.bias, self.stride, self.padding,
                         self.dilation, self.groups))
@@ -223,7 +246,7 @@ class QIntLayerNorm(nn.LayerNorm):
             x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias,
                              self.eps)
         elif self.mode == 'int':#
-            if True:
+            if False:
                 in_scale = in_quantizer.scale
                 if in_scale_expand != 1:
                     in_scale = in_scale.unsqueeze(-1).expand(
