@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : Weight_Cache
-// Git hash  : 962e6395a568a18aef701636bb9d2a5dfce85690
+// Git hash  : 1108b61adcf947182a291b8b7d6ee841ff80883d
 
 `timescale 1ns/1ps
 
@@ -62,6 +62,22 @@ module Weight_Cache (
   wire       [15:0]   _zz_OutRow_Cnt_valid;
   wire       [15:0]   _zz_OutCol_Cnt_valid;
   wire       [15:0]   _zz_OutCol_Cnt_count_1;
+  wire       [15:0]   _zz_addra;
+  wire       [15:0]   _zz_addrb;
+  wire       [15:0]   _zz_addra_1;
+  wire       [15:0]   _zz_addrb_1;
+  wire       [15:0]   _zz_addra_2;
+  wire       [15:0]   _zz_addrb_2;
+  wire       [15:0]   _zz_addra_3;
+  wire       [15:0]   _zz_addrb_3;
+  wire       [15:0]   _zz_addra_4;
+  wire       [15:0]   _zz_addrb_4;
+  wire       [15:0]   _zz_addra_5;
+  wire       [15:0]   _zz_addrb_5;
+  wire       [15:0]   _zz_addra_6;
+  wire       [15:0]   _zz_addrb_6;
+  wire       [15:0]   _zz_addra_7;
+  wire       [15:0]   _zz_addrb_7;
   reg                 start_regNext;
   wire                when_Weight_CacheV2_l29;
   reg        [3:0]    Fsm_currentState;
@@ -112,6 +128,22 @@ module Weight_Cache (
   assign _zz_OutRow_Cnt_valid = (Matrix_Row - 16'h0001);
   assign _zz_OutCol_Cnt_valid = {12'd0, _zz_OutCol_Cnt_count};
   assign _zz_OutCol_Cnt_count_1 = {12'd0, _zz_OutCol_Cnt_count};
+  assign _zz_addra = (In_Row_Cnt_count + Write_Row_Base_Addr);
+  assign _zz_addrb = (OutRow_Cnt_count + Read_Row_Base_Addr);
+  assign _zz_addra_1 = (In_Row_Cnt_count + Write_Row_Base_Addr);
+  assign _zz_addrb_1 = (OutRow_Cnt_count + Read_Row_Base_Addr);
+  assign _zz_addra_2 = (In_Row_Cnt_count + Write_Row_Base_Addr);
+  assign _zz_addrb_2 = (OutRow_Cnt_count + Read_Row_Base_Addr);
+  assign _zz_addra_3 = (In_Row_Cnt_count + Write_Row_Base_Addr);
+  assign _zz_addrb_3 = (OutRow_Cnt_count + Read_Row_Base_Addr);
+  assign _zz_addra_4 = (In_Row_Cnt_count + Write_Row_Base_Addr);
+  assign _zz_addrb_4 = (OutRow_Cnt_count + Read_Row_Base_Addr);
+  assign _zz_addra_5 = (In_Row_Cnt_count + Write_Row_Base_Addr);
+  assign _zz_addrb_5 = (OutRow_Cnt_count + Read_Row_Base_Addr);
+  assign _zz_addra_6 = (In_Row_Cnt_count + Write_Row_Base_Addr);
+  assign _zz_addrb_6 = (OutRow_Cnt_count + Read_Row_Base_Addr);
+  assign _zz_addra_7 = (In_Row_Cnt_count + Write_Row_Base_Addr);
+  assign _zz_addrb_7 = (OutRow_Cnt_count + Read_Row_Base_Addr);
   Weight_Bram xil_SimpleDualBram (
     .clka  (clk                           ), //i
     .addra (xil_SimpleDualBram_addra[13:0]), //i
@@ -284,8 +316,8 @@ module Weight_Cache (
   assign when_Weight_CacheV2_l116 = ((Fsm_currentState & WEIGHT_CACHE_STATUS_INIT) != 4'b0000);
   assign Fsm_Weight_All_Cached = In_Col_Cnt_valid;
   assign Weight_Cached = In_Col_Cnt_valid;
-  assign xil_SimpleDualBram_addra = In_Row_Cnt_count[13:0];
-  assign xil_SimpleDualBram_addrb = OutRow_Cnt_count[13:0];
+  assign xil_SimpleDualBram_addra = _zz_addra[13:0];
+  assign xil_SimpleDualBram_addrb = _zz_addrb[13:0];
   assign xil_SimpleDualBram_dina = sData_payload[7 : 0];
   assign sData_fire_1 = (sData_valid && sData_ready);
   always @(*) begin
@@ -299,32 +331,32 @@ module Weight_Cache (
     mData[63 : 56] = xil_SimpleDualBram_7_doutb;
   end
 
-  assign xil_SimpleDualBram_1_addra = In_Row_Cnt_count[13:0];
-  assign xil_SimpleDualBram_1_addrb = OutRow_Cnt_count[13:0];
+  assign xil_SimpleDualBram_1_addra = _zz_addra_1[13:0];
+  assign xil_SimpleDualBram_1_addrb = _zz_addrb_1[13:0];
   assign xil_SimpleDualBram_1_dina = sData_payload[15 : 8];
   assign sData_fire_2 = (sData_valid && sData_ready);
-  assign xil_SimpleDualBram_2_addra = In_Row_Cnt_count[13:0];
-  assign xil_SimpleDualBram_2_addrb = OutRow_Cnt_count[13:0];
+  assign xil_SimpleDualBram_2_addra = _zz_addra_2[13:0];
+  assign xil_SimpleDualBram_2_addrb = _zz_addrb_2[13:0];
   assign xil_SimpleDualBram_2_dina = sData_payload[23 : 16];
   assign sData_fire_3 = (sData_valid && sData_ready);
-  assign xil_SimpleDualBram_3_addra = In_Row_Cnt_count[13:0];
-  assign xil_SimpleDualBram_3_addrb = OutRow_Cnt_count[13:0];
+  assign xil_SimpleDualBram_3_addra = _zz_addra_3[13:0];
+  assign xil_SimpleDualBram_3_addrb = _zz_addrb_3[13:0];
   assign xil_SimpleDualBram_3_dina = sData_payload[31 : 24];
   assign sData_fire_4 = (sData_valid && sData_ready);
-  assign xil_SimpleDualBram_4_addra = In_Row_Cnt_count[13:0];
-  assign xil_SimpleDualBram_4_addrb = OutRow_Cnt_count[13:0];
+  assign xil_SimpleDualBram_4_addra = _zz_addra_4[13:0];
+  assign xil_SimpleDualBram_4_addrb = _zz_addrb_4[13:0];
   assign xil_SimpleDualBram_4_dina = sData_payload[39 : 32];
   assign sData_fire_5 = (sData_valid && sData_ready);
-  assign xil_SimpleDualBram_5_addra = In_Row_Cnt_count[13:0];
-  assign xil_SimpleDualBram_5_addrb = OutRow_Cnt_count[13:0];
+  assign xil_SimpleDualBram_5_addra = _zz_addra_5[13:0];
+  assign xil_SimpleDualBram_5_addrb = _zz_addrb_5[13:0];
   assign xil_SimpleDualBram_5_dina = sData_payload[47 : 40];
   assign sData_fire_6 = (sData_valid && sData_ready);
-  assign xil_SimpleDualBram_6_addra = In_Row_Cnt_count[13:0];
-  assign xil_SimpleDualBram_6_addrb = OutRow_Cnt_count[13:0];
+  assign xil_SimpleDualBram_6_addra = _zz_addra_6[13:0];
+  assign xil_SimpleDualBram_6_addrb = _zz_addrb_6[13:0];
   assign xil_SimpleDualBram_6_dina = sData_payload[55 : 48];
   assign sData_fire_7 = (sData_valid && sData_ready);
-  assign xil_SimpleDualBram_7_addra = In_Row_Cnt_count[13:0];
-  assign xil_SimpleDualBram_7_addrb = OutRow_Cnt_count[13:0];
+  assign xil_SimpleDualBram_7_addra = _zz_addra_7[13:0];
+  assign xil_SimpleDualBram_7_addrb = _zz_addrb_7[13:0];
   assign xil_SimpleDualBram_7_dina = sData_payload[63 : 56];
   assign sData_fire_8 = (sData_valid && sData_ready);
   assign sData_ready = ((Fsm_currentState & WEIGHT_CACHE_STATUS_CACHE_WEIGHT) != 4'b0000);

@@ -2,7 +2,7 @@ package xip
 
 import spinal.core._
 import utils.Tcl_Config.Tcl_File_Path
-    import org.apache.commons.io.FileUtils
+import org.apache.commons.io.FileUtils
 object MulConfig {
     val signed = "signed"
     val unsigned = "Unsigned"
@@ -76,7 +76,7 @@ object Mul {
             s"}\n"
         FileUtils.forceMkdir(new File(Tcl_File_Path + File.separator + "tcl"))
         val tclHeader = new PrintWriter(new File(Tcl_File_Path + File.separator + "tcl" + File.separator + s"generate$componentName.tcl"))
-                
+        tclHeader.write(createMulCmd)
         tclHeader.write(s"set_property -dict [list ")
         tclHeader.write(s"CONFIG.PortAWidth {$A_WIDTH} ")
         tclHeader.write(s"CONFIG.PortAType {$A_TYPE} ")
@@ -116,29 +116,25 @@ object Mul {
     }
 }
 
-class  MulTest extends Component{
-
-   val io = new Bundle{
-       val A = in SInt(32 bits)
-       val B = in UInt(32 bits)
-       val P = out Vec(SInt(32 bits),5)
-   }
-   noIoPrefix()
-   val mul = Array.tabulate(5){i=>
-       def gen = {
-           val m = Mul(32,32,32,MulConfig.signed,MulConfig.unsigned,3,MulConfig.dsp,this.clockDomain,"mul8_8_8",63,32,i==0)
-           m.io.A <> io.A
-           m.io.B <> io.B
-           m.io.P <> io.P(i)
-       }
-       gen
-   }
-    
-}
-// object TestGen extends App { 
-//     val verilog_path="./testcode_gen" 
-    
-//     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Mul(8,8,20,"unsigned","unsigned",ClockDomain,"hahah"))
-//     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new MulTest)
-//     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
-// }
+//class testMul extends Component{
+//    val io = new Bundle{
+//        val A = in SInt(32 bits)
+//        val B = in UInt(32 bits)
+//        val P = out Vec(SInt(32 bits),5)
+//    }
+//    noIoPrefix()
+//    val mul = Array.tabulate(5){i=>
+//        def gen = {
+//            val m = Mul(32,32,32,MulConfig.signed,MulConfig.unsigned,3,MulConfig.dsp,this.clockDomain,"mul8_8_8",63,32,i==0)
+//            m.io.A <> io.A
+//            m.io.B <> io.B
+//            m.io.P <> io.P(i)
+//        }
+//        gen
+//    }
+//
+//
+//}
+//object testMul extends App {
+//    SpinalVerilog(new testMul)
+//}

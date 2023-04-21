@@ -4,7 +4,7 @@ import spinal.lib._
 import utils._
 import spinal.lib.Delay
 import spinal.lib.StreamFifo
-import spinal.core.internals.Operator
+// import spinal.core.internals.Operator
 import xip.xil_SimpleDualBram
 class WaddrOffset_Fifo extends StreamFifo(UInt(16 bits),32+1)//必须加一，比如我们需要实现16*16的卷积，如果fifo深度设置为32，32个fifo会被存满，fifo.push.ready会拉低,不能出现这种情况
 class RaddrOffset_Fifo extends StreamFifo(UInt(16 bits),32)

@@ -1,4 +1,4 @@
-package top.topV1
+package top.topV2
 import spinal.core._
 import Systolic_Array.{Tile,PEConfig,Img2Col_Top,ConvArrange}
 import Systolic_Array.weightV1.WeightCache_Stream
@@ -12,6 +12,7 @@ import utils.Axis_Switch_2s
 import spinal.lib.master
 import gemm.GemmCache
 import Systolic_Array.LHMM.MatrixOut
+import Systolic_Array.Quant.ConvQuant
 
 
 
@@ -129,7 +130,7 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
 
    
     val signCount = in UInt (16 bits) //卷积核16*16  signCoun就是t256
-    // val resultVaild = out Vec(Bool,Tile_Size)
+    val resultVaild = out Vec(Bool,Tile_Size)
     
     val OutMatrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
     val OutMatrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
@@ -138,15 +139,15 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
     val OutFeatureSize=in UInt(16 bits)
     val Matrix2Img=in Bool()//Matrix to Image 将卷积后的矩阵结果按通道优先的图片格式输出
     val start=in Bool()
-    val LayerEnd=out Bool()
-    val mData=master Stream(UInt(64 bits))
+    // val LayerEnd=out Bool()
+    val mData=out Vec(SInt(Config.addChannelTimesWidth bits),Config.SA_ROW)
 
-    val mLast=out Bool()
+    // val mLast=out Bool()
   }
   noIoPrefix()
   val Tile=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)//脉动阵列
-  val Tile_Output=new ConvArrange//需要改名字，这里是将矩阵格式转化为图片通道优先格式
-  val MatrixFormat_Output=new MatrixOut(64,64,64)//不管是矩阵还是权重都按矩阵格式输出
+  //val Tile_Output=new ConvArrange//需要改名字，这里是将矩阵格式转化为图片通道优先格式
+  //val MatrixFormat_Output=new MatrixOut(64,64,64)//不管是矩阵还是权重都按矩阵格式输出
 
   io.activate    <>Tile.io.activate
   io.weight      <>Tile.io.weight 
@@ -156,26 +157,28 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
     Tile.io.b_Valid(i):=io.b_Valid(i downto i).asBool
   }
 
-  io.OutChannel <>Tile_Output.io.OutChannel
-  Tile_Output.io.start:=io.start&&io.Matrix2Img 
-  io.OutFeatureSize <>Tile_Output.io.OutFeatureSize
+  //io.OutChannel <>Tile_Output.io.OutChannel
+  //Tile_Output.io.start:=io.start&&io.Matrix2Img 
+  //io.OutFeatureSize <>Tile_Output.io.OutFeatureSize
 
 
-  io.OutMatrix_Col <>MatrixFormat_Output.io.OutMatrix_Col
-  io.OutMatrix_Row <>MatrixFormat_Output.io.OutMatrix_Row
+  //io.OutMatrix_Col <>MatrixFormat_Output.io.OutMatrix_Col
+  //io.OutMatrix_Row <>MatrixFormat_Output.io.OutMatrix_Row
 
 
 
-  for(i<-0 to Tile_Size-1){
-    Tile.io.PE_OUT(i)(7 downto 0).asUInt<>Tile_Output.io.sData((i+1)*8-1 downto i*8)//还没量化，所以只能截取低8位
-    Tile.io.PE_OUT(i)(7 downto 0).asUInt<>MatrixFormat_Output.io.sData.payload((i+1)*8-1 downto i*8)//还没量化，所以只能截取低8位
-  }
-  Tile.io.resultVaild<>Tile_Output.io.sValid//TODO，优化这里的valid信号数量
-  Tile.io.resultVaild(0)<>MatrixFormat_Output.io.sData.valid
+  // for(i<-0 to Tile_Size-1){
+  //   // Tile.io.PE_OUT(i)(7 downto 0).asUInt<>Tile_Output.io.sData((i+1)*8-1 downto i*8)//还没量化，所以只能截取低8位
+  //   // Tile.io.PE_OUT(i)(7 downto 0).asUInt<>MatrixFormat_Output.io.sData.payload((i+1)*8-1 downto i*8)//还没量化，所以只能截取低8位
+    
+  // }
+  io.mData<>Tile.io.PE_OUT
+  Tile.io.resultVaild<>io.resultVaild//TODO，优化这里的valid信号数量
+  // Tile.io.resultVaild(0)<>MatrixFormat_Output.io.sData.valid
   
-  io.LayerEnd:=Tile_Output.io.LayerEnd
-  io.mData<>Tile_Output.io.mData
-  io.mLast:=Tile_Output.io.mLast
+  // io.LayerEnd:=Tile_Output.io.LayerEnd
+  // io.mData<>Tile.io.mData
+  // io.mLast:=Tile_Output.io.mLast
 
   
 }
@@ -184,6 +187,7 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
 object TopCtrl_Enum extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, WEIGHT_CACHE,RECEIVE_PICTURE,RECEIVE_MATRIX,WAIT_COMPUTE_END= newElement
     //WEIGHT_CACHE:缓存权重
+      //缓存的权重包含B矩阵权重和量化参数
     //RECEIVE_PICTURE:接收图片数据
     //RECEIVE_MATRIX:接收矩阵数据
     //WAITEND:等待计算结束
@@ -249,7 +253,7 @@ case class TopCtrl_Fsm(start:Bool)extends Area{
       }
     }
 }
-
+//权重图片各占一个DMA
 class Conv extends Component{
   val Config=TopConfig()
   val Control=new Bundle{
@@ -258,6 +262,7 @@ class Conv extends Component{
     //val OutSwitch           =in UInt(2 bits)
     val Switch_Conv         =in Bool()//切换到卷积计算
     val Matrix2Img          =in Bool()
+    val LayerEnd            =in Bool()//数据量化完成，输出完成
   }
   val s_axis_s2mm=new Bundle{//一个从接口，两个主接口
     val Data_Width=64
@@ -267,13 +272,9 @@ class Conv extends Component{
     val tready=out Bool()
     val tvalid=in Bool()
   }
-  val m_axis_mm2s=new Bundle{//一个从接口，两个主接口
-    val Data_Width=64
-    val tdata=out UInt(Data_Width bits)
-    val tkeep=out Bits(Data_Width/8 bits)
-    val tlast=out Bool()
-    val tready=in Bool()
-    val tvalid=out Bool()
+  val mData=new Bundle{
+    val payload=out UInt(64 bits)
+    // val valid=out Vec(Bool(),Config.SA_ROW)
   }
   val Img2Col_Instru=new Bundle{
     val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
@@ -307,11 +308,11 @@ class Conv extends Component{
 
   val InputSwitch=new Axis_Switch_1s(3,64)//1个从接口，一个给img2col，一个给weight
   InputSwitch.setDefinitionName("Compute_DataIn_Switch")
-  val OutputSwitch=new Axis_Switch_2s(1,64)//2个从接口
-  OutputSwitch.setDefinitionName("Compute_DataOut_Switch")
+  //val OutputSwitch=new Axis_Switch_2s(1,64)//2个从接口
+  // OutputSwitch.setDefinitionName("Compute_DataOut_Switch")
   
   InputSwitch.s0_axis_s2mm<>s_axis_s2mm
-  OutputSwitch.m0_axis_mm2s<>m_axis_mm2s
+  // OutputSwitch.m0_axis_mm2s<>m_axis_mm2s
   when(Fsm.currentState===TopCtrl_Enum.WEIGHT_CACHE){//0：加载权重，1：加载图片，2：加载矩阵
     InputSwitch.io.Switch:=0
   }elsewhen(Control.Switch_Conv){
@@ -321,16 +322,17 @@ class Conv extends Component{
   }
   //InputSwitch.io.Switch:=Control.Inswitch
   //OutputSwitch.io.Switch:=Control.OutSwitch//
-  when(Control.Switch_Conv){
-    OutputSwitch.io.Switch:=0//因为先实现的卷积，所以这里0选择卷积输出，1选择Gemm输出
-  }otherwise{
-    OutputSwitch.io.Switch:=1
-  }
+  // when(Control.Switch_Conv){
+  //   OutputSwitch.io.Switch:=0//因为先实现的卷积，所以这里0选择卷积输出，1选择Gemm输出
+  // }otherwise{
+  //   OutputSwitch.io.Switch:=1
+  // }
   //整合img2col，脉动阵列以及数据输出
-  val Compute_Unit=new SA_Conv(8,8,20,PEConfig(4*4*32,20))//计算单元
+  val Compute_Unit=new SA_Conv(8,8,Config.addChannelTimesWidth,PEConfig(4*4*32,32))//计算单元
   val Weight_Unit=new WeightCache_Stream//权重缓存单元
   val Img2Col_Unit=new Img2ColStreamV2//img2col数据排列单元
   val LH_Gemm=new GemmCache
+  val ConvQuant=new ConvQuant//卷积量化模块
 
   Img2Col_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(1).axis_mm2s_tdata
   Img2Col_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(1).axis_mm2s_tkeep
@@ -360,16 +362,23 @@ class Conv extends Component{
   Weight_Unit.io.Matrix_Col :=Img2Col_Instru.OutFeature_Channel
   Weight_Unit.io.start      :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE,3)
   Weight_Unit.io.Raddr_Valid:=Img2Col_Unit.io.Raddr_Valid||LH_Gemm.io.bvalid
-  Weight_Unit.io.LayerEnd   :=(Compute_Unit.io.LayerEnd||LH_Gemm.io.LayerEnd)
-  Fsm.WeightCached          :=(Weight_Unit.io.Weight_Cached)
-  Fsm.Compute_End           :=(Compute_Unit.io.LayerEnd)
-  Weight_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(0).axis_mm2s_tdata
+  Weight_Unit.io.LayerEnd   :=(Control.LayerEnd)
+  Fsm.WeightCached          :=(ConvQuant.io.QuantPara_Cached)
+  Fsm.Compute_End           :=(Control.LayerEnd)
+  // val Weight_Tmp=UInt(64 bits)
+  Weight_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(0).axis_mm2s_tdata//RegNext(InputSwitch.m(0).axis_mm2s_tdata)
   Weight_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(0).axis_mm2s_tkeep
   Weight_Unit.io.s_axis_s2mm_tlast <>InputSwitch.m(0).axis_mm2s_tlast
   Weight_Unit.io.s_axis_s2mm_tready<>InputSwitch.m(0).axis_mm2s_tready
-  Weight_Unit.io.s_axis_s2mm_tvalid<>InputSwitch.m(0).axis_mm2s_tvalid
-
-
+  Weight_Unit.io.s_axis_s2mm_tvalid<>InputSwitch.m(0).axis_mm2s_tvalid//RegNext(InputSwitch.m(0).axis_mm2s_tvalid)
+  //当B矩阵缓存完后应该继续缓存量化参数
+  when(Weight_Unit.io.s_axis_s2mm_tready){
+    InputSwitch.m(0).axis_mm2s_tready:=Weight_Unit.io.s_axis_s2mm_tready
+  }otherwise{
+    InputSwitch.m(0).axis_mm2s_tready:=ConvQuant.io.sData.ready
+  }
+  ConvQuant.io.sData.payload<>InputSwitch.m(0).axis_mm2s_tdata
+  ConvQuant.io.sData.valid<>InputSwitch.m(0).axis_mm2s_tvalid
   //==================================================================================
   Compute_Unit.io.start           :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE&&Control.Switch_Conv,3)
   Compute_Unit.io.Matrix2Img      :=Control.Matrix2Img
@@ -400,12 +409,14 @@ class Conv extends Component{
 
   
   // OutputSwitch.s(1).axis_s2mm_tkeep.setAll 
-  OutputSwitch.s(0).axis_s2mm_tkeep.setAll    
+  // OutputSwitch.s(0).axis_s2mm_tkeep.setAll    
   // OutputSwitch.s(1).axis_s2mm_tkeep.setAll    
-  Compute_Unit.io.mData.payload <>OutputSwitch.s(0).axis_s2mm_tdata        
-  Compute_Unit.io.mLast         <>OutputSwitch.s(0).axis_s2mm_tlast
-  Compute_Unit.io.mData.ready   <>OutputSwitch.s(0).axis_s2mm_tready
-  Compute_Unit.io.mData.valid   <>OutputSwitch.s(0).axis_s2mm_tvalid
+  
+  //Compute_Unit.io.mData.resized <>mData.payload
+  // Compute_Unit.io.resultVaild<>mData.valid    
+  // Compute_Unit.io.mLast         <>OutputSwitch.s(0).axis_s2mm_tlast
+  // Compute_Unit.io.mData.ready   <>OutputSwitch.s(0).axis_s2mm_tready
+  // Compute_Unit.io.mData.valid   <>OutputSwitch.s(0).axis_s2mm_tvalid
   //=====================================================================================
   Fsm.Matrix_Received:=LH_Gemm.io.LayerEnd
   Fsm.Switch_Conv:=Control.Switch_Conv
@@ -418,26 +429,52 @@ class Conv extends Component{
   LH_Gemm.io.HIGHT:=GemmInstru.HEIGHT.resized//
   LH_Gemm.io.WEIGHTCOL:=Img2Col_Instru.OutFeature_Channel.resized
 
-
-
-
+  //=====================================================================================
+    //开始连接量化模块
+    //应该在外面再开一个数据接口用于输入量化参数
+  // val ConvQuant=new ConvQuant
+  // val s_axis_quant=new Bundle{//一个从接口，两个主接口
+  //   val Data_Width=64
+  //   val tdata=in UInt(Data_Width bits)
+  //   val tkeep=in Bits(Data_Width/8 bits)
+  //   val tlast=in Bool()
+  //   val tready=out Bool()
+  //   val tvalid=in Bool()
+  // }
+  // ConvQuant.io.sData.payload<>s_axis_quant.tdata
+  // ConvQuant.io.sData.valid<>s_axis_quant.tvalid
+  // ConvQuant.io.sData.ready<>s_axis_quant.tready
+  ConvQuant.io.start:=Weight_Unit.io.Weight_Cached
+  
+  for(i<-0 to Config.SA_ROW-1){
+    
+  }
+  ConvQuant.io.dataIn:=Compute_Unit.io.mData
+  ConvQuant.io.dataOut<>mData.payload
+  ConvQuant.io.LayerEnd:=Control.LayerEnd
+  ConvQuant.io.OutMatrix_Col:=Img2Col_Instru.OutFeature_Channel//输出矩阵的列数
+  ConvQuant.io.zeroIn:=59
+  ConvQuant.io.SAOutput_Valid:=Compute_Unit.io.resultVaild(0)
+  // mData.valid:=False
 }
 
+
 object Top extends App { 
-    val OnBoard=true
-    var verilog_path="./Simulation/SimSystolic/verilog" 
+    val OnBoard=false
+    var verilog_path="./Simulation/Quant" 
     if(OnBoard){
         verilog_path="./OnBoard"
     }
     
     
     // printf("=================%d===============",log2Up(7))
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_Conv(8,8,20,PEConfig(4*4*32,20)))
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Img2ColStreamV2)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new WeightCache_Stream)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new RegTable)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Axis_Switch_2s(3,64))
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Axis_Switch_1s(3,64))
+    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_Conv(8,8,20,PEConfig(4*4*32,20)))
+    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Img2ColStreamV2)
+    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new WeightCache_Stream)
+    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new RegTable)
+    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Axis_Switch_2s(3,64))
+    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Axis_Switch_1s(3,64))
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Conv)
+    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ConvQuant)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

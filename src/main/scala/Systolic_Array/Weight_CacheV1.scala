@@ -1,4 +1,4 @@
-package Systolic_Array
+package Systolic_Array.weightV1
 
 import spinal.core._
 import spinal.lib.{slave,master}

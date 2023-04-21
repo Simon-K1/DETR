@@ -1,4 +1,4 @@
-package Systolic_Array.weight
+package Systolic_Array.weightV2
 
 //重新设计权重缓存，为了适应后面多头矩阵乘法
 import spinal.core._
