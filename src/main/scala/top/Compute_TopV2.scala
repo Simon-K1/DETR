@@ -1,6 +1,8 @@
 package top.topV2
 import spinal.core._
-import Systolic_Array.{Tile,PEConfig,Img2Col_Top,ConvArrange}
+import Systolic_Array.{Tile,PEConfig,Img2Col_Top}
+import Systolic_Array.ConvArrangeV2
+import Systolic_Array.LHMM.GemmCache
 import Systolic_Array.weightV1.WeightCache_Stream
 import RegTable.RegTable
 import utils.{TopConfig,WaCounter,WidthConvert}
@@ -10,9 +12,9 @@ import spinal.lib.Delay
 import utils.Axis_Switch_1s
 import utils.Axis_Switch_2s
 import spinal.lib.master
-import gemm.GemmCache
-import Systolic_Array.LHMM.MatrixOut
+
 import Systolic_Array.Quant.ConvQuant
+import javax.sound.midi.Instrument
 
 
 
@@ -272,10 +274,10 @@ class Conv extends Component{
     val tready=out Bool()
     val tvalid=in Bool()
   }
-  val mData=new Bundle{
-    val payload=out UInt(64 bits)
-    // val valid=out Vec(Bool(),Config.SA_ROW)
-  }
+  // val mData=new Bundle{
+  //   val payload=out UInt(64 bits)
+  //   // val valid=out Vec(Bool(),Config.SA_ROW)
+  // }
   val Img2Col_Instru=new Bundle{
     val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
     val Kernel_Size                     =in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
@@ -333,6 +335,7 @@ class Conv extends Component{
   val Img2Col_Unit=new Img2ColStreamV2//img2col数据排列单元
   val LH_Gemm=new GemmCache
   val ConvQuant=new ConvQuant//卷积量化模块
+  val DataOutput=new ConvArrangeV2
 
   Img2Col_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(1).axis_mm2s_tdata
   Img2Col_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(1).axis_mm2s_tkeep
@@ -357,14 +360,14 @@ class Conv extends Component{
   Fsm.Picture_Received                            :=Img2Col_Unit.io.LayerEnd||LH_Gemm.io.LayerEnd
 
 
-
+  val LayerEnd=Bool()
   Weight_Unit.io.Matrix_Row :=Img2Col_Instru.WeightMatrix_Row
   Weight_Unit.io.Matrix_Col :=Img2Col_Instru.OutFeature_Channel
   Weight_Unit.io.start      :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE,3)
   Weight_Unit.io.Raddr_Valid:=Img2Col_Unit.io.Raddr_Valid||LH_Gemm.io.bvalid
-  Weight_Unit.io.LayerEnd   :=(Control.LayerEnd)
+  Weight_Unit.io.LayerEnd   :=LayerEnd//(Control.LayerEnd)
   Fsm.WeightCached          :=(ConvQuant.io.QuantPara_Cached)
-  Fsm.Compute_End           :=(Control.LayerEnd)
+  Fsm.Compute_End           :=LayerEnd//(Control.LayerEnd)
   // val Weight_Tmp=UInt(64 bits)
   Weight_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(0).axis_mm2s_tdata//RegNext(InputSwitch.m(0).axis_mm2s_tdata)
   Weight_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(0).axis_mm2s_tkeep
@@ -446,16 +449,37 @@ class Conv extends Component{
   // ConvQuant.io.sData.ready<>s_axis_quant.tready
   ConvQuant.io.start:=Weight_Unit.io.Weight_Cached
   
-  for(i<-0 to Config.SA_ROW-1){
-    
-  }
   ConvQuant.io.dataIn:=Compute_Unit.io.mData
-  ConvQuant.io.dataOut<>mData.payload
-  ConvQuant.io.LayerEnd:=Control.LayerEnd
+  // ConvQuant.io.dataOut<>mData.payload
+  ConvQuant.io.LayerEnd:=LayerEnd//Control.LayerEnd
   ConvQuant.io.OutMatrix_Col:=Img2Col_Instru.OutFeature_Channel//输出矩阵的列数
   ConvQuant.io.zeroIn:=59
   ConvQuant.io.SAOutput_Valid:=Compute_Unit.io.resultVaild(0)
   // mData.valid:=False
+
+  DataOutput.io.sData:=ConvQuant.io.dataOut
+  for(i<-0 to Config.SA_ROW-1){
+    DataOutput.io.sValid(i):=Delay(Compute_Unit.io.resultVaild(i),10)
+  }
+
+  val m_axis_mm2s=new Bundle{//一个从接口，两个主接口
+    val Data_Width=64
+    val tdata=out UInt(Data_Width bits)
+    val tkeep=out Bits(Data_Width/8 bits)
+    val tlast=out Bool()
+    val tready=in Bool()
+    val tvalid=out Bool()
+  }
+  DataOutput.io.MatrixCol:=Img2Col_Instru.OutMatrix_Col
+  DataOutput.io.MatrixRow:=Img2Col_Instru.OutMatrix_Row
+  DataOutput.io.start    :=Control.start
+  m_axis_mm2s.tdata:=DataOutput.io.mData.payload
+  m_axis_mm2s.tlast:=DataOutput.io.mLast
+  m_axis_mm2s.tvalid:=DataOutput.io.mData.valid
+  m_axis_mm2s.tkeep.setAll()
+  DataOutput.io.mData.ready:=m_axis_mm2s.tready
+  LayerEnd:=DataOutput.io.LayerEnd
+
 }
 
 

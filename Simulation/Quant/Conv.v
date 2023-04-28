@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : Conv
-// Git hash  : 8b732f386b6c6c5e4593e679c58d3a2aaee62c68
+// Git hash  : e8dcfce705c1bcdf690ffb3d015a2fad665a0efe
 
 `timescale 1ns/1ps
 
@@ -14,7 +14,6 @@ module Conv (
   input               s_axis_s2mm_tlast,
   output              s_axis_s2mm_tready,
   input               s_axis_s2mm_tvalid,
-  output     [63:0]   mData_payload,
   input      [4:0]    Img2Col_Stride,
   input      [4:0]    Img2Col_Kernel_Size,
   input      [15:0]   Img2Col_Window_Size,
@@ -29,10 +28,15 @@ module Conv (
   input      [15:0]   Img2Col_OutFeature_Channel_Count_Times,
   input      [15:0]   Img2Col_WeightMatrix_Row,
   input      [11:0]   Img2Col_OutMatrix_Col,
-  input      [15:0]   Img2Col_OutMatrix_Row,
+  input      [19:0]   Img2Col_OutMatrix_Row,
   input      [15:0]   GemmInstru_WIDTH,
   input      [15:0]   GemmInstru_HEIGHT,
   input               clk,
+  output     [63:0]   m_axis_mm2s_tdata,
+  output     [7:0]    m_axis_mm2s_tkeep,
+  output              m_axis_mm2s_tlast,
+  input               m_axis_mm2s_tready,
+  output              m_axis_mm2s_tvalid,
   input               reset
 );
   localparam TopCtrl_Enum_IDLE = 6'd1;
@@ -52,9 +56,10 @@ module Conv (
   wire       [9:0]    Compute_Unit_OutChannel;
   wire                Weight_Unit_Raddr_Valid;
   wire                Img2Col_Unit_mReady;
-  wire       [11:0]   LH_Gemm_WIDTH;
-  wire       [11:0]   LH_Gemm_HIGHT;
-  wire       [7:0]    LH_Gemm_WEIGHTCOL;
+  wire       [12:0]   LH_Gemm_WIDTH;
+  wire       [12:0]   LH_Gemm_HIGHT;
+  wire       [11:0]   LH_Gemm_WEIGHTCOL;
+  reg        [7:0]    DataOutput_sValid;
   wire                InputSwitch_s0_axis_s2mm_tready;
   wire       [63:0]   InputSwitch_m_0_axis_mm2s_tdata;
   wire       [7:0]    InputSwitch_m_0_axis_mm2s_tkeep;
@@ -108,6 +113,11 @@ module Conv (
   wire                ConvQuant_1_sData_ready;
   wire                ConvQuant_1_QuantPara_Cached;
   wire       [63:0]   ConvQuant_1_dataOut;
+  wire                DataOutput_sReady;
+  wire                DataOutput_mData_valid;
+  wire       [63:0]   DataOutput_mData_payload;
+  wire                DataOutput_mLast;
+  wire                DataOutput_LayerEnd;
   wire       [0:0]    _zz_b_Valid;
   wire       [0:0]    _zz_b_Valid_1;
   wire       [0:0]    _zz_b_Valid_2;
@@ -124,22 +134,103 @@ module Conv (
   wire                Fsm_Matrix_Received;
   wire                Fsm_Compute_End;
   wire                Fsm_Switch_Conv;
-  wire                when_Compute_TopV2_l225;
   wire                when_Compute_TopV2_l227;
+  wire                when_Compute_TopV2_l229;
   wire                when_WaCounter_l19;
   reg        [2:0]    InitCnt_count;
   reg                 InitCnt_valid;
   wire                when_WaCounter_l14;
-  wire                when_Compute_TopV2_l316;
+  wire                when_Compute_TopV2_l318;
   reg                 toplevel_Weight_Unit_Weight_Cached_delay_1;
   reg                 toplevel_Weight_Unit_Weight_Cached_delay_2;
   reg                 toplevel_Weight_Unit_Weight_Cached_delay_3;
+  wire                LayerEnd;
   reg                 _zz_start;
   reg                 _zz_start_1;
   reg                 _zz_start_2;
   reg                 _zz_start_3;
   reg                 _zz_start_4;
   reg                 _zz_start_5;
+  reg                 toplevel_Compute_Unit_resultVaild_0_delay_1;
+  reg                 toplevel_Compute_Unit_resultVaild_0_delay_2;
+  reg                 toplevel_Compute_Unit_resultVaild_0_delay_3;
+  reg                 toplevel_Compute_Unit_resultVaild_0_delay_4;
+  reg                 toplevel_Compute_Unit_resultVaild_0_delay_5;
+  reg                 toplevel_Compute_Unit_resultVaild_0_delay_6;
+  reg                 toplevel_Compute_Unit_resultVaild_0_delay_7;
+  reg                 toplevel_Compute_Unit_resultVaild_0_delay_8;
+  reg                 toplevel_Compute_Unit_resultVaild_0_delay_9;
+  reg                 toplevel_Compute_Unit_resultVaild_0_delay_10;
+  reg                 toplevel_Compute_Unit_resultVaild_1_delay_1;
+  reg                 toplevel_Compute_Unit_resultVaild_1_delay_2;
+  reg                 toplevel_Compute_Unit_resultVaild_1_delay_3;
+  reg                 toplevel_Compute_Unit_resultVaild_1_delay_4;
+  reg                 toplevel_Compute_Unit_resultVaild_1_delay_5;
+  reg                 toplevel_Compute_Unit_resultVaild_1_delay_6;
+  reg                 toplevel_Compute_Unit_resultVaild_1_delay_7;
+  reg                 toplevel_Compute_Unit_resultVaild_1_delay_8;
+  reg                 toplevel_Compute_Unit_resultVaild_1_delay_9;
+  reg                 toplevel_Compute_Unit_resultVaild_1_delay_10;
+  reg                 toplevel_Compute_Unit_resultVaild_2_delay_1;
+  reg                 toplevel_Compute_Unit_resultVaild_2_delay_2;
+  reg                 toplevel_Compute_Unit_resultVaild_2_delay_3;
+  reg                 toplevel_Compute_Unit_resultVaild_2_delay_4;
+  reg                 toplevel_Compute_Unit_resultVaild_2_delay_5;
+  reg                 toplevel_Compute_Unit_resultVaild_2_delay_6;
+  reg                 toplevel_Compute_Unit_resultVaild_2_delay_7;
+  reg                 toplevel_Compute_Unit_resultVaild_2_delay_8;
+  reg                 toplevel_Compute_Unit_resultVaild_2_delay_9;
+  reg                 toplevel_Compute_Unit_resultVaild_2_delay_10;
+  reg                 toplevel_Compute_Unit_resultVaild_3_delay_1;
+  reg                 toplevel_Compute_Unit_resultVaild_3_delay_2;
+  reg                 toplevel_Compute_Unit_resultVaild_3_delay_3;
+  reg                 toplevel_Compute_Unit_resultVaild_3_delay_4;
+  reg                 toplevel_Compute_Unit_resultVaild_3_delay_5;
+  reg                 toplevel_Compute_Unit_resultVaild_3_delay_6;
+  reg                 toplevel_Compute_Unit_resultVaild_3_delay_7;
+  reg                 toplevel_Compute_Unit_resultVaild_3_delay_8;
+  reg                 toplevel_Compute_Unit_resultVaild_3_delay_9;
+  reg                 toplevel_Compute_Unit_resultVaild_3_delay_10;
+  reg                 toplevel_Compute_Unit_resultVaild_4_delay_1;
+  reg                 toplevel_Compute_Unit_resultVaild_4_delay_2;
+  reg                 toplevel_Compute_Unit_resultVaild_4_delay_3;
+  reg                 toplevel_Compute_Unit_resultVaild_4_delay_4;
+  reg                 toplevel_Compute_Unit_resultVaild_4_delay_5;
+  reg                 toplevel_Compute_Unit_resultVaild_4_delay_6;
+  reg                 toplevel_Compute_Unit_resultVaild_4_delay_7;
+  reg                 toplevel_Compute_Unit_resultVaild_4_delay_8;
+  reg                 toplevel_Compute_Unit_resultVaild_4_delay_9;
+  reg                 toplevel_Compute_Unit_resultVaild_4_delay_10;
+  reg                 toplevel_Compute_Unit_resultVaild_5_delay_1;
+  reg                 toplevel_Compute_Unit_resultVaild_5_delay_2;
+  reg                 toplevel_Compute_Unit_resultVaild_5_delay_3;
+  reg                 toplevel_Compute_Unit_resultVaild_5_delay_4;
+  reg                 toplevel_Compute_Unit_resultVaild_5_delay_5;
+  reg                 toplevel_Compute_Unit_resultVaild_5_delay_6;
+  reg                 toplevel_Compute_Unit_resultVaild_5_delay_7;
+  reg                 toplevel_Compute_Unit_resultVaild_5_delay_8;
+  reg                 toplevel_Compute_Unit_resultVaild_5_delay_9;
+  reg                 toplevel_Compute_Unit_resultVaild_5_delay_10;
+  reg                 toplevel_Compute_Unit_resultVaild_6_delay_1;
+  reg                 toplevel_Compute_Unit_resultVaild_6_delay_2;
+  reg                 toplevel_Compute_Unit_resultVaild_6_delay_3;
+  reg                 toplevel_Compute_Unit_resultVaild_6_delay_4;
+  reg                 toplevel_Compute_Unit_resultVaild_6_delay_5;
+  reg                 toplevel_Compute_Unit_resultVaild_6_delay_6;
+  reg                 toplevel_Compute_Unit_resultVaild_6_delay_7;
+  reg                 toplevel_Compute_Unit_resultVaild_6_delay_8;
+  reg                 toplevel_Compute_Unit_resultVaild_6_delay_9;
+  reg                 toplevel_Compute_Unit_resultVaild_6_delay_10;
+  reg                 toplevel_Compute_Unit_resultVaild_7_delay_1;
+  reg                 toplevel_Compute_Unit_resultVaild_7_delay_2;
+  reg                 toplevel_Compute_Unit_resultVaild_7_delay_3;
+  reg                 toplevel_Compute_Unit_resultVaild_7_delay_4;
+  reg                 toplevel_Compute_Unit_resultVaild_7_delay_5;
+  reg                 toplevel_Compute_Unit_resultVaild_7_delay_6;
+  reg                 toplevel_Compute_Unit_resultVaild_7_delay_7;
+  reg                 toplevel_Compute_Unit_resultVaild_7_delay_8;
+  reg                 toplevel_Compute_Unit_resultVaild_7_delay_9;
+  reg                 toplevel_Compute_Unit_resultVaild_7_delay_10;
   `ifndef SYNTHESIS
   reg [127:0] Fsm_currentState_string;
   reg [127:0] Fsm_nextState_string;
@@ -192,7 +283,7 @@ module Conv (
     .resultVaild_6  (Compute_Unit_resultVaild_6   ), //o
     .resultVaild_7  (Compute_Unit_resultVaild_7   ), //o
     .OutMatrix_Col  (Img2Col_OutMatrix_Col[11:0]  ), //i
-    .OutMatrix_Row  (Img2Col_OutMatrix_Row[15:0]  ), //i
+    .OutMatrix_Row  (Img2Col_OutMatrix_Row[19:0]  ), //i
     .OutChannel     (Compute_Unit_OutChannel[9:0] ), //i
     .OutFeatureSize (Img2Col_OutFeature_Size[15:0]), //i
     .Matrix2Img     (Control_Matrix2Img           ), //i
@@ -220,7 +311,7 @@ module Conv (
     .mData              (Weight_Unit_mData[63:0]              ), //o
     .Raddr_Valid        (Weight_Unit_Raddr_Valid              ), //i
     .Weight_Cached      (Weight_Unit_Weight_Cached            ), //o
-    .LayerEnd           (Control_LayerEnd                     ), //i
+    .LayerEnd           (LayerEnd                             ), //i
     .MatrixCol_Switch   (Weight_Unit_MatrixCol_Switch[7:0]    ), //o
     .clk                (clk                                  ), //i
     .reset              (reset                                )  //i
@@ -256,9 +347,9 @@ module Conv (
     .sData_valid   (InputSwitch_m_2_axis_mm2s_tvalid     ), //i
     .sData_ready   (LH_Gemm_sData_ready                  ), //o
     .sData_payload (InputSwitch_m_2_axis_mm2s_tdata[63:0]), //i
-    .WIDTH         (LH_Gemm_WIDTH[11:0]                  ), //i
-    .HIGHT         (LH_Gemm_HIGHT[11:0]                  ), //i
-    .WEIGHTCOL     (LH_Gemm_WEIGHTCOL[7:0]               ), //i
+    .WIDTH         (LH_Gemm_WIDTH[12:0]                  ), //i
+    .HIGHT         (LH_Gemm_HIGHT[12:0]                  ), //i
+    .WEIGHTCOL     (LH_Gemm_WEIGHTCOL[11:0]              ), //i
     .start         (Weight_Unit_Weight_Cached            ), //i
     .validOut_0    (LH_Gemm_validOut_0                   ), //o
     .validOut_1    (LH_Gemm_validOut_1                   ), //o
@@ -280,7 +371,7 @@ module Conv (
     .sData_ready      (ConvQuant_1_sData_ready              ), //o
     .sData_payload    (InputSwitch_m_0_axis_mm2s_tdata[63:0]), //i
     .OutMatrix_Col    (Img2Col_OutFeature_Channel[15:0]     ), //i
-    .LayerEnd         (Control_LayerEnd                     ), //i
+    .LayerEnd         (LayerEnd                             ), //i
     .QuantPara_Cached (ConvQuant_1_QuantPara_Cached         ), //o
     .dataIn_0         (Compute_Unit_mData_0[31:0]           ), //i
     .dataIn_1         (Compute_Unit_mData_1[31:0]           ), //i
@@ -295,6 +386,21 @@ module Conv (
     .SAOutput_Valid   (Compute_Unit_resultVaild_0           ), //i
     .clk              (clk                                  ), //i
     .reset            (reset                                )  //i
+  );
+  ConvArrangeV2 DataOutput (
+    .sData         (ConvQuant_1_dataOut[63:0]     ), //i
+    .sReady        (DataOutput_sReady             ), //o
+    .sValid        (DataOutput_sValid[7:0]        ), //i
+    .MatrixCol     (Img2Col_OutMatrix_Col[11:0]   ), //i
+    .MatrixRow     (Img2Col_OutMatrix_Row[19:0]   ), //i
+    .mData_valid   (DataOutput_mData_valid        ), //o
+    .mData_ready   (m_axis_mm2s_tready            ), //i
+    .mData_payload (DataOutput_mData_payload[63:0]), //o
+    .mLast         (DataOutput_mLast              ), //o
+    .LayerEnd      (DataOutput_LayerEnd           ), //o
+    .start         (Control_start                 ), //i
+    .clk           (clk                           ), //i
+    .reset         (reset                         )  //i
   );
   `ifndef SYNTHESIS
   always @(*) begin
@@ -339,10 +445,10 @@ module Conv (
         end
       end
       (((Fsm_currentState) & TopCtrl_Enum_WEIGHT_CACHE) == TopCtrl_Enum_WEIGHT_CACHE) : begin
-        if(when_Compute_TopV2_l225) begin
+        if(when_Compute_TopV2_l227) begin
           Fsm_nextState = TopCtrl_Enum_RECEIVE_PICTURE;
         end else begin
-          if(when_Compute_TopV2_l227) begin
+          if(when_Compute_TopV2_l229) begin
             Fsm_nextState = TopCtrl_Enum_RECEIVE_MATRIX;
           end else begin
             Fsm_nextState = TopCtrl_Enum_WEIGHT_CACHE;
@@ -373,8 +479,8 @@ module Conv (
     endcase
   end
 
-  assign when_Compute_TopV2_l225 = (Fsm_WeightCached && Fsm_Switch_Conv);
-  assign when_Compute_TopV2_l227 = (Fsm_WeightCached && (! Fsm_Switch_Conv));
+  assign when_Compute_TopV2_l227 = (Fsm_WeightCached && Fsm_Switch_Conv);
+  assign when_Compute_TopV2_l229 = (Fsm_WeightCached && (! Fsm_Switch_Conv));
   assign when_WaCounter_l19 = ((Fsm_currentState & TopCtrl_Enum_INIT) != 6'b000000);
   assign when_WaCounter_l14 = (InitCnt_count == 3'b101);
   always @(*) begin
@@ -387,9 +493,9 @@ module Conv (
 
   assign Fsm_Inited = InitCnt_valid;
   assign s_axis_s2mm_tready = InputSwitch_s0_axis_s2mm_tready;
-  assign when_Compute_TopV2_l316 = ((Fsm_currentState & TopCtrl_Enum_WEIGHT_CACHE) != 6'b000000);
+  assign when_Compute_TopV2_l318 = ((Fsm_currentState & TopCtrl_Enum_WEIGHT_CACHE) != 6'b000000);
   always @(*) begin
-    if(when_Compute_TopV2_l316) begin
+    if(when_Compute_TopV2_l318) begin
       InputSwitch_Switch = 2'b00;
     end else begin
       if(Control_Switch_Conv) begin
@@ -403,7 +509,7 @@ module Conv (
   assign Fsm_Picture_Received = (Img2Col_Unit_LayerEnd || LH_Gemm_LayerEnd);
   assign Weight_Unit_Raddr_Valid = (Img2Col_Unit_Raddr_Valid || LH_Gemm_bvalid);
   assign Fsm_WeightCached = ConvQuant_1_QuantPara_Cached;
-  assign Fsm_Compute_End = Control_LayerEnd;
+  assign Fsm_Compute_End = LayerEnd;
   always @(*) begin
     InputSwitch_m_0_axis_mm2s_tready = Weight_Unit_s_axis_s2mm_tready;
     if(Weight_Unit_s_axis_s2mm_tready) begin
@@ -452,10 +558,25 @@ module Conv (
 
   assign Fsm_Matrix_Received = LH_Gemm_LayerEnd;
   assign Fsm_Switch_Conv = Control_Switch_Conv;
-  assign LH_Gemm_WIDTH = GemmInstru_WIDTH[11:0];
-  assign LH_Gemm_HIGHT = GemmInstru_HEIGHT[11:0];
-  assign LH_Gemm_WEIGHTCOL = Img2Col_OutFeature_Channel[7:0];
-  assign mData_payload = ConvQuant_1_dataOut;
+  assign LH_Gemm_WIDTH = GemmInstru_WIDTH[12:0];
+  assign LH_Gemm_HIGHT = GemmInstru_HEIGHT[12:0];
+  assign LH_Gemm_WEIGHTCOL = Img2Col_OutFeature_Channel[11:0];
+  always @(*) begin
+    DataOutput_sValid[0] = toplevel_Compute_Unit_resultVaild_0_delay_10;
+    DataOutput_sValid[1] = toplevel_Compute_Unit_resultVaild_1_delay_10;
+    DataOutput_sValid[2] = toplevel_Compute_Unit_resultVaild_2_delay_10;
+    DataOutput_sValid[3] = toplevel_Compute_Unit_resultVaild_3_delay_10;
+    DataOutput_sValid[4] = toplevel_Compute_Unit_resultVaild_4_delay_10;
+    DataOutput_sValid[5] = toplevel_Compute_Unit_resultVaild_5_delay_10;
+    DataOutput_sValid[6] = toplevel_Compute_Unit_resultVaild_6_delay_10;
+    DataOutput_sValid[7] = toplevel_Compute_Unit_resultVaild_7_delay_10;
+  end
+
+  assign m_axis_mm2s_tdata = DataOutput_mData_payload;
+  assign m_axis_mm2s_tlast = DataOutput_mLast;
+  assign m_axis_mm2s_tvalid = DataOutput_mData_valid;
+  assign m_axis_mm2s_tkeep = 8'hff;
+  assign LayerEnd = DataOutput_LayerEnd;
   always @(posedge clk or posedge reset) begin
     if(reset) begin
       Fsm_currentState <= TopCtrl_Enum_IDLE;
@@ -481,6 +602,716 @@ module Conv (
     _zz_start_3 <= (((Fsm_nextState & TopCtrl_Enum_WEIGHT_CACHE) != 6'b000000) && Control_Switch_Conv);
     _zz_start_4 <= _zz_start_3;
     _zz_start_5 <= _zz_start_4;
+    toplevel_Compute_Unit_resultVaild_0_delay_1 <= Compute_Unit_resultVaild_0;
+    toplevel_Compute_Unit_resultVaild_0_delay_2 <= toplevel_Compute_Unit_resultVaild_0_delay_1;
+    toplevel_Compute_Unit_resultVaild_0_delay_3 <= toplevel_Compute_Unit_resultVaild_0_delay_2;
+    toplevel_Compute_Unit_resultVaild_0_delay_4 <= toplevel_Compute_Unit_resultVaild_0_delay_3;
+    toplevel_Compute_Unit_resultVaild_0_delay_5 <= toplevel_Compute_Unit_resultVaild_0_delay_4;
+    toplevel_Compute_Unit_resultVaild_0_delay_6 <= toplevel_Compute_Unit_resultVaild_0_delay_5;
+    toplevel_Compute_Unit_resultVaild_0_delay_7 <= toplevel_Compute_Unit_resultVaild_0_delay_6;
+    toplevel_Compute_Unit_resultVaild_0_delay_8 <= toplevel_Compute_Unit_resultVaild_0_delay_7;
+    toplevel_Compute_Unit_resultVaild_0_delay_9 <= toplevel_Compute_Unit_resultVaild_0_delay_8;
+    toplevel_Compute_Unit_resultVaild_0_delay_10 <= toplevel_Compute_Unit_resultVaild_0_delay_9;
+    toplevel_Compute_Unit_resultVaild_1_delay_1 <= Compute_Unit_resultVaild_1;
+    toplevel_Compute_Unit_resultVaild_1_delay_2 <= toplevel_Compute_Unit_resultVaild_1_delay_1;
+    toplevel_Compute_Unit_resultVaild_1_delay_3 <= toplevel_Compute_Unit_resultVaild_1_delay_2;
+    toplevel_Compute_Unit_resultVaild_1_delay_4 <= toplevel_Compute_Unit_resultVaild_1_delay_3;
+    toplevel_Compute_Unit_resultVaild_1_delay_5 <= toplevel_Compute_Unit_resultVaild_1_delay_4;
+    toplevel_Compute_Unit_resultVaild_1_delay_6 <= toplevel_Compute_Unit_resultVaild_1_delay_5;
+    toplevel_Compute_Unit_resultVaild_1_delay_7 <= toplevel_Compute_Unit_resultVaild_1_delay_6;
+    toplevel_Compute_Unit_resultVaild_1_delay_8 <= toplevel_Compute_Unit_resultVaild_1_delay_7;
+    toplevel_Compute_Unit_resultVaild_1_delay_9 <= toplevel_Compute_Unit_resultVaild_1_delay_8;
+    toplevel_Compute_Unit_resultVaild_1_delay_10 <= toplevel_Compute_Unit_resultVaild_1_delay_9;
+    toplevel_Compute_Unit_resultVaild_2_delay_1 <= Compute_Unit_resultVaild_2;
+    toplevel_Compute_Unit_resultVaild_2_delay_2 <= toplevel_Compute_Unit_resultVaild_2_delay_1;
+    toplevel_Compute_Unit_resultVaild_2_delay_3 <= toplevel_Compute_Unit_resultVaild_2_delay_2;
+    toplevel_Compute_Unit_resultVaild_2_delay_4 <= toplevel_Compute_Unit_resultVaild_2_delay_3;
+    toplevel_Compute_Unit_resultVaild_2_delay_5 <= toplevel_Compute_Unit_resultVaild_2_delay_4;
+    toplevel_Compute_Unit_resultVaild_2_delay_6 <= toplevel_Compute_Unit_resultVaild_2_delay_5;
+    toplevel_Compute_Unit_resultVaild_2_delay_7 <= toplevel_Compute_Unit_resultVaild_2_delay_6;
+    toplevel_Compute_Unit_resultVaild_2_delay_8 <= toplevel_Compute_Unit_resultVaild_2_delay_7;
+    toplevel_Compute_Unit_resultVaild_2_delay_9 <= toplevel_Compute_Unit_resultVaild_2_delay_8;
+    toplevel_Compute_Unit_resultVaild_2_delay_10 <= toplevel_Compute_Unit_resultVaild_2_delay_9;
+    toplevel_Compute_Unit_resultVaild_3_delay_1 <= Compute_Unit_resultVaild_3;
+    toplevel_Compute_Unit_resultVaild_3_delay_2 <= toplevel_Compute_Unit_resultVaild_3_delay_1;
+    toplevel_Compute_Unit_resultVaild_3_delay_3 <= toplevel_Compute_Unit_resultVaild_3_delay_2;
+    toplevel_Compute_Unit_resultVaild_3_delay_4 <= toplevel_Compute_Unit_resultVaild_3_delay_3;
+    toplevel_Compute_Unit_resultVaild_3_delay_5 <= toplevel_Compute_Unit_resultVaild_3_delay_4;
+    toplevel_Compute_Unit_resultVaild_3_delay_6 <= toplevel_Compute_Unit_resultVaild_3_delay_5;
+    toplevel_Compute_Unit_resultVaild_3_delay_7 <= toplevel_Compute_Unit_resultVaild_3_delay_6;
+    toplevel_Compute_Unit_resultVaild_3_delay_8 <= toplevel_Compute_Unit_resultVaild_3_delay_7;
+    toplevel_Compute_Unit_resultVaild_3_delay_9 <= toplevel_Compute_Unit_resultVaild_3_delay_8;
+    toplevel_Compute_Unit_resultVaild_3_delay_10 <= toplevel_Compute_Unit_resultVaild_3_delay_9;
+    toplevel_Compute_Unit_resultVaild_4_delay_1 <= Compute_Unit_resultVaild_4;
+    toplevel_Compute_Unit_resultVaild_4_delay_2 <= toplevel_Compute_Unit_resultVaild_4_delay_1;
+    toplevel_Compute_Unit_resultVaild_4_delay_3 <= toplevel_Compute_Unit_resultVaild_4_delay_2;
+    toplevel_Compute_Unit_resultVaild_4_delay_4 <= toplevel_Compute_Unit_resultVaild_4_delay_3;
+    toplevel_Compute_Unit_resultVaild_4_delay_5 <= toplevel_Compute_Unit_resultVaild_4_delay_4;
+    toplevel_Compute_Unit_resultVaild_4_delay_6 <= toplevel_Compute_Unit_resultVaild_4_delay_5;
+    toplevel_Compute_Unit_resultVaild_4_delay_7 <= toplevel_Compute_Unit_resultVaild_4_delay_6;
+    toplevel_Compute_Unit_resultVaild_4_delay_8 <= toplevel_Compute_Unit_resultVaild_4_delay_7;
+    toplevel_Compute_Unit_resultVaild_4_delay_9 <= toplevel_Compute_Unit_resultVaild_4_delay_8;
+    toplevel_Compute_Unit_resultVaild_4_delay_10 <= toplevel_Compute_Unit_resultVaild_4_delay_9;
+    toplevel_Compute_Unit_resultVaild_5_delay_1 <= Compute_Unit_resultVaild_5;
+    toplevel_Compute_Unit_resultVaild_5_delay_2 <= toplevel_Compute_Unit_resultVaild_5_delay_1;
+    toplevel_Compute_Unit_resultVaild_5_delay_3 <= toplevel_Compute_Unit_resultVaild_5_delay_2;
+    toplevel_Compute_Unit_resultVaild_5_delay_4 <= toplevel_Compute_Unit_resultVaild_5_delay_3;
+    toplevel_Compute_Unit_resultVaild_5_delay_5 <= toplevel_Compute_Unit_resultVaild_5_delay_4;
+    toplevel_Compute_Unit_resultVaild_5_delay_6 <= toplevel_Compute_Unit_resultVaild_5_delay_5;
+    toplevel_Compute_Unit_resultVaild_5_delay_7 <= toplevel_Compute_Unit_resultVaild_5_delay_6;
+    toplevel_Compute_Unit_resultVaild_5_delay_8 <= toplevel_Compute_Unit_resultVaild_5_delay_7;
+    toplevel_Compute_Unit_resultVaild_5_delay_9 <= toplevel_Compute_Unit_resultVaild_5_delay_8;
+    toplevel_Compute_Unit_resultVaild_5_delay_10 <= toplevel_Compute_Unit_resultVaild_5_delay_9;
+    toplevel_Compute_Unit_resultVaild_6_delay_1 <= Compute_Unit_resultVaild_6;
+    toplevel_Compute_Unit_resultVaild_6_delay_2 <= toplevel_Compute_Unit_resultVaild_6_delay_1;
+    toplevel_Compute_Unit_resultVaild_6_delay_3 <= toplevel_Compute_Unit_resultVaild_6_delay_2;
+    toplevel_Compute_Unit_resultVaild_6_delay_4 <= toplevel_Compute_Unit_resultVaild_6_delay_3;
+    toplevel_Compute_Unit_resultVaild_6_delay_5 <= toplevel_Compute_Unit_resultVaild_6_delay_4;
+    toplevel_Compute_Unit_resultVaild_6_delay_6 <= toplevel_Compute_Unit_resultVaild_6_delay_5;
+    toplevel_Compute_Unit_resultVaild_6_delay_7 <= toplevel_Compute_Unit_resultVaild_6_delay_6;
+    toplevel_Compute_Unit_resultVaild_6_delay_8 <= toplevel_Compute_Unit_resultVaild_6_delay_7;
+    toplevel_Compute_Unit_resultVaild_6_delay_9 <= toplevel_Compute_Unit_resultVaild_6_delay_8;
+    toplevel_Compute_Unit_resultVaild_6_delay_10 <= toplevel_Compute_Unit_resultVaild_6_delay_9;
+    toplevel_Compute_Unit_resultVaild_7_delay_1 <= Compute_Unit_resultVaild_7;
+    toplevel_Compute_Unit_resultVaild_7_delay_2 <= toplevel_Compute_Unit_resultVaild_7_delay_1;
+    toplevel_Compute_Unit_resultVaild_7_delay_3 <= toplevel_Compute_Unit_resultVaild_7_delay_2;
+    toplevel_Compute_Unit_resultVaild_7_delay_4 <= toplevel_Compute_Unit_resultVaild_7_delay_3;
+    toplevel_Compute_Unit_resultVaild_7_delay_5 <= toplevel_Compute_Unit_resultVaild_7_delay_4;
+    toplevel_Compute_Unit_resultVaild_7_delay_6 <= toplevel_Compute_Unit_resultVaild_7_delay_5;
+    toplevel_Compute_Unit_resultVaild_7_delay_7 <= toplevel_Compute_Unit_resultVaild_7_delay_6;
+    toplevel_Compute_Unit_resultVaild_7_delay_8 <= toplevel_Compute_Unit_resultVaild_7_delay_7;
+    toplevel_Compute_Unit_resultVaild_7_delay_9 <= toplevel_Compute_Unit_resultVaild_7_delay_8;
+    toplevel_Compute_Unit_resultVaild_7_delay_10 <= toplevel_Compute_Unit_resultVaild_7_delay_9;
+  end
+
+
+endmodule
+
+module ConvArrangeV2 (
+  input      [63:0]   sData,
+  output              sReady,
+  input      [7:0]    sValid,
+  input      [11:0]   MatrixCol,
+  input      [19:0]   MatrixRow,
+  output reg          mData_valid,
+  input               mData_ready,
+  output reg [63:0]   mData_payload,
+  output              mLast,
+  output              LayerEnd,
+  input               start,
+  input               clk,
+  input               reset
+);
+  localparam CONVOUTPUT_ENUM_IDLE = 4'd1;
+  localparam CONVOUTPUT_ENUM_INIT = 4'd2;
+  localparam CONVOUTPUT_ENUM_DATA_ARRANGEMENT = 4'd4;
+  localparam CONVOUTPUT_ENUM_WAIT_END = 4'd8;
+
+  reg                 streamFifo_io_pop_ready;
+  wire                axisDataConverter_8_inStream_valid;
+  wire       [7:0]    axisDataConverter_8_inStream_payload;
+  reg                 streamFifo_1_io_pop_ready;
+  wire                axisDataConverter_9_inStream_valid;
+  wire       [7:0]    axisDataConverter_9_inStream_payload;
+  reg                 streamFifo_2_io_pop_ready;
+  wire                axisDataConverter_10_inStream_valid;
+  wire       [7:0]    axisDataConverter_10_inStream_payload;
+  reg                 streamFifo_3_io_pop_ready;
+  wire                axisDataConverter_11_inStream_valid;
+  wire       [7:0]    axisDataConverter_11_inStream_payload;
+  reg                 streamFifo_4_io_pop_ready;
+  wire                axisDataConverter_12_inStream_valid;
+  wire       [7:0]    axisDataConverter_12_inStream_payload;
+  reg                 streamFifo_5_io_pop_ready;
+  wire                axisDataConverter_13_inStream_valid;
+  wire       [7:0]    axisDataConverter_13_inStream_payload;
+  reg                 streamFifo_6_io_pop_ready;
+  wire                axisDataConverter_14_inStream_valid;
+  wire       [7:0]    axisDataConverter_14_inStream_payload;
+  reg                 streamFifo_7_io_pop_ready;
+  wire                axisDataConverter_15_inStream_valid;
+  wire       [7:0]    axisDataConverter_15_inStream_payload;
+  wire                streamFifo_io_push_ready;
+  wire                streamFifo_io_pop_valid;
+  wire       [63:0]   streamFifo_io_pop_payload;
+  wire       [9:0]    streamFifo_io_occupancy;
+  wire       [9:0]    streamFifo_io_availability;
+  wire                axisDataConverter_8_inStream_ready;
+  wire                axisDataConverter_8_outStream_valid;
+  wire       [63:0]   axisDataConverter_8_outStream_payload;
+  wire                streamFifo_1_io_push_ready;
+  wire                streamFifo_1_io_pop_valid;
+  wire       [63:0]   streamFifo_1_io_pop_payload;
+  wire       [9:0]    streamFifo_1_io_occupancy;
+  wire       [9:0]    streamFifo_1_io_availability;
+  wire                axisDataConverter_9_inStream_ready;
+  wire                axisDataConverter_9_outStream_valid;
+  wire       [63:0]   axisDataConverter_9_outStream_payload;
+  wire                streamFifo_2_io_push_ready;
+  wire                streamFifo_2_io_pop_valid;
+  wire       [63:0]   streamFifo_2_io_pop_payload;
+  wire       [9:0]    streamFifo_2_io_occupancy;
+  wire       [9:0]    streamFifo_2_io_availability;
+  wire                axisDataConverter_10_inStream_ready;
+  wire                axisDataConverter_10_outStream_valid;
+  wire       [63:0]   axisDataConverter_10_outStream_payload;
+  wire                streamFifo_3_io_push_ready;
+  wire                streamFifo_3_io_pop_valid;
+  wire       [63:0]   streamFifo_3_io_pop_payload;
+  wire       [9:0]    streamFifo_3_io_occupancy;
+  wire       [9:0]    streamFifo_3_io_availability;
+  wire                axisDataConverter_11_inStream_ready;
+  wire                axisDataConverter_11_outStream_valid;
+  wire       [63:0]   axisDataConverter_11_outStream_payload;
+  wire                streamFifo_4_io_push_ready;
+  wire                streamFifo_4_io_pop_valid;
+  wire       [63:0]   streamFifo_4_io_pop_payload;
+  wire       [9:0]    streamFifo_4_io_occupancy;
+  wire       [9:0]    streamFifo_4_io_availability;
+  wire                axisDataConverter_12_inStream_ready;
+  wire                axisDataConverter_12_outStream_valid;
+  wire       [63:0]   axisDataConverter_12_outStream_payload;
+  wire                streamFifo_5_io_push_ready;
+  wire                streamFifo_5_io_pop_valid;
+  wire       [63:0]   streamFifo_5_io_pop_payload;
+  wire       [9:0]    streamFifo_5_io_occupancy;
+  wire       [9:0]    streamFifo_5_io_availability;
+  wire                axisDataConverter_13_inStream_ready;
+  wire                axisDataConverter_13_outStream_valid;
+  wire       [63:0]   axisDataConverter_13_outStream_payload;
+  wire                streamFifo_6_io_push_ready;
+  wire                streamFifo_6_io_pop_valid;
+  wire       [63:0]   streamFifo_6_io_pop_payload;
+  wire       [9:0]    streamFifo_6_io_occupancy;
+  wire       [9:0]    streamFifo_6_io_availability;
+  wire                axisDataConverter_14_inStream_ready;
+  wire                axisDataConverter_14_outStream_valid;
+  wire       [63:0]   axisDataConverter_14_outStream_payload;
+  wire                streamFifo_7_io_push_ready;
+  wire                streamFifo_7_io_pop_valid;
+  wire       [63:0]   streamFifo_7_io_pop_payload;
+  wire       [9:0]    streamFifo_7_io_occupancy;
+  wire       [9:0]    streamFifo_7_io_availability;
+  wire                axisDataConverter_15_inStream_ready;
+  wire                axisDataConverter_15_outStream_valid;
+  wire       [63:0]   axisDataConverter_15_outStream_payload;
+  wire       [11:0]   _zz_In_Col_Cnt_valid;
+  wire       [19:0]   _zz_In_Row_Cnt_valid;
+  wire       [19:0]   _zz_In_Row_Cnt_count_1;
+  wire       [8:0]    _zz_Out_Col_Cnt_valid;
+  wire       [8:0]    _zz_Out_Col_Cnt_valid_1;
+  wire       [19:0]   _zz_Out_Row_Cnt_valid;
+  wire       [0:0]    _zz_when_DataArrangeV2_l83;
+  wire       [0:0]    _zz_when_DataArrangeV2_l83_1;
+  wire       [0:0]    _zz_when_DataArrangeV2_l83_2;
+  wire       [0:0]    _zz_when_DataArrangeV2_l83_3;
+  wire       [0:0]    _zz_when_DataArrangeV2_l83_4;
+  wire       [0:0]    _zz_when_DataArrangeV2_l83_5;
+  wire       [0:0]    _zz_when_DataArrangeV2_l83_6;
+  wire       [0:0]    _zz_when_DataArrangeV2_l83_7;
+  reg        [3:0]    Fsm_currentState;
+  reg        [3:0]    Fsm_nextState;
+  wire                Fsm_Inited;
+  wire                Fsm_LayerEnd;
+  wire                Fsm_Data_AllOut;
+  wire                when_WaCounter_l39;
+  reg        [2:0]    Init_Cnt_count;
+  wire                Init_Cnt_valid;
+  wire                when_WaCounter_l39_1;
+  reg        [11:0]   In_Col_Cnt_count;
+  wire                In_Col_Cnt_valid;
+  wire       [3:0]    _zz_In_Row_Cnt_count;
+  reg        [19:0]   In_Row_Cnt_count;
+  reg                 In_Row_Cnt_valid;
+  wire                mData_fire;
+  reg        [8:0]    Out_Col_Cnt_count;
+  wire                Out_Col_Cnt_valid;
+  reg        [19:0]   Out_Row_Cnt_count;
+  wire                Out_Row_Cnt_valid;
+  reg        [7:0]    OutSwitch;
+  wire                when_DataArrangeV2_l62;
+  wire                when_DataArrangeV2_l83;
+  wire                when_DataArrangeV2_l83_1;
+  wire                when_DataArrangeV2_l83_2;
+  wire                when_DataArrangeV2_l83_3;
+  wire                when_DataArrangeV2_l83_4;
+  wire                when_DataArrangeV2_l83_5;
+  wire                when_DataArrangeV2_l83_6;
+  wire                when_DataArrangeV2_l83_7;
+  `ifndef SYNTHESIS
+  reg [127:0] Fsm_currentState_string;
+  reg [127:0] Fsm_nextState_string;
+  `endif
+
+
+  assign _zz_In_Col_Cnt_valid = (MatrixCol - 12'h001);
+  assign _zz_In_Row_Cnt_valid = {16'd0, _zz_In_Row_Cnt_count};
+  assign _zz_In_Row_Cnt_count_1 = {16'd0, _zz_In_Row_Cnt_count};
+  assign _zz_Out_Col_Cnt_valid = (_zz_Out_Col_Cnt_valid_1 - 9'h001);
+  assign _zz_Out_Col_Cnt_valid_1 = (MatrixCol >>> 3);
+  assign _zz_Out_Row_Cnt_valid = (MatrixRow - 20'h00001);
+  assign _zz_when_DataArrangeV2_l83 = OutSwitch[0 : 0];
+  assign _zz_when_DataArrangeV2_l83_1 = OutSwitch[1 : 1];
+  assign _zz_when_DataArrangeV2_l83_2 = OutSwitch[2 : 2];
+  assign _zz_when_DataArrangeV2_l83_3 = OutSwitch[3 : 3];
+  assign _zz_when_DataArrangeV2_l83_4 = OutSwitch[4 : 4];
+  assign _zz_when_DataArrangeV2_l83_5 = OutSwitch[5 : 5];
+  assign _zz_when_DataArrangeV2_l83_6 = OutSwitch[6 : 6];
+  assign _zz_when_DataArrangeV2_l83_7 = OutSwitch[7 : 7];
+  ConvOutput_Fifo streamFifo (
+    .io_push_valid   (axisDataConverter_8_outStream_valid        ), //i
+    .io_push_ready   (streamFifo_io_push_ready                   ), //o
+    .io_push_payload (axisDataConverter_8_outStream_payload[63:0]), //i
+    .io_pop_valid    (streamFifo_io_pop_valid                    ), //o
+    .io_pop_ready    (streamFifo_io_pop_ready                    ), //i
+    .io_pop_payload  (streamFifo_io_pop_payload[63:0]            ), //o
+    .io_flush        (1'b0                                       ), //i
+    .io_occupancy    (streamFifo_io_occupancy[9:0]               ), //o
+    .io_availability (streamFifo_io_availability[9:0]            ), //o
+    .clk             (clk                                        ), //i
+    .reset           (reset                                      )  //i
+  );
+  ConvOutput_Converter axisDataConverter_8 (
+    .inStream_valid    (axisDataConverter_8_inStream_valid         ), //i
+    .inStream_ready    (axisDataConverter_8_inStream_ready         ), //o
+    .inStream_payload  (axisDataConverter_8_inStream_payload[7:0]  ), //i
+    .outStream_valid   (axisDataConverter_8_outStream_valid        ), //o
+    .outStream_ready   (streamFifo_io_push_ready                   ), //i
+    .outStream_payload (axisDataConverter_8_outStream_payload[63:0]), //o
+    .clk               (clk                                        ), //i
+    .reset             (reset                                      )  //i
+  );
+  ConvOutput_Fifo streamFifo_1 (
+    .io_push_valid   (axisDataConverter_9_outStream_valid        ), //i
+    .io_push_ready   (streamFifo_1_io_push_ready                 ), //o
+    .io_push_payload (axisDataConverter_9_outStream_payload[63:0]), //i
+    .io_pop_valid    (streamFifo_1_io_pop_valid                  ), //o
+    .io_pop_ready    (streamFifo_1_io_pop_ready                  ), //i
+    .io_pop_payload  (streamFifo_1_io_pop_payload[63:0]          ), //o
+    .io_flush        (1'b0                                       ), //i
+    .io_occupancy    (streamFifo_1_io_occupancy[9:0]             ), //o
+    .io_availability (streamFifo_1_io_availability[9:0]          ), //o
+    .clk             (clk                                        ), //i
+    .reset           (reset                                      )  //i
+  );
+  ConvOutput_Converter axisDataConverter_9 (
+    .inStream_valid    (axisDataConverter_9_inStream_valid         ), //i
+    .inStream_ready    (axisDataConverter_9_inStream_ready         ), //o
+    .inStream_payload  (axisDataConverter_9_inStream_payload[7:0]  ), //i
+    .outStream_valid   (axisDataConverter_9_outStream_valid        ), //o
+    .outStream_ready   (streamFifo_1_io_push_ready                 ), //i
+    .outStream_payload (axisDataConverter_9_outStream_payload[63:0]), //o
+    .clk               (clk                                        ), //i
+    .reset             (reset                                      )  //i
+  );
+  ConvOutput_Fifo streamFifo_2 (
+    .io_push_valid   (axisDataConverter_10_outStream_valid        ), //i
+    .io_push_ready   (streamFifo_2_io_push_ready                  ), //o
+    .io_push_payload (axisDataConverter_10_outStream_payload[63:0]), //i
+    .io_pop_valid    (streamFifo_2_io_pop_valid                   ), //o
+    .io_pop_ready    (streamFifo_2_io_pop_ready                   ), //i
+    .io_pop_payload  (streamFifo_2_io_pop_payload[63:0]           ), //o
+    .io_flush        (1'b0                                        ), //i
+    .io_occupancy    (streamFifo_2_io_occupancy[9:0]              ), //o
+    .io_availability (streamFifo_2_io_availability[9:0]           ), //o
+    .clk             (clk                                         ), //i
+    .reset           (reset                                       )  //i
+  );
+  ConvOutput_Converter axisDataConverter_10 (
+    .inStream_valid    (axisDataConverter_10_inStream_valid         ), //i
+    .inStream_ready    (axisDataConverter_10_inStream_ready         ), //o
+    .inStream_payload  (axisDataConverter_10_inStream_payload[7:0]  ), //i
+    .outStream_valid   (axisDataConverter_10_outStream_valid        ), //o
+    .outStream_ready   (streamFifo_2_io_push_ready                  ), //i
+    .outStream_payload (axisDataConverter_10_outStream_payload[63:0]), //o
+    .clk               (clk                                         ), //i
+    .reset             (reset                                       )  //i
+  );
+  ConvOutput_Fifo streamFifo_3 (
+    .io_push_valid   (axisDataConverter_11_outStream_valid        ), //i
+    .io_push_ready   (streamFifo_3_io_push_ready                  ), //o
+    .io_push_payload (axisDataConverter_11_outStream_payload[63:0]), //i
+    .io_pop_valid    (streamFifo_3_io_pop_valid                   ), //o
+    .io_pop_ready    (streamFifo_3_io_pop_ready                   ), //i
+    .io_pop_payload  (streamFifo_3_io_pop_payload[63:0]           ), //o
+    .io_flush        (1'b0                                        ), //i
+    .io_occupancy    (streamFifo_3_io_occupancy[9:0]              ), //o
+    .io_availability (streamFifo_3_io_availability[9:0]           ), //o
+    .clk             (clk                                         ), //i
+    .reset           (reset                                       )  //i
+  );
+  ConvOutput_Converter axisDataConverter_11 (
+    .inStream_valid    (axisDataConverter_11_inStream_valid         ), //i
+    .inStream_ready    (axisDataConverter_11_inStream_ready         ), //o
+    .inStream_payload  (axisDataConverter_11_inStream_payload[7:0]  ), //i
+    .outStream_valid   (axisDataConverter_11_outStream_valid        ), //o
+    .outStream_ready   (streamFifo_3_io_push_ready                  ), //i
+    .outStream_payload (axisDataConverter_11_outStream_payload[63:0]), //o
+    .clk               (clk                                         ), //i
+    .reset             (reset                                       )  //i
+  );
+  ConvOutput_Fifo streamFifo_4 (
+    .io_push_valid   (axisDataConverter_12_outStream_valid        ), //i
+    .io_push_ready   (streamFifo_4_io_push_ready                  ), //o
+    .io_push_payload (axisDataConverter_12_outStream_payload[63:0]), //i
+    .io_pop_valid    (streamFifo_4_io_pop_valid                   ), //o
+    .io_pop_ready    (streamFifo_4_io_pop_ready                   ), //i
+    .io_pop_payload  (streamFifo_4_io_pop_payload[63:0]           ), //o
+    .io_flush        (1'b0                                        ), //i
+    .io_occupancy    (streamFifo_4_io_occupancy[9:0]              ), //o
+    .io_availability (streamFifo_4_io_availability[9:0]           ), //o
+    .clk             (clk                                         ), //i
+    .reset           (reset                                       )  //i
+  );
+  ConvOutput_Converter axisDataConverter_12 (
+    .inStream_valid    (axisDataConverter_12_inStream_valid         ), //i
+    .inStream_ready    (axisDataConverter_12_inStream_ready         ), //o
+    .inStream_payload  (axisDataConverter_12_inStream_payload[7:0]  ), //i
+    .outStream_valid   (axisDataConverter_12_outStream_valid        ), //o
+    .outStream_ready   (streamFifo_4_io_push_ready                  ), //i
+    .outStream_payload (axisDataConverter_12_outStream_payload[63:0]), //o
+    .clk               (clk                                         ), //i
+    .reset             (reset                                       )  //i
+  );
+  ConvOutput_Fifo streamFifo_5 (
+    .io_push_valid   (axisDataConverter_13_outStream_valid        ), //i
+    .io_push_ready   (streamFifo_5_io_push_ready                  ), //o
+    .io_push_payload (axisDataConverter_13_outStream_payload[63:0]), //i
+    .io_pop_valid    (streamFifo_5_io_pop_valid                   ), //o
+    .io_pop_ready    (streamFifo_5_io_pop_ready                   ), //i
+    .io_pop_payload  (streamFifo_5_io_pop_payload[63:0]           ), //o
+    .io_flush        (1'b0                                        ), //i
+    .io_occupancy    (streamFifo_5_io_occupancy[9:0]              ), //o
+    .io_availability (streamFifo_5_io_availability[9:0]           ), //o
+    .clk             (clk                                         ), //i
+    .reset           (reset                                       )  //i
+  );
+  ConvOutput_Converter axisDataConverter_13 (
+    .inStream_valid    (axisDataConverter_13_inStream_valid         ), //i
+    .inStream_ready    (axisDataConverter_13_inStream_ready         ), //o
+    .inStream_payload  (axisDataConverter_13_inStream_payload[7:0]  ), //i
+    .outStream_valid   (axisDataConverter_13_outStream_valid        ), //o
+    .outStream_ready   (streamFifo_5_io_push_ready                  ), //i
+    .outStream_payload (axisDataConverter_13_outStream_payload[63:0]), //o
+    .clk               (clk                                         ), //i
+    .reset             (reset                                       )  //i
+  );
+  ConvOutput_Fifo streamFifo_6 (
+    .io_push_valid   (axisDataConverter_14_outStream_valid        ), //i
+    .io_push_ready   (streamFifo_6_io_push_ready                  ), //o
+    .io_push_payload (axisDataConverter_14_outStream_payload[63:0]), //i
+    .io_pop_valid    (streamFifo_6_io_pop_valid                   ), //o
+    .io_pop_ready    (streamFifo_6_io_pop_ready                   ), //i
+    .io_pop_payload  (streamFifo_6_io_pop_payload[63:0]           ), //o
+    .io_flush        (1'b0                                        ), //i
+    .io_occupancy    (streamFifo_6_io_occupancy[9:0]              ), //o
+    .io_availability (streamFifo_6_io_availability[9:0]           ), //o
+    .clk             (clk                                         ), //i
+    .reset           (reset                                       )  //i
+  );
+  ConvOutput_Converter axisDataConverter_14 (
+    .inStream_valid    (axisDataConverter_14_inStream_valid         ), //i
+    .inStream_ready    (axisDataConverter_14_inStream_ready         ), //o
+    .inStream_payload  (axisDataConverter_14_inStream_payload[7:0]  ), //i
+    .outStream_valid   (axisDataConverter_14_outStream_valid        ), //o
+    .outStream_ready   (streamFifo_6_io_push_ready                  ), //i
+    .outStream_payload (axisDataConverter_14_outStream_payload[63:0]), //o
+    .clk               (clk                                         ), //i
+    .reset             (reset                                       )  //i
+  );
+  ConvOutput_Fifo streamFifo_7 (
+    .io_push_valid   (axisDataConverter_15_outStream_valid        ), //i
+    .io_push_ready   (streamFifo_7_io_push_ready                  ), //o
+    .io_push_payload (axisDataConverter_15_outStream_payload[63:0]), //i
+    .io_pop_valid    (streamFifo_7_io_pop_valid                   ), //o
+    .io_pop_ready    (streamFifo_7_io_pop_ready                   ), //i
+    .io_pop_payload  (streamFifo_7_io_pop_payload[63:0]           ), //o
+    .io_flush        (1'b0                                        ), //i
+    .io_occupancy    (streamFifo_7_io_occupancy[9:0]              ), //o
+    .io_availability (streamFifo_7_io_availability[9:0]           ), //o
+    .clk             (clk                                         ), //i
+    .reset           (reset                                       )  //i
+  );
+  ConvOutput_Converter axisDataConverter_15 (
+    .inStream_valid    (axisDataConverter_15_inStream_valid         ), //i
+    .inStream_ready    (axisDataConverter_15_inStream_ready         ), //o
+    .inStream_payload  (axisDataConverter_15_inStream_payload[7:0]  ), //i
+    .outStream_valid   (axisDataConverter_15_outStream_valid        ), //o
+    .outStream_ready   (streamFifo_7_io_push_ready                  ), //i
+    .outStream_payload (axisDataConverter_15_outStream_payload[63:0]), //o
+    .clk               (clk                                         ), //i
+    .reset             (reset                                       )  //i
+  );
+  `ifndef SYNTHESIS
+  always @(*) begin
+    case(Fsm_currentState)
+      CONVOUTPUT_ENUM_IDLE : Fsm_currentState_string = "IDLE            ";
+      CONVOUTPUT_ENUM_INIT : Fsm_currentState_string = "INIT            ";
+      CONVOUTPUT_ENUM_DATA_ARRANGEMENT : Fsm_currentState_string = "DATA_ARRANGEMENT";
+      CONVOUTPUT_ENUM_WAIT_END : Fsm_currentState_string = "WAIT_END        ";
+      default : Fsm_currentState_string = "????????????????";
+    endcase
+  end
+  always @(*) begin
+    case(Fsm_nextState)
+      CONVOUTPUT_ENUM_IDLE : Fsm_nextState_string = "IDLE            ";
+      CONVOUTPUT_ENUM_INIT : Fsm_nextState_string = "INIT            ";
+      CONVOUTPUT_ENUM_DATA_ARRANGEMENT : Fsm_nextState_string = "DATA_ARRANGEMENT";
+      CONVOUTPUT_ENUM_WAIT_END : Fsm_nextState_string = "WAIT_END        ";
+      default : Fsm_nextState_string = "????????????????";
+    endcase
+  end
+  `endif
+
+  always @(*) begin
+    (* parallel_case *)
+    case(1) // synthesis parallel_case
+      (((Fsm_currentState) & CONVOUTPUT_ENUM_IDLE) == CONVOUTPUT_ENUM_IDLE) : begin
+        if(start) begin
+          Fsm_nextState = CONVOUTPUT_ENUM_INIT;
+        end else begin
+          Fsm_nextState = CONVOUTPUT_ENUM_IDLE;
+        end
+      end
+      (((Fsm_currentState) & CONVOUTPUT_ENUM_INIT) == CONVOUTPUT_ENUM_INIT) : begin
+        if(Fsm_Inited) begin
+          Fsm_nextState = CONVOUTPUT_ENUM_DATA_ARRANGEMENT;
+        end else begin
+          Fsm_nextState = CONVOUTPUT_ENUM_INIT;
+        end
+      end
+      (((Fsm_currentState) & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) == CONVOUTPUT_ENUM_DATA_ARRANGEMENT) : begin
+        if(Fsm_LayerEnd) begin
+          Fsm_nextState = CONVOUTPUT_ENUM_WAIT_END;
+        end else begin
+          Fsm_nextState = CONVOUTPUT_ENUM_DATA_ARRANGEMENT;
+        end
+      end
+      default : begin
+        if(Fsm_Data_AllOut) begin
+          Fsm_nextState = CONVOUTPUT_ENUM_IDLE;
+        end else begin
+          Fsm_nextState = CONVOUTPUT_ENUM_WAIT_END;
+        end
+      end
+    endcase
+  end
+
+  assign when_WaCounter_l39 = ((Fsm_currentState & CONVOUTPUT_ENUM_INIT) != 4'b0000);
+  assign Init_Cnt_valid = ((Init_Cnt_count == 3'b101) && when_WaCounter_l39);
+  assign Fsm_Inited = Init_Cnt_valid;
+  assign when_WaCounter_l39_1 = (sReady && sValid[0]);
+  assign In_Col_Cnt_valid = ((In_Col_Cnt_count == _zz_In_Col_Cnt_valid) && when_WaCounter_l39_1);
+  assign _zz_In_Row_Cnt_count = 4'b1000;
+  always @(*) begin
+    In_Row_Cnt_valid = ((In_Row_Cnt_count <= _zz_In_Row_Cnt_valid) && In_Col_Cnt_valid);
+    if(start) begin
+      In_Row_Cnt_valid = 1'b0;
+    end
+  end
+
+  assign Fsm_LayerEnd = In_Row_Cnt_valid;
+  assign mData_fire = (mData_valid && mData_ready);
+  assign Out_Col_Cnt_valid = ((Out_Col_Cnt_count == _zz_Out_Col_Cnt_valid) && mData_fire);
+  assign Out_Row_Cnt_valid = ((Out_Row_Cnt_count == _zz_Out_Row_Cnt_valid) && Out_Col_Cnt_valid);
+  assign Fsm_Data_AllOut = Out_Row_Cnt_valid;
+  always @(*) begin
+    mData_payload = 64'h0;
+    if(when_DataArrangeV2_l83) begin
+      mData_payload = streamFifo_io_pop_payload;
+    end
+    if(when_DataArrangeV2_l83_1) begin
+      mData_payload = streamFifo_1_io_pop_payload;
+    end
+    if(when_DataArrangeV2_l83_2) begin
+      mData_payload = streamFifo_2_io_pop_payload;
+    end
+    if(when_DataArrangeV2_l83_3) begin
+      mData_payload = streamFifo_3_io_pop_payload;
+    end
+    if(when_DataArrangeV2_l83_4) begin
+      mData_payload = streamFifo_4_io_pop_payload;
+    end
+    if(when_DataArrangeV2_l83_5) begin
+      mData_payload = streamFifo_5_io_pop_payload;
+    end
+    if(when_DataArrangeV2_l83_6) begin
+      mData_payload = streamFifo_6_io_pop_payload;
+    end
+    if(when_DataArrangeV2_l83_7) begin
+      mData_payload = streamFifo_7_io_pop_payload;
+    end
+  end
+
+  always @(*) begin
+    mData_valid = 1'b0;
+    if(when_DataArrangeV2_l83) begin
+      mData_valid = streamFifo_io_pop_valid;
+    end
+    if(when_DataArrangeV2_l83_1) begin
+      mData_valid = streamFifo_1_io_pop_valid;
+    end
+    if(when_DataArrangeV2_l83_2) begin
+      mData_valid = streamFifo_2_io_pop_valid;
+    end
+    if(when_DataArrangeV2_l83_3) begin
+      mData_valid = streamFifo_3_io_pop_valid;
+    end
+    if(when_DataArrangeV2_l83_4) begin
+      mData_valid = streamFifo_4_io_pop_valid;
+    end
+    if(when_DataArrangeV2_l83_5) begin
+      mData_valid = streamFifo_5_io_pop_valid;
+    end
+    if(when_DataArrangeV2_l83_6) begin
+      mData_valid = streamFifo_6_io_pop_valid;
+    end
+    if(when_DataArrangeV2_l83_7) begin
+      mData_valid = streamFifo_7_io_pop_valid;
+    end
+  end
+
+  assign when_DataArrangeV2_l62 = ((Fsm_currentState & CONVOUTPUT_ENUM_INIT) != 4'b0000);
+  assign axisDataConverter_8_inStream_payload = sData[7 : 0];
+  assign sReady = (axisDataConverter_8_inStream_ready && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
+  assign axisDataConverter_8_inStream_valid = (sValid[0] && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
+  always @(*) begin
+    streamFifo_io_pop_ready = 1'b0;
+    if(when_DataArrangeV2_l83) begin
+      streamFifo_io_pop_ready = mData_ready;
+    end
+  end
+
+  assign when_DataArrangeV2_l83 = _zz_when_DataArrangeV2_l83[0];
+  assign axisDataConverter_9_inStream_payload = sData[15 : 8];
+  assign axisDataConverter_9_inStream_valid = (sValid[1] && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
+  always @(*) begin
+    streamFifo_1_io_pop_ready = 1'b0;
+    if(when_DataArrangeV2_l83_1) begin
+      streamFifo_1_io_pop_ready = mData_ready;
+    end
+  end
+
+  assign when_DataArrangeV2_l83_1 = _zz_when_DataArrangeV2_l83_1[0];
+  assign axisDataConverter_10_inStream_payload = sData[23 : 16];
+  assign axisDataConverter_10_inStream_valid = (sValid[2] && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
+  always @(*) begin
+    streamFifo_2_io_pop_ready = 1'b0;
+    if(when_DataArrangeV2_l83_2) begin
+      streamFifo_2_io_pop_ready = mData_ready;
+    end
+  end
+
+  assign when_DataArrangeV2_l83_2 = _zz_when_DataArrangeV2_l83_2[0];
+  assign axisDataConverter_11_inStream_payload = sData[31 : 24];
+  assign axisDataConverter_11_inStream_valid = (sValid[3] && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
+  always @(*) begin
+    streamFifo_3_io_pop_ready = 1'b0;
+    if(when_DataArrangeV2_l83_3) begin
+      streamFifo_3_io_pop_ready = mData_ready;
+    end
+  end
+
+  assign when_DataArrangeV2_l83_3 = _zz_when_DataArrangeV2_l83_3[0];
+  assign axisDataConverter_12_inStream_payload = sData[39 : 32];
+  assign axisDataConverter_12_inStream_valid = (sValid[4] && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
+  always @(*) begin
+    streamFifo_4_io_pop_ready = 1'b0;
+    if(when_DataArrangeV2_l83_4) begin
+      streamFifo_4_io_pop_ready = mData_ready;
+    end
+  end
+
+  assign when_DataArrangeV2_l83_4 = _zz_when_DataArrangeV2_l83_4[0];
+  assign axisDataConverter_13_inStream_payload = sData[47 : 40];
+  assign axisDataConverter_13_inStream_valid = (sValid[5] && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
+  always @(*) begin
+    streamFifo_5_io_pop_ready = 1'b0;
+    if(when_DataArrangeV2_l83_5) begin
+      streamFifo_5_io_pop_ready = mData_ready;
+    end
+  end
+
+  assign when_DataArrangeV2_l83_5 = _zz_when_DataArrangeV2_l83_5[0];
+  assign axisDataConverter_14_inStream_payload = sData[55 : 48];
+  assign axisDataConverter_14_inStream_valid = (sValid[6] && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
+  always @(*) begin
+    streamFifo_6_io_pop_ready = 1'b0;
+    if(when_DataArrangeV2_l83_6) begin
+      streamFifo_6_io_pop_ready = mData_ready;
+    end
+  end
+
+  assign when_DataArrangeV2_l83_6 = _zz_when_DataArrangeV2_l83_6[0];
+  assign axisDataConverter_15_inStream_payload = sData[63 : 56];
+  assign axisDataConverter_15_inStream_valid = (sValid[7] && ((Fsm_currentState & CONVOUTPUT_ENUM_DATA_ARRANGEMENT) != 4'b0000));
+  always @(*) begin
+    streamFifo_7_io_pop_ready = 1'b0;
+    if(when_DataArrangeV2_l83_7) begin
+      streamFifo_7_io_pop_ready = mData_ready;
+    end
+  end
+
+  assign when_DataArrangeV2_l83_7 = _zz_when_DataArrangeV2_l83_7[0];
+  assign mLast = Fsm_Data_AllOut;
+  assign LayerEnd = Fsm_Data_AllOut;
+  always @(posedge clk or posedge reset) begin
+    if(reset) begin
+      Fsm_currentState <= CONVOUTPUT_ENUM_IDLE;
+      Init_Cnt_count <= 3'b000;
+      In_Col_Cnt_count <= 12'h0;
+      In_Row_Cnt_count <= MatrixRow;
+      Out_Col_Cnt_count <= 9'h0;
+      Out_Row_Cnt_count <= 20'h0;
+      OutSwitch <= 8'h01;
+    end else begin
+      Fsm_currentState <= Fsm_nextState;
+      if(when_WaCounter_l39) begin
+        if(Init_Cnt_valid) begin
+          Init_Cnt_count <= 3'b000;
+        end else begin
+          Init_Cnt_count <= (Init_Cnt_count + 3'b001);
+        end
+      end
+      if(when_WaCounter_l39_1) begin
+        if(In_Col_Cnt_valid) begin
+          In_Col_Cnt_count <= 12'h0;
+        end else begin
+          In_Col_Cnt_count <= (In_Col_Cnt_count + 12'h001);
+        end
+      end
+      if(In_Col_Cnt_valid) begin
+        if(In_Row_Cnt_valid) begin
+          In_Row_Cnt_count <= MatrixRow;
+        end else begin
+          In_Row_Cnt_count <= (In_Row_Cnt_count - _zz_In_Row_Cnt_count_1);
+        end
+      end
+      if(start) begin
+        In_Row_Cnt_count <= MatrixRow;
+      end
+      if(mData_fire) begin
+        if(Out_Col_Cnt_valid) begin
+          Out_Col_Cnt_count <= 9'h0;
+        end else begin
+          Out_Col_Cnt_count <= (Out_Col_Cnt_count + 9'h001);
+        end
+      end
+      if(Out_Col_Cnt_valid) begin
+        if(Out_Row_Cnt_valid) begin
+          Out_Row_Cnt_count <= 20'h0;
+        end else begin
+          Out_Row_Cnt_count <= (Out_Row_Cnt_count + 20'h00001);
+        end
+      end
+      if(when_DataArrangeV2_l62) begin
+        OutSwitch <= 8'h01;
+      end else begin
+        if(Out_Col_Cnt_valid) begin
+          OutSwitch <= {OutSwitch[6 : 0],OutSwitch[7 : 7]};
+        end
+      end
+    end
   end
 
 
@@ -743,9 +1574,9 @@ module GemmCache (
   input               sData_valid,
   output reg          sData_ready,
   input      [63:0]   sData_payload,
-  input      [11:0]   WIDTH,
-  input      [11:0]   HIGHT,
-  input      [7:0]    WEIGHTCOL,
+  input      [12:0]   WIDTH,
+  input      [12:0]   HIGHT,
+  input      [11:0]   WEIGHTCOL,
   input               start,
   output              validOut_0,
   output              validOut_1,
@@ -769,23 +1600,126 @@ module GemmCache (
   localparam RW_ENUM_IDLE = 2'd1;
   localparam RW_ENUM_WRITE = 2'd2;
 
-  reg        [11:0]   buffer1_addra;
-  reg        [63:0]   buffer1_dina;
-  reg                 buffer1_ena;
-  reg                 buffer1_wea;
-  reg        [11:0]   buffer1_addrb;
-  reg        [11:0]   buffer2_addra;
-  reg        [63:0]   buffer2_dina;
-  reg                 buffer2_ena;
-  reg                 buffer2_wea;
-  reg        [11:0]   buffer2_addrb;
-  wire       [63:0]   buffer1_doutb;
-  wire       [63:0]   buffer2_doutb;
-  wire       [11:0]   _zz_colCnt_valid;
-  wire       [11:0]   _zz_rAddrCnt_valid;
-  wire       [7:0]    _zz_totalCnt_valid;
-  wire       [7:0]    _zz_totalCnt_valid_1;
-  wire       [7:0]    _zz_totalCnt_valid_2;
+  reg        [9:0]    xil_SimpleDualBram_addra;
+  reg        [63:0]   xil_SimpleDualBram_dina;
+  reg                 xil_SimpleDualBram_ena;
+  reg                 xil_SimpleDualBram_wea;
+  reg        [12:0]   xil_SimpleDualBram_addrb;
+  reg        [9:0]    xil_SimpleDualBram_1_addra;
+  reg        [63:0]   xil_SimpleDualBram_1_dina;
+  reg                 xil_SimpleDualBram_1_ena;
+  reg                 xil_SimpleDualBram_1_wea;
+  reg        [12:0]   xil_SimpleDualBram_1_addrb;
+  reg        [9:0]    xil_SimpleDualBram_2_addra;
+  reg        [63:0]   xil_SimpleDualBram_2_dina;
+  reg                 xil_SimpleDualBram_2_ena;
+  reg                 xil_SimpleDualBram_2_wea;
+  reg        [12:0]   xil_SimpleDualBram_2_addrb;
+  reg        [9:0]    xil_SimpleDualBram_3_addra;
+  reg        [63:0]   xil_SimpleDualBram_3_dina;
+  reg                 xil_SimpleDualBram_3_ena;
+  reg                 xil_SimpleDualBram_3_wea;
+  reg        [12:0]   xil_SimpleDualBram_3_addrb;
+  reg        [9:0]    xil_SimpleDualBram_4_addra;
+  reg        [63:0]   xil_SimpleDualBram_4_dina;
+  reg                 xil_SimpleDualBram_4_ena;
+  reg                 xil_SimpleDualBram_4_wea;
+  reg        [12:0]   xil_SimpleDualBram_4_addrb;
+  reg        [9:0]    xil_SimpleDualBram_5_addra;
+  reg        [63:0]   xil_SimpleDualBram_5_dina;
+  reg                 xil_SimpleDualBram_5_ena;
+  reg                 xil_SimpleDualBram_5_wea;
+  reg        [12:0]   xil_SimpleDualBram_5_addrb;
+  reg        [9:0]    xil_SimpleDualBram_6_addra;
+  reg        [63:0]   xil_SimpleDualBram_6_dina;
+  reg                 xil_SimpleDualBram_6_ena;
+  reg                 xil_SimpleDualBram_6_wea;
+  reg        [12:0]   xil_SimpleDualBram_6_addrb;
+  reg        [9:0]    xil_SimpleDualBram_7_addra;
+  reg        [63:0]   xil_SimpleDualBram_7_dina;
+  reg                 xil_SimpleDualBram_7_ena;
+  reg                 xil_SimpleDualBram_7_wea;
+  reg        [12:0]   xil_SimpleDualBram_7_addrb;
+  reg        [9:0]    xil_SimpleDualBram_8_addra;
+  reg        [63:0]   xil_SimpleDualBram_8_dina;
+  reg                 xil_SimpleDualBram_8_ena;
+  reg                 xil_SimpleDualBram_8_wea;
+  reg        [12:0]   xil_SimpleDualBram_8_addrb;
+  reg        [9:0]    xil_SimpleDualBram_9_addra;
+  reg        [63:0]   xil_SimpleDualBram_9_dina;
+  reg                 xil_SimpleDualBram_9_ena;
+  reg                 xil_SimpleDualBram_9_wea;
+  reg        [12:0]   xil_SimpleDualBram_9_addrb;
+  reg        [9:0]    xil_SimpleDualBram_10_addra;
+  reg        [63:0]   xil_SimpleDualBram_10_dina;
+  reg                 xil_SimpleDualBram_10_ena;
+  reg                 xil_SimpleDualBram_10_wea;
+  reg        [12:0]   xil_SimpleDualBram_10_addrb;
+  reg        [9:0]    xil_SimpleDualBram_11_addra;
+  reg        [63:0]   xil_SimpleDualBram_11_dina;
+  reg                 xil_SimpleDualBram_11_ena;
+  reg                 xil_SimpleDualBram_11_wea;
+  reg        [12:0]   xil_SimpleDualBram_11_addrb;
+  reg        [9:0]    xil_SimpleDualBram_12_addra;
+  reg        [63:0]   xil_SimpleDualBram_12_dina;
+  reg                 xil_SimpleDualBram_12_ena;
+  reg                 xil_SimpleDualBram_12_wea;
+  reg        [12:0]   xil_SimpleDualBram_12_addrb;
+  reg        [9:0]    xil_SimpleDualBram_13_addra;
+  reg        [63:0]   xil_SimpleDualBram_13_dina;
+  reg                 xil_SimpleDualBram_13_ena;
+  reg                 xil_SimpleDualBram_13_wea;
+  reg        [12:0]   xil_SimpleDualBram_13_addrb;
+  reg        [9:0]    xil_SimpleDualBram_14_addra;
+  reg        [63:0]   xil_SimpleDualBram_14_dina;
+  reg                 xil_SimpleDualBram_14_ena;
+  reg                 xil_SimpleDualBram_14_wea;
+  reg        [12:0]   xil_SimpleDualBram_14_addrb;
+  reg        [9:0]    xil_SimpleDualBram_15_addra;
+  reg        [63:0]   xil_SimpleDualBram_15_dina;
+  reg                 xil_SimpleDualBram_15_ena;
+  reg                 xil_SimpleDualBram_15_wea;
+  reg        [12:0]   xil_SimpleDualBram_15_addrb;
+  wire       [7:0]    xil_SimpleDualBram_doutb;
+  wire       [7:0]    xil_SimpleDualBram_1_doutb;
+  wire       [7:0]    xil_SimpleDualBram_2_doutb;
+  wire       [7:0]    xil_SimpleDualBram_3_doutb;
+  wire       [7:0]    xil_SimpleDualBram_4_doutb;
+  wire       [7:0]    xil_SimpleDualBram_5_doutb;
+  wire       [7:0]    xil_SimpleDualBram_6_doutb;
+  wire       [7:0]    xil_SimpleDualBram_7_doutb;
+  wire       [7:0]    xil_SimpleDualBram_8_doutb;
+  wire       [7:0]    xil_SimpleDualBram_9_doutb;
+  wire       [7:0]    xil_SimpleDualBram_10_doutb;
+  wire       [7:0]    xil_SimpleDualBram_11_doutb;
+  wire       [7:0]    xil_SimpleDualBram_12_doutb;
+  wire       [7:0]    xil_SimpleDualBram_13_doutb;
+  wire       [7:0]    xil_SimpleDualBram_14_doutb;
+  wire       [7:0]    xil_SimpleDualBram_15_doutb;
+  wire       [15:0]   _zz_colCnt_valid;
+  wire       [12:0]   _zz_colCnt_valid_1;
+  wire       [12:0]   _zz_rAddrCnt_valid;
+  wire       [11:0]   _zz_totalCnt_valid;
+  wire       [11:0]   _zz_totalCnt_valid_1;
+  wire       [15:0]   _zz_OneColCnt_valid;
+  wire       [12:0]   _zz_OneColCnt_valid_1;
+  wire       [12:0]   _zz_OneColCnt_valid_2;
+  wire       [0:0]    _zz_ena;
+  wire       [0:0]    _zz_ena_1;
+  wire       [0:0]    _zz_ena_2;
+  wire       [0:0]    _zz_ena_3;
+  wire       [0:0]    _zz_ena_4;
+  wire       [0:0]    _zz_ena_5;
+  wire       [0:0]    _zz_ena_6;
+  wire       [0:0]    _zz_ena_7;
+  wire       [0:0]    _zz_ena_8;
+  wire       [0:0]    _zz_ena_9;
+  wire       [0:0]    _zz_ena_10;
+  wire       [0:0]    _zz_ena_11;
+  wire       [0:0]    _zz_ena_12;
+  wire       [0:0]    _zz_ena_13;
+  wire       [0:0]    _zz_ena_14;
+  wire       [0:0]    _zz_ena_15;
   reg                 Switch;
   reg                 valid_0;
   reg                 valid_1;
@@ -795,8 +1729,7 @@ module GemmCache (
   reg                 valid_5;
   reg                 valid_6;
   reg                 valid_7;
-  reg        [63:0]   data;
-  reg        [11:0]   reg_1;
+  reg        [12:0]   reg_1;
   reg        [4:0]    fsm_currentState;
   reg        [4:0]    fsm_nextState;
   wire                fsm_initEnd;
@@ -804,11 +1737,11 @@ module GemmCache (
   wire                fsm_writeEnd;
   wire                fsm_judge;
   wire                fsm_otherWrite;
-  wire                when_GEMMCache_l149;
+  wire                when_GEMM_l151;
   wire                writeend;
   reg                 Switch_regNext;
   reg                 Switch_regNext_1;
-  wire                when_GEMMCache_l42;
+  wire                when_GEMM_l44;
   reg        [1:0]    rwfsm_currentState;
   reg        [1:0]    rwfsm_nextState;
   reg                 rwfsm_writeEnd;
@@ -816,55 +1749,52 @@ module GemmCache (
   reg        [2:0]    initCount_count;
   wire                initCount_valid;
   wire                sData_fire;
-  reg        [11:0]   colCnt_count;
+  reg        [15:0]   colCnt_count;
   wire                colCnt_valid;
   wire                when_WaCounter_l39_1;
-  reg        [11:0]   rAddrCnt_count;
+  reg        [12:0]   rAddrCnt_count;
   wire                rAddrCnt_valid;
-  reg        [2:0]    totalCnt_count;
+  reg        [11:0]   totalCnt_count;
   wire                totalCnt_valid;
   reg                 finish;
-  wire                when_GEMMCache_l162;
-  wire                when_GEMMCache_l170;
-  reg                 writeend_regNext;
-  reg                 _zz_1;
-  reg                 _zz_2;
-  reg                 finish_regNext;
-  reg                 finish_regNext_1;
-  wire                when_GEMMCache_l209;
   wire                sData_fire_1;
+  reg        [15:0]   OneColCnt_count;
+  wire                OneColCnt_valid;
+  reg        [9:0]    Write_Row_Base_Addr;
+  reg        [7:0]    InData_Switch;
+  wire                when_GEMM_l169;
   wire                sData_fire_2;
-  wire                when_GEMMCache_l235;
-  wire                when_GEMMCache_l241;
+  reg                 _zz_1;
+  reg                 writeend_delay_1;
+  reg                 _zz_2;
   reg                 _zz_3;
-  reg                 valid_1_delay_1;
-  reg                 valid_2_delay_1;
-  reg                 valid_2_delay_2;
-  reg                 valid_3_delay_1;
-  reg                 valid_3_delay_2;
-  reg                 valid_3_delay_3;
-  reg                 valid_4_delay_1;
-  reg                 valid_4_delay_2;
-  reg                 valid_4_delay_3;
-  reg                 valid_4_delay_4;
-  reg                 valid_5_delay_1;
-  reg                 valid_5_delay_2;
-  reg                 valid_5_delay_3;
-  reg                 valid_5_delay_4;
-  reg                 valid_5_delay_5;
-  reg                 valid_6_delay_1;
-  reg                 valid_6_delay_2;
-  reg                 valid_6_delay_3;
-  reg                 valid_6_delay_4;
-  reg                 valid_6_delay_5;
-  reg                 valid_6_delay_6;
-  reg                 valid_7_delay_1;
-  reg                 valid_7_delay_2;
-  reg                 valid_7_delay_3;
-  reg                 valid_7_delay_4;
-  reg                 valid_7_delay_5;
-  reg                 valid_7_delay_6;
-  reg                 valid_7_delay_7;
+  reg                 finish_delay_1;
+  reg                 finish_regNext;
+  reg        [63:0]   mdata_temp;
+  wire                when_GEMM_l235;
+  wire                sData_fire_3;
+  wire                sData_fire_4;
+  wire                when_GEMM_l235_1;
+  wire                sData_fire_5;
+  wire                sData_fire_6;
+  wire                when_GEMM_l235_2;
+  wire                sData_fire_7;
+  wire                sData_fire_8;
+  wire                when_GEMM_l235_3;
+  wire                sData_fire_9;
+  wire                sData_fire_10;
+  wire                when_GEMM_l235_4;
+  wire                sData_fire_11;
+  wire                sData_fire_12;
+  wire                when_GEMM_l235_5;
+  wire                sData_fire_13;
+  wire                sData_fire_14;
+  wire                when_GEMM_l235_6;
+  wire                sData_fire_15;
+  wire                sData_fire_16;
+  wire                when_GEMM_l235_7;
+  wire                sData_fire_17;
+  wire                sData_fire_18;
   reg        [7:0]    _zz_mData;
   reg        [7:0]    _zz_mData_1;
   reg        [7:0]    _zz_mData_2;
@@ -893,7 +1823,46 @@ module GemmCache (
   reg        [7:0]    _zz_mData_25;
   reg        [7:0]    _zz_mData_26;
   reg        [7:0]    _zz_mData_27;
-  wire                when_GEMMCache_l271;
+  wire                when_GEMM_l302;
+  wire                when_GEMM_l308;
+  reg                 _zz_4;
+  wire                when_GEMM_l317;
+  wire                when_GEMM_l317_1;
+  wire                when_GEMM_l317_2;
+  wire                when_GEMM_l317_3;
+  wire                when_GEMM_l317_4;
+  wire                when_GEMM_l317_5;
+  wire                when_GEMM_l317_6;
+  wire                when_GEMM_l317_7;
+  reg                 valid_1_delay_1;
+  reg                 valid_2_delay_1;
+  reg                 valid_2_delay_2;
+  reg                 valid_3_delay_1;
+  reg                 valid_3_delay_2;
+  reg                 valid_3_delay_3;
+  reg                 valid_4_delay_1;
+  reg                 valid_4_delay_2;
+  reg                 valid_4_delay_3;
+  reg                 valid_4_delay_4;
+  reg                 valid_5_delay_1;
+  reg                 valid_5_delay_2;
+  reg                 valid_5_delay_3;
+  reg                 valid_5_delay_4;
+  reg                 valid_5_delay_5;
+  reg                 valid_6_delay_1;
+  reg                 valid_6_delay_2;
+  reg                 valid_6_delay_3;
+  reg                 valid_6_delay_4;
+  reg                 valid_6_delay_5;
+  reg                 valid_6_delay_6;
+  reg                 valid_7_delay_1;
+  reg                 valid_7_delay_2;
+  reg                 valid_7_delay_3;
+  reg                 valid_7_delay_4;
+  reg                 valid_7_delay_5;
+  reg                 valid_7_delay_6;
+  reg                 valid_7_delay_7;
+  wire                when_GEMM_l338;
   `ifndef SYNTHESIS
   reg [39:0] fsm_currentState_string;
   reg [39:0] fsm_nextState_string;
@@ -902,30 +1871,189 @@ module GemmCache (
   `endif
 
 
-  assign _zz_colCnt_valid = (WIDTH - 12'h001);
-  assign _zz_rAddrCnt_valid = (WIDTH - 12'h001);
-  assign _zz_totalCnt_valid = {5'd0, totalCnt_count};
-  assign _zz_totalCnt_valid_1 = (_zz_totalCnt_valid_2 - 8'h01);
-  assign _zz_totalCnt_valid_2 = (WEIGHTCOL / 4'b1000);
-  A_Bram buffer1 (
-    .clka  (clk                ), //i
-    .addra (buffer1_addra[11:0]), //i
-    .dina  (buffer1_dina[63:0] ), //i
-    .ena   (buffer1_ena        ), //i
-    .wea   (buffer1_wea        ), //i
-    .addrb (buffer1_addrb[11:0]), //i
-    .doutb (buffer1_doutb[63:0]), //o
-    .clkb  (clk                )  //i
+  assign _zz_colCnt_valid_1 = (WIDTH - 13'h0001);
+  assign _zz_colCnt_valid = {3'd0, _zz_colCnt_valid_1};
+  assign _zz_rAddrCnt_valid = (WIDTH - 13'h0001);
+  assign _zz_totalCnt_valid = (_zz_totalCnt_valid_1 - 12'h001);
+  assign _zz_totalCnt_valid_1 = (WEIGHTCOL / 4'b1000);
+  assign _zz_OneColCnt_valid_1 = (_zz_OneColCnt_valid_2 - 13'h0001);
+  assign _zz_OneColCnt_valid = {3'd0, _zz_OneColCnt_valid_1};
+  assign _zz_OneColCnt_valid_2 = (WIDTH / 4'b1000);
+  assign _zz_ena = InData_Switch[0 : 0];
+  assign _zz_ena_1 = InData_Switch[0 : 0];
+  assign _zz_ena_2 = InData_Switch[1 : 1];
+  assign _zz_ena_3 = InData_Switch[1 : 1];
+  assign _zz_ena_4 = InData_Switch[2 : 2];
+  assign _zz_ena_5 = InData_Switch[2 : 2];
+  assign _zz_ena_6 = InData_Switch[3 : 3];
+  assign _zz_ena_7 = InData_Switch[3 : 3];
+  assign _zz_ena_8 = InData_Switch[4 : 4];
+  assign _zz_ena_9 = InData_Switch[4 : 4];
+  assign _zz_ena_10 = InData_Switch[5 : 5];
+  assign _zz_ena_11 = InData_Switch[5 : 5];
+  assign _zz_ena_12 = InData_Switch[6 : 6];
+  assign _zz_ena_13 = InData_Switch[6 : 6];
+  assign _zz_ena_14 = InData_Switch[7 : 7];
+  assign _zz_ena_15 = InData_Switch[7 : 7];
+  A_Bram xil_SimpleDualBram (
+    .clka  (clk                           ), //i
+    .addra (xil_SimpleDualBram_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_ena        ), //i
+    .wea   (xil_SimpleDualBram_wea        ), //i
+    .addrb (xil_SimpleDualBram_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_doutb[7:0] ), //o
+    .clkb  (clk                           )  //i
   );
-  B_Bram buffer2 (
-    .clka  (clk                ), //i
-    .addra (buffer2_addra[11:0]), //i
-    .dina  (buffer2_dina[63:0] ), //i
-    .ena   (buffer2_ena        ), //i
-    .wea   (buffer2_wea        ), //i
-    .addrb (buffer2_addrb[11:0]), //i
-    .doutb (buffer2_doutb[63:0]), //o
-    .clkb  (clk                )  //i
+  B_Bram xil_SimpleDualBram_1 (
+    .clka  (clk                             ), //i
+    .addra (xil_SimpleDualBram_1_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_1_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_1_ena        ), //i
+    .wea   (xil_SimpleDualBram_1_wea        ), //i
+    .addrb (xil_SimpleDualBram_1_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_1_doutb[7:0] ), //o
+    .clkb  (clk                             )  //i
+  );
+  A_Bram xil_SimpleDualBram_2 (
+    .clka  (clk                             ), //i
+    .addra (xil_SimpleDualBram_2_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_2_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_2_ena        ), //i
+    .wea   (xil_SimpleDualBram_2_wea        ), //i
+    .addrb (xil_SimpleDualBram_2_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_2_doutb[7:0] ), //o
+    .clkb  (clk                             )  //i
+  );
+  B_Bram xil_SimpleDualBram_3 (
+    .clka  (clk                             ), //i
+    .addra (xil_SimpleDualBram_3_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_3_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_3_ena        ), //i
+    .wea   (xil_SimpleDualBram_3_wea        ), //i
+    .addrb (xil_SimpleDualBram_3_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_3_doutb[7:0] ), //o
+    .clkb  (clk                             )  //i
+  );
+  A_Bram xil_SimpleDualBram_4 (
+    .clka  (clk                             ), //i
+    .addra (xil_SimpleDualBram_4_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_4_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_4_ena        ), //i
+    .wea   (xil_SimpleDualBram_4_wea        ), //i
+    .addrb (xil_SimpleDualBram_4_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_4_doutb[7:0] ), //o
+    .clkb  (clk                             )  //i
+  );
+  B_Bram xil_SimpleDualBram_5 (
+    .clka  (clk                             ), //i
+    .addra (xil_SimpleDualBram_5_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_5_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_5_ena        ), //i
+    .wea   (xil_SimpleDualBram_5_wea        ), //i
+    .addrb (xil_SimpleDualBram_5_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_5_doutb[7:0] ), //o
+    .clkb  (clk                             )  //i
+  );
+  A_Bram xil_SimpleDualBram_6 (
+    .clka  (clk                             ), //i
+    .addra (xil_SimpleDualBram_6_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_6_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_6_ena        ), //i
+    .wea   (xil_SimpleDualBram_6_wea        ), //i
+    .addrb (xil_SimpleDualBram_6_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_6_doutb[7:0] ), //o
+    .clkb  (clk                             )  //i
+  );
+  B_Bram xil_SimpleDualBram_7 (
+    .clka  (clk                             ), //i
+    .addra (xil_SimpleDualBram_7_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_7_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_7_ena        ), //i
+    .wea   (xil_SimpleDualBram_7_wea        ), //i
+    .addrb (xil_SimpleDualBram_7_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_7_doutb[7:0] ), //o
+    .clkb  (clk                             )  //i
+  );
+  A_Bram xil_SimpleDualBram_8 (
+    .clka  (clk                             ), //i
+    .addra (xil_SimpleDualBram_8_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_8_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_8_ena        ), //i
+    .wea   (xil_SimpleDualBram_8_wea        ), //i
+    .addrb (xil_SimpleDualBram_8_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_8_doutb[7:0] ), //o
+    .clkb  (clk                             )  //i
+  );
+  B_Bram xil_SimpleDualBram_9 (
+    .clka  (clk                             ), //i
+    .addra (xil_SimpleDualBram_9_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_9_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_9_ena        ), //i
+    .wea   (xil_SimpleDualBram_9_wea        ), //i
+    .addrb (xil_SimpleDualBram_9_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_9_doutb[7:0] ), //o
+    .clkb  (clk                             )  //i
+  );
+  A_Bram xil_SimpleDualBram_10 (
+    .clka  (clk                              ), //i
+    .addra (xil_SimpleDualBram_10_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_10_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_10_ena        ), //i
+    .wea   (xil_SimpleDualBram_10_wea        ), //i
+    .addrb (xil_SimpleDualBram_10_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_10_doutb[7:0] ), //o
+    .clkb  (clk                              )  //i
+  );
+  B_Bram xil_SimpleDualBram_11 (
+    .clka  (clk                              ), //i
+    .addra (xil_SimpleDualBram_11_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_11_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_11_ena        ), //i
+    .wea   (xil_SimpleDualBram_11_wea        ), //i
+    .addrb (xil_SimpleDualBram_11_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_11_doutb[7:0] ), //o
+    .clkb  (clk                              )  //i
+  );
+  A_Bram xil_SimpleDualBram_12 (
+    .clka  (clk                              ), //i
+    .addra (xil_SimpleDualBram_12_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_12_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_12_ena        ), //i
+    .wea   (xil_SimpleDualBram_12_wea        ), //i
+    .addrb (xil_SimpleDualBram_12_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_12_doutb[7:0] ), //o
+    .clkb  (clk                              )  //i
+  );
+  B_Bram xil_SimpleDualBram_13 (
+    .clka  (clk                              ), //i
+    .addra (xil_SimpleDualBram_13_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_13_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_13_ena        ), //i
+    .wea   (xil_SimpleDualBram_13_wea        ), //i
+    .addrb (xil_SimpleDualBram_13_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_13_doutb[7:0] ), //o
+    .clkb  (clk                              )  //i
+  );
+  A_Bram xil_SimpleDualBram_14 (
+    .clka  (clk                              ), //i
+    .addra (xil_SimpleDualBram_14_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_14_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_14_ena        ), //i
+    .wea   (xil_SimpleDualBram_14_wea        ), //i
+    .addrb (xil_SimpleDualBram_14_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_14_doutb[7:0] ), //o
+    .clkb  (clk                              )  //i
+  );
+  B_Bram xil_SimpleDualBram_15 (
+    .clka  (clk                              ), //i
+    .addra (xil_SimpleDualBram_15_addra[9:0] ), //i
+    .dina  (xil_SimpleDualBram_15_dina[63:0] ), //i
+    .ena   (xil_SimpleDualBram_15_ena        ), //i
+    .wea   (xil_SimpleDualBram_15_wea        ), //i
+    .addrb (xil_SimpleDualBram_15_addrb[12:0]), //i
+    .doutb (xil_SimpleDualBram_15_doutb[7:0] ), //o
+    .clkb  (clk                              )  //i
   );
   `ifndef SYNTHESIS
   always @(*) begin
@@ -966,7 +2094,7 @@ module GemmCache (
 
   always @(*) begin
     mData = 64'h0;
-    mData[7 : 0] = data[7 : 0];
+    mData[7 : 0] = mdata_temp[7 : 0];
     mData[15 : 8] = _zz_mData;
     mData[23 : 16] = _zz_mData_2;
     mData[31 : 24] = _zz_mData_5;
@@ -1021,9 +2149,9 @@ module GemmCache (
     endcase
   end
 
-  assign when_GEMMCache_l149 = ((fsm_currentState & GEMM_ENUM_IDLE) != 5'b00000);
+  assign when_GEMM_l151 = ((fsm_currentState & GEMM_ENUM_IDLE) != 5'b00000);
   assign writeend = (((fsm_currentState & GEMM_ENUM_WRITE) != 5'b00000) && ((fsm_nextState & GEMM_ENUM_READ) != 5'b00000));
-  assign when_GEMMCache_l42 = ((((! Switch) && Switch_regNext) || (Switch && (! Switch_regNext_1))) && ((fsm_currentState & GEMM_ENUM_IDLE) == 5'b00000));
+  assign when_GEMM_l44 = ((((! Switch) && Switch_regNext) || (Switch && (! Switch_regNext_1))) && ((fsm_currentState & GEMM_ENUM_IDLE) == 5'b00000));
   always @(*) begin
     (* parallel_case *)
     case(1) // synthesis parallel_case
@@ -1035,7 +2163,7 @@ module GemmCache (
         end
       end
       default : begin
-        if(when_GEMMCache_l42) begin
+        if(when_GEMM_l44) begin
           rwfsm_nextState = RW_ENUM_WRITE;
         end else begin
           rwfsm_nextState = RW_ENUM_IDLE;
@@ -1050,20 +2178,22 @@ module GemmCache (
   assign colCnt_valid = ((colCnt_count == _zz_colCnt_valid) && sData_fire);
   assign when_WaCounter_l39_1 = ((fsm_currentState & GEMM_ENUM_READ) != 5'b00000);
   assign rAddrCnt_valid = ((rAddrCnt_count == _zz_rAddrCnt_valid) && when_WaCounter_l39_1);
-  assign totalCnt_valid = ((_zz_totalCnt_valid == _zz_totalCnt_valid_1) && rAddrCnt_valid);
-  assign when_GEMMCache_l162 = (totalCnt_valid && (reg_1 <= 12'h008));
+  assign totalCnt_valid = ((totalCnt_count == _zz_totalCnt_valid) && rAddrCnt_valid);
+  assign sData_fire_1 = (sData_valid && sData_ready);
+  assign OneColCnt_valid = ((OneColCnt_count == _zz_OneColCnt_valid) && sData_fire_1);
+  assign when_GEMM_l169 = (totalCnt_valid && (reg_1 <= 13'h0008));
   always @(*) begin
-    if(when_GEMMCache_l162) begin
+    if(when_GEMM_l169) begin
       finish = 1'b1;
     end else begin
       finish = 1'b0;
     end
   end
 
-  assign when_GEMMCache_l170 = (totalCnt_valid && (! finish));
+  assign sData_fire_2 = (sData_valid && sData_ready);
   always @(*) begin
     rwfsm_writeEnd = colCnt_valid;
-    if(when_GEMMCache_l241) begin
+    if(when_GEMM_l308) begin
       rwfsm_writeEnd = 1'b1;
     end
   end
@@ -1073,154 +2203,740 @@ module GemmCache (
   assign fsm_readFinish = finish;
   assign fsm_otherWrite = colCnt_valid;
   assign fsm_writeEnd = colCnt_valid;
-  assign LayerEnd = finish_regNext_1;
+  assign LayerEnd = finish_regNext;
   always @(*) begin
-    buffer1_addra = 12'h0;
-    if(when_GEMMCache_l209) begin
-      buffer1_addra = colCnt_count;
+    xil_SimpleDualBram_addra = 10'h0;
+    if(when_GEMM_l235) begin
+      xil_SimpleDualBram_addra = Write_Row_Base_Addr;
     end
   end
 
   always @(*) begin
-    buffer1_dina = 64'h0;
-    if(when_GEMMCache_l209) begin
-      buffer1_dina = sData_payload;
+    xil_SimpleDualBram_dina = 64'h0;
+    if(when_GEMM_l235) begin
+      xil_SimpleDualBram_dina = sData_payload;
     end
   end
 
   always @(*) begin
-    buffer1_ena = 1'b0;
-    if(when_GEMMCache_l209) begin
-      buffer1_ena = sData_fire_1;
+    xil_SimpleDualBram_ena = 1'b0;
+    if(when_GEMM_l235) begin
+      xil_SimpleDualBram_ena = (_zz_ena[0] && sData_fire_3);
     end
   end
 
   always @(*) begin
-    buffer1_wea = 1'b1;
-    if(when_GEMMCache_l209) begin
-      buffer1_wea = 1'b1;
+    xil_SimpleDualBram_wea = 1'b1;
+    if(when_GEMM_l235) begin
+      xil_SimpleDualBram_wea = 1'b1;
     end
   end
 
   always @(*) begin
-    buffer2_addrb = 12'h0;
-    if(when_GEMMCache_l209) begin
-      buffer2_addrb = rAddrCnt_count;
+    xil_SimpleDualBram_1_addrb = 13'h0;
+    if(when_GEMM_l235) begin
+      xil_SimpleDualBram_1_addrb = rAddrCnt_count;
     end
   end
 
   always @(*) begin
-    buffer2_addra = 12'h0;
-    if(!when_GEMMCache_l209) begin
-      buffer2_addra = colCnt_count;
+    xil_SimpleDualBram_1_addra = 10'h0;
+    if(!when_GEMM_l235) begin
+      xil_SimpleDualBram_1_addra = Write_Row_Base_Addr;
     end
   end
 
   always @(*) begin
-    buffer2_dina = 64'h0;
-    if(!when_GEMMCache_l209) begin
-      buffer2_dina = sData_payload;
+    xil_SimpleDualBram_1_dina = 64'h0;
+    if(!when_GEMM_l235) begin
+      xil_SimpleDualBram_1_dina = sData_payload;
     end
   end
 
   always @(*) begin
-    buffer2_ena = 1'b0;
-    if(!when_GEMMCache_l209) begin
-      buffer2_ena = sData_fire_2;
+    xil_SimpleDualBram_1_ena = 1'b0;
+    if(!when_GEMM_l235) begin
+      xil_SimpleDualBram_1_ena = (_zz_ena_1[0] && sData_fire_4);
     end
   end
 
   always @(*) begin
-    buffer2_wea = 1'b1;
-    if(!when_GEMMCache_l209) begin
-      buffer2_wea = 1'b1;
+    xil_SimpleDualBram_1_wea = 1'b1;
+    if(!when_GEMM_l235) begin
+      xil_SimpleDualBram_1_wea = 1'b1;
     end
   end
 
   always @(*) begin
-    buffer1_addrb = 12'h0;
-    if(!when_GEMMCache_l209) begin
-      buffer1_addrb = rAddrCnt_count;
+    xil_SimpleDualBram_addrb = 13'h0;
+    if(!when_GEMM_l235) begin
+      xil_SimpleDualBram_addrb = rAddrCnt_count;
     end
   end
 
-  assign when_GEMMCache_l209 = (Switch == 1'b0);
-  assign sData_fire_1 = (sData_valid && sData_ready);
+  assign when_GEMM_l235 = (Switch == 1'b0);
+  assign sData_fire_3 = (sData_valid && sData_ready);
   always @(*) begin
-    if(when_GEMMCache_l209) begin
-      data = buffer2_doutb;
+    if(when_GEMM_l235) begin
+      mdata_temp[7 : 0] = xil_SimpleDualBram_1_doutb;
     end else begin
-      data = buffer1_doutb;
+      mdata_temp[7 : 0] = xil_SimpleDualBram_doutb;
+    end
+    if(when_GEMM_l235_1) begin
+      mdata_temp[15 : 8] = xil_SimpleDualBram_3_doutb;
+    end else begin
+      mdata_temp[15 : 8] = xil_SimpleDualBram_2_doutb;
+    end
+    if(when_GEMM_l235_2) begin
+      mdata_temp[23 : 16] = xil_SimpleDualBram_5_doutb;
+    end else begin
+      mdata_temp[23 : 16] = xil_SimpleDualBram_4_doutb;
+    end
+    if(when_GEMM_l235_3) begin
+      mdata_temp[31 : 24] = xil_SimpleDualBram_7_doutb;
+    end else begin
+      mdata_temp[31 : 24] = xil_SimpleDualBram_6_doutb;
+    end
+    if(when_GEMM_l235_4) begin
+      mdata_temp[39 : 32] = xil_SimpleDualBram_9_doutb;
+    end else begin
+      mdata_temp[39 : 32] = xil_SimpleDualBram_8_doutb;
+    end
+    if(when_GEMM_l235_5) begin
+      mdata_temp[47 : 40] = xil_SimpleDualBram_11_doutb;
+    end else begin
+      mdata_temp[47 : 40] = xil_SimpleDualBram_10_doutb;
+    end
+    if(when_GEMM_l235_6) begin
+      mdata_temp[55 : 48] = xil_SimpleDualBram_13_doutb;
+    end else begin
+      mdata_temp[55 : 48] = xil_SimpleDualBram_12_doutb;
+    end
+    if(when_GEMM_l235_7) begin
+      mdata_temp[63 : 56] = xil_SimpleDualBram_15_doutb;
+    end else begin
+      mdata_temp[63 : 56] = xil_SimpleDualBram_14_doutb;
     end
   end
 
-  assign sData_fire_2 = (sData_valid && sData_ready);
-  assign when_GEMMCache_l235 = (((fsm_currentState & GEMM_ENUM_WRITE) != 5'b00000) || ((rwfsm_currentState & RW_ENUM_WRITE) != 2'b00));
+  assign sData_fire_4 = (sData_valid && sData_ready);
   always @(*) begin
-    if(when_GEMMCache_l235) begin
+    xil_SimpleDualBram_2_addra = 10'h0;
+    if(when_GEMM_l235_1) begin
+      xil_SimpleDualBram_2_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_2_dina = 64'h0;
+    if(when_GEMM_l235_1) begin
+      xil_SimpleDualBram_2_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_2_ena = 1'b0;
+    if(when_GEMM_l235_1) begin
+      xil_SimpleDualBram_2_ena = (_zz_ena_2[0] && sData_fire_5);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_2_wea = 1'b1;
+    if(when_GEMM_l235_1) begin
+      xil_SimpleDualBram_2_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_3_addrb = 13'h0;
+    if(when_GEMM_l235_1) begin
+      xil_SimpleDualBram_3_addrb = rAddrCnt_count;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_3_addra = 10'h0;
+    if(!when_GEMM_l235_1) begin
+      xil_SimpleDualBram_3_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_3_dina = 64'h0;
+    if(!when_GEMM_l235_1) begin
+      xil_SimpleDualBram_3_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_3_ena = 1'b0;
+    if(!when_GEMM_l235_1) begin
+      xil_SimpleDualBram_3_ena = (_zz_ena_3[0] && sData_fire_6);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_3_wea = 1'b1;
+    if(!when_GEMM_l235_1) begin
+      xil_SimpleDualBram_3_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_2_addrb = 13'h0;
+    if(!when_GEMM_l235_1) begin
+      xil_SimpleDualBram_2_addrb = rAddrCnt_count;
+    end
+  end
+
+  assign when_GEMM_l235_1 = (Switch == 1'b0);
+  assign sData_fire_5 = (sData_valid && sData_ready);
+  assign sData_fire_6 = (sData_valid && sData_ready);
+  always @(*) begin
+    xil_SimpleDualBram_4_addra = 10'h0;
+    if(when_GEMM_l235_2) begin
+      xil_SimpleDualBram_4_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_4_dina = 64'h0;
+    if(when_GEMM_l235_2) begin
+      xil_SimpleDualBram_4_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_4_ena = 1'b0;
+    if(when_GEMM_l235_2) begin
+      xil_SimpleDualBram_4_ena = (_zz_ena_4[0] && sData_fire_7);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_4_wea = 1'b1;
+    if(when_GEMM_l235_2) begin
+      xil_SimpleDualBram_4_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_5_addrb = 13'h0;
+    if(when_GEMM_l235_2) begin
+      xil_SimpleDualBram_5_addrb = rAddrCnt_count;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_5_addra = 10'h0;
+    if(!when_GEMM_l235_2) begin
+      xil_SimpleDualBram_5_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_5_dina = 64'h0;
+    if(!when_GEMM_l235_2) begin
+      xil_SimpleDualBram_5_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_5_ena = 1'b0;
+    if(!when_GEMM_l235_2) begin
+      xil_SimpleDualBram_5_ena = (_zz_ena_5[0] && sData_fire_8);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_5_wea = 1'b1;
+    if(!when_GEMM_l235_2) begin
+      xil_SimpleDualBram_5_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_4_addrb = 13'h0;
+    if(!when_GEMM_l235_2) begin
+      xil_SimpleDualBram_4_addrb = rAddrCnt_count;
+    end
+  end
+
+  assign when_GEMM_l235_2 = (Switch == 1'b0);
+  assign sData_fire_7 = (sData_valid && sData_ready);
+  assign sData_fire_8 = (sData_valid && sData_ready);
+  always @(*) begin
+    xil_SimpleDualBram_6_addra = 10'h0;
+    if(when_GEMM_l235_3) begin
+      xil_SimpleDualBram_6_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_6_dina = 64'h0;
+    if(when_GEMM_l235_3) begin
+      xil_SimpleDualBram_6_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_6_ena = 1'b0;
+    if(when_GEMM_l235_3) begin
+      xil_SimpleDualBram_6_ena = (_zz_ena_6[0] && sData_fire_9);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_6_wea = 1'b1;
+    if(when_GEMM_l235_3) begin
+      xil_SimpleDualBram_6_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_7_addrb = 13'h0;
+    if(when_GEMM_l235_3) begin
+      xil_SimpleDualBram_7_addrb = rAddrCnt_count;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_7_addra = 10'h0;
+    if(!when_GEMM_l235_3) begin
+      xil_SimpleDualBram_7_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_7_dina = 64'h0;
+    if(!when_GEMM_l235_3) begin
+      xil_SimpleDualBram_7_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_7_ena = 1'b0;
+    if(!when_GEMM_l235_3) begin
+      xil_SimpleDualBram_7_ena = (_zz_ena_7[0] && sData_fire_10);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_7_wea = 1'b1;
+    if(!when_GEMM_l235_3) begin
+      xil_SimpleDualBram_7_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_6_addrb = 13'h0;
+    if(!when_GEMM_l235_3) begin
+      xil_SimpleDualBram_6_addrb = rAddrCnt_count;
+    end
+  end
+
+  assign when_GEMM_l235_3 = (Switch == 1'b0);
+  assign sData_fire_9 = (sData_valid && sData_ready);
+  assign sData_fire_10 = (sData_valid && sData_ready);
+  always @(*) begin
+    xil_SimpleDualBram_8_addra = 10'h0;
+    if(when_GEMM_l235_4) begin
+      xil_SimpleDualBram_8_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_8_dina = 64'h0;
+    if(when_GEMM_l235_4) begin
+      xil_SimpleDualBram_8_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_8_ena = 1'b0;
+    if(when_GEMM_l235_4) begin
+      xil_SimpleDualBram_8_ena = (_zz_ena_8[0] && sData_fire_11);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_8_wea = 1'b1;
+    if(when_GEMM_l235_4) begin
+      xil_SimpleDualBram_8_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_9_addrb = 13'h0;
+    if(when_GEMM_l235_4) begin
+      xil_SimpleDualBram_9_addrb = rAddrCnt_count;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_9_addra = 10'h0;
+    if(!when_GEMM_l235_4) begin
+      xil_SimpleDualBram_9_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_9_dina = 64'h0;
+    if(!when_GEMM_l235_4) begin
+      xil_SimpleDualBram_9_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_9_ena = 1'b0;
+    if(!when_GEMM_l235_4) begin
+      xil_SimpleDualBram_9_ena = (_zz_ena_9[0] && sData_fire_12);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_9_wea = 1'b1;
+    if(!when_GEMM_l235_4) begin
+      xil_SimpleDualBram_9_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_8_addrb = 13'h0;
+    if(!when_GEMM_l235_4) begin
+      xil_SimpleDualBram_8_addrb = rAddrCnt_count;
+    end
+  end
+
+  assign when_GEMM_l235_4 = (Switch == 1'b0);
+  assign sData_fire_11 = (sData_valid && sData_ready);
+  assign sData_fire_12 = (sData_valid && sData_ready);
+  always @(*) begin
+    xil_SimpleDualBram_10_addra = 10'h0;
+    if(when_GEMM_l235_5) begin
+      xil_SimpleDualBram_10_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_10_dina = 64'h0;
+    if(when_GEMM_l235_5) begin
+      xil_SimpleDualBram_10_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_10_ena = 1'b0;
+    if(when_GEMM_l235_5) begin
+      xil_SimpleDualBram_10_ena = (_zz_ena_10[0] && sData_fire_13);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_10_wea = 1'b1;
+    if(when_GEMM_l235_5) begin
+      xil_SimpleDualBram_10_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_11_addrb = 13'h0;
+    if(when_GEMM_l235_5) begin
+      xil_SimpleDualBram_11_addrb = rAddrCnt_count;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_11_addra = 10'h0;
+    if(!when_GEMM_l235_5) begin
+      xil_SimpleDualBram_11_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_11_dina = 64'h0;
+    if(!when_GEMM_l235_5) begin
+      xil_SimpleDualBram_11_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_11_ena = 1'b0;
+    if(!when_GEMM_l235_5) begin
+      xil_SimpleDualBram_11_ena = (_zz_ena_11[0] && sData_fire_14);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_11_wea = 1'b1;
+    if(!when_GEMM_l235_5) begin
+      xil_SimpleDualBram_11_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_10_addrb = 13'h0;
+    if(!when_GEMM_l235_5) begin
+      xil_SimpleDualBram_10_addrb = rAddrCnt_count;
+    end
+  end
+
+  assign when_GEMM_l235_5 = (Switch == 1'b0);
+  assign sData_fire_13 = (sData_valid && sData_ready);
+  assign sData_fire_14 = (sData_valid && sData_ready);
+  always @(*) begin
+    xil_SimpleDualBram_12_addra = 10'h0;
+    if(when_GEMM_l235_6) begin
+      xil_SimpleDualBram_12_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_12_dina = 64'h0;
+    if(when_GEMM_l235_6) begin
+      xil_SimpleDualBram_12_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_12_ena = 1'b0;
+    if(when_GEMM_l235_6) begin
+      xil_SimpleDualBram_12_ena = (_zz_ena_12[0] && sData_fire_15);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_12_wea = 1'b1;
+    if(when_GEMM_l235_6) begin
+      xil_SimpleDualBram_12_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_13_addrb = 13'h0;
+    if(when_GEMM_l235_6) begin
+      xil_SimpleDualBram_13_addrb = rAddrCnt_count;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_13_addra = 10'h0;
+    if(!when_GEMM_l235_6) begin
+      xil_SimpleDualBram_13_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_13_dina = 64'h0;
+    if(!when_GEMM_l235_6) begin
+      xil_SimpleDualBram_13_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_13_ena = 1'b0;
+    if(!when_GEMM_l235_6) begin
+      xil_SimpleDualBram_13_ena = (_zz_ena_13[0] && sData_fire_16);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_13_wea = 1'b1;
+    if(!when_GEMM_l235_6) begin
+      xil_SimpleDualBram_13_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_12_addrb = 13'h0;
+    if(!when_GEMM_l235_6) begin
+      xil_SimpleDualBram_12_addrb = rAddrCnt_count;
+    end
+  end
+
+  assign when_GEMM_l235_6 = (Switch == 1'b0);
+  assign sData_fire_15 = (sData_valid && sData_ready);
+  assign sData_fire_16 = (sData_valid && sData_ready);
+  always @(*) begin
+    xil_SimpleDualBram_14_addra = 10'h0;
+    if(when_GEMM_l235_7) begin
+      xil_SimpleDualBram_14_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_14_dina = 64'h0;
+    if(when_GEMM_l235_7) begin
+      xil_SimpleDualBram_14_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_14_ena = 1'b0;
+    if(when_GEMM_l235_7) begin
+      xil_SimpleDualBram_14_ena = (_zz_ena_14[0] && sData_fire_17);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_14_wea = 1'b1;
+    if(when_GEMM_l235_7) begin
+      xil_SimpleDualBram_14_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_15_addrb = 13'h0;
+    if(when_GEMM_l235_7) begin
+      xil_SimpleDualBram_15_addrb = rAddrCnt_count;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_15_addra = 10'h0;
+    if(!when_GEMM_l235_7) begin
+      xil_SimpleDualBram_15_addra = Write_Row_Base_Addr;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_15_dina = 64'h0;
+    if(!when_GEMM_l235_7) begin
+      xil_SimpleDualBram_15_dina = sData_payload;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_15_ena = 1'b0;
+    if(!when_GEMM_l235_7) begin
+      xil_SimpleDualBram_15_ena = (_zz_ena_15[0] && sData_fire_18);
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_15_wea = 1'b1;
+    if(!when_GEMM_l235_7) begin
+      xil_SimpleDualBram_15_wea = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    xil_SimpleDualBram_14_addrb = 13'h0;
+    if(!when_GEMM_l235_7) begin
+      xil_SimpleDualBram_14_addrb = rAddrCnt_count;
+    end
+  end
+
+  assign when_GEMM_l235_7 = (Switch == 1'b0);
+  assign sData_fire_17 = (sData_valid && sData_ready);
+  assign sData_fire_18 = (sData_valid && sData_ready);
+  assign when_GEMM_l302 = (((fsm_currentState & GEMM_ENUM_WRITE) != 5'b00000) || ((rwfsm_currentState & RW_ENUM_WRITE) != 2'b00));
+  always @(*) begin
+    if(when_GEMM_l302) begin
       sData_ready = 1'b1;
     end else begin
       sData_ready = 1'b0;
     end
   end
 
-  assign when_GEMMCache_l241 = ((fsm_currentState & GEMM_ENUM_IDLE) != 5'b00000);
+  assign when_GEMM_l308 = ((fsm_currentState & GEMM_ENUM_IDLE) != 5'b00000);
   always @(*) begin
     valid_0 = 1'b0;
-    if(_zz_3) begin
-      valid_0 = 1'b1;
+    if(_zz_4) begin
+      if(when_GEMM_l317) begin
+        valid_0 = 1'b1;
+      end else begin
+        valid_0 = 1'b0;
+      end
     end
   end
 
   always @(*) begin
     valid_1 = 1'b0;
-    if(_zz_3) begin
-      valid_1 = 1'b1;
+    if(_zz_4) begin
+      if(when_GEMM_l317_1) begin
+        valid_1 = 1'b1;
+      end else begin
+        valid_1 = 1'b0;
+      end
     end
   end
 
   always @(*) begin
     valid_2 = 1'b0;
-    if(_zz_3) begin
-      valid_2 = 1'b1;
+    if(_zz_4) begin
+      if(when_GEMM_l317_2) begin
+        valid_2 = 1'b1;
+      end else begin
+        valid_2 = 1'b0;
+      end
     end
   end
 
   always @(*) begin
     valid_3 = 1'b0;
-    if(_zz_3) begin
-      valid_3 = 1'b1;
+    if(_zz_4) begin
+      if(when_GEMM_l317_3) begin
+        valid_3 = 1'b1;
+      end else begin
+        valid_3 = 1'b0;
+      end
     end
   end
 
   always @(*) begin
     valid_4 = 1'b0;
-    if(_zz_3) begin
-      valid_4 = 1'b1;
+    if(_zz_4) begin
+      if(when_GEMM_l317_4) begin
+        valid_4 = 1'b1;
+      end else begin
+        valid_4 = 1'b0;
+      end
     end
   end
 
   always @(*) begin
     valid_5 = 1'b0;
-    if(_zz_3) begin
-      valid_5 = 1'b1;
+    if(_zz_4) begin
+      if(when_GEMM_l317_5) begin
+        valid_5 = 1'b1;
+      end else begin
+        valid_5 = 1'b0;
+      end
     end
   end
 
   always @(*) begin
     valid_6 = 1'b0;
-    if(_zz_3) begin
-      valid_6 = 1'b1;
+    if(_zz_4) begin
+      if(when_GEMM_l317_6) begin
+        valid_6 = 1'b1;
+      end else begin
+        valid_6 = 1'b0;
+      end
     end
   end
 
   always @(*) begin
     valid_7 = 1'b0;
-    if(_zz_3) begin
-      valid_7 = 1'b1;
+    if(_zz_4) begin
+      if(when_GEMM_l317_7) begin
+        valid_7 = 1'b1;
+      end else begin
+        valid_7 = 1'b0;
+      end
     end
   end
 
+  assign when_GEMM_l317 = (13'h0 < reg_1);
+  assign when_GEMM_l317_1 = (13'h0001 < reg_1);
+  assign when_GEMM_l317_2 = (13'h0002 < reg_1);
+  assign when_GEMM_l317_3 = (13'h0003 < reg_1);
+  assign when_GEMM_l317_4 = (13'h0004 < reg_1);
+  assign when_GEMM_l317_5 = (13'h0005 < reg_1);
+  assign when_GEMM_l317_6 = (13'h0006 < reg_1);
+  assign when_GEMM_l317_7 = (13'h0007 < reg_1);
   assign validOut_0 = valid_0;
   assign validOut_1 = valid_1_delay_1;
   assign validOut_2 = valid_2_delay_2;
@@ -1229,9 +2945,9 @@ module GemmCache (
   assign validOut_5 = valid_5_delay_5;
   assign validOut_6 = valid_6_delay_6;
   assign validOut_7 = valid_7_delay_7;
-  assign when_GEMMCache_l271 = ((fsm_currentState & GEMM_ENUM_READ) != 5'b00000);
+  assign when_GEMM_l338 = ((fsm_currentState & GEMM_ENUM_READ) != 5'b00000);
   always @(*) begin
-    if(when_GEMMCache_l271) begin
+    if(when_GEMM_l338) begin
       bvalid = 1'b1;
     end else begin
       bvalid = 1'b0;
@@ -1241,16 +2957,19 @@ module GemmCache (
   always @(posedge clk or posedge reset) begin
     if(reset) begin
       Switch <= 1'b0;
-      reg_1 <= 12'h0;
+      reg_1 <= 13'h0;
       fsm_currentState <= GEMM_ENUM_IDLE;
       rwfsm_currentState <= RW_ENUM_IDLE;
       initCount_count <= 3'b000;
-      colCnt_count <= 12'h0;
-      rAddrCnt_count <= 12'h0;
-      totalCnt_count <= 3'b000;
+      colCnt_count <= 16'h0;
+      rAddrCnt_count <= 13'h0;
+      totalCnt_count <= 12'h0;
+      OneColCnt_count <= 16'h0;
+      Write_Row_Base_Addr <= 10'h0;
+      InData_Switch <= 8'h01;
     end else begin
       fsm_currentState <= fsm_nextState;
-      if(when_GEMMCache_l149) begin
+      if(when_GEMM_l151) begin
         reg_1 <= HIGHT;
       end
       rwfsm_currentState <= rwfsm_nextState;
@@ -1263,42 +2982,55 @@ module GemmCache (
       end
       if(sData_fire) begin
         if(colCnt_valid) begin
-          colCnt_count <= 12'h0;
+          colCnt_count <= 16'h0;
         end else begin
-          colCnt_count <= (colCnt_count + 12'h001);
+          colCnt_count <= (colCnt_count + 16'h0001);
         end
       end
       if(when_WaCounter_l39_1) begin
         if(rAddrCnt_valid) begin
-          rAddrCnt_count <= 12'h0;
+          rAddrCnt_count <= 13'h0;
         end else begin
-          rAddrCnt_count <= (rAddrCnt_count + 12'h001);
+          rAddrCnt_count <= (rAddrCnt_count + 13'h0001);
         end
       end
       if(rAddrCnt_valid) begin
         if(totalCnt_valid) begin
-          totalCnt_count <= 3'b000;
+          totalCnt_count <= 12'h0;
         end else begin
-          totalCnt_count <= (totalCnt_count + 3'b001);
+          totalCnt_count <= (totalCnt_count + 12'h001);
         end
       end
-      if(when_GEMMCache_l170) begin
-        reg_1 <= (reg_1 - 12'h008);
+      if(sData_fire_1) begin
+        if(OneColCnt_valid) begin
+          OneColCnt_count <= 16'h0;
+        end else begin
+          OneColCnt_count <= (OneColCnt_count + 16'h0001);
+        end
       end
-      if(writeend_regNext) begin
+      if(sData_fire_2) begin
+        Write_Row_Base_Addr <= (Write_Row_Base_Addr + 10'h001);
+      end
+      if(OneColCnt_valid) begin
+        InData_Switch <= {InData_Switch[6 : 0],InData_Switch[7 : 7]};
+        Write_Row_Base_Addr <= 10'h0;
+      end
+      if(_zz_1) begin
+        reg_1 <= (reg_1 - 13'h0008);
+      end
+      if(writeend_delay_1) begin
         Switch <= (! Switch);
       end else begin
-        if(_zz_1) begin
+        if(_zz_2) begin
           Switch <= (! Switch);
         end else begin
-          if(_zz_2) begin
+          if(_zz_3) begin
             Switch <= (! Switch);
-          end else begin
-            if(finish_regNext) begin
-              Switch <= 1'b0;
-            end
           end
         end
+      end
+      if(finish_delay_1) begin
+        Switch <= (! Switch);
       end
     end
   end
@@ -1306,12 +3038,41 @@ module GemmCache (
   always @(posedge clk) begin
     Switch_regNext <= Switch;
     Switch_regNext_1 <= Switch;
-    writeend_regNext <= writeend;
-    _zz_1 <= (totalCnt_valid && ((rwfsm_currentState & RW_ENUM_IDLE) != 2'b00));
-    _zz_2 <= (colCnt_valid && ((fsm_currentState & GEMM_ENUM_CHECK) != 5'b00000));
+    _zz_1 <= (totalCnt_valid && (! finish));
+    writeend_delay_1 <= writeend;
+    _zz_2 <= ((totalCnt_valid && ((rwfsm_currentState & RW_ENUM_IDLE) != 2'b00)) && (! finish));
+    _zz_3 <= (colCnt_valid && ((fsm_currentState & GEMM_ENUM_CHECK) != 5'b00000));
+    finish_delay_1 <= finish;
     finish_regNext <= finish;
-    finish_regNext_1 <= finish;
-    _zz_3 <= ((fsm_currentState & GEMM_ENUM_READ) != 5'b00000);
+    _zz_mData <= mdata_temp[15 : 8];
+    _zz_mData_1 <= mdata_temp[23 : 16];
+    _zz_mData_2 <= _zz_mData_1;
+    _zz_mData_3 <= mdata_temp[31 : 24];
+    _zz_mData_4 <= _zz_mData_3;
+    _zz_mData_5 <= _zz_mData_4;
+    _zz_mData_6 <= mdata_temp[39 : 32];
+    _zz_mData_7 <= _zz_mData_6;
+    _zz_mData_8 <= _zz_mData_7;
+    _zz_mData_9 <= _zz_mData_8;
+    _zz_mData_10 <= mdata_temp[47 : 40];
+    _zz_mData_11 <= _zz_mData_10;
+    _zz_mData_12 <= _zz_mData_11;
+    _zz_mData_13 <= _zz_mData_12;
+    _zz_mData_14 <= _zz_mData_13;
+    _zz_mData_15 <= mdata_temp[55 : 48];
+    _zz_mData_16 <= _zz_mData_15;
+    _zz_mData_17 <= _zz_mData_16;
+    _zz_mData_18 <= _zz_mData_17;
+    _zz_mData_19 <= _zz_mData_18;
+    _zz_mData_20 <= _zz_mData_19;
+    _zz_mData_21 <= mdata_temp[63 : 56];
+    _zz_mData_22 <= _zz_mData_21;
+    _zz_mData_23 <= _zz_mData_22;
+    _zz_mData_24 <= _zz_mData_23;
+    _zz_mData_25 <= _zz_mData_24;
+    _zz_mData_26 <= _zz_mData_25;
+    _zz_mData_27 <= _zz_mData_26;
+    _zz_4 <= ((fsm_currentState & GEMM_ENUM_READ) != 5'b00000);
     valid_1_delay_1 <= valid_1;
     valid_2_delay_1 <= valid_2;
     valid_2_delay_2 <= valid_2_delay_1;
@@ -1340,34 +3101,6 @@ module GemmCache (
     valid_7_delay_5 <= valid_7_delay_4;
     valid_7_delay_6 <= valid_7_delay_5;
     valid_7_delay_7 <= valid_7_delay_6;
-    _zz_mData <= data[15 : 8];
-    _zz_mData_1 <= data[23 : 16];
-    _zz_mData_2 <= _zz_mData_1;
-    _zz_mData_3 <= data[31 : 24];
-    _zz_mData_4 <= _zz_mData_3;
-    _zz_mData_5 <= _zz_mData_4;
-    _zz_mData_6 <= data[39 : 32];
-    _zz_mData_7 <= _zz_mData_6;
-    _zz_mData_8 <= _zz_mData_7;
-    _zz_mData_9 <= _zz_mData_8;
-    _zz_mData_10 <= data[47 : 40];
-    _zz_mData_11 <= _zz_mData_10;
-    _zz_mData_12 <= _zz_mData_11;
-    _zz_mData_13 <= _zz_mData_12;
-    _zz_mData_14 <= _zz_mData_13;
-    _zz_mData_15 <= data[55 : 48];
-    _zz_mData_16 <= _zz_mData_15;
-    _zz_mData_17 <= _zz_mData_16;
-    _zz_mData_18 <= _zz_mData_17;
-    _zz_mData_19 <= _zz_mData_18;
-    _zz_mData_20 <= _zz_mData_19;
-    _zz_mData_21 <= data[63 : 56];
-    _zz_mData_22 <= _zz_mData_21;
-    _zz_mData_23 <= _zz_mData_22;
-    _zz_mData_24 <= _zz_mData_23;
-    _zz_mData_25 <= _zz_mData_24;
-    _zz_mData_26 <= _zz_mData_25;
-    _zz_mData_27 <= _zz_mData_26;
   end
 
 
@@ -1863,7 +3596,7 @@ module SA_Conv (
   output              resultVaild_6,
   output              resultVaild_7,
   input      [11:0]   OutMatrix_Col,
-  input      [15:0]   OutMatrix_Row,
+  input      [19:0]   OutMatrix_Row,
   input      [9:0]    OutChannel,
   input      [15:0]   OutFeatureSize,
   input               Matrix2Img,
@@ -2103,6 +3836,253 @@ module Compute_DataIn_Switch (
       m_2_axis_mm2s_tvalid = s0_axis_s2mm_tvalid;
     end else begin
       m_2_axis_mm2s_tvalid = 1'b0;
+    end
+  end
+
+
+endmodule
+
+//ConvOutput_Converter replaced by ConvOutput_Converter
+
+//ConvOutput_Fifo replaced by ConvOutput_Fifo
+
+//ConvOutput_Converter replaced by ConvOutput_Converter
+
+//ConvOutput_Fifo replaced by ConvOutput_Fifo
+
+//ConvOutput_Converter replaced by ConvOutput_Converter
+
+//ConvOutput_Fifo replaced by ConvOutput_Fifo
+
+//ConvOutput_Converter replaced by ConvOutput_Converter
+
+//ConvOutput_Fifo replaced by ConvOutput_Fifo
+
+//ConvOutput_Converter replaced by ConvOutput_Converter
+
+//ConvOutput_Fifo replaced by ConvOutput_Fifo
+
+//ConvOutput_Converter replaced by ConvOutput_Converter
+
+//ConvOutput_Fifo replaced by ConvOutput_Fifo
+
+//ConvOutput_Converter replaced by ConvOutput_Converter
+
+//ConvOutput_Fifo replaced by ConvOutput_Fifo
+
+module ConvOutput_Converter (
+  input               inStream_valid,
+  output              inStream_ready,
+  input      [7:0]    inStream_payload,
+  output              outStream_valid,
+  input               outStream_ready,
+  output     [63:0]   outStream_payload,
+  input               clk,
+  input               reset
+);
+
+  wire       [2:0]    _zz__zz_inStream_ready_1;
+  wire       [0:0]    _zz__zz_inStream_ready_1_1;
+  wire       [47:0]   _zz__zz_outStream_payload;
+  wire       [63:0]   _zz_outStream_payload_1;
+  wire       [63:0]   _zz_outStream_payload_2;
+  wire                inStream_fire;
+  reg                 _zz_inStream_ready;
+  reg        [2:0]    _zz_inStream_ready_1;
+  reg        [2:0]    _zz_inStream_ready_2;
+  wire                _zz_inStream_ready_3;
+  reg        [55:0]   _zz_outStream_payload;
+  wire                inStream_fire_1;
+
+  assign _zz__zz_inStream_ready_1_1 = _zz_inStream_ready;
+  assign _zz__zz_inStream_ready_1 = {2'd0, _zz__zz_inStream_ready_1_1};
+  assign _zz__zz_outStream_payload = (_zz_outStream_payload >>> 8);
+  assign _zz_outStream_payload_2 = {inStream_payload,_zz_outStream_payload};
+  assign _zz_outStream_payload_1 = _zz_outStream_payload_2;
+  assign inStream_fire = (inStream_valid && inStream_ready);
+  always @(*) begin
+    _zz_inStream_ready = 1'b0;
+    if(inStream_fire) begin
+      _zz_inStream_ready = 1'b1;
+    end
+  end
+
+  assign _zz_inStream_ready_3 = (_zz_inStream_ready_2 == 3'b111);
+  always @(*) begin
+    _zz_inStream_ready_1 = (_zz_inStream_ready_2 + _zz__zz_inStream_ready_1);
+    if(1'b0) begin
+      _zz_inStream_ready_1 = 3'b000;
+    end
+  end
+
+  assign inStream_fire_1 = (inStream_valid && inStream_ready);
+  assign outStream_valid = (inStream_valid && _zz_inStream_ready_3);
+  assign outStream_payload = _zz_outStream_payload_1;
+  assign inStream_ready = (! ((! outStream_ready) && _zz_inStream_ready_3));
+  always @(posedge clk or posedge reset) begin
+    if(reset) begin
+      _zz_inStream_ready_2 <= 3'b000;
+    end else begin
+      _zz_inStream_ready_2 <= _zz_inStream_ready_1;
+    end
+  end
+
+  always @(posedge clk) begin
+    if(inStream_fire_1) begin
+      _zz_outStream_payload <= {inStream_payload,_zz__zz_outStream_payload};
+    end
+  end
+
+
+endmodule
+
+module ConvOutput_Fifo (
+  input               io_push_valid,
+  output              io_push_ready,
+  input      [63:0]   io_push_payload,
+  output              io_pop_valid,
+  input               io_pop_ready,
+  output     [63:0]   io_pop_payload,
+  input               io_flush,
+  output     [9:0]    io_occupancy,
+  output     [9:0]    io_availability,
+  input               clk,
+  input               reset
+);
+
+  reg        [63:0]   _zz_logic_ram_port0;
+  wire       [8:0]    _zz_logic_pushPtr_valueNext;
+  wire       [0:0]    _zz_logic_pushPtr_valueNext_1;
+  wire       [8:0]    _zz_logic_popPtr_valueNext;
+  wire       [0:0]    _zz_logic_popPtr_valueNext_1;
+  wire                _zz_logic_ram_port;
+  wire                _zz_io_pop_payload;
+  wire       [63:0]   _zz_logic_ram_port_1;
+  wire       [8:0]    _zz_io_availability;
+  reg                 _zz_1;
+  reg                 logic_pushPtr_willIncrement;
+  reg                 logic_pushPtr_willClear;
+  reg        [8:0]    logic_pushPtr_valueNext;
+  reg        [8:0]    logic_pushPtr_value;
+  wire                logic_pushPtr_willOverflowIfInc;
+  wire                logic_pushPtr_willOverflow;
+  reg                 logic_popPtr_willIncrement;
+  reg                 logic_popPtr_willClear;
+  reg        [8:0]    logic_popPtr_valueNext;
+  reg        [8:0]    logic_popPtr_value;
+  wire                logic_popPtr_willOverflowIfInc;
+  wire                logic_popPtr_willOverflow;
+  wire                logic_ptrMatch;
+  reg                 logic_risingOccupancy;
+  wire                logic_pushing;
+  wire                logic_popping;
+  wire                logic_empty;
+  wire                logic_full;
+  reg                 _zz_io_pop_valid;
+  wire                when_Stream_l1122;
+  wire       [8:0]    logic_ptrDif;
+  reg [63:0] logic_ram [0:511];
+
+  assign _zz_logic_pushPtr_valueNext_1 = logic_pushPtr_willIncrement;
+  assign _zz_logic_pushPtr_valueNext = {8'd0, _zz_logic_pushPtr_valueNext_1};
+  assign _zz_logic_popPtr_valueNext_1 = logic_popPtr_willIncrement;
+  assign _zz_logic_popPtr_valueNext = {8'd0, _zz_logic_popPtr_valueNext_1};
+  assign _zz_io_availability = (logic_popPtr_value - logic_pushPtr_value);
+  assign _zz_io_pop_payload = 1'b1;
+  assign _zz_logic_ram_port_1 = io_push_payload;
+  always @(posedge clk) begin
+    if(_zz_io_pop_payload) begin
+      _zz_logic_ram_port0 <= logic_ram[logic_popPtr_valueNext];
+    end
+  end
+
+  always @(posedge clk) begin
+    if(_zz_1) begin
+      logic_ram[logic_pushPtr_value] <= _zz_logic_ram_port_1;
+    end
+  end
+
+  always @(*) begin
+    _zz_1 = 1'b0;
+    if(logic_pushing) begin
+      _zz_1 = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    logic_pushPtr_willIncrement = 1'b0;
+    if(logic_pushing) begin
+      logic_pushPtr_willIncrement = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    logic_pushPtr_willClear = 1'b0;
+    if(io_flush) begin
+      logic_pushPtr_willClear = 1'b1;
+    end
+  end
+
+  assign logic_pushPtr_willOverflowIfInc = (logic_pushPtr_value == 9'h1ff);
+  assign logic_pushPtr_willOverflow = (logic_pushPtr_willOverflowIfInc && logic_pushPtr_willIncrement);
+  always @(*) begin
+    logic_pushPtr_valueNext = (logic_pushPtr_value + _zz_logic_pushPtr_valueNext);
+    if(logic_pushPtr_willClear) begin
+      logic_pushPtr_valueNext = 9'h0;
+    end
+  end
+
+  always @(*) begin
+    logic_popPtr_willIncrement = 1'b0;
+    if(logic_popping) begin
+      logic_popPtr_willIncrement = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    logic_popPtr_willClear = 1'b0;
+    if(io_flush) begin
+      logic_popPtr_willClear = 1'b1;
+    end
+  end
+
+  assign logic_popPtr_willOverflowIfInc = (logic_popPtr_value == 9'h1ff);
+  assign logic_popPtr_willOverflow = (logic_popPtr_willOverflowIfInc && logic_popPtr_willIncrement);
+  always @(*) begin
+    logic_popPtr_valueNext = (logic_popPtr_value + _zz_logic_popPtr_valueNext);
+    if(logic_popPtr_willClear) begin
+      logic_popPtr_valueNext = 9'h0;
+    end
+  end
+
+  assign logic_ptrMatch = (logic_pushPtr_value == logic_popPtr_value);
+  assign logic_pushing = (io_push_valid && io_push_ready);
+  assign logic_popping = (io_pop_valid && io_pop_ready);
+  assign logic_empty = (logic_ptrMatch && (! logic_risingOccupancy));
+  assign logic_full = (logic_ptrMatch && logic_risingOccupancy);
+  assign io_push_ready = (! logic_full);
+  assign io_pop_valid = ((! logic_empty) && (! (_zz_io_pop_valid && (! logic_full))));
+  assign io_pop_payload = _zz_logic_ram_port0;
+  assign when_Stream_l1122 = (logic_pushing != logic_popping);
+  assign logic_ptrDif = (logic_pushPtr_value - logic_popPtr_value);
+  assign io_occupancy = {(logic_risingOccupancy && logic_ptrMatch),logic_ptrDif};
+  assign io_availability = {((! logic_risingOccupancy) && logic_ptrMatch),_zz_io_availability};
+  always @(posedge clk or posedge reset) begin
+    if(reset) begin
+      logic_pushPtr_value <= 9'h0;
+      logic_popPtr_value <= 9'h0;
+      logic_risingOccupancy <= 1'b0;
+      _zz_io_pop_valid <= 1'b0;
+    end else begin
+      logic_pushPtr_value <= logic_pushPtr_valueNext;
+      logic_popPtr_value <= logic_popPtr_valueNext;
+      _zz_io_pop_valid <= (logic_popPtr_valueNext == logic_pushPtr_value);
+      if(when_Stream_l1122) begin
+        logic_risingOccupancy <= logic_pushing;
+      end
+      if(io_flush) begin
+        logic_risingOccupancy <= 1'b0;
+      end
     end
   end
 
