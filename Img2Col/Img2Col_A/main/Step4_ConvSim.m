@@ -48,26 +48,27 @@ for i=1:size(OutFeature_3D_Arranged,1)%遍历行
     OriginData_Cut=reshape(hex2dec(OriginData_Cut),size(OutFeature_3D_Arranged{1}));
     OutFeature_3D_Quan{i}=OriginData_Cut;
 end
-
-Valid_Sign=1;%数据Valid有效信号
-Valid_Sign=['FF','7F','3F','1F','0F','07','03','01'];
-fid=fopen("阵列输出仿真数据.txt","w");
-for i=1:size(OutFeature_3D_Arranged,1)%遍历行
-    BlockData=OutFeature_3D_Arranged{i};
-    for j=1:size(OutFeature_3D_Arranged{1,1},1)
-        QuanData=fliplr(dec2hex(BlockData(j,:)));
-        QuanData=fliplr(QuanData(:,1:2));
-        for Print_Times=1:8
-            if Print_Times==8
-                fprintf(fid,"%02s\n",QuanData(8-Print_Times+1,:));
-            else
-                fprintf(fid,"%02s",QuanData(8-Print_Times+1,:));
+if 0
+    Valid_Sign=1;%数据Valid有效信号
+    Valid_Sign=['FF','7F','3F','1F','0F','07','03','01'];
+    fid=fopen("阵列输出仿真数据.txt","w");
+    for i=1:size(OutFeature_3D_Arranged,1)%遍历行
+        BlockData=OutFeature_3D_Arranged{i};
+        for j=1:size(OutFeature_3D_Arranged{1,1},1)
+            QuanData=fliplr(dec2hex(BlockData(j,:)));
+            QuanData=fliplr(QuanData(:,1:2));
+            for Print_Times=1:8
+                if Print_Times==8
+                    fprintf(fid,"%02s\n",QuanData(8-Print_Times+1,:));
+                else
+                    fprintf(fid,"%02s",QuanData(8-Print_Times+1,:));
+                end
             end
+            
         end
-        
     end
+    fclose(fid);
 end
-fclose(fid);
 %生成输出对比文件
     %第一步：将矩阵展平，得到连续的数据，模拟连续的数据流
 %     for i=1:size(OutFeature_3D_Quan,1)%遍历行

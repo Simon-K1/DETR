@@ -1,12 +1,13 @@
 %% 第一步： 生成8x输入通道的测试数据，包含32输入通道的图片和32输出通道的卷积权重
     % 图片大小，步长等相关信息需要手动配置
 clear
+Drop_Message=1;%将图片继续补零以匹配卷积不丢失信息
 WEIGHT_VERSION=1;%权重缓存模块的版本，可选1（V1），2（V2）
 Feature_Size=322;%图片大小224*224
 Feature_Channel=32;%图片通道32
 Out_Channel=64;
 
-Stride=1;%要修改
+Stride=2;%要修改
 KernelSize=3;%要修改
 OutFeatureSize=75;%无需修改，在后面自动推理出来
 %Strdie1
@@ -23,13 +24,20 @@ else
     OutFeatureSize=size(1:Feature_Size-KernelSize+1,2);
 
     else 
-        
-            Tmp=1:Stride:Feature_Size;
+        Tmp=1:Stride:Feature_Size;
+        if ~Drop_Message%若不丢失信息，继续补零
+            
             if(Tmp(end)~=Feature_Size)
-                Feature_Size=Tmp(end)+KernelSize-1
+                Feature_Size=Tmp(end)+KernelSize-1%修改图片大小
             end
-            OutFeatureSize=size(Tmp,2)
-        
+        else%若丢失信息，则修改输出图片大小
+            %说明：比如3*3卷积，步长为2，输入图片322*322，
+                %对于3*3的步长为2的卷积来说是无法覆盖全部图片的（321*321->160*160,323*323->161*161)
+                %这里就是将322*322的图片变成321*321的图片，得到160*160的输出。
+                %上面就是将322*322的图片变成323*323的图片，得到161*161的输出。
+            %do nothing
+        end
+        OutFeatureSize=size(Tmp,2)-1
     end
 end
 Compute_OutChannel=8;%每次计算的输出通道，先别动

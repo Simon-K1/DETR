@@ -89,10 +89,10 @@ fprintf("Write_Lite(REG_Table_BASE_ADDR,0x1c,0x%s%04s);\n",dec2hex(io_OutFeature
 %Instru7：1个16bit
 fprintf("Write_Lite(REG_Table_BASE_ADDR,0x20,0x%s);\n",dec2hex(io_WeightMatrix_Row))
 
-%Instru8:2个12bit
+%Instru8:20+12
 ReceivePicture_Len=Out_Col*Out_Row*Out_Channel;
 if Matrix2Img
-    OutMatrix_Row=sprintf("%012s",dec2bin(io_OutMatrix_Row));%图片行数
+    OutMatrix_Row=sprintf("%020s",dec2bin(io_OutMatrix_Row));%图片行数
     OutMatrix_Col=sprintf("%012s",dec2bin(io_OutMatrix_Col));%图片列数
     IMG2COL_INSTRU8=dec2hex(bin2dec([OutMatrix_Row+OutMatrix_Col]));
     fprintf("Write_Lite(REG_Table_BASE_ADDR,0x24,0x%s);\n",IMG2COL_INSTRU8)
