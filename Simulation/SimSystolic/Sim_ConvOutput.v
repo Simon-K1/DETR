@@ -228,7 +228,7 @@ wire [7:0]a_Valid;
 wire [7:0]b_Valid;
 
 wire [63:0]ConvOutput_Data;
-ConvOutput ConvOutput(
+ConvArrange ConvOutput(
   .sData(mem[mem_addr]),
   .sReady(mReady),
   .sValid(mValid),

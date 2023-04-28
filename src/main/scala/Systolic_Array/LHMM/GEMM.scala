@@ -3,12 +3,12 @@ package Systolic_Array.LHMM
 import spinal.core._
 import spinal.core.internals.Operator
 import spinal.lib._
-import utils.{ForLoopCounter }
-import xip.xil_SimpleDualBram
+import xip.{xil_SimpleDualBram}
+import utils.ForLoopCounter
 
 case class configGemm(){
-  val WH_WIDTH = 11
-  val W_WIDTH = 8
+  val WH_WIDTH = 13
+  val W_WIDTH = 16
   val SA_COL =8
   val dataWidthIn = 64
   val dataWidthOut = 64
@@ -128,7 +128,7 @@ val config = new configGemm()
       val sData =  slave Stream UInt(config.dataWidthIn bits)
       val WIDTH = in UInt(config.WH_WIDTH bits)
       val HIGHT = in UInt(config.WH_WIDTH bits)
-      val WEIGHTCOL  = in UInt(8 bits) //权重矩阵列数
+      val WEIGHTCOL  = in UInt(12 bits) //权重矩阵列数
 
       val start = in Bool()  //START信号，开始加载
       val validOut = out Vec(Bool(),8)
@@ -159,10 +159,10 @@ val config = new configGemm()
   val initCount=ForLoopCounter(fsm.currentState===GEMM_ENUM.INIT,3,5)
   val colCnt = ForLoopCounter(io.sData.fire,config.W_WIDTH,io.WIDTH-1)
   val rAddrCnt= ForLoopCounter(fsm.currentState===GEMM_ENUM.READ,config.WH_WIDTH,io.WIDTH-1)
-  val totalCnt =ForLoopCounter(rAddrCnt.valid,log2Up(8),io.WEIGHTCOL/8-1)//记录权重矩阵出了几次
+  val totalCnt =ForLoopCounter(rAddrCnt.valid,12,io.WEIGHTCOL/8-1)//记录权重矩阵出了几次
   val finish = Bool()
   val OneColCnt=ForLoopCounter(io.sData.fire,config.W_WIDTH,io.WIDTH/8-1)//一列完成
-  val Write_Row_Base_Addr=Reg(UInt(8 bits))init(0)//写权重的基地址，一列一列存
+  val Write_Row_Base_Addr=Reg(UInt(10 bits))init(0)//写权重的基地址，一列一列存
 
   val InData_Switch=Reg(UInt(8 bits))init(1)//这地方的初始化得是1
 
@@ -182,19 +182,25 @@ val config = new configGemm()
     Write_Row_Base_Addr := 0
   }
 
-  when(totalCnt.valid&&(!finish)) {
+  when(RegNext(totalCnt.valid&&(!finish))) {
     reg := reg - config.dataWidthIn / 8
   }
 
+//  when(Delay(finish, 8)) {
+//    Switch := False
+//  }
+//  else
 
-  when(RegNext(writeend)) {
+
+  when(Delay(writeend,1)) {
     Switch := !Switch
-  } elsewhen (RegNext(totalCnt.valid && rwfsm.currentState === RW_ENUM.IDLE)) {
+  } elsewhen (Delay(totalCnt.valid && rwfsm.currentState === RW_ENUM.IDLE  && !finish,1)) {
     Switch := !Switch
-  } elsewhen (RegNext(colCnt.valid && fsm.currentState === GEMM_ENUM.CHECK)) {
+  } elsewhen (Delay(colCnt.valid && fsm.currentState === GEMM_ENUM.CHECK,1)) {
     Switch := !Switch
-  }elsewhen(RegNext(finish)){
-    Switch := False
+  }
+  when(Delay(finish, 1)) {
+    Switch := !Switch
   }
 
 
@@ -208,13 +214,13 @@ val config = new configGemm()
 
 
    // val buffer1=new xil_SimpleDualBram(config.dataWidthIn,2304,config.dataWidthOut,"A_Bram",true)
-
+ val mdata_temp = UInt(config.dataWidthOut bits)
   val Weight_Cache = Array.tabulate(config.SA_COL) {
     i =>
       def gen() = {
         //4096*64bit是一个Bram资源，32K
-        val buffer1=new xil_SimpleDualBram(config.dataWidthIn,200,8,"A_Bram",true)
-        val buffer2=new xil_SimpleDualBram(config.dataWidthIn,200,8,"B_Bram",true)
+        val buffer1=new xil_SimpleDualBram(config.dataWidthIn,800,8,"A_Bram",true)
+        val buffer2=new xil_SimpleDualBram(config.dataWidthIn,800,8,"B_Bram",true)
         buffer1.io.addra := 0
         buffer1.io.dina := 0
         buffer1.io.ena := False
@@ -232,7 +238,7 @@ val config = new configGemm()
           buffer1.io.ena := InData_Switch(i downto i).asBool&&io.sData.fire
           buffer1.io.wea := True
           buffer2.io.addrb := rAddrCnt.count
-          io.mData((i+1)*8-1 downto i*8):=Delay(buffer2.io.doutb,i)
+          mdata_temp((i+1)*8-1 downto i*8):=buffer2.io.doutb
         } otherwise {
           buffer2.io.addra := Write_Row_Base_Addr//colCnt.count
           buffer2.io.dina := io.sData.payload
@@ -241,7 +247,7 @@ val config = new configGemm()
           buffer1.io.addrb := rAddrCnt.count
           //data := buffer1.io.doutb
           //    for (i <- 0 to 7) {
-               io.mData((i + 1) * 8 - 1 downto i * 8) := Delay(buffer1.io.doutb,i)
+          mdata_temp((i + 1) * 8 - 1 downto i * 8) := buffer1.io.doutb
           //    }
         }
 
@@ -250,8 +256,9 @@ val config = new configGemm()
 
       gen()
   }
-
-
+  for(k  <- 0 to 7){
+  io.mData((k + 1) * 8 - 1 downto k * 8):=Delay(mdata_temp((k + 1) * 8 - 1 downto k * 8),k)
+  }
   //val buffer2=new xil_SimpleDualBram(config.dataWidthIn,2304,config.dataWidthOut,"B_Bram",true)
 
 //  buffer1.io.addra := 0
@@ -305,20 +312,20 @@ val config = new configGemm()
 
 
   valid := Vec(False, 8)
-//  when(RegNext(fsm.currentState === GEMM_ENUM.READ)) {
-//    for (i <- 0 to 7) {
-//      when(reg > i) {
-//        valid(i) := True
-//      } otherwise {
-//        valid(i) := False
-//      }
-//
-//    }
-//  }
-
   when(RegNext(fsm.currentState === GEMM_ENUM.READ)) {
-    valid := Vec(True, 8)
+    for (i <- 0 to 7) {
+      when(reg > i) {
+        valid(i) := True
+      } otherwise {
+        valid(i) := False
+      }
+
+    }
   }
+
+//  when(RegNext(fsm.currentState === GEMM_ENUM.READ)) {
+//    valid := Vec(True, 8)
+//  }
   for (i <- 0 to 7) {
     io.validOut(i) := Delay(valid(i), i)
   }
@@ -358,7 +365,7 @@ class GemmCache_Steam extends Component{
 
     val WIDTH = in UInt (config.WH_WIDTH bits)
     val HIGHT = in UInt (config.WH_WIDTH bits)
-    val WEIGHTCOL = in UInt (8 bits) //权重矩阵列数
+    val WEIGHTCOL = in UInt (12 bits) //权重矩阵列数
 
     val start = in Bool() //START信号，开始加载
     val validOut = out Vec(Bool(), 8)
