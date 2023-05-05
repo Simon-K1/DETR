@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 import numpy as np
 Cfg=dict(
-    Gen_Picture_Wei_Output=False#是否生成权重和图
+    Gen_Picture_Wei_Output=True#是否生成权重和图
 )
 Wq=torch.randint(0,10,(64,32,3,3),dtype=torch.float)
 Xq=torch.randint(0,10,(1,32,322,322),dtype=torch.float)
 # Xq=torch.rand(1,32,322,322)
-ConvLayer=nn.Conv2d(32,64,3,bias=False)
+ConvLayer=nn.Conv2d(32,64,3,bias=False,stride=2)
 ConvLayer.weight.data=Wq
 Output=ConvLayer(Xq)
 print(Output.shape)
@@ -47,26 +47,29 @@ if Cfg['Gen_Picture_Wei_Output']:
                     #print('%02x%02x%02x%02x%02x%02x%02x%02x'%(Hex7,Hex6,Hex5,Hex4,Hex3,Hex2,Hex1,Hex0))
                     ff.write('%02x%02x%02x%02x%02x%02x%02x%02x'%(Hex7,Hex6,Hex5,Hex4,Hex3,Hex2,Hex1,Hex0))
                     ff.write("\n")
+                    
         ff.close()
+        #生成输出txt文件
+        ftxt = open(r'E:\Transformer\Transformer_Arithmatic\Transformer_Main\TxT\Output.txt', "w")  
+        for Row in range(Output.shape[2]):#遍历行
+            print(Row)
+            for Col in range(Output.shape[3]):#遍历列
+                for IC in range(Output.shape[1]):#遍历通道
+                    #ff.write('%08x'%(int(Output[0,IC,  Row,Col].item())&0xffffffff))#写成bin文件
+                    ftxt.write('%08x\n'%(int(Output[0,IC,  Row,Col].item())&0xffffffff))
+        ftxt.close()
 
-Output_Reshape1=torch.permute(Output,[0,2,3,1])
-Output_Reshape2=torch.reshape(Output_Reshape1,[-1])
-Output_Reshape3 = Output_Reshape2.detach().numpy()
-int_output= Output_Reshape3.astype(np.int)
-print(int_output.dtype)
-# exit()
-    #Wq的维度：[OC,IC,K,K]
-ff=open (r'E:\Transformer\Transformer_Arithmatic\Transformer_Main\TxT\OutPut.bin','w')
-int_output.tofile(ff)
-ff.close()
+    #生成输出bin文件，将来用于matlab逐字节对比
+    Output_Reshape1=torch.permute(Output,[0,2,3,1])
+    Output_Reshape2=torch.reshape(Output_Reshape1,[-1])
+    Output_Reshape3 = Output_Reshape2.detach().numpy()
+    int_output= Output_Reshape3.astype(np.int)#转为int，因为之前的tensor是float
+    print(int_output.dtype)
+    ff=open (r'E:\Transformer\Transformer_Arithmatic\Transformer_Main\TxT\OutPut.bin','w')
+    int_output.tofile(ff)
+    ff.close()
 
-ftxt = open(r'E:\Transformer\Transformer_Arithmatic\Transformer_Main\TxT\Output.txt', "w")  # 打开fp1 ab+追加写入
-for Row in range(Output.shape[2]):#遍历行
-    print(Row)
-    for Col in range(Output.shape[3]):#遍历列
-        for IC in range(Output.shape[1]):#遍历通道
-            #ff.write('%08x'%(int(Output[0,IC,  Row,Col].item())&0xffffffff))#写成bin文件
-            ftxt.write('%08x\n'%(int(Output[0,IC,  Row,Col].item())&0xffffffff))
-ftxt.close()
+
 
                 
+#=======================================================================================
