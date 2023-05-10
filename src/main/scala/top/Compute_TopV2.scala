@@ -139,7 +139,7 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
 
     val OutChannel=in UInt(Config.DATA_GENERATE_CONV_OUT_CHANNEL_WIDTH bits)
     val OutFeatureSize=in UInt(16 bits)
-    val Matrix2Img=in Bool()//Matrix to Image 将卷积后的矩阵结果按通道优先的图片格式输出
+    // val Matrix2Img=in Bool()//Matrix to Image 将卷积后的矩阵结果按通道优先的图片格式输出
     val start=in Bool()
     // val LayerEnd=out Bool()
     val mData=out Vec(SInt(Config.addChannelTimesWidth bits),Config.SA_ROW)
@@ -263,8 +263,8 @@ class Conv extends Component{
     //val Inswitch=in UInt(2 bits)
     //val OutSwitch           =in UInt(2 bits)
     val Switch_Conv         =in Bool()//切换到卷积计算
-    val Matrix2Img          =in Bool()
-    val LayerEnd            =in Bool()//数据量化完成，输出完成
+    // val Matrix2Img          =in Bool()
+    // val LayerEnd            =in Bool()//数据量化完成，输出完成
   }
   val s_axis_s2mm=new Bundle{//一个从接口，两个主接口
     val Data_Width=64
@@ -384,7 +384,7 @@ class Conv extends Component{
   ConvQuant.io.sData.valid<>InputSwitch.m(0).axis_mm2s_tvalid
   //==================================================================================
   Compute_Unit.io.start           :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE&&Control.Switch_Conv,3)
-  Compute_Unit.io.Matrix2Img      :=Control.Matrix2Img
+  // Compute_Unit.io.Matrix2Img      :=Control.Matrix2Img
   Compute_Unit.io.OutChannel      :=Img2Col_Instru.OutFeature_Channel.resized//这里的位宽可以小一点
   Compute_Unit.io.OutMatrix_Col   :=Img2Col_Instru.OutMatrix_Col
   Compute_Unit.io.OutMatrix_Row   :=Img2Col_Instru.OutMatrix_Row
@@ -484,7 +484,7 @@ class Conv extends Component{
 
 
 object Top extends App { 
-    val OnBoard=false
+    val OnBoard=true
     var verilog_path="./Simulation/Quant" 
     if(OnBoard){
         verilog_path="./OnBoard"

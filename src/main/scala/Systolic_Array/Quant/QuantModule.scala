@@ -66,7 +66,7 @@ class Bias(convConfig: TopConfig) extends Component {
         dataInTemp(i) := port.dataIn(i) @@ S"16'd0"//补0
         switch(port.quan(30 downto 24)) {//i：0~7--对应Bias
             for (j <- 0 until 17) {
-                is(j) {
+                is(j) {//转化为补码计算
                     biasInTemp(i) := S(port.quan(31)).resize(8 + j bits).asUInt @@ port.quan(23 downto 0) @@ U(16 - j bits, default -> false)
                 }
             }
@@ -115,12 +115,12 @@ class Shift(convConfig: TopConfig) extends Component {
     //shift完后为什么要加1？
     def <<(in: SInt, sh: UInt): SInt = {//动态移位
         val dataTemp = SInt(32 bits)
-        dataTemp := in >> sh
+        dataTemp := in >> sh//比如那边实际上Shift了8位，但是这边拿到的却是7位，原因是如果直接移8位，最后一位就直接丢掉了，但是我们需要判断最后一位的值，做四舍五入
         val out = Reg(SInt(16 bits))
         when(dataTemp(0)) {
             out := (dataTemp.sign.asSInt @@ dataTemp(15 downto 1)) + 1//这里实际上是四舍五入
         } otherwise {
-            out := dataTemp.sign.asSInt @@ dataTemp(15 downto 1)
+            out := dataTemp.sign.asSInt @@ dataTemp(15 downto 1)//不四舍五入，直接截余取整可否？
         }
         out
     }
@@ -168,3 +168,9 @@ class Zero(convConfig: TopConfig) extends Component {
     })
 }
 
+object GeneVerilog extends App { 
+    val verilog_path="./Simulation/SimImg2Col" 
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Shift(TopConfig()))
+    //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
+    //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
+}
