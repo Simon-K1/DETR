@@ -34,11 +34,7 @@ class ConvArrangeV2 extends Component{//卷积输出数据的数据排列，排�
     val Init_Cnt=ForLoopCounter(Fsm.currentState===CONVOUTPUT_ENUM.INIT,3,5)
     Fsm.Inited:=Init_Cnt.valid
     
-    //注意这里的InChannel实际上是脉动阵列输出图片的通道，也就是卷积完后图片的通道，也可以认为是卷积层的输出通道，只是这里需要知道一个通道参数进行数据缓存和输出
-    //val InChannel_Cnt=ForLoopCounter((io.sReady&&io.sValid(0)),Config.MATRIXC_COL_WIDTH,io.OutChannel-1)//输入通道计数器，每行一下进一个点，也就是图片的一个通道
     val In_Col_Cnt=ForLoopCounter(io.sReady&&io.sValid(0),Config.MATRIXC_COL_WIDTH,io.MatrixCol-1)//图片列计数器,做减法这里io.Matrix_Col不需要减1
-    //In_Channel_Cnt每次Valid代表已经缓存好了8个点的完整通道，所以这里需要除8
-
     val In_Row_Cnt=SubstractLoopCounter(In_Col_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.MatrixRow,8)//图片行计数器
     when(io.start){
         In_Row_Cnt.reset
@@ -51,7 +47,7 @@ class ConvArrangeV2 extends Component{//卷积输出数据的数据排列，排�
     //
     //val OutChannel_Cnt=ForLoopCounter(io.mData.fire,Config.MATRIXC_COL_WIDTH-3,(io.OutChannel>>3)-1)//输出通道计数器，一下出8个点，也就是一下出8个通道
     // Outchannel_Cnt valid拉高，代表一个像素点被处理完了，这时就要切换到下一个fifo
-    val Out_Col_Cnt=ForLoopCounter(io.mData.fire,Config.MATRIXC_COL_WIDTH-3,(io.MatrixCol>>3)-1)//图片列计数器
+    val Out_Col_Cnt=ForLoopCounter(io.mData.fire,Config.MATRIXC_COL_WIDTH-3,(io.MatrixCol>>3)-1)//图片列计数器,因为一下出8个点，一行一行出，所以要除8
     val Out_Row_Cnt=ForLoopCounter(Out_Col_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.MatrixRow-1)
     Fsm.Data_AllOut:=Out_Row_Cnt.valid
     //构建SA_Row个Mem作为缓存,外面再挂一个WidthConverter
@@ -67,7 +63,7 @@ class ConvArrangeV2 extends Component{//卷积输出数据的数据排列，排�
     val OutFeature_Cache=Array.tabulate(Config.SA_COL){
         i=>def gen()={
             //4096*64bit是一个Bram资源，32K
-            val OutFeature_Fifo=new StreamFifo(UInt(64 bits),512)//bram的深度必须正确配置,只能大不能小
+            val OutFeature_Fifo=new StreamFifo(UInt(64 bits),512)
             //这个fifo必须至少能缓存输出矩阵完整的一行
             val DataConverter=new AxisDataConverter(8,64)
             DataConverter.setDefinitionName("ConvOutput_Converter")

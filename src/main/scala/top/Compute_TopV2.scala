@@ -15,6 +15,7 @@ import spinal.lib.master
 
 import Systolic_Array.Quant.ConvQuant
 import javax.sound.midi.Instrument
+import Systolic_Array.ConvArrangeV3
 
 
 
@@ -23,7 +24,7 @@ class Img2ColStreamV2 extends Component{
     val io=new Bundle{
         
         val mData=out UInt(64 bits)//out UInt(64 bits)//Vec(UInt(8 bits),8)
-        val mReady=in Bool()
+        // val mReady=in Bool()
         val mValid=out Bits(Config.SA_ROW bits)
 
         def DATA_IN_WIDTH=64
@@ -335,7 +336,7 @@ class Conv extends Component{
   val Img2Col_Unit=new Img2ColStreamV2//img2col数据排列单元
   val LH_Gemm=new GemmCache
   val ConvQuant=new ConvQuant//卷积量化模块
-  val DataOutput=new ConvArrangeV2
+  val DataOutput=new ConvArrangeV3
 
   Img2Col_Unit.io.s_axis_s2mm_tdata <>InputSwitch.m(1).axis_mm2s_tdata
   Img2Col_Unit.io.s_axis_s2mm_tkeep <>InputSwitch.m(1).axis_mm2s_tkeep
@@ -356,7 +357,7 @@ class Conv extends Component{
   Img2Col_Unit.io.OutFeature_Channel_Count_Times  <>Img2Col_Instru.OutFeature_Channel_Count_Times  //
   Img2Col_Unit.io.Sliding_Size                    <>Img2Col_Instru.Sliding_Size                    //
  
-  Img2Col_Unit.io.start                           :=Delay(Weight_Unit.io.Weight_Cached,3)//权重缓存完了才启动img2col以及卷积计算
+  Img2Col_Unit.io.start                           :=Delay(Weight_Unit.io.Weight_Cached,3)&&(Control.Switch_Conv)//权重缓存完了才启动img2col以及卷积计算
   Fsm.Picture_Received                            :=Img2Col_Unit.io.LayerEnd||LH_Gemm.io.LayerEnd
 
 
@@ -473,6 +474,9 @@ class Conv extends Component{
   DataOutput.io.MatrixCol:=Img2Col_Instru.OutMatrix_Col
   DataOutput.io.MatrixRow:=Img2Col_Instru.OutMatrix_Row
   DataOutput.io.start    :=Control.start
+  DataOutput.io.OutChannel:=Img2Col_Instru.OutFeature_Channel.resized
+  DataOutput.io.OutFeatureSize:=Img2Col_Instru.OutFeature_Size
+  DataOutput.io.SwitchConv:=Control.Switch_Conv
   m_axis_mm2s.tdata:=DataOutput.io.mData.payload
   m_axis_mm2s.tlast:=DataOutput.io.mLast
   m_axis_mm2s.tvalid:=DataOutput.io.mData.valid

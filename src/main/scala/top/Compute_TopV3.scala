@@ -6,6 +6,7 @@ import spinal.lib.bus.amba4.axilite._
 import spinal.lib.bus.misc.SizeMapping
 import spinal.lib.slave
 import top.topV2.Conv
+import xip.xil_ila
 
 class ConvTop extends Component{
   val regSData = slave(AxiLite4(log2Up(1 MiB), 32))//地址位宽-数据位宽
