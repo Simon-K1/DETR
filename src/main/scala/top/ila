@@ -1,0 +1,24 @@
+ila_Instru ila_Instru(
+  .clk(clk),
+  .probe0(Img2Col_Stride),                        
+  .probe1(Img2Col_Kernel_Size),                   
+  .probe2(Img2Col_Window_Size),                   
+  .probe3(Img2Col_InFeature_Size),                
+  .probe4(Img2Col_InFeature_Channel),             
+  .probe5(Img2Col_OutFeature_Channel),            
+  .probe6(Img2Col_OutFeature_Size),               
+  .probe7(Img2Col_Sliding_Size),                  
+  .probe8(Img2Col_OutCol_Count_Times),            
+  .probe9(Img2Col_InCol_Count_Times),             
+  .probe10(Img2Col_OutRow_Count_Times),            
+  .probe11(Img2Col_OutFeature_Channel_Count_Times),
+  .probe12(Img2Col_WeightMatrix_Row),              
+  .probe13(Img2Col_OutMatrix_Col),                 
+  .probe14(Img2Col_OutMatrix_Row),                 
+  .probe15(GemmInstru_WIDTH),                      
+  .probe16(GemmInstru_HEIGHT)
+  );                    
+
+
+create_ip -name ila -vendor xilinx.com -library ip -version 6.2 -module_name ila_Instru -dir e:/Transformer/OnBoard/SystolicOnBoard/BlackGold/XM_PS_DMA_RW_PL_DDR/XM_PS_DMA_RW_PL_DDR.srcs/sources_1/ip
+set_property -dict [list CONFIG.C_PROBE16_WIDTH {16} CONFIG.C_PROBE15_WIDTH {16} CONFIG.C_PROBE14_WIDTH {20} CONFIG.C_PROBE13_WIDTH {12} CONFIG.C_PROBE12_WIDTH {16} CONFIG.C_PROBE11_WIDTH {16} CONFIG.C_PROBE10_WIDTH {16} CONFIG.C_PROBE9_WIDTH {16} CONFIG.C_PROBE8_WIDTH {16} CONFIG.C_PROBE7_WIDTH {13} CONFIG.C_PROBE6_WIDTH {16} CONFIG.C_PROBE5_WIDTH {16} CONFIG.C_PROBE4_WIDTH {16} CONFIG.C_PROBE3_WIDTH {16} CONFIG.C_PROBE2_WIDTH {16} CONFIG.C_PROBE1_WIDTH {5} CONFIG.C_PROBE0_WIDTH {5} CONFIG.C_NUM_OF_PROBES {17} CONFIG.Component_Name {ila_Instru}] [get_ips ila_Instru]

@@ -157,7 +157,7 @@ val config = new configGemm()
   val rwfsm = new RW_Fsm((Switch.fall()||Switch.rise())&&fsm.currentState=/=GEMM_ENUM.IDLE)
 
   val initCount=ForLoopCounter(fsm.currentState===GEMM_ENUM.INIT,3,5)
-  val colCnt = ForLoopCounter(io.sData.fire,config.W_WIDTH,io.WIDTH-1)
+  val colCnt = ForLoopCounter(io.sData.fire,config.W_WIDTH,io.WIDTH-1)//ForLoopCounter(io.sData.fire,config.W_WIDTH,io.WIDTH-1)
   val rAddrCnt= ForLoopCounter(fsm.currentState===GEMM_ENUM.READ,config.WH_WIDTH,io.WIDTH-1)
   val totalCnt =ForLoopCounter(rAddrCnt.valid,12,io.WEIGHTCOL/8-1)//记录权重矩阵出了几次
   val finish = Bool()
