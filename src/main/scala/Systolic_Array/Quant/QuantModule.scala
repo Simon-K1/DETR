@@ -99,7 +99,7 @@ class Scale(convConfig: TopConfig) extends Component {
             val mul = Mul(48, 32, 32, MulConfig.signed, MulConfig.unsigned, 8, MulConfig.dsp, this.clockDomain, "scaleMul", 79, 48, i == 0)
             mul.io.A <> port.dataIn(i)
             mul.io.B <> port.quan
-            mul.io.P <> scaleMulOut(i)
+            mul.io.P.asSInt <> scaleMulOut(i)
         }
 
         gen

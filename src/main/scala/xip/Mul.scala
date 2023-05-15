@@ -22,11 +22,8 @@ class Mul(A_WIDTH: Int, B_WIDTH: Int, P_WIDTH: Int, A_TYPE: String, B_TYPE: Stri
         } else {
             in UInt (B_WIDTH bits)
         }
-        val P = if (A_TYPE == MulConfig.signed || B_TYPE == MulConfig.signed) {
-            out SInt (P_WIDTH bits)
-        } else {
-            out UInt (P_WIDTH bits)
-        }
+        val P = Bits(P_WIDTH bits)
+        P.asOutput()
         val CLK = in Bool()
     }
     noIoPrefix()
@@ -116,7 +113,7 @@ object Mul {
     }
 }
 
-//class testMul extends Component{
+// class testMul extends Component{
 //    val io = new Bundle{
 //        val A = in SInt(32 bits)
 //        val B = in UInt(32 bits)
@@ -132,9 +129,9 @@ object Mul {
 //        }
 //        gen
 //    }
-//
-//
-//}
-//object testMul extends App {
+
+
+// }
+// object testMul extends App {
 //    SpinalVerilog(new testMul)
-//}
+// }

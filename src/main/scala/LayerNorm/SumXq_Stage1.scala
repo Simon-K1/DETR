@@ -4,6 +4,7 @@ import spinal.lib._
 import utils._
 import spinal.lib.Delay
 import spinal.lib.StreamFifo
+import xip.Mul
 //实现8并行度的累加计算
 object SUM_XQ_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, LOAD_FIRST_ROW,ACCUMU,FINISH_LAST_ROW = newElement
@@ -325,15 +326,17 @@ class Sum_Xq extends Component{
     val Read_Row_Mem_Data_Valid=RegNext(io.sData.fire&&Fsm.currentState===SUM_XQ_ENUM.ACCUMU||(Fsm.currentState===SUM_XQ_ENUM.FINISH_LAST_ROW))//因为只有进入ACCUMU状态才开始计算上一层累加和之后的数据
     //sData.fire拉高，说明可以从Mem中读取数据，需要一个时钟，所以RegNext一下-->数据进来一个，sData.fire拉高，这时从Mem中读出一个数，在下一周期才有效
 //只要位于FINISH_LAST_ROW状态，读出来的XqC数据都是有效的
-    val XqC_Module=new XqC
+    // val XqC_Module=new XqC
+    // val XqC_Module=new Mul(Config.XQC_A_WIDTH,Config.XQC_B_WIDTH,Config.XQC_P_WIDTH,"signed","unsigned",3,"DSP",this.clockDomain,"Xqc",Config.XQC_P_WIDTH-1,0,true)
+    val XqC_Module=Mul(Config.XQC_A_WIDTH,Config.XQC_B_WIDTH,Config.XQC_P_WIDTH,"signed","unsigned",Config.XQC_PIPELINE,"DSP",this.clockDomain,"XqC",Config.XQC_P_WIDTH-1,0,true)
     // val Xq2C_ABCP=new Xq2C_1
-    val Xq2C_Module=new Xq2C
-    
+    val Xq2C_Module=Mul(Config.XQ2C_A_WIDTH,Config.XQ2C_B_WIDTH,Config.XQ2C_P_WIDTH,"signed","signed",Config.XQ2C_PIPELINE,"DSP",this.clockDomain,"Xq2C",Config.XQ2C_P_WIDTH-1,0,true)
     XqC_Module.io.A:=io.sData.payload//读出上一行的数据参与计算
     XqC_Module.io.B:=io.Channel_Nums
     //XqC计算结果写回=======================================================
     val XqC_Valid=Delay(io.sData.fire,Config.XQC_PIPELINE)
-    val Write_Row_Mem_Data=XqC_Module.io.P.resized//要写入的数据应该是XqC这个数据
+    val Write_Row_Mem_Data=XqC_Module.io.P.asSInt//要写入的数据应该是XqC这个数据
+
     val Write_Row_Mem_Valid=XqC_Valid
     val Write_Row_Mem_Addr=Delay(Col_Cnt.count,Config.XQC_PIPELINE)
     Row_Mem.write(Write_Row_Mem_Addr,Write_Row_Mem_Data,Write_Row_Mem_Valid)//使用读优先策略，要求先读再写，先读出旧的Xq再写入新的Xq
@@ -351,7 +354,7 @@ class Sum_Xq extends Component{
     }
     
     //Xq2C计算==============================================================
-    Xq2C_Module.io.A:=XqC_Module.io.P
+    Xq2C_Module.io.A<>(XqC_Module.io.P).asSInt
     Xq2C_Module.io.B:=Delay(io.sData.payload,Config.XQC_PIPELINE)
     
 
@@ -362,9 +365,9 @@ class Sum_Xq extends Component{
 
     when(Xq2C_Valid){//如果当前数据有效，需要判断是继续累加还是重新开始累加
         when(Xq2C_Sum_Clear){
-            Xq2C_Sum:=Xq2C_Module.io.P.resized
+            Xq2C_Sum:=(Xq2C_Module.io.P.asUInt).resized
         }otherwise{
-            Xq2C_Sum:=Xq2C_Sum+Xq2C_Module.io.P.resized
+            Xq2C_Sum:=Xq2C_Sum+(Xq2C_Module.io.P.asUInt).resized
         }
     }
     // Xq2C_ABCP.io.B:=XqC_Module.io.A
@@ -384,7 +387,8 @@ class Sum_Xq extends Component{
     //这里由于XqC是有符号数，M2也是有符号数，两数相减存在位宽扩大的情况，所以需要在做减法之前提前符号位扩展
     //计算C*M2-M1^2==========================================================================
         //M1^2(这地方可以给乘法器加一个时钟使能，以后再说)
-    val XqSum_Pow=new Xq_Sum_Pow
+    // val XqSum_Pow=new Xq_Sum_Pow
+    val XqSum_Pow=Mul(Config.XQ_SUM_WIDTH,Config.XQ_SUM_WIDTH,2*Config.XQ_SUM_WIDTH,"signed","signed",Config.XQ_SUM_POW_PIPELINE,"DSP",this.clockDomain,"Xq_Sum_Pow",2*Config.XQ_SUM_WIDTH-1,0,true)
     XqSum_Pow.io.A:=Xq_Sum_Old
     XqSum_Pow.io.B:=Xq_Sum_Old//Xq_Sum_Old慢Xq_Sum一拍，这样的话下面Xq_Sum_Pow_Valid要多打一拍，
     val Xq_Sum_Pow_Valid=Delay(Xq_Sum_Clear,Config.XQ_SUM_POW_PIPELINE+1)//40bit
@@ -393,14 +397,15 @@ class Sum_Xq extends Component{
         //计算上一行数据CM2-M1^2作为根号输入
     val Sqrt_Out_Valid=RegNext(Xq2C_Sum_Clear)//维持一个周期，但是如果是多并行度的话，只要有一个好了，那么其他的都好了
     io.Sqrt_Out_Valid:=Sqrt_Out_Valid
-    val Sqrt_In=RegNextWhen(Xq2C_Sum-XqSum_Pow.io.P,Xq2C_Sum_Clear)init(0)//这样写会出来毛刺，，，，，，
+    val Sqrt_In=RegNextWhen(Xq2C_Sum-XqSum_Pow.io.P.asUInt,Xq2C_Sum_Clear)init(0)//这样写会出来毛刺，，，，，，
     //分析发现Xq2C的结果是最后出来的，所以当Xq2C最后被算出来，CXq-M2,Xq_Sum,Xq_Sum_Pow都被算出来了
     val Sqrt_In_Truncated=Sqrt_In(31 downto 0)
     val Truncated_Success=Sqrt_In===Sqrt_In_Truncated//先转32单精度，再执行根号下分之一计算，得到单精度浮点
     io.Sqrt_In_Truncated:=Sqrt_In_Truncated
 
     //在算根号分之一的时候计算算S*A===============================================
-    val Scale_Mul_A=new Scale_Multiply_A
+    // val Scale_Mul_A=new Scale_Multiply_A
+    val Scale_Mul_A=Mul(Config.XQ_SUBSTRACT_M2_WIDTH,Config.SCALE_WIDTH,Config.SCALE_WIDTH+Config.XQ_SUBSTRACT_M2_WIDTH,"signed","signed",Config.SCALE_A_PIPELINE,"DSP",this.clockDomain,"Scale_Multiply_A",Config.SCALE_WIDTH+Config.XQ_SUBSTRACT_M2_WIDTH-1,0,true)
     Scale_Mul_A.io.A:=XqC_Substract_M2
     Scale_Mul_A.io.B:=io.Scale
     io.Scale_Read_Addr:=Col_Cnt.count//目前认为Scale和Bias从外面输入，也就是说Scale和Bias已经在外面存好了，现在只要给外面的存储模块一个读地址就能将对应的Scale和Bias读进来
@@ -408,12 +413,13 @@ class Sum_Xq extends Component{
 
     //有一种可能，Scale*A算完了，ReciproSqrt还没算完，需要Scale*A的数据进行缓存一下
     val ScaleMulA_Fifo=new Scale_A_Fifo(SInt(Config.SCALE_WIDTH+Config.XQ_SUBSTRACT_M2_WIDTH bits),128)
-    ScaleMulA_Fifo.io.push.payload:=Scale_Mul_A.io.P//缓存一下Scale*A的值
+    ScaleMulA_Fifo.io.push.payload:=Scale_Mul_A.io.P.asSInt//缓存一下Scale*A的值
     ScaleMulA_Fifo.io.push.valid:=Scale_Mul_A_Valid
     ScaleMulA_Fifo.io.pop.ready:=io.Recipro_Sqrt_Result_Valid//当Recipro_Sqrt被算完了，就可以从fifo中出数了
     io.ScaleA_Fifo_Popfire:=ScaleMulA_Fifo.io.pop.fire
 
-    val ScaleA_Mul_ReSqrt=new Scale_A_ReciproSqrt
+    // val ScaleA_Mul_ReSqrt=new Scale_A_ReciproSqrt
+    val ScaleA_Mul_ReSqrt=Mul(Config.SCALE_A_RECIPROSQRT_Aport_WIDTH,Config.SCALE_A_RECIPROSQRT_Bport_WIDTH,Config.SCALE_A_RECIPROSQRT_Pport_WIDTH,"signed","unsigned",Config.SCALE_A_RECIPROSQRT_PIPELINE,"DSP",this.clockDomain,"Scale_A_ReciproSqrt",Config.SCALE_A_RECIPROSQRT_Pport_WIDTH-1,0,true)
     ScaleA_Mul_ReSqrt.io.A:=ScaleMulA_Fifo.io.pop.payload
     ScaleA_Mul_ReSqrt.io.B:=U"1'b1"@@(io.Recipro_Sqrt_Result(22 downto 0))
     val ScaleA_Mul_ReSqrt_Result_Valid=Delay(ScaleMulA_Fifo.io.pop.fire,Config.SCALE_A_RECIPROSQRT_PIPELINE)
@@ -423,9 +429,9 @@ class Sum_Xq extends Component{
     //由于Scale不能和Bias同时进来，所以需要对Bias的读取额外处理一下
     val Exp_Part=io.Recipro_Sqrt_Result(30 downto 23)
     val Right_Shift_Num0=150-Exp_Part
-    val SAB_Shifted=ScaleA_Mul_ReSqrt.io.P>>Delay(Right_Shift_Num0,Config.SCALE_A_RECIPROSQRT_PIPELINE)
-    val SAB_Add_Bias=SAB_Shifted+io.Bias
-    val SAB_Add_Bias_Truncated=SAB_Add_Bias(7 downto 0)
+    val SAB_Shifted=ScaleA_Mul_ReSqrt.io.P>>Delay(Right_Shift_Num0,Config.SCALE_A_RECIPROSQRT_PIPELINE)//这里位宽会不会超？
+    val SAB_Add_Bias=SAB_Shifted.asSInt+io.Bias
+    val SAB_Add_Bias_Truncated=SAB_Add_Bias(7 downto 0)//加完bias咋就变成8bit了。。。
 
     io.mData.payload:=SAB_Add_Bias_Truncated
     io.mData.valid:=ScaleA_Mul_ReSqrt_Result_Valid
@@ -553,7 +559,8 @@ class LayerNorm_Module extends Component{
     Stage1(0).io.Scale_Read_Addr<>io.Scale_Read_Addr
     //根号分之一与顶层接口连接============================
     Stage2.io.Bias_Read_Addr<>io.Bias_Read_Addr
-
+    io.mData.valid:=Stage1(0).io.mData.valid
+    
 }
 // class LayerNorm_Top extends Component{
 //     val LN_Compute=new LayerNorm_Module
@@ -589,10 +596,11 @@ class LayerNorm_Module extends Component{
 //     Med_Sort.io.m_tlast<>io.m_tlast
 //     LN_Compute.io.start<>io.start
 // }
+
 object Sum_Xq_Gen extends App { 
-    val verilog_path="./testcode_gen" 
+    val verilog_path="./Simulation/SimLayerNorm/verilog" 
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Sum_Xq)
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Reci_Sqrt_Compute)
-    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new LayerNorm_Module)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new LayerNorm_Module)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }
