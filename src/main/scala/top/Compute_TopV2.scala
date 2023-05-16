@@ -242,7 +242,7 @@ case class TopCtrl_Fsm(start:Bool)extends Area{
       }
       is(TopCtrl_Enum.RECEIVE_MATRIX){
         when(Matrix_Received){
-          nextState:=TopCtrl_Enum.IDLE
+          nextState:=TopCtrl_Enum.WAIT_COMPUTE_END
         }otherwise{
           nextState:=TopCtrl_Enum.RECEIVE_MATRIX
         }

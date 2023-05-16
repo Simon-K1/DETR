@@ -2,10 +2,10 @@
 
 module Sim_Layernorm_Quant;
 parameter Mem_Depth =412000;
-parameter Mem_Width=8*8;//txtæ•°æ®ä½å®½
-parameter Total_Input_Times=412000;//å‘å®Œ2224*224*64bitæ•°æ®åmValidéœ€è¦æ‹‰ä½
+parameter Mem_Width=8*8;//txtÊı¾İÎ»¿í
+parameter Total_Input_Times=412000;//·¢Íê2224*224*64bitÊı¾İºómValidĞèÒªÀ­µÍ
 
-parameter Mem2_Depth=300*300*4;//ç¬¬äºŒä¸ªMemçš„é…ç½®
+parameter Mem2_Depth=300*300*4;//µÚ¶ş¸öMemµÄÅäÖÃ
 parameter Mem2_Width=64;
 
   reg clk;
@@ -18,16 +18,16 @@ parameter Mem2_Width=64;
 
   reg sReady;
   wire sValid;
-  wire sLast;//è·å–sLastä¿¡å·ï¼Œç¬¬äºŒæ¬¡å¯åŠ¨ã€‚
+  wire sLast;//»ñÈ¡sLastĞÅºÅ£¬µÚ¶ş´ÎÆô¶¯¡£
   wire Start_Again_En;
-  assign Start_Again_En=1;//éœ€è¦ä»¿çœŸå†æ¬¡å¯åŠ¨
+  assign Start_Again_En=1;//ĞèÒª·ÂÕæÔÙ´ÎÆô¶¯
   reg start;
   reg start2;
   wire [63:0]sData;
 
-  reg [31:0]Total_Cnt;//ç”¨æ¥æ¨¡æ‹ŸMvalidå’ŒSready
-  reg [63:0]Out_Total_Cnt;//è¾“å‡ºæ•°æ®è®¡æ•°å™¨ï¼Œç”¨æ¥è®¡æ•°è¾“å‡ºæ•°æ®çš„
-  reg[63:0]Input_Total_Cnt;//ç”¨æ¥è®¡ç®—è¾“å…¥æ•°æ®æ•°é‡
+  reg [31:0]Total_Cnt;//ÓÃÀ´Ä£ÄâMvalidºÍSready
+  reg [63:0]Out_Total_Cnt;//Êä³öÊı¾İ¼ÆÊıÆ÷£¬ÓÃÀ´¼ÆÊıÊä³öÊı¾İµÄ
+  reg[63:0]Input_Total_Cnt;//ÓÃÀ´¼ÆËãÊäÈëÊı¾İÊıÁ¿
   reg [63:0]Input_Total_Cnt2;
   reg [31:0]mem_addr;
   reg [31:0]mem_addr2;  
@@ -38,13 +38,13 @@ parameter Mem2_Width=64;
   wire Write_Txt_En;
   wire Write_Txt_End;    
   reg [1:0]InSwitch; 
-//  å¯¼å‡ºtxtæ•°æ®=====================================================
+//  µ¼³ötxtÊı¾İ=====================================================
 //E:\\Transformer\\Sim_Transformer\\SimData_Output\\DataGenerate.txt
 //  integer file_out;
 //  initial
 //  begin
 
-//      file_out = $fopen("C:\\Users\\25073\\Desktop\\compare\\VivadoOutput.txt","w+");//è®°å¾—ç”¨\\åˆ†å¼€
+//      file_out = $fopen("C:\\Users\\25073\\Desktop\\compare\\VivadoOutput.txt","w+");//¼ÇµÃÓÃ\\·Ö¿ª
 //      if (!file_out) begin
 //          $display("can't open file");
 //          $finish;
@@ -53,10 +53,10 @@ parameter Mem2_Width=64;
 
 //  always @ (posedge clk) begin  
 //        if(Write_Txt_End)begin
-//           $fclose(file_out);  //å…³é—­å†™æ–‡ä»¶
+//           $fclose(file_out);  //¹Ø±ÕĞ´ÎÄ¼ş
 //        end
 //        else if(sValid&&Write_Txt_En) begin
-//          $fdisplay(file_out, "%h", sData);//å°†æ•°æ®å†™åˆ°TXTæ–‡ä»¶ä¸­ï¼Œå¹¶ä¸”è‡ªåŠ¨æ¢è¡Œ
+//          $fdisplay(file_out, "%h", sData);//½«Êı¾İĞ´µ½TXTÎÄ¼şÖĞ£¬²¢ÇÒ×Ô¶¯»»ĞĞ
 //        end 
 //  end
 //  ==========================================
@@ -66,7 +66,7 @@ parameter Mem2_Width=64;
 //    $readmemh("E:\\Transformer\\Transformer_Arithmatic\\Transformer_Main\\TXT\\WeightPicture.txt",mem);//_Modified
 //    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K33\\S1_320_320\\WeightPicture.txt",mem);
     $readmemh("E:\\Transformer\\Sim_File\\SimQuant\\WeightPicture.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K1616\\S16\\WeightData.txt",mem2);//é«˜8bitä¸ºScaleï¼Œä½8bitä¸ºBias
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K1616\\S16\\WeightData.txt",mem2);//¸ß8bitÎªScale£¬µÍ8bitÎªBias
     clk=0;
     start=0;
     rst=1;
@@ -84,10 +84,10 @@ parameter Mem2_Width=64;
      #20000
      InSwitch=0;
   end
-  always#5 clk=~clk;//100Mæ—¶é’Ÿ
+  always#5 clk=~clk;//100MÊ±ÖÓ
 
 
-  //å…¨å±€è®¡æ•°å™¨ï¼Œç”¨äºæ§åˆ¶Mvalidå’ŒSready
+  //È«¾Ö¼ÆÊıÆ÷£¬ÓÃÓÚ¿ØÖÆMvalidºÍSready
   always@(posedge clk)
   begin
     if(rst)
@@ -101,7 +101,7 @@ parameter Mem2_Width=64;
     else
       Total_Cnt<=0;
   end
-  //è¾“å‡ºæ•°æ®è®¡æ•°å™¨===============================================
+  //Êä³öÊı¾İ¼ÆÊıÆ÷===============================================
   always@(posedge clk)
   begin
     if(rst)
@@ -117,7 +117,7 @@ parameter Mem2_Width=64;
     else
       Out_Total_Cnt<=Out_Total_Cnt;
   end
-  //æ•°æ®è¾“å…¥ï¼Œæ²¡æœ‰å»¶æ—¶ï¼Œç›´æ¥ä»regä¸­è¯»å‡ºæ¥=========================
+  //Êı¾İÊäÈë£¬Ã»ÓĞÑÓÊ±£¬Ö±½Ó´ÓregÖĞ¶Á³öÀ´=========================
   always@(posedge clk)
   begin
     if(rst)
@@ -133,10 +133,10 @@ parameter Mem2_Width=64;
     else
       mem_addr<=mem_addr;
   end
-  //æ€»è¾“å…¥æ•°æ®è®¡æ•°å™¨================================================
+  //×ÜÊäÈëÊı¾İ¼ÆÊıÆ÷================================================
   always@(posedge clk)
   begin
-    if(rst||start)//è‹¥å¤ä½æˆ–ç¬¬äºŒæ¬¡å¯åŠ¨ï¼Œè¿™ä¸ªè®¡æ•°å™¨è¦å½’ä½
+    if(rst||start)//Èô¸´Î»»òµÚ¶ş´ÎÆô¶¯£¬Õâ¸ö¼ÆÊıÆ÷Òª¹éÎ»
     begin
       Input_Total_Cnt<=0;
     end
@@ -147,7 +147,7 @@ parameter Mem2_Width=64;
     else
       Input_Total_Cnt<=Input_Total_Cnt;
   end
-  //mValidå’ŒsReadyæ¨¡æ‹Ÿ============================================
+  //mValidºÍsReadyÄ£Äâ============================================
   always@(posedge clk)
   begin
     if(rst)
@@ -172,7 +172,7 @@ parameter Mem2_Width=64;
     begin
       start<=0;
     end
-    else if(sLast&&Start_Again_En)//sLastå³æœ€åä¸€ä¸ªè¾“å‡ºï¼Œç»“æŸåå†æ¬¡å¯åŠ¨
+    else if(sLast&&Start_Again_En)//sLast¼´×îºóÒ»¸öÊä³ö£¬½áÊøºóÔÙ´ÎÆô¶¯
       start<=1;
     else start<=0;
   end
@@ -196,7 +196,7 @@ end
 
 always@(posedge clk)
 begin
-  if(rst||start)//è‹¥å¤ä½æˆ–ç¬¬äºŒæ¬¡å¯åŠ¨ï¼Œè¿™ä¸ªè®¡æ•°å™¨è¦å½’ä½
+  if(rst||start)//Èô¸´Î»»òµÚ¶ş´ÎÆô¶¯£¬Õâ¸ö¼ÆÊıÆ÷Òª¹éÎ»
   begin
     Input_Total_Cnt2<=0;
   end

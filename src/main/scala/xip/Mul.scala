@@ -22,8 +22,8 @@ class Mul(A_WIDTH: Int, B_WIDTH: Int, P_WIDTH: Int, A_TYPE: String, B_TYPE: Stri
         } else {
             in UInt (B_WIDTH bits)
         }
-        val P = Bits(P_WIDTH bits)
-        P.asOutput()
+        val P =out Bits(P_WIDTH bits)
+        // P.asOutput()
         val CLK = in Bool()
     }
     noIoPrefix()
