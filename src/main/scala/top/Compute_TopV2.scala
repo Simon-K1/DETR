@@ -305,6 +305,9 @@ class Conv extends Component{
     val WIDTH=in UInt(16 bits)
     val HEIGHT=in UInt(16 bits)
   }
+  val QuantInstru=new Bundle{
+    val zeroIn=in UInt(8 bits)
+  }
   val Fsm=TopCtrl_Fsm(Control.start)
   val InitCnt=WaCounter(Fsm.currentState===TopCtrl_Enum.INIT,3,5)
   Fsm.Inited:=InitCnt.valid
@@ -454,7 +457,7 @@ class Conv extends Component{
   // ConvQuant.io.dataOut<>mData.payload
   ConvQuant.io.LayerEnd:=LayerEnd//Control.LayerEnd
   ConvQuant.io.OutMatrix_Col:=Img2Col_Instru.OutFeature_Channel//输出矩阵的列数
-  ConvQuant.io.zeroIn:=59
+  ConvQuant.io.zeroIn:=QuantInstru.zeroIn
   ConvQuant.io.SAOutput_Valid:=Compute_Unit.io.resultVaild(0)
   // mData.valid:=False
 

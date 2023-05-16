@@ -58,6 +58,8 @@ class ConvTop extends Component{
 
   core.GemmInstru.HEIGHT                              :=Regs.Gemm_Height
   core.GemmInstru.WIDTH                               :=Regs.Gemm_Width
+
+  core.QuantInstru.zeroIn                             :=Regs.Quant_ZeroPoint
   }
 
 

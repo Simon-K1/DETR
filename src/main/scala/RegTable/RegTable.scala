@@ -65,6 +65,10 @@ class RegTable extends Component{
 	val Gemm_Width				=Gemm_Instru.field(UInt(16 bits),WO).asOutput()
 	val Gemm_Height				=Gemm_Instru.field(UInt(16 bits),WO).asOutput()
 
+
+	val QuantReg1				=bus.newReg(doc="Quant Instru")
+	val Quant_ZeroPoint			=QuantReg1.field(UInt(8 bits),WO).asOutput()//给到指令中的zeropoint
+
 	bus.accept(HtmlGenerator("regif", "RegTable V1"))
 }
 
