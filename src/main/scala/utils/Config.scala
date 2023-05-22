@@ -4,8 +4,9 @@ import spinal.core.log2Up
 
 case class TopConfig(){
 //layernorm config============================================================
-    val CHANNEL_NUMS=384//通道数
-    val CHANNEL_NUMS_WIDTH=12
+    val MAX_CHANNEL_NUMS=1024//用于控制片上存储的使用
+    val CHANNEL_NUMS_WIDTH=log2Up(MAX_CHANNEL_NUMS)
+    
     val TOKEN_NUMS=25//token 因为单并行度的话就是197，但是8并行度这里需要改为25，矩阵需要被补0
     val LAYERNORM_PIPELINE=1//8并行度
     

@@ -1,22 +1,224 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
-// Component : LayerNorm_Module
-// Git hash  : 6c6b7868b5422eb47ec76956e9229aac11f889be
+// Component : LayerNorm_Top
+// Git hash  : ed8f947fa815d91e29f0468bd585fb0c22af37e0
 
 `timescale 1ns/1ps
+
+module LayerNorm_Top (
+  input      [18:0]   sData_0,
+  input               sValid,
+  output              sReady,
+  input               start,
+  input      [9:0]    Channel_Nums,
+  input               ScaleBias_sValid,
+  output reg          ScaleBias_sReady,
+  input      [7:0]    Scale,
+  input      [7:0]    Bias,
+  output              mData_valid,
+  input               mData_ready,
+  output     [7:0]    mData_payload,
+  output              mLast,
+  input               clk,
+  input               reset
+);
+  localparam LayerNorm_Status_IDLE = 4'd1;
+  localparam LayerNorm_Status_INIT = 4'd2;
+  localparam LayerNorm_Status_LOAD_QUANT_DATA = 4'd4;
+  localparam LayerNorm_Status_WAIT_END = 4'd8;
+
+  wire       [7:0]    SubModule_Scale;
+  wire       [7:0]    SubModule_Bias;
+  wire       [7:0]    ScaleMem_1_dina;
+  wire                ScaleMem_1_ena;
+  wire       [7:0]    BiasMem_dina;
+  wire                BiasMem_ena;
+  wire                SubModule_sReady;
+  wire       [9:0]    SubModule_Bias_Read_Addr;
+  wire       [9:0]    SubModule_Scale_Read_Addr;
+  wire                SubModule_mData_valid;
+  wire       [7:0]    SubModule_mData_payload;
+  wire                SubModule_mLast;
+  wire       [7:0]    ScaleMem_1_doutb;
+  wire       [7:0]    BiasMem_doutb;
+  wire       [9:0]    _zz_QuantCache_Cnt_valid;
+  reg        [3:0]    Fsm_currentState;
+  reg        [3:0]    Fsm_nextState;
+  wire                Fsm_Init_End;
+  wire                Fsm_QuantData_Loaded;
+  wire                Fsm_Compute_End;
+  wire                when_WaCounter_l40;
+  reg        [2:0]    Init_Count_count;
+  wire                Init_Count_valid;
+  wire                when_WaCounter_l40_1;
+  reg        [9:0]    QuantCache_Cnt_count;
+  wire                QuantCache_Cnt_valid;
+  wire                when_SumXq_Stage1_l672;
+  `ifndef SYNTHESIS
+  reg [119:0] Fsm_currentState_string;
+  reg [119:0] Fsm_nextState_string;
+  `endif
+
+
+  assign _zz_QuantCache_Cnt_valid = (Channel_Nums - 10'h001);
+  LayerNorm_Module SubModule (
+    .sData_0         (sData_0[18:0]                 ), //i
+    .sValid          (sValid                        ), //i
+    .sReady          (SubModule_sReady              ), //o
+    .start           (start                         ), //i
+    .Channel_Nums    (Channel_Nums[9:0]             ), //i
+    .Bias_Read_Addr  (SubModule_Bias_Read_Addr[9:0] ), //o
+    .Scale_Read_Addr (SubModule_Scale_Read_Addr[9:0]), //o
+    .Scale           (SubModule_Scale[7:0]          ), //i
+    .Bias            (SubModule_Bias[7:0]           ), //i
+    .mData_valid     (SubModule_mData_valid         ), //o
+    .mData_ready     (mData_ready                   ), //i
+    .mData_payload   (SubModule_mData_payload[7:0]  ), //o
+    .mLast           (SubModule_mLast               ), //o
+    .clk             (clk                           ), //i
+    .reset           (reset                         )  //i
+  );
+  ScaleMem ScaleMem_1 (
+    .clka  (clk                           ), //i
+    .addra (QuantCache_Cnt_count[9:0]     ), //i
+    .dina  (ScaleMem_1_dina[7:0]          ), //i
+    .ena   (ScaleMem_1_ena                ), //i
+    .wea   (1'b1                          ), //i
+    .addrb (SubModule_Scale_Read_Addr[9:0]), //i
+    .doutb (ScaleMem_1_doutb[7:0]         ), //o
+    .clkb  (clk                           )  //i
+  );
+  ScaleMem BiasMem (
+    .clka  (clk                          ), //i
+    .addra (QuantCache_Cnt_count[9:0]    ), //i
+    .dina  (BiasMem_dina[7:0]            ), //i
+    .ena   (BiasMem_ena                  ), //i
+    .wea   (1'b1                         ), //i
+    .addrb (SubModule_Bias_Read_Addr[9:0]), //i
+    .doutb (BiasMem_doutb[7:0]           ), //o
+    .clkb  (clk                          )  //i
+  );
+  `ifndef SYNTHESIS
+  always @(*) begin
+    case(Fsm_currentState)
+      LayerNorm_Status_IDLE : Fsm_currentState_string = "IDLE           ";
+      LayerNorm_Status_INIT : Fsm_currentState_string = "INIT           ";
+      LayerNorm_Status_LOAD_QUANT_DATA : Fsm_currentState_string = "LOAD_QUANT_DATA";
+      LayerNorm_Status_WAIT_END : Fsm_currentState_string = "WAIT_END       ";
+      default : Fsm_currentState_string = "???????????????";
+    endcase
+  end
+  always @(*) begin
+    case(Fsm_nextState)
+      LayerNorm_Status_IDLE : Fsm_nextState_string = "IDLE           ";
+      LayerNorm_Status_INIT : Fsm_nextState_string = "INIT           ";
+      LayerNorm_Status_LOAD_QUANT_DATA : Fsm_nextState_string = "LOAD_QUANT_DATA";
+      LayerNorm_Status_WAIT_END : Fsm_nextState_string = "WAIT_END       ";
+      default : Fsm_nextState_string = "???????????????";
+    endcase
+  end
+  `endif
+
+  always @(*) begin
+    (* parallel_case *)
+    case(1) // synthesis parallel_case
+      (((Fsm_currentState) & LayerNorm_Status_IDLE) == LayerNorm_Status_IDLE) : begin
+        if(start) begin
+          Fsm_nextState = LayerNorm_Status_INIT;
+        end else begin
+          Fsm_nextState = LayerNorm_Status_IDLE;
+        end
+      end
+      (((Fsm_currentState) & LayerNorm_Status_INIT) == LayerNorm_Status_INIT) : begin
+        if(Fsm_Init_End) begin
+          Fsm_nextState = LayerNorm_Status_LOAD_QUANT_DATA;
+        end else begin
+          Fsm_nextState = LayerNorm_Status_INIT;
+        end
+      end
+      (((Fsm_currentState) & LayerNorm_Status_LOAD_QUANT_DATA) == LayerNorm_Status_LOAD_QUANT_DATA) : begin
+        if(Fsm_QuantData_Loaded) begin
+          Fsm_nextState = LayerNorm_Status_WAIT_END;
+        end else begin
+          Fsm_nextState = LayerNorm_Status_LOAD_QUANT_DATA;
+        end
+      end
+      default : begin
+        if(Fsm_Compute_End) begin
+          Fsm_nextState = LayerNorm_Status_IDLE;
+        end else begin
+          Fsm_nextState = LayerNorm_Status_WAIT_END;
+        end
+      end
+    endcase
+  end
+
+  assign when_WaCounter_l40 = ((Fsm_currentState & LayerNorm_Status_INIT) != 4'b0000);
+  assign Init_Count_valid = ((Init_Count_count == 3'b101) && when_WaCounter_l40);
+  assign Fsm_Init_End = Init_Count_valid;
+  assign when_WaCounter_l40_1 = (ScaleBias_sValid && ScaleBias_sReady);
+  assign QuantCache_Cnt_valid = ((QuantCache_Cnt_count == _zz_QuantCache_Cnt_valid) && when_WaCounter_l40_1);
+  assign Fsm_QuantData_Loaded = QuantCache_Cnt_valid;
+  assign ScaleMem_1_dina = Scale;
+  assign ScaleMem_1_ena = (ScaleBias_sValid && ScaleBias_sReady);
+  assign BiasMem_dina = Bias;
+  assign BiasMem_ena = (ScaleBias_sValid && ScaleBias_sReady);
+  assign SubModule_Scale = ScaleMem_1_doutb;
+  assign SubModule_Bias = BiasMem_doutb;
+  assign mData_valid = SubModule_mData_valid;
+  assign mData_payload = SubModule_mData_payload;
+  assign sReady = SubModule_sReady;
+  assign when_SumXq_Stage1_l672 = ((Fsm_currentState & LayerNorm_Status_LOAD_QUANT_DATA) != 4'b0000);
+  always @(*) begin
+    if(when_SumXq_Stage1_l672) begin
+      ScaleBias_sReady = 1'b1;
+    end else begin
+      ScaleBias_sReady = 1'b0;
+    end
+  end
+
+  assign mLast = SubModule_mLast;
+  assign Fsm_Compute_End = SubModule_mLast;
+  always @(posedge clk or posedge reset) begin
+    if(reset) begin
+      Fsm_currentState <= LayerNorm_Status_IDLE;
+      Init_Count_count <= 3'b000;
+      QuantCache_Cnt_count <= 10'h0;
+    end else begin
+      Fsm_currentState <= Fsm_nextState;
+      if(when_WaCounter_l40) begin
+        if(Init_Count_valid) begin
+          Init_Count_count <= 3'b000;
+        end else begin
+          Init_Count_count <= (Init_Count_count + 3'b001);
+        end
+      end
+      if(when_WaCounter_l40_1) begin
+        if(QuantCache_Cnt_valid) begin
+          QuantCache_Cnt_count <= 10'h0;
+        end else begin
+          QuantCache_Cnt_count <= (QuantCache_Cnt_count + 10'h001);
+        end
+      end
+    end
+  end
+
+
+endmodule
 
 module LayerNorm_Module (
   input      [18:0]   sData_0,
   input               sValid,
   output              sReady,
   input               start,
-  input      [11:0]   Channel_Nums,
-  output     [8:0]    Bias_Read_Addr,
-  output     [8:0]    Scale_Read_Addr,
+  input      [9:0]    Channel_Nums,
+  output     [9:0]    Bias_Read_Addr,
+  output     [9:0]    Scale_Read_Addr,
   input      [7:0]    Scale,
   input      [7:0]    Bias,
   output              mData_valid,
   input               mData_ready,
   output     [7:0]    mData_payload,
+  output              mLast,
   input               clk,
   input               reset
 );
@@ -31,10 +233,11 @@ module LayerNorm_Module (
   wire                Stage1_0_mData_ready;
   wire       [31:0]   Stage2_Recipro_Sqrt_Result_Latch_0;
   wire                Stage2_Recipro_Sqrt_Result_Valid;
-  wire       [8:0]    Stage2_Bias_Read_Addr;
+  wire       [9:0]    Stage2_Bias_Read_Addr;
+  wire                Stage2_mLast;
   wire       [31:0]   Stage2_Recipro_Sqrt_Result_Latch_0_1;
   wire                Stage1_0_sData_ready;
-  wire       [8:0]    Stage1_0_Scale_Read_Addr;
+  wire       [9:0]    Stage1_0_Scale_Read_Addr;
   wire                Stage1_0_Sqrt_Out_Valid;
   wire       [31:0]   Stage1_0_Sqrt_In_Truncated;
   wire                Stage1_0_ScaleA_Fifo_Popfire;
@@ -46,6 +249,7 @@ module LayerNorm_Module (
   reg        [7:0]    Bias_delay_4;
 
   Reci_Sqrt_Compute Stage2 (
+    .Channel_Nums                  (Channel_Nums[9:0]                         ), //i
     .Sqrt_In_Valid_0               (Stage1_0_Sqrt_Out_Valid                   ), //i
     .Sqrt_In_Valid_1               (Stage2_Sqrt_In_Valid_1                    ), //i
     .Sqrt_In_Valid_2               (Stage2_Sqrt_In_Valid_2                    ), //i
@@ -58,7 +262,8 @@ module LayerNorm_Module (
     .ScaleA_Fifo_Popfire           (Stage1_0_ScaleA_Fifo_Popfire              ), //i
     .Recipro_Sqrt_Result_Latch_0   (Stage2_Recipro_Sqrt_Result_Latch_0[31:0]  ), //o
     .Recipro_Sqrt_Result_Valid     (Stage2_Recipro_Sqrt_Result_Valid          ), //o
-    .Bias_Read_Addr                (Stage2_Bias_Read_Addr[8:0]                ), //o
+    .Bias_Read_Addr                (Stage2_Bias_Read_Addr[9:0]                ), //o
+    .mLast                         (Stage2_mLast                              ), //o
     .clk                           (clk                                       ), //i
     .Recipro_Sqrt_Result_Latch_0_1 (Stage2_Recipro_Sqrt_Result_Latch_0_1[31:0]), //o
     .reset                         (reset                                     )  //i
@@ -68,8 +273,8 @@ module LayerNorm_Module (
     .sData_ready               (Stage1_0_sData_ready                    ), //o
     .sData_payload             (sData_0[18:0]                           ), //i
     .start                     (start                                   ), //i
-    .Channel_Nums              (Channel_Nums[11:0]                      ), //i
-    .Scale_Read_Addr           (Stage1_0_Scale_Read_Addr[8:0]           ), //o
+    .Channel_Nums              (Channel_Nums[9:0]                       ), //i
+    .Scale_Read_Addr           (Stage1_0_Scale_Read_Addr[9:0]           ), //o
     .Scale                     (Scale[7:0]                              ), //i
     .Bias                      (Bias_delay_4[7:0]                       ), //i
     .Sqrt_Out_Valid            (Stage1_0_Sqrt_Out_Valid                 ), //o
@@ -88,6 +293,7 @@ module LayerNorm_Module (
   assign Scale_Read_Addr = Stage1_0_Scale_Read_Addr;
   assign Bias_Read_Addr = Stage2_Bias_Read_Addr;
   assign mData_valid = Stage1_0_mData_valid;
+  assign mLast = Stage2_mLast;
   always @(posedge clk) begin
     Bias_delay_1 <= Bias;
     Bias_delay_2 <= Bias_delay_1;
@@ -103,8 +309,8 @@ module Sum_Xq (
   output              sData_ready,
   input      [18:0]   sData_payload,
   input               start,
-  input      [11:0]   Channel_Nums,
-  output     [8:0]    Scale_Read_Addr,
+  input      [9:0]    Channel_Nums,
+  output     [9:0]    Scale_Read_Addr,
   input      [7:0]    Scale,
   input      [7:0]    Bias,
   output              Sqrt_Out_Valid,
@@ -124,12 +330,12 @@ module Sum_Xq (
   localparam SUM_XQ_ENUM_ACCUMU = 5'd8;
   localparam SUM_XQ_ENUM_FINISH_LAST_ROW = 5'd16;
 
-  wire       [30:0]   Xq2C_Module_A;
+  wire       [28:0]   Xq2C_Module_A;
   wire       [39:0]   ScaleMulA_Fifo_io_push_payload;
   wire       [23:0]   ScaleA_Mul_ReSqrt_B;
-  reg        [30:0]   _zz_Row_Mem_port0;
-  wire       [30:0]   XqC_Module_P;
-  wire       [49:0]   Xq2C_Module_P;
+  reg        [28:0]   _zz_Row_Mem_port0;
+  wire       [28:0]   XqC_Module_P;
+  wire       [47:0]   Xq2C_Module_P;
   wire       [39:0]   XqSum_Pow_P;
   wire       [39:0]   Scale_Mul_A_P;
   wire                ScaleMulA_Fifo_io_push_ready;
@@ -138,11 +344,9 @@ module Sum_Xq (
   wire       [7:0]    ScaleMulA_Fifo_io_occupancy;
   wire       [7:0]    ScaleMulA_Fifo_io_availability;
   wire       [63:0]   ScaleA_Mul_ReSqrt_P;
-  wire       [30:0]   _zz_Row_Mem_port;
+  wire       [9:0]    _zz_Col_Cnt_valid;
+  wire       [28:0]   _zz_Row_Mem_port;
   wire       [19:0]   _zz_Xq_Sum;
-  wire       [49:0]   _zz_Xq2C_Sum;
-  wire       [47:0]   _zz_Xq2C_Sum_1;
-  wire       [49:0]   _zz_Xq2C_Sum_2;
   wire       [31:0]   _zz_XqC_Substract_M2;
   wire       [31:0]   _zz_XqC_Substract_M2_1;
   wire       [47:0]   _zz_Sqrt_In;
@@ -151,7 +355,7 @@ module Sum_Xq (
   wire       [63:0]   _zz_SAB_Add_Bias;
   wire       [63:0]   _zz_SAB_Add_Bias_1;
   reg                 start_regNext;
-  wire                when_SumXq_Stage1_l132;
+  wire                when_SumXq_Stage1_l134;
   reg        [4:0]    Fsm_currentState;
   reg        [4:0]    Fsm_nextState;
   wire                Fsm_Init_End;
@@ -162,23 +366,23 @@ module Sum_Xq (
   reg        [2:0]    Init_Count_count;
   wire                Init_Count_valid;
   wire                when_WaCounter_l40_1;
-  reg        [8:0]    Col_Cnt_count;
+  reg        [9:0]    Col_Cnt_count;
   wire                Col_Cnt_valid;
   reg        [4:0]    Row_Cnt_count;
   wire                Row_Cnt_valid;
   wire                sData_fire;
   wire                _zz_Read_Row_Mem_Data;
-  wire       [30:0]   Read_Row_Mem_Data;
+  wire       [28:0]   Read_Row_Mem_Data;
   wire                sData_fire_1;
   reg                 Read_Row_Mem_Data_Valid;
   wire                sData_fire_2;
   reg                 sData_fire_2_delay_1;
   reg                 sData_fire_2_delay_2;
   reg                 XqC_Valid;
-  wire       [30:0]   Write_Row_Mem_Data;
-  reg        [8:0]    Col_Cnt_count_delay_1;
-  reg        [8:0]    Col_Cnt_count_delay_2;
-  reg        [8:0]    Write_Row_Mem_Addr;
+  wire       [28:0]   Write_Row_Mem_Data;
+  reg        [9:0]    Col_Cnt_count_delay_1;
+  reg        [9:0]    Col_Cnt_count_delay_2;
+  reg        [9:0]    Write_Row_Mem_Addr;
   reg        [19:0]   Xq_Sum;
   reg                 Xq_Sum_Clear;
   wire                sData_fire_3;
@@ -232,13 +436,11 @@ module Sum_Xq (
   reg [119:0] Fsm_nextState_string;
   `endif
 
-  reg [30:0] Row_Mem [0:383];
+  reg [28:0] Row_Mem [0:1023];
 
+  assign _zz_Col_Cnt_valid = (Channel_Nums - 10'h001);
   assign _zz_Xq_Sum = {{1{sData_payload[18]}}, sData_payload};
-  assign _zz_Xq2C_Sum = Xq2C_Module_P;
-  assign _zz_Xq2C_Sum_2 = Xq2C_Module_P;
-  assign _zz_Xq2C_Sum_1 = _zz_Xq2C_Sum_2[47:0];
-  assign _zz_XqC_Substract_M2 = {{1{Read_Row_Mem_Data[30]}}, Read_Row_Mem_Data};
+  assign _zz_XqC_Substract_M2 = {{3{Read_Row_Mem_Data[28]}}, Read_Row_Mem_Data};
   assign _zz_XqC_Substract_M2_1 = {{12{Xq_Sum_Old[19]}}, Xq_Sum_Old};
   assign _zz_Sqrt_In_1 = XqSum_Pow_P;
   assign _zz_Sqrt_In = {8'd0, _zz_Sqrt_In_1};
@@ -260,14 +462,14 @@ module Sum_Xq (
 
   XqC XqC_Module (
     .A   (sData_payload[18:0]), //i
-    .B   (Channel_Nums[11:0] ), //i
-    .P   (XqC_Module_P[30:0] ), //o
+    .B   (Channel_Nums[9:0]  ), //i
+    .P   (XqC_Module_P[28:0] ), //o
     .CLK (clk                )  //i
   );
   Xq2C Xq2C_Module (
-    .A   (Xq2C_Module_A[30:0]        ), //i
+    .A   (Xq2C_Module_A[28:0]        ), //i
     .B   (sData_payload_delay_3[18:0]), //i
-    .P   (Xq2C_Module_P[49:0]        ), //o
+    .P   (Xq2C_Module_P[47:0]        ), //o
     .CLK (clk                        )  //i
   );
   Xq_Sum_Pow XqSum_Pow (
@@ -324,12 +526,12 @@ module Sum_Xq (
   end
   `endif
 
-  assign when_SumXq_Stage1_l132 = (start && (! start_regNext));
+  assign when_SumXq_Stage1_l134 = (start && (! start_regNext));
   always @(*) begin
     (* parallel_case *)
     case(1) // synthesis parallel_case
       (((Fsm_currentState) & SUM_XQ_ENUM_IDLE) == SUM_XQ_ENUM_IDLE) : begin
-        if(when_SumXq_Stage1_l132) begin
+        if(when_SumXq_Stage1_l134) begin
           Fsm_nextState = SUM_XQ_ENUM_INIT;
         end else begin
           Fsm_nextState = SUM_XQ_ENUM_IDLE;
@@ -369,7 +571,7 @@ module Sum_Xq (
   assign when_WaCounter_l40 = ((Fsm_currentState & SUM_XQ_ENUM_INIT) != 5'b00000);
   assign Init_Count_valid = ((Init_Count_count == 3'b101) && when_WaCounter_l40);
   assign when_WaCounter_l40_1 = ((sData_valid && sData_ready) || ((Fsm_currentState & SUM_XQ_ENUM_FINISH_LAST_ROW) != 5'b00000));
-  assign Col_Cnt_valid = ((Col_Cnt_count == 9'h17f) && when_WaCounter_l40_1);
+  assign Col_Cnt_valid = ((Col_Cnt_count == _zz_Col_Cnt_valid) && when_WaCounter_l40_1);
   assign Row_Cnt_valid = ((Row_Cnt_count == 5'h19) && Col_Cnt_valid);
   assign Fsm_Init_End = Init_Count_valid;
   assign Fsm_Load_Firts_Row_End = ((Row_Cnt_count == 5'h0) && Col_Cnt_valid);
@@ -450,7 +652,7 @@ module Sum_Xq (
     if(reset) begin
       Fsm_currentState <= SUM_XQ_ENUM_IDLE;
       Init_Count_count <= 3'b000;
-      Col_Cnt_count <= 9'h0;
+      Col_Cnt_count <= 10'h0;
       Row_Cnt_count <= 5'h0;
       Xq_Sum <= 20'h0;
       Xq2C_Sum <= 48'h0;
@@ -467,9 +669,9 @@ module Sum_Xq (
       end
       if(when_WaCounter_l40_1) begin
         if(Col_Cnt_valid) begin
-          Col_Cnt_count <= 9'h0;
+          Col_Cnt_count <= 10'h0;
         end else begin
-          Col_Cnt_count <= (Col_Cnt_count + 9'h001);
+          Col_Cnt_count <= (Col_Cnt_count + 10'h001);
         end
       end
       if(Col_Cnt_valid) begin
@@ -488,9 +690,9 @@ module Sum_Xq (
       end
       if(Xq2C_Valid) begin
         if(Xq2C_Sum_Clear) begin
-          Xq2C_Sum <= _zz_Xq2C_Sum[47:0];
+          Xq2C_Sum <= Xq2C_Module_P;
         end else begin
-          Xq2C_Sum <= (Xq2C_Sum + _zz_Xq2C_Sum_1);
+          Xq2C_Sum <= (Xq2C_Sum + Xq2C_Module_P);
         end
       end
       if(Xq_Sum_Clear) begin
@@ -506,6 +708,7 @@ module Sum_Xq (
 endmodule
 
 module Reci_Sqrt_Compute (
+  input      [9:0]    Channel_Nums,
   input               Sqrt_In_Valid_0,
   input               Sqrt_In_Valid_1,
   input               Sqrt_In_Valid_2,
@@ -518,7 +721,8 @@ module Reci_Sqrt_Compute (
   input               ScaleA_Fifo_Popfire,
   output     [31:0]   Recipro_Sqrt_Result_Latch_0,
   output              Recipro_Sqrt_Result_Valid,
-  output     [8:0]    Bias_Read_Addr,
+  output     [9:0]    Bias_Read_Addr,
+  output              mLast,
   input               clk,
   output     [31:0]   Recipro_Sqrt_Result_Latch_0_1,
   input               reset
@@ -543,6 +747,8 @@ module Reci_Sqrt_Compute (
   wire                Reci_Sqrt_s_axis_a_tready;
   wire       [31:0]   Reci_Sqrt_m_axis_result_tdata;
   wire                Reci_Sqrt_m_axis_result_tvalid;
+  wire       [9:0]    _zz_SAB_Cnt_valid;
+  wire       [9:0]    _zz_when;
   reg        [8:0]    Sqrt_Compute_Fsm_currentState;
   reg        [8:0]    Sqrt_Compute_Fsm_nextState;
   wire                Sqrt_Compute_Fsm_Data_Sended;
@@ -557,16 +763,16 @@ module Reci_Sqrt_Compute (
   wire                Sqrt_Compute_Fsm_Send_Data_8;
   reg        [0:0]    Recipro_Pointer_Result_count;
   wire                Recipro_Pointer_Result_valid;
-  wire                when_SumXq_Stage1_l219;
+  wire                when_SumXq_Stage1_l221;
   reg        [2:0]    SAB_Fsm_currentState;
   reg        [2:0]    SAB_Fsm_nextState;
   wire                SAB_Fsm_ScaleA_Mul_ReSqrt_End;
   wire                SAB_Fsm_Row_All_Computed;
-  wire                when_SumXq_Stage1_l228;
-  reg        [8:0]    SAB_Cnt_count;
+  wire                when_SumXq_Stage1_l230;
+  reg        [9:0]    SAB_Cnt_count;
   wire                SAB_Cnt_valid;
   wire                when_WaCounter_l40;
-  reg        [8:0]    _zz_Bias_Read_Addr;
+  reg        [9:0]    _zz_Bias_Read_Addr;
   reg        [31:0]   Recipro_Sqrt_Result_Latch_0_1_regNext;
   reg                 SAB_Cnt_valid_regNext;
   reg        [31:0]   Recipro_Sqrt_Result_Latch_0_regNext;
@@ -583,6 +789,8 @@ module Reci_Sqrt_Compute (
   `endif
 
 
+  assign _zz_SAB_Cnt_valid = (Channel_Nums - 10'h001);
+  assign _zz_when = (Channel_Nums - 10'h001);
   Fi32_to_Single Fi32_2_Single (
     .s_axis_a_tdata       (Sqrt_In_Truncated_0[31:0]              ), //i
     .s_axis_a_tready      (Fi32_2_Single_s_axis_a_tready          ), //o
@@ -727,12 +935,12 @@ module Reci_Sqrt_Compute (
   assign Sqrt_Compute_Fsm_Send_Data_7 = Fi32_2_Single_s_axis_a_tready;
   assign Sqrt_Compute_Fsm_Send_Data_8 = Fi32_2_Single_s_axis_a_tready;
   assign Recipro_Pointer_Result_valid = ((Recipro_Pointer_Result_count == 1'b0) && Reci_Sqrt_m_axis_result_tvalid);
-  assign when_SumXq_Stage1_l219 = (Recipro_Pointer_Result_count == 1'b0);
+  assign when_SumXq_Stage1_l221 = (Recipro_Pointer_Result_count == 1'b0);
   always @(*) begin
     (* parallel_case *)
     case(1) // synthesis parallel_case
       (((SAB_Fsm_currentState) & SCALEA_MUL_RESQRT_ENUM_IDLE) == SCALEA_MUL_RESQRT_ENUM_IDLE) : begin
-        if(when_SumXq_Stage1_l219) begin
+        if(when_SumXq_Stage1_l221) begin
           SAB_Fsm_nextState = SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID;
         end else begin
           SAB_Fsm_nextState = SCALEA_MUL_RESQRT_ENUM_IDLE;
@@ -742,10 +950,10 @@ module Reci_Sqrt_Compute (
         if(SAB_Fsm_Row_All_Computed) begin
           SAB_Fsm_nextState = SCALEA_MUL_RESQRT_ENUM_IDLE;
         end else begin
-          if(when_SumXq_Stage1_l228) begin
+          if(when_SumXq_Stage1_l230) begin
             SAB_Fsm_nextState = SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID;
           end else begin
-            if(when_SumXq_Stage1_l219) begin
+            if(when_SumXq_Stage1_l221) begin
               SAB_Fsm_nextState = SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID_AGAIN;
             end else begin
               if(SAB_Fsm_ScaleA_Mul_ReSqrt_End) begin
@@ -771,8 +979,8 @@ module Reci_Sqrt_Compute (
     endcase
   end
 
-  assign when_SumXq_Stage1_l228 = (when_SumXq_Stage1_l219 && SAB_Fsm_ScaleA_Mul_ReSqrt_End);
-  assign SAB_Cnt_valid = ((SAB_Cnt_count == 9'h17f) && ScaleA_Fifo_Popfire);
+  assign when_SumXq_Stage1_l230 = (when_SumXq_Stage1_l221 && SAB_Fsm_ScaleA_Mul_ReSqrt_End);
+  assign SAB_Cnt_valid = ((SAB_Cnt_count == _zz_SAB_Cnt_valid) && ScaleA_Fifo_Popfire);
   assign SAB_Fsm_ScaleA_Mul_ReSqrt_End = SAB_Cnt_valid;
   assign Recipro_Sqrt_Result_Valid = (((SAB_Fsm_currentState & SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID) != 3'b000) || ((SAB_Fsm_currentState & SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID_AGAIN) != 3'b000));
   assign when_WaCounter_l40 = ((SAB_Fsm_currentState & SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID) != 3'b000);
@@ -795,13 +1003,14 @@ module Reci_Sqrt_Compute (
   assign Recipro_Pointer_DataIn_valid = ((Recipro_Pointer_DataIn_count == 1'b0) && when_WaCounter_l40_1);
   assign Row_Cnt_valid = ((Row_Cnt_count == 5'h18) && SAB_Cnt_valid);
   assign SAB_Fsm_Row_All_Computed = (Row_Cnt_valid && SAB_Cnt_valid);
+  assign mLast = SAB_Fsm_Row_All_Computed;
   always @(posedge clk or posedge reset) begin
     if(reset) begin
       Sqrt_Compute_Fsm_currentState <= SQRT_COMPUTE_ENUM_COMPUTE_0;
       Recipro_Pointer_Result_count <= 1'b0;
       SAB_Fsm_currentState <= SCALEA_MUL_RESQRT_ENUM_IDLE;
-      SAB_Cnt_count <= 9'h0;
-      _zz_Bias_Read_Addr <= 9'h0;
+      SAB_Cnt_count <= 10'h0;
+      _zz_Bias_Read_Addr <= 10'h0;
       Recipro_Pointer_DataIn_count <= 1'b0;
       Row_Cnt_count <= 5'h0;
     end else begin
@@ -816,16 +1025,16 @@ module Reci_Sqrt_Compute (
       SAB_Fsm_currentState <= SAB_Fsm_nextState;
       if(ScaleA_Fifo_Popfire) begin
         if(SAB_Cnt_valid) begin
-          SAB_Cnt_count <= 9'h0;
+          SAB_Cnt_count <= 10'h0;
         end else begin
-          SAB_Cnt_count <= (SAB_Cnt_count + 9'h001);
+          SAB_Cnt_count <= (SAB_Cnt_count + 10'h001);
         end
       end
       if(when_WaCounter_l40) begin
-        if(((_zz_Bias_Read_Addr == 9'h17f) && when_WaCounter_l40)) begin
-          _zz_Bias_Read_Addr <= 9'h0;
+        if(((_zz_Bias_Read_Addr == _zz_when) && when_WaCounter_l40)) begin
+          _zz_Bias_Read_Addr <= 10'h0;
         end else begin
-          _zz_Bias_Read_Addr <= (_zz_Bias_Read_Addr + 9'h001);
+          _zz_Bias_Read_Addr <= (_zz_Bias_Read_Addr + 10'h001);
         end
       end
       if(when_WaCounter_l40_1) begin
