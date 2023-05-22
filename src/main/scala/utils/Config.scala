@@ -7,7 +7,8 @@ case class TopConfig(){
     val MAX_CHANNEL_NUMS=1024//用于控制片上存储的使用
     val CHANNEL_NUMS_WIDTH=log2Up(MAX_CHANNEL_NUMS)
     
-    val TOKEN_NUMS=25//token 因为单并行度的话就是197，但是8并行度这里需要改为25，矩阵需要被补0
+    val TOKEN_NUMS_WIDTH=20//token 因为单并行度的话就是197，但是8并行度这里需要改为25，矩阵需要被补0
+        //TokenNums也就是矩阵的行数,最大支持1024*1024的图片展开
     val LAYERNORM_PIPELINE=1//8并行度
     
     val XQ_DATA_WIDTH=19//Xq-Zp，也就是处理了Ptf之后可以直接参与计算的Xq-Zp，因为数据需要移位0，1，2，3，8bit<<3-->所以最终的量化数据位宽是11bit

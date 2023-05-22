@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : LayerNorm_Top
-// Git hash  : ed8f947fa815d91e29f0468bd585fb0c22af37e0
+// Git hash  : 54704f0ec52b52299e5f823029efe570ca40e9e3
 
 `timescale 1ns/1ps
 
@@ -10,6 +10,7 @@ module LayerNorm_Top (
   output              sReady,
   input               start,
   input      [9:0]    Channel_Nums,
+  input      [19:0]   Token_Nums,
   input               ScaleBias_sValid,
   output reg          ScaleBias_sReady,
   input      [7:0]    Scale,
@@ -52,7 +53,7 @@ module LayerNorm_Top (
   wire                when_WaCounter_l40_1;
   reg        [9:0]    QuantCache_Cnt_count;
   wire                QuantCache_Cnt_valid;
-  wire                when_SumXq_Stage1_l672;
+  wire                when_SumXq_Stage1_l679;
   `ifndef SYNTHESIS
   reg [119:0] Fsm_currentState_string;
   reg [119:0] Fsm_nextState_string;
@@ -64,8 +65,9 @@ module LayerNorm_Top (
     .sData_0         (sData_0[18:0]                 ), //i
     .sValid          (sValid                        ), //i
     .sReady          (SubModule_sReady              ), //o
-    .start           (start                         ), //i
+    .start           (Fsm_QuantData_Loaded          ), //i
     .Channel_Nums    (Channel_Nums[9:0]             ), //i
+    .Token_Nums      (Token_Nums[19:0]              ), //i
     .Bias_Read_Addr  (SubModule_Bias_Read_Addr[9:0] ), //o
     .Scale_Read_Addr (SubModule_Scale_Read_Addr[9:0]), //o
     .Scale           (SubModule_Scale[7:0]          ), //i
@@ -167,9 +169,9 @@ module LayerNorm_Top (
   assign mData_valid = SubModule_mData_valid;
   assign mData_payload = SubModule_mData_payload;
   assign sReady = SubModule_sReady;
-  assign when_SumXq_Stage1_l672 = ((Fsm_currentState & LayerNorm_Status_LOAD_QUANT_DATA) != 4'b0000);
+  assign when_SumXq_Stage1_l679 = ((Fsm_currentState & LayerNorm_Status_LOAD_QUANT_DATA) != 4'b0000);
   always @(*) begin
-    if(when_SumXq_Stage1_l672) begin
+    if(when_SumXq_Stage1_l679) begin
       ScaleBias_sReady = 1'b1;
     end else begin
       ScaleBias_sReady = 1'b0;
@@ -211,6 +213,7 @@ module LayerNorm_Module (
   output              sReady,
   input               start,
   input      [9:0]    Channel_Nums,
+  input      [19:0]   Token_Nums,
   output     [9:0]    Bias_Read_Addr,
   output     [9:0]    Scale_Read_Addr,
   input      [7:0]    Scale,
@@ -250,6 +253,7 @@ module LayerNorm_Module (
 
   Reci_Sqrt_Compute Stage2 (
     .Channel_Nums                  (Channel_Nums[9:0]                         ), //i
+    .Token_Nums                    (Token_Nums[19:0]                          ), //i
     .Sqrt_In_Valid_0               (Stage1_0_Sqrt_Out_Valid                   ), //i
     .Sqrt_In_Valid_1               (Stage2_Sqrt_In_Valid_1                    ), //i
     .Sqrt_In_Valid_2               (Stage2_Sqrt_In_Valid_2                    ), //i
@@ -274,6 +278,7 @@ module LayerNorm_Module (
     .sData_payload             (sData_0[18:0]                           ), //i
     .start                     (start                                   ), //i
     .Channel_Nums              (Channel_Nums[9:0]                       ), //i
+    .Token_Nums                (Token_Nums[19:0]                        ), //i
     .Scale_Read_Addr           (Stage1_0_Scale_Read_Addr[9:0]           ), //o
     .Scale                     (Scale[7:0]                              ), //i
     .Bias                      (Bias_delay_4[7:0]                       ), //i
@@ -310,6 +315,7 @@ module Sum_Xq (
   input      [18:0]   sData_payload,
   input               start,
   input      [9:0]    Channel_Nums,
+  input      [19:0]   Token_Nums,
   output     [9:0]    Scale_Read_Addr,
   input      [7:0]    Scale,
   input      [7:0]    Bias,
@@ -345,6 +351,7 @@ module Sum_Xq (
   wire       [7:0]    ScaleMulA_Fifo_io_availability;
   wire       [63:0]   ScaleA_Mul_ReSqrt_P;
   wire       [9:0]    _zz_Col_Cnt_valid;
+  wire       [19:0]   _zz_Row_Cnt_valid;
   wire       [28:0]   _zz_Row_Mem_port;
   wire       [19:0]   _zz_Xq_Sum;
   wire       [31:0]   _zz_XqC_Substract_M2;
@@ -368,7 +375,7 @@ module Sum_Xq (
   wire                when_WaCounter_l40_1;
   reg        [9:0]    Col_Cnt_count;
   wire                Col_Cnt_valid;
-  reg        [4:0]    Row_Cnt_count;
+  reg        [19:0]   Row_Cnt_count;
   wire                Row_Cnt_valid;
   wire                sData_fire;
   wire                _zz_Read_Row_Mem_Data;
@@ -439,6 +446,7 @@ module Sum_Xq (
   reg [28:0] Row_Mem [0:1023];
 
   assign _zz_Col_Cnt_valid = (Channel_Nums - 10'h001);
+  assign _zz_Row_Cnt_valid = (Token_Nums - 20'h00001);
   assign _zz_Xq_Sum = {{1{sData_payload[18]}}, sData_payload};
   assign _zz_XqC_Substract_M2 = {{3{Read_Row_Mem_Data[28]}}, Read_Row_Mem_Data};
   assign _zz_XqC_Substract_M2_1 = {{12{Xq_Sum_Old[19]}}, Xq_Sum_Old};
@@ -572,9 +580,9 @@ module Sum_Xq (
   assign Init_Count_valid = ((Init_Count_count == 3'b101) && when_WaCounter_l40);
   assign when_WaCounter_l40_1 = ((sData_valid && sData_ready) || ((Fsm_currentState & SUM_XQ_ENUM_FINISH_LAST_ROW) != 5'b00000));
   assign Col_Cnt_valid = ((Col_Cnt_count == _zz_Col_Cnt_valid) && when_WaCounter_l40_1);
-  assign Row_Cnt_valid = ((Row_Cnt_count == 5'h19) && Col_Cnt_valid);
+  assign Row_Cnt_valid = ((Row_Cnt_count == _zz_Row_Cnt_valid) && Col_Cnt_valid);
   assign Fsm_Init_End = Init_Count_valid;
-  assign Fsm_Load_Firts_Row_End = ((Row_Cnt_count == 5'h0) && Col_Cnt_valid);
+  assign Fsm_Load_Firts_Row_End = ((Row_Cnt_count == 20'h0) && Col_Cnt_valid);
   assign Fsm_Accumu_End = Row_Cnt_valid;
   assign Fsm_Last_Row_Finished = Col_Cnt_valid;
   assign sData_ready = ((((Fsm_currentState & SUM_XQ_ENUM_IDLE) == 5'b00000) && ((Fsm_currentState & SUM_XQ_ENUM_INIT) == 5'b00000)) && ((Fsm_currentState & SUM_XQ_ENUM_FINISH_LAST_ROW) == 5'b00000));
@@ -653,7 +661,7 @@ module Sum_Xq (
       Fsm_currentState <= SUM_XQ_ENUM_IDLE;
       Init_Count_count <= 3'b000;
       Col_Cnt_count <= 10'h0;
-      Row_Cnt_count <= 5'h0;
+      Row_Cnt_count <= 20'h0;
       Xq_Sum <= 20'h0;
       Xq2C_Sum <= 48'h0;
       Xq_Sum_Old <= 20'h0;
@@ -676,9 +684,9 @@ module Sum_Xq (
       end
       if(Col_Cnt_valid) begin
         if(Row_Cnt_valid) begin
-          Row_Cnt_count <= 5'h0;
+          Row_Cnt_count <= 20'h0;
         end else begin
-          Row_Cnt_count <= (Row_Cnt_count + 5'h01);
+          Row_Cnt_count <= (Row_Cnt_count + 20'h00001);
         end
       end
       if(sData_fire_3) begin
@@ -709,6 +717,7 @@ endmodule
 
 module Reci_Sqrt_Compute (
   input      [9:0]    Channel_Nums,
+  input      [19:0]   Token_Nums,
   input               Sqrt_In_Valid_0,
   input               Sqrt_In_Valid_1,
   input               Sqrt_In_Valid_2,
@@ -749,6 +758,7 @@ module Reci_Sqrt_Compute (
   wire                Reci_Sqrt_m_axis_result_tvalid;
   wire       [9:0]    _zz_SAB_Cnt_valid;
   wire       [9:0]    _zz_when;
+  wire       [19:0]   _zz_Row_Cnt_valid;
   reg        [8:0]    Sqrt_Compute_Fsm_currentState;
   reg        [8:0]    Sqrt_Compute_Fsm_nextState;
   wire                Sqrt_Compute_Fsm_Data_Sended;
@@ -779,7 +789,7 @@ module Reci_Sqrt_Compute (
   wire                when_WaCounter_l40_1;
   reg        [0:0]    Recipro_Pointer_DataIn_count;
   wire                Recipro_Pointer_DataIn_valid;
-  reg        [4:0]    Row_Cnt_count;
+  reg        [19:0]   Row_Cnt_count;
   wire                Row_Cnt_valid;
   `ifndef SYNTHESIS
   reg [71:0] Sqrt_Compute_Fsm_currentState_string;
@@ -791,6 +801,7 @@ module Reci_Sqrt_Compute (
 
   assign _zz_SAB_Cnt_valid = (Channel_Nums - 10'h001);
   assign _zz_when = (Channel_Nums - 10'h001);
+  assign _zz_Row_Cnt_valid = (Token_Nums - 20'h00001);
   Fi32_to_Single Fi32_2_Single (
     .s_axis_a_tdata       (Sqrt_In_Truncated_0[31:0]              ), //i
     .s_axis_a_tready      (Fi32_2_Single_s_axis_a_tready          ), //o
@@ -1001,7 +1012,7 @@ module Reci_Sqrt_Compute (
 
   assign when_WaCounter_l40_1 = (Fi32_2_Single_s_axis_a_tvalid && Fi32_2_Single_s_axis_a_tready);
   assign Recipro_Pointer_DataIn_valid = ((Recipro_Pointer_DataIn_count == 1'b0) && when_WaCounter_l40_1);
-  assign Row_Cnt_valid = ((Row_Cnt_count == 5'h18) && SAB_Cnt_valid);
+  assign Row_Cnt_valid = ((Row_Cnt_count == _zz_Row_Cnt_valid) && SAB_Cnt_valid);
   assign SAB_Fsm_Row_All_Computed = (Row_Cnt_valid && SAB_Cnt_valid);
   assign mLast = SAB_Fsm_Row_All_Computed;
   always @(posedge clk or posedge reset) begin
@@ -1012,7 +1023,7 @@ module Reci_Sqrt_Compute (
       SAB_Cnt_count <= 10'h0;
       _zz_Bias_Read_Addr <= 10'h0;
       Recipro_Pointer_DataIn_count <= 1'b0;
-      Row_Cnt_count <= 5'h0;
+      Row_Cnt_count <= 20'h0;
     end else begin
       Sqrt_Compute_Fsm_currentState <= Sqrt_Compute_Fsm_nextState;
       if(Reci_Sqrt_m_axis_result_tvalid) begin
@@ -1046,9 +1057,9 @@ module Reci_Sqrt_Compute (
       end
       if(SAB_Cnt_valid) begin
         if(Row_Cnt_valid) begin
-          Row_Cnt_count <= 5'h0;
+          Row_Cnt_count <= 20'h0;
         end else begin
-          Row_Cnt_count <= (Row_Cnt_count + 5'h01);
+          Row_Cnt_count <= (Row_Cnt_count + 20'h00001);
         end
       end
     end

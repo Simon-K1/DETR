@@ -279,7 +279,7 @@ class Sum_Xq extends Component{
         val start=in Bool()//计算启动信号
 
         val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
-
+        val Token_Nums=in UInt(Config.TOKEN_NUMS_WIDTH bits)
         
         val Scale_Read_Addr=out UInt(Config.CHANNEL_NUMS_WIDTH bits)
         val Scale=in SInt(8 bits)//暂时让Scale和Bias作为输入
@@ -302,7 +302,7 @@ class Sum_Xq extends Component{
     val Fsm=SUM_XQ_FSM(io.start&&(!RegNext(io.start)))
     val Init_Count=ForLoopCounter(Fsm.currentState===SUM_XQ_ENUM.INIT,log2Up(5),5)//初始化数5下
     val Col_Cnt=ForLoopCounter(io.sData.valid&&io.sData.ready||Fsm.currentState===SUM_XQ_ENUM.FINISH_LAST_ROW, Config.CHANNEL_NUMS_WIDTH, io.Channel_Nums-1)//创建输入数据的列计数器
-    val Row_Cnt=ForLoopCounter(Col_Cnt.valid, log2Up(Config.TOKEN_NUMS), Config.TOKEN_NUMS)//创建输入数据行计数器                                                            
+    val Row_Cnt=ForLoopCounter(Col_Cnt.valid, Config.TOKEN_NUMS_WIDTH, io.Token_Nums-1)//创建输入数据行计数器                                                            
                                                                 //Row_Cnt的值对应的是当前正在处理的行数，所以这里不该减一
     Fsm.Init_End:=Init_Count.valid
     
@@ -402,7 +402,7 @@ class Sum_Xq extends Component{
     io.Sqrt_Out_Valid:=Sqrt_Out_Valid
     val Sqrt_In=RegNextWhen(Xq2C_Sum-XqSum_Pow.io.P.asUInt,Xq2C_Sum_Clear)init(0)//这样写会出来毛刺，，，，，，
     //分析发现Xq2C的结果是最后出来的，所以当Xq2C最后被算出来，CXq-M2,Xq_Sum,Xq_Sum_Pow都被算出来了
-    val Sqrt_In_Truncated=Sqrt_In(31 downto 0)
+    val Sqrt_In_Truncated=Sqrt_In(31 downto 0)//这里为什么要取后32位而不是前32位？（半后年再看这行代码看不懂了，23、5、22，已解决）
     val Truncated_Success=Sqrt_In===Sqrt_In_Truncated//先转32单精度，再执行根号下分之一计算，得到单精度浮点
     io.Sqrt_In_Truncated:=Sqrt_In_Truncated
 
@@ -445,10 +445,11 @@ class Reci_Sqrt_Compute extends Component{
     val Config=TopConfig()
     val io=new Bundle{
         val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)
+        val Token_Nums=in UInt(Config.TOKEN_NUMS_WIDTH bits)
         val Sqrt_In_Valid=in Vec(Bool(),8)
         val Sqrt_In_Truncated=in Vec(UInt(32 bits),Config.LAYERNORM_PIPELINE)
         val ScaleA_Fifo_Popfire=in Bool()
-
+    
         val Recipro_Sqrt_Result_Latch=out Vec(UInt(32 bits),Config.LAYERNORM_PIPELINE)
         val Recipro_Sqrt_Result_Valid=out Bool()
         val Bias_Read_Addr=out UInt(Config.CHANNEL_NUMS_WIDTH bits)
@@ -513,7 +514,7 @@ class Reci_Sqrt_Compute extends Component{
     val Recipro_Pointer_DataIn=ForLoopCounter(Fi32_2_Single.s_axis_a.tvalid&&Fi32_2_Single.s_axis_a.tready,log2Up(Config.LAYERNORM_PIPELINE),Config.LAYERNORM_PIPELINE-1)
     if(Config.LAYERNORM_PIPELINE==1){Fi32_2_Single.s_axis_a.tdata:=io.Sqrt_In_Truncated(0)}else{Fi32_2_Single.s_axis_a.tdata:=Recipro_Pointer_DataIn.count.muxList(for(i <- 0 until Config.LAYERNORM_PIPELINE) yield (i, io.Sqrt_In_Truncated(i)))}
                                                                 //这里改成muxListDc也行，需要研究研究
-    val Row_Cnt=ForLoopCounter(SAB_Cnt.valid,log2Up(Config.TOKEN_NUMS),Config.TOKEN_NUMS-1)//加一个这个是为了最后计算完了状态跳转
+    val Row_Cnt=ForLoopCounter(SAB_Cnt.valid,Config.TOKEN_NUMS_WIDTH,io.Token_Nums-1)//加一个这个是为了最后计算完了状态跳转
                                                                                       //这里也是得减一                                                                        
     SAB_Fsm.Row_All_Computed:=Row_Cnt.valid&&SAB_Cnt.valid//当处于最后一行并且最后一列算完了
     io.mLast:=SAB_Fsm.Row_All_Computed
@@ -528,6 +529,7 @@ class LayerNorm_Module extends Component{
         val start=in Bool()//计算启动信号
 
         val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
+        val Token_Nums=in UInt(Config.TOKEN_NUMS_WIDTH bits)
 
         val Bias_Read_Addr=out UInt(Config.CHANNEL_NUMS_WIDTH bits)
         val Scale_Read_Addr=out UInt(Config.CHANNEL_NUMS_WIDTH bits)
@@ -552,6 +554,7 @@ class LayerNorm_Module extends Component{
 
             Stage1.io.start:=io.start
             Stage1.io.Channel_Nums:=io.Channel_Nums
+            Stage1.io.Token_Nums:=io.Token_Nums
             Stage1.io.Scale:=io.Scale
             Stage1.io.Bias:=Delay(io.Bias,Config.SCALE_A_RECIPROSQRT_PIPELINE-1)//减一的原因：待更新
             //Stage1和Stage2之间的连接===========================
@@ -571,6 +574,7 @@ class LayerNorm_Module extends Component{
     //根号分之一与顶层接口连接============================
     Stage2.io.Bias_Read_Addr<>io.Bias_Read_Addr
     Stage2.io.Channel_Nums:=io.Channel_Nums
+    Stage2.io.Token_Nums    :=io.Token_Nums
     io.mData.valid:=Stage1(0).io.mData.valid
     io.mLast:=Stage2.io.mLast
 }
@@ -628,6 +632,8 @@ class LayerNorm_Top extends Component{
         val sReady=out Bool()
         val start=in Bool()//计算启动信号
         val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
+        val Token_Nums=in UInt(Config.TOKEN_NUMS_WIDTH bits)//TokenNums 的值由外部编译器给出,比如197行矩阵,如果并Pipeline设置为1,那么这里的值是197
+        //如果PipeLine设置为8,那么这里的值是25,计算公式为ceil(TokenNums/Pipeline)
 
         val ScaleBias_sValid=in Bool()
         val ScaleBias_sReady=out Bool()
@@ -663,11 +669,12 @@ class LayerNorm_Top extends Component{
     SubModule.io.Scale          :=ScaleMem.io.doutb.asSInt
     SubModule.io.Bias           :=BiasMem.io.doutb.asSInt
     SubModule.io.Channel_Nums   :=io.Channel_Nums
+    SubModule.io.Token_Nums     :=io.Token_Nums
     SubModule.io.mData          <>io.mData
     SubModule.io.sData          :=io.sData
     SubModule.io.sValid         :=io.sValid
     io.sReady                   :=SubModule.io.sReady
-    SubModule.io.start          :=io.start
+    SubModule.io.start          :=Fsm.QuantData_Loaded
 
     when(Fsm.currentState===LayerNorm_Status.LOAD_QUANT_DATA){
         io.ScaleBias_sReady:=True
@@ -677,6 +684,7 @@ class LayerNorm_Top extends Component{
 
     io.mLast:=SubModule.io.mLast
     Fsm.Compute_End:=SubModule.io.mLast
+
 
 }
 // class LayerNorm_Top extends Component{
