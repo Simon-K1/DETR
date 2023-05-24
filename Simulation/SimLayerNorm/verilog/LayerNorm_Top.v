@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : LayerNorm_Top
-// Git hash  : 54704f0ec52b52299e5f823029efe570ca40e9e3
+// Git hash  : 8d314031faf1112c5de87d015fd28caabcf355a1
 
 `timescale 1ns/1ps
 
@@ -53,7 +53,7 @@ module LayerNorm_Top (
   wire                when_WaCounter_l40_1;
   reg        [9:0]    QuantCache_Cnt_count;
   wire                QuantCache_Cnt_valid;
-  wire                when_SumXq_Stage1_l679;
+  wire                when_SumXq_Stage1_l682;
   `ifndef SYNTHESIS
   reg [119:0] Fsm_currentState_string;
   reg [119:0] Fsm_nextState_string;
@@ -169,9 +169,9 @@ module LayerNorm_Top (
   assign mData_valid = SubModule_mData_valid;
   assign mData_payload = SubModule_mData_payload;
   assign sReady = SubModule_sReady;
-  assign when_SumXq_Stage1_l679 = ((Fsm_currentState & LayerNorm_Status_LOAD_QUANT_DATA) != 4'b0000);
+  assign when_SumXq_Stage1_l682 = ((Fsm_currentState & LayerNorm_Status_LOAD_QUANT_DATA) != 4'b0000);
   always @(*) begin
-    if(when_SumXq_Stage1_l679) begin
+    if(when_SumXq_Stage1_l682) begin
       ScaleBias_sReady = 1'b1;
     end else begin
       ScaleBias_sReady = 1'b0;
@@ -359,8 +359,8 @@ module Sum_Xq (
   wire       [47:0]   _zz_Sqrt_In;
   wire       [39:0]   _zz_Sqrt_In_1;
   wire       [47:0]   _zz_Truncated_Success;
+  wire       [63:0]   _zz_SAB_Shifted;
   wire       [63:0]   _zz_SAB_Add_Bias;
-  wire       [63:0]   _zz_SAB_Add_Bias_1;
   reg                 start_regNext;
   wire                when_SumXq_Stage1_l134;
   reg        [4:0]    Fsm_currentState;
@@ -453,8 +453,8 @@ module Sum_Xq (
   assign _zz_Sqrt_In_1 = XqSum_Pow_P;
   assign _zz_Sqrt_In = {8'd0, _zz_Sqrt_In_1};
   assign _zz_Truncated_Success = {16'd0, Sqrt_In_Truncated_1};
-  assign _zz_SAB_Add_Bias = SAB_Shifted;
-  assign _zz_SAB_Add_Bias_1 = {{56{Bias[7]}}, Bias};
+  assign _zz_SAB_Shifted = ScaleA_Mul_ReSqrt_P;
+  assign _zz_SAB_Add_Bias = {{56{Bias[7]}}, Bias};
   assign _zz_Row_Mem_port = Write_Row_Mem_Data;
   always @(posedge clk) begin
     if(_zz_Read_Row_Mem_Data) begin
@@ -607,8 +607,8 @@ module Sum_Xq (
   assign Stage1_0_ScaleMulA_Fifo_io_pop_fire_1 = (ScaleMulA_Fifo_io_pop_valid && Recipro_Sqrt_Result_Valid);
   assign Exp_Part = Recipro_Sqrt_Result[30 : 23];
   assign Right_Shift_Num0 = (8'h96 - Exp_Part);
-  assign SAB_Shifted = (ScaleA_Mul_ReSqrt_P >>> Right_Shift_Num0_delay_5);
-  assign SAB_Add_Bias = ($signed(_zz_SAB_Add_Bias) + $signed(_zz_SAB_Add_Bias_1));
+  assign SAB_Shifted = ($signed(_zz_SAB_Shifted) >>> Right_Shift_Num0_delay_5);
+  assign SAB_Add_Bias = ($signed(SAB_Shifted) + $signed(_zz_SAB_Add_Bias));
   assign SAB_Add_Bias_Truncated = SAB_Add_Bias[7 : 0];
   assign mData_payload = SAB_Add_Bias_Truncated;
   assign mData_valid = ScaleA_Mul_ReSqrt_Result_Valid;
@@ -773,7 +773,6 @@ module Reci_Sqrt_Compute (
   wire                Sqrt_Compute_Fsm_Send_Data_8;
   reg        [0:0]    Recipro_Pointer_Result_count;
   wire                Recipro_Pointer_Result_valid;
-  wire                when_SumXq_Stage1_l221;
   reg        [2:0]    SAB_Fsm_currentState;
   reg        [2:0]    SAB_Fsm_nextState;
   wire                SAB_Fsm_ScaleA_Mul_ReSqrt_End;
@@ -946,12 +945,11 @@ module Reci_Sqrt_Compute (
   assign Sqrt_Compute_Fsm_Send_Data_7 = Fi32_2_Single_s_axis_a_tready;
   assign Sqrt_Compute_Fsm_Send_Data_8 = Fi32_2_Single_s_axis_a_tready;
   assign Recipro_Pointer_Result_valid = ((Recipro_Pointer_Result_count == 1'b0) && Reci_Sqrt_m_axis_result_tvalid);
-  assign when_SumXq_Stage1_l221 = (Recipro_Pointer_Result_count == 1'b0);
   always @(*) begin
     (* parallel_case *)
     case(1) // synthesis parallel_case
       (((SAB_Fsm_currentState) & SCALEA_MUL_RESQRT_ENUM_IDLE) == SCALEA_MUL_RESQRT_ENUM_IDLE) : begin
-        if(when_SumXq_Stage1_l221) begin
+        if(Recipro_Pointer_Result_valid) begin
           SAB_Fsm_nextState = SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID;
         end else begin
           SAB_Fsm_nextState = SCALEA_MUL_RESQRT_ENUM_IDLE;
@@ -964,7 +962,7 @@ module Reci_Sqrt_Compute (
           if(when_SumXq_Stage1_l230) begin
             SAB_Fsm_nextState = SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID;
           end else begin
-            if(when_SumXq_Stage1_l221) begin
+            if(Recipro_Pointer_Result_valid) begin
               SAB_Fsm_nextState = SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID_AGAIN;
             end else begin
               if(SAB_Fsm_ScaleA_Mul_ReSqrt_End) begin
@@ -990,7 +988,7 @@ module Reci_Sqrt_Compute (
     endcase
   end
 
-  assign when_SumXq_Stage1_l230 = (when_SumXq_Stage1_l221 && SAB_Fsm_ScaleA_Mul_ReSqrt_End);
+  assign when_SumXq_Stage1_l230 = (Recipro_Pointer_Result_valid && SAB_Fsm_ScaleA_Mul_ReSqrt_End);
   assign SAB_Cnt_valid = ((SAB_Cnt_count == _zz_SAB_Cnt_valid) && ScaleA_Fifo_Popfire);
   assign SAB_Fsm_ScaleA_Mul_ReSqrt_End = SAB_Cnt_valid;
   assign Recipro_Sqrt_Result_Valid = (((SAB_Fsm_currentState & SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID) != 3'b000) || ((SAB_Fsm_currentState & SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID_AGAIN) != 3'b000));

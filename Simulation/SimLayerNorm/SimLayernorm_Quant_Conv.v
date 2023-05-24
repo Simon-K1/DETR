@@ -162,7 +162,7 @@ parameter Mem2_Width=16;
     end
     else
     begin
-      mValid<=0;
+      mValid<=1;
       sReady<=1;
     end
   end

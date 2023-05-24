@@ -424,16 +424,16 @@ class Sum_Xq extends Component{
     // val ScaleA_Mul_ReSqrt=new Scale_A_ReciproSqrt
     val ScaleA_Mul_ReSqrt=Mul(Config.SCALE_A_RECIPROSQRT_Aport_WIDTH,Config.SCALE_A_RECIPROSQRT_Bport_WIDTH,Config.SCALE_A_RECIPROSQRT_Pport_WIDTH,"signed","unsigned",Config.SCALE_A_RECIPROSQRT_PIPELINE,"DSP",this.clockDomain,"Scale_A_ReciproSqrt",Config.SCALE_A_RECIPROSQRT_Pport_WIDTH-1,0,true)
     ScaleA_Mul_ReSqrt.io.A:=ScaleMulA_Fifo.io.pop.payload
-    ScaleA_Mul_ReSqrt.io.B:=U"1'b1"@@(io.Recipro_Sqrt_Result(22 downto 0))
+    ScaleA_Mul_ReSqrt.io.B:=U"1'b1"@@(io.Recipro_Sqrt_Result(22 downto 0))//拿到尾数部分
     val ScaleA_Mul_ReSqrt_Result_Valid=Delay(ScaleMulA_Fifo.io.pop.fire,Config.SCALE_A_RECIPROSQRT_PIPELINE)
     
 
     //拿到结果后执行动态移位再加上Bias
     //由于Scale不能和Bias同时进来，所以需要对Bias的读取额外处理一下
-    val Exp_Part=io.Recipro_Sqrt_Result(30 downto 23)
+    val Exp_Part=io.Recipro_Sqrt_Result(30 downto 23)//指数部分
     val Right_Shift_Num0=150-Exp_Part
-    val SAB_Shifted=ScaleA_Mul_ReSqrt.io.P>>Delay(Right_Shift_Num0,Config.SCALE_A_RECIPROSQRT_PIPELINE)//这里位宽会不会超？
-    val SAB_Add_Bias=SAB_Shifted.asSInt+io.Bias
+    val SAB_Shifted=(ScaleA_Mul_ReSqrt.io.P).asSInt>>Delay(Right_Shift_Num0,Config.SCALE_A_RECIPROSQRT_PIPELINE)//这里位宽会不会超？
+    val SAB_Add_Bias=SAB_Shifted+io.Bias
     val SAB_Add_Bias_Truncated=SAB_Add_Bias(7 downto 0)//加完bias咋就变成8bit了。。。
 
     io.mData.payload:=SAB_Add_Bias_Truncated
@@ -484,7 +484,10 @@ class Reci_Sqrt_Compute extends Component{
 
 
     // Exp_Part:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===0))?(Reci_Sqrt.m_axis_result.tdata(30 downto 23))|RegNext(Exp_Part)
-    val SAB_Fsm=ScaleA_Mul_Resqrt_Fsm(Recipro_Pointer_Result.count===Config.LAYERNORM_PIPELINE-1)//最后还是决定等8个sqrt都算完了才启动后面的计算，因为后面还得读取Bias，8个sqrt对齐后读取bias就会变得方便一些
+    // val SAB_Fsm=ScaleA_Mul_Resqrt_Fsm(Recipro_Pointer_Result.count===Config.LAYERNORM_PIPELINE-1)//最后还是决定等8个sqrt都算完了才启动后面的计算，因为后面还得读取Bias，8个sqrt对齐后读取bias就会变得方便一些
+        //23/5/23修了一个bug↑
+    val SAB_Fsm=ScaleA_Mul_Resqrt_Fsm(Recipro_Pointer_Result.valid)//最后还是决定等8个sqrt都算完了才启动后面的计算，因为后面还得读取Bias，8个sqrt对齐后读取bias就会变得方便一些
+
     val SAB_Cnt=ForLoopCounter(io.ScaleA_Fifo_Popfire,Config.CHANNEL_NUMS_WIDTH,io.Channel_Nums-1)//当Fifo出了384个点后，一行就算完了
     SAB_Fsm.ScaleA_Mul_ReSqrt_End:=SAB_Cnt.valid
 
