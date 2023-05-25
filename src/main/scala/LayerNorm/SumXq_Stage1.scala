@@ -7,6 +7,8 @@ import spinal.lib.StreamFifo
 import xip.Mul
 import Systolic_Array.Quant.Quan
 import xip.xil_SimpleDualBram
+import javax.xml.transform.OutputKeys
+import Systolic_Array.ConvOutput_Ctrl
 //实现8并行度的累加计算
 object SUM_XQ_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, LOAD_FIRST_ROW,ACCUMU,FINISH_LAST_ROW = newElement
@@ -302,8 +304,9 @@ class Sum_Xq extends Component{
     val Fsm=SUM_XQ_FSM(io.start&&(!RegNext(io.start)))
     val Init_Count=ForLoopCounter(Fsm.currentState===SUM_XQ_ENUM.INIT,log2Up(5),5)//初始化数5下
     val Col_Cnt=ForLoopCounter(io.sData.valid&&io.sData.ready||Fsm.currentState===SUM_XQ_ENUM.FINISH_LAST_ROW, Config.CHANNEL_NUMS_WIDTH, io.Channel_Nums-1)//创建输入数据的列计数器
-    val Row_Cnt=ForLoopCounter(Col_Cnt.valid, Config.TOKEN_NUMS_WIDTH, io.Token_Nums-1)//创建输入数据行计数器                                                            
+    val Row_Cnt=ForLoopCounter((Col_Cnt.valid)&&Fsm.currentState===SUM_XQ_ENUM.ACCUMU, Config.TOKEN_NUMS_WIDTH, io.Token_Nums-2)//创建输入数据行计数器                                                            
                                                                 //Row_Cnt的值对应的是当前正在处理的行数，所以这里不该减一
+    //23/5/25修正bug↑：将行计数器的减1改成了减2，比如Tokennums=2，那么行计数器应该是0，可以类推的。                                                    
     Fsm.Init_End:=Init_Count.valid
     
     Fsm.Load_Firts_Row_End:=(Row_Cnt.count===0)&&Col_Cnt.valid//当行计数为0时，说明处于第一行，当列计数拉高时，说明第一行加载完了
@@ -347,8 +350,9 @@ class Sum_Xq extends Component{
     val Xq_Sum=Reg(SInt(Config.XQ_SUM_WIDTH bits))init(0)
     val Xq_Sum_Clear=RegNext(Col_Cnt.valid)//累加和清零,延一拍
 
-
-    when(io.sData.fire){//如果当前数据有效，需要判断是继续累加还是重新开始累加
+    when(Fsm.currentState===SUM_XQ_ENUM.IDLE){
+            Xq_Sum:=0
+        }elsewhen(io.sData.fire){//如果当前数据有效，需要判断是继续累加还是重新开始累加
         when(Xq_Sum_Clear){
             Xq_Sum:=io.sData.payload.resized
         }otherwise{
@@ -366,7 +370,9 @@ class Sum_Xq extends Component{
     val Xq2C_Valid=Delay(XqC_Valid,Config.XQ2C_PIPELINE)
     val Xq2C_Sum_Clear=Delay(Xq_Sum_Clear,Config.XQ2C_PIPELINE+Config.XQC_PIPELINE)//Xq进来，valid拉高，计算累加和，Xq然后和C计算，延迟XqC_Pipeline拍，出来的结果继续和Xq计算，延迟Xq2c_Pipeline拍
 
-    when(Xq2C_Valid){//如果当前数据有效，需要判断是继续累加还是重新开始累加
+    when(Fsm.currentState===SUM_XQ_ENUM.IDLE){
+        Xq2C_Sum:=0
+    }elsewhen(Xq2C_Valid){//如果当前数据有效，需要判断是继续累加还是重新开始累加
         when(Xq2C_Sum_Clear){
             Xq2C_Sum:=(Xq2C_Module.io.P.asUInt).resized
         }otherwise{
@@ -559,7 +565,8 @@ class LayerNorm_Module extends Component{
             Stage1.io.Channel_Nums:=io.Channel_Nums
             Stage1.io.Token_Nums:=io.Token_Nums
             Stage1.io.Scale:=io.Scale
-            Stage1.io.Bias:=Delay(io.Bias,Config.SCALE_A_RECIPROSQRT_PIPELINE-1)//减一的原因：待更新
+            Stage1.io.Bias:=Delay(io.Bias,Config.SCALE_A_RECIPROSQRT_PIPELINE-1+3)//减一的原因：待更新
+            //23、5、25：这里又加3是看波形图算出来的。。。不知道为啥。。
             //Stage1和Stage2之间的连接===========================
             Stage1.io.Sqrt_In_Truncated<>Stage2.io.Sqrt_In_Truncated(i)
             Stage1.io.Sqrt_Out_Valid<>Stage2.io.Sqrt_In_Valid(i)
@@ -583,9 +590,10 @@ class LayerNorm_Module extends Component{
 }
 
 object LayerNorm_Status extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
-    val IDLE, INIT, LOAD_QUANT_DATA,WAIT_END = newElement
+    val IDLE, INIT, LOAD_QUANT_DATA,WAIT_MREADY,WAIT_COMPUTE_END,WAIT_OUTPUT_END = newElement
     //LOAD_QUANT_DATA:加载量化参数
-    //WAIT_END:等待量化计算和数据输出结束
+    //WAIT_MREADY:最后新加的一个状态，用来处反压23、5、24
+    //WAIT_END:等待量化计算全部结束，需要注意：这时数据输出还没结束
 }
 case class LayerNorm_Fsm(start:Bool)extends Area{
     val currentState = Reg(LayerNorm_Status()) init LayerNorm_Status.IDLE
@@ -595,6 +603,8 @@ case class LayerNorm_Fsm(start:Bool)extends Area{
     val Init_End=Bool()
     val QuantData_Loaded=Bool()//量化参数加载完毕
     val Compute_End=Bool()//计算结束
+    val Output_End=Bool()//输出结束
+    val mReady=Bool()
     switch(currentState){
         is(LayerNorm_Status.IDLE){
             when(start){
@@ -612,16 +622,32 @@ case class LayerNorm_Fsm(start:Bool)extends Area{
         }
         is(LayerNorm_Status.LOAD_QUANT_DATA){
             when(QuantData_Loaded){
-                nextState:=LayerNorm_Status.WAIT_END
+                nextState:=LayerNorm_Status.WAIT_MREADY
             }otherwise{
                 nextState:=LayerNorm_Status.LOAD_QUANT_DATA
             }
         }
-        is(LayerNorm_Status.WAIT_END){
-            when(Compute_End){
+        is(LayerNorm_Status.WAIT_MREADY){
+            when(mReady){
+                nextState:=LayerNorm_Status.WAIT_COMPUTE_END
+            }otherwise{
+                nextState:=LayerNorm_Status.WAIT_MREADY
+            }
+        }
+        is(LayerNorm_Status.WAIT_COMPUTE_END){
+            when(!mReady){
+                nextState:=LayerNorm_Status.WAIT_MREADY
+            }elsewhen(Compute_End){
+                nextState:=LayerNorm_Status.WAIT_OUTPUT_END
+            }otherwise{
+                nextState:=LayerNorm_Status.WAIT_COMPUTE_END
+            }
+        }
+        is(LayerNorm_Status.WAIT_OUTPUT_END){
+            when(Output_End){
                 nextState:=LayerNorm_Status.IDLE
             }otherwise{
-                nextState:=LayerNorm_Status.WAIT_END
+                nextState:=LayerNorm_Status.WAIT_OUTPUT_END
             }
         }
     }
@@ -654,8 +680,8 @@ class LayerNorm_Top extends Component{
 
     val QuantCache_Cnt=ForLoopCounter(io.ScaleBias_sValid&&io.ScaleBias_sReady,Config.CHANNEL_NUMS_WIDTH,io.Channel_Nums-1)
     Fsm.QuantData_Loaded:=QuantCache_Cnt.valid
-    val ScaleMem=new xil_SimpleDualBram(8,1024,8,"ScaleMem",true)
-    val BiasMem=new xil_SimpleDualBram(8,1024,8,"ScaleMem",false)
+    val ScaleMem=new xil_SimpleDualBram(Config.SCALE_WIDTH,1024,Config.SCALE_WIDTH,"ScaleMem",true)
+    val BiasMem=new xil_SimpleDualBram(Config.SCALE_WIDTH,1024,Config.SCALE_WIDTH,"ScaleMem",false)
 
     ScaleMem.io.dina        :=io.Scale.asUInt
     ScaleMem.io.addra       :=QuantCache_Cnt.count
@@ -673,21 +699,35 @@ class LayerNorm_Top extends Component{
     SubModule.io.Bias           :=BiasMem.io.doutb.asSInt
     SubModule.io.Channel_Nums   :=io.Channel_Nums
     SubModule.io.Token_Nums     :=io.Token_Nums
-    SubModule.io.mData          <>io.mData
+    // SubModule.io.mData          <>io.mData
     SubModule.io.sData          :=io.sData
-    SubModule.io.sValid         :=io.sValid
-    io.sReady                   :=SubModule.io.sReady
+    SubModule.io.sValid         :=io.sValid&&io.sReady
+    // io.sReady                   :=SubModule.io.sReady
     SubModule.io.start          :=Fsm.QuantData_Loaded
-
+    io.sReady                   :=SubModule.io.sReady&&(Fsm.currentState===LayerNorm_Status.WAIT_COMPUTE_END)//只有处于这个状态才能进数据
     when(Fsm.currentState===LayerNorm_Status.LOAD_QUANT_DATA){
         io.ScaleBias_sReady:=True
     }otherwise{
         io.ScaleBias_sReady:=False
     }
 
-    io.mLast:=SubModule.io.mLast
+    // io.mLast:=SubModule.io.mLast
+    Fsm.mReady:=io.mData.ready
+    
     Fsm.Compute_End:=SubModule.io.mLast
 
+
+    //数据反压还要考虑数据延时：即使停止输入数据，但是模块内部流水线上还残留一些数据，所以需要将这些残留的数据收集起来
+    //在输出端再接一个小fifo用于缓存
+    val OutPut_Cache=new StreamFifo(SInt(8*Config.LAYERNORM_PIPELINE bits),64)
+    OutPut_Cache.setDefinitionName("LayerNorm_OutputCache_Fifo")
+    OutPut_Cache.io.push<>SubModule.io.mData
+    OutPut_Cache.io.pop<>io.mData
+
+    val OutCol_Cnt=ForLoopCounter(io.mData.fire,Config.CHANNEL_NUMS_WIDTH,io.Channel_Nums-1)
+    val OutRow_Cnt=ForLoopCounter(OutCol_Cnt.valid,Config.CHANNEL_NUMS_WIDTH,io.Token_Nums-1)
+    Fsm.Output_End:=io.mLast
+    io.mLast:=OutRow_Cnt.valid
 
 }
 // class LayerNorm_Top extends Component{

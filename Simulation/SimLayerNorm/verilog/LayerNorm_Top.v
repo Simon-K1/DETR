@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : LayerNorm_Top
-// Git hash  : 8d314031faf1112c5de87d015fd28caabcf355a1
+// Git hash  : a55fe5d5656a0df7f554859b473f3bb12c613033
 
 `timescale 1ns/1ps
 
@@ -22,11 +22,14 @@ module LayerNorm_Top (
   input               clk,
   input               reset
 );
-  localparam LayerNorm_Status_IDLE = 4'd1;
-  localparam LayerNorm_Status_INIT = 4'd2;
-  localparam LayerNorm_Status_LOAD_QUANT_DATA = 4'd4;
-  localparam LayerNorm_Status_WAIT_END = 4'd8;
+  localparam LayerNorm_Status_IDLE = 6'd1;
+  localparam LayerNorm_Status_INIT = 6'd2;
+  localparam LayerNorm_Status_LOAD_QUANT_DATA = 6'd4;
+  localparam LayerNorm_Status_WAIT_MREADY = 6'd8;
+  localparam LayerNorm_Status_WAIT_COMPUTE_END = 6'd16;
+  localparam LayerNorm_Status_WAIT_OUTPUT_END = 6'd32;
 
+  wire                SubModule_sValid;
   wire       [7:0]    SubModule_Scale;
   wire       [7:0]    SubModule_Bias;
   wire       [7:0]    ScaleMem_1_dina;
@@ -41,29 +44,48 @@ module LayerNorm_Top (
   wire                SubModule_mLast;
   wire       [7:0]    ScaleMem_1_doutb;
   wire       [7:0]    BiasMem_doutb;
+  wire                OutPut_Cache_io_push_ready;
+  wire                OutPut_Cache_io_pop_valid;
+  wire       [7:0]    OutPut_Cache_io_pop_payload;
+  wire       [6:0]    OutPut_Cache_io_occupancy;
+  wire       [6:0]    OutPut_Cache_io_availability;
   wire       [9:0]    _zz_QuantCache_Cnt_valid;
-  reg        [3:0]    Fsm_currentState;
-  reg        [3:0]    Fsm_nextState;
+  wire       [9:0]    _zz_OutCol_Cnt_valid;
+  wire       [19:0]   _zz_OutRow_Cnt_valid;
+  wire       [19:0]   _zz_OutRow_Cnt_valid_1;
+  reg        [5:0]    Fsm_currentState;
+  reg        [5:0]    Fsm_nextState;
   wire                Fsm_Init_End;
   wire                Fsm_QuantData_Loaded;
   wire                Fsm_Compute_End;
+  wire                Fsm_Output_End;
+  wire                Fsm_mReady;
+  wire                when_SumXq_Stage1_l638;
   wire                when_WaCounter_l40;
   reg        [2:0]    Init_Count_count;
   wire                Init_Count_valid;
   wire                when_WaCounter_l40_1;
   reg        [9:0]    QuantCache_Cnt_count;
   wire                QuantCache_Cnt_valid;
-  wire                when_SumXq_Stage1_l682;
+  wire                when_SumXq_Stage1_l708;
+  wire                mData_fire;
+  reg        [9:0]    OutCol_Cnt_count;
+  wire                OutCol_Cnt_valid;
+  reg        [9:0]    OutRow_Cnt_count;
+  wire                OutRow_Cnt_valid;
   `ifndef SYNTHESIS
-  reg [119:0] Fsm_currentState_string;
-  reg [119:0] Fsm_nextState_string;
+  reg [127:0] Fsm_currentState_string;
+  reg [127:0] Fsm_nextState_string;
   `endif
 
 
   assign _zz_QuantCache_Cnt_valid = (Channel_Nums - 10'h001);
+  assign _zz_OutCol_Cnt_valid = (Channel_Nums - 10'h001);
+  assign _zz_OutRow_Cnt_valid = {10'd0, OutRow_Cnt_count};
+  assign _zz_OutRow_Cnt_valid_1 = (Token_Nums - 20'h00001);
   LayerNorm_Module SubModule (
     .sData_0         (sData_0[18:0]                 ), //i
-    .sValid          (sValid                        ), //i
+    .sValid          (SubModule_sValid              ), //i
     .sReady          (SubModule_sReady              ), //o
     .start           (Fsm_QuantData_Loaded          ), //i
     .Channel_Nums    (Channel_Nums[9:0]             ), //i
@@ -73,7 +95,7 @@ module LayerNorm_Top (
     .Scale           (SubModule_Scale[7:0]          ), //i
     .Bias            (SubModule_Bias[7:0]           ), //i
     .mData_valid     (SubModule_mData_valid         ), //o
-    .mData_ready     (mData_ready                   ), //i
+    .mData_ready     (OutPut_Cache_io_push_ready    ), //i
     .mData_payload   (SubModule_mData_payload[7:0]  ), //o
     .mLast           (SubModule_mLast               ), //o
     .clk             (clk                           ), //i
@@ -99,23 +121,40 @@ module LayerNorm_Top (
     .doutb (BiasMem_doutb[7:0]           ), //o
     .clkb  (clk                          )  //i
   );
+  LayerNorm_OutputCache_Fifo OutPut_Cache (
+    .io_push_valid   (SubModule_mData_valid            ), //i
+    .io_push_ready   (OutPut_Cache_io_push_ready       ), //o
+    .io_push_payload (SubModule_mData_payload[7:0]     ), //i
+    .io_pop_valid    (OutPut_Cache_io_pop_valid        ), //o
+    .io_pop_ready    (mData_ready                      ), //i
+    .io_pop_payload  (OutPut_Cache_io_pop_payload[7:0] ), //o
+    .io_flush        (1'b0                             ), //i
+    .io_occupancy    (OutPut_Cache_io_occupancy[6:0]   ), //o
+    .io_availability (OutPut_Cache_io_availability[6:0]), //o
+    .clk             (clk                              ), //i
+    .reset           (reset                            )  //i
+  );
   `ifndef SYNTHESIS
   always @(*) begin
     case(Fsm_currentState)
-      LayerNorm_Status_IDLE : Fsm_currentState_string = "IDLE           ";
-      LayerNorm_Status_INIT : Fsm_currentState_string = "INIT           ";
-      LayerNorm_Status_LOAD_QUANT_DATA : Fsm_currentState_string = "LOAD_QUANT_DATA";
-      LayerNorm_Status_WAIT_END : Fsm_currentState_string = "WAIT_END       ";
-      default : Fsm_currentState_string = "???????????????";
+      LayerNorm_Status_IDLE : Fsm_currentState_string = "IDLE            ";
+      LayerNorm_Status_INIT : Fsm_currentState_string = "INIT            ";
+      LayerNorm_Status_LOAD_QUANT_DATA : Fsm_currentState_string = "LOAD_QUANT_DATA ";
+      LayerNorm_Status_WAIT_MREADY : Fsm_currentState_string = "WAIT_MREADY     ";
+      LayerNorm_Status_WAIT_COMPUTE_END : Fsm_currentState_string = "WAIT_COMPUTE_END";
+      LayerNorm_Status_WAIT_OUTPUT_END : Fsm_currentState_string = "WAIT_OUTPUT_END ";
+      default : Fsm_currentState_string = "????????????????";
     endcase
   end
   always @(*) begin
     case(Fsm_nextState)
-      LayerNorm_Status_IDLE : Fsm_nextState_string = "IDLE           ";
-      LayerNorm_Status_INIT : Fsm_nextState_string = "INIT           ";
-      LayerNorm_Status_LOAD_QUANT_DATA : Fsm_nextState_string = "LOAD_QUANT_DATA";
-      LayerNorm_Status_WAIT_END : Fsm_nextState_string = "WAIT_END       ";
-      default : Fsm_nextState_string = "???????????????";
+      LayerNorm_Status_IDLE : Fsm_nextState_string = "IDLE            ";
+      LayerNorm_Status_INIT : Fsm_nextState_string = "INIT            ";
+      LayerNorm_Status_LOAD_QUANT_DATA : Fsm_nextState_string = "LOAD_QUANT_DATA ";
+      LayerNorm_Status_WAIT_MREADY : Fsm_nextState_string = "WAIT_MREADY     ";
+      LayerNorm_Status_WAIT_COMPUTE_END : Fsm_nextState_string = "WAIT_COMPUTE_END";
+      LayerNorm_Status_WAIT_OUTPUT_END : Fsm_nextState_string = "WAIT_OUTPUT_END ";
+      default : Fsm_nextState_string = "????????????????";
     endcase
   end
   `endif
@@ -139,22 +178,41 @@ module LayerNorm_Top (
       end
       (((Fsm_currentState) & LayerNorm_Status_LOAD_QUANT_DATA) == LayerNorm_Status_LOAD_QUANT_DATA) : begin
         if(Fsm_QuantData_Loaded) begin
-          Fsm_nextState = LayerNorm_Status_WAIT_END;
+          Fsm_nextState = LayerNorm_Status_WAIT_MREADY;
         end else begin
           Fsm_nextState = LayerNorm_Status_LOAD_QUANT_DATA;
         end
       end
+      (((Fsm_currentState) & LayerNorm_Status_WAIT_MREADY) == LayerNorm_Status_WAIT_MREADY) : begin
+        if(Fsm_mReady) begin
+          Fsm_nextState = LayerNorm_Status_WAIT_COMPUTE_END;
+        end else begin
+          Fsm_nextState = LayerNorm_Status_WAIT_MREADY;
+        end
+      end
+      (((Fsm_currentState) & LayerNorm_Status_WAIT_COMPUTE_END) == LayerNorm_Status_WAIT_COMPUTE_END) : begin
+        if(when_SumXq_Stage1_l638) begin
+          Fsm_nextState = LayerNorm_Status_WAIT_MREADY;
+        end else begin
+          if(Fsm_Compute_End) begin
+            Fsm_nextState = LayerNorm_Status_WAIT_OUTPUT_END;
+          end else begin
+            Fsm_nextState = LayerNorm_Status_WAIT_COMPUTE_END;
+          end
+        end
+      end
       default : begin
-        if(Fsm_Compute_End) begin
+        if(Fsm_Output_End) begin
           Fsm_nextState = LayerNorm_Status_IDLE;
         end else begin
-          Fsm_nextState = LayerNorm_Status_WAIT_END;
+          Fsm_nextState = LayerNorm_Status_WAIT_OUTPUT_END;
         end
       end
     endcase
   end
 
-  assign when_WaCounter_l40 = ((Fsm_currentState & LayerNorm_Status_INIT) != 4'b0000);
+  assign when_SumXq_Stage1_l638 = (! Fsm_mReady);
+  assign when_WaCounter_l40 = ((Fsm_currentState & LayerNorm_Status_INIT) != 6'b000000);
   assign Init_Count_valid = ((Init_Count_count == 3'b101) && when_WaCounter_l40);
   assign Fsm_Init_End = Init_Count_valid;
   assign when_WaCounter_l40_1 = (ScaleBias_sValid && ScaleBias_sReady);
@@ -166,25 +224,33 @@ module LayerNorm_Top (
   assign BiasMem_ena = (ScaleBias_sValid && ScaleBias_sReady);
   assign SubModule_Scale = ScaleMem_1_doutb;
   assign SubModule_Bias = BiasMem_doutb;
-  assign mData_valid = SubModule_mData_valid;
-  assign mData_payload = SubModule_mData_payload;
-  assign sReady = SubModule_sReady;
-  assign when_SumXq_Stage1_l682 = ((Fsm_currentState & LayerNorm_Status_LOAD_QUANT_DATA) != 4'b0000);
+  assign SubModule_sValid = (sValid && sReady);
+  assign sReady = (SubModule_sReady && ((Fsm_currentState & LayerNorm_Status_WAIT_COMPUTE_END) != 6'b000000));
+  assign when_SumXq_Stage1_l708 = ((Fsm_currentState & LayerNorm_Status_LOAD_QUANT_DATA) != 6'b000000);
   always @(*) begin
-    if(when_SumXq_Stage1_l682) begin
+    if(when_SumXq_Stage1_l708) begin
       ScaleBias_sReady = 1'b1;
     end else begin
       ScaleBias_sReady = 1'b0;
     end
   end
 
-  assign mLast = SubModule_mLast;
+  assign Fsm_mReady = mData_ready;
   assign Fsm_Compute_End = SubModule_mLast;
+  assign mData_valid = OutPut_Cache_io_pop_valid;
+  assign mData_payload = OutPut_Cache_io_pop_payload;
+  assign mData_fire = (mData_valid && mData_ready);
+  assign OutCol_Cnt_valid = ((OutCol_Cnt_count == _zz_OutCol_Cnt_valid) && mData_fire);
+  assign OutRow_Cnt_valid = ((_zz_OutRow_Cnt_valid == _zz_OutRow_Cnt_valid_1) && OutCol_Cnt_valid);
+  assign Fsm_Output_End = mLast;
+  assign mLast = OutRow_Cnt_valid;
   always @(posedge clk or posedge reset) begin
     if(reset) begin
       Fsm_currentState <= LayerNorm_Status_IDLE;
       Init_Count_count <= 3'b000;
       QuantCache_Cnt_count <= 10'h0;
+      OutCol_Cnt_count <= 10'h0;
+      OutRow_Cnt_count <= 10'h0;
     end else begin
       Fsm_currentState <= Fsm_nextState;
       if(when_WaCounter_l40) begin
@@ -200,6 +266,173 @@ module LayerNorm_Top (
         end else begin
           QuantCache_Cnt_count <= (QuantCache_Cnt_count + 10'h001);
         end
+      end
+      if(mData_fire) begin
+        if(OutCol_Cnt_valid) begin
+          OutCol_Cnt_count <= 10'h0;
+        end else begin
+          OutCol_Cnt_count <= (OutCol_Cnt_count + 10'h001);
+        end
+      end
+      if(OutCol_Cnt_valid) begin
+        if(OutRow_Cnt_valid) begin
+          OutRow_Cnt_count <= 10'h0;
+        end else begin
+          OutRow_Cnt_count <= (OutRow_Cnt_count + 10'h001);
+        end
+      end
+    end
+  end
+
+
+endmodule
+
+module LayerNorm_OutputCache_Fifo (
+  input               io_push_valid,
+  output              io_push_ready,
+  input      [7:0]    io_push_payload,
+  output              io_pop_valid,
+  input               io_pop_ready,
+  output     [7:0]    io_pop_payload,
+  input               io_flush,
+  output     [6:0]    io_occupancy,
+  output     [6:0]    io_availability,
+  input               clk,
+  input               reset
+);
+
+  reg        [7:0]    _zz_logic_ram_port0;
+  wire       [5:0]    _zz_logic_pushPtr_valueNext;
+  wire       [0:0]    _zz_logic_pushPtr_valueNext_1;
+  wire       [5:0]    _zz_logic_popPtr_valueNext;
+  wire       [0:0]    _zz_logic_popPtr_valueNext_1;
+  wire                _zz_logic_ram_port;
+  wire                _zz_io_pop_payload;
+  wire       [7:0]    _zz_logic_ram_port_1;
+  wire       [5:0]    _zz_io_availability;
+  reg                 _zz_1;
+  reg                 logic_pushPtr_willIncrement;
+  reg                 logic_pushPtr_willClear;
+  reg        [5:0]    logic_pushPtr_valueNext;
+  reg        [5:0]    logic_pushPtr_value;
+  wire                logic_pushPtr_willOverflowIfInc;
+  wire                logic_pushPtr_willOverflow;
+  reg                 logic_popPtr_willIncrement;
+  reg                 logic_popPtr_willClear;
+  reg        [5:0]    logic_popPtr_valueNext;
+  reg        [5:0]    logic_popPtr_value;
+  wire                logic_popPtr_willOverflowIfInc;
+  wire                logic_popPtr_willOverflow;
+  wire                logic_ptrMatch;
+  reg                 logic_risingOccupancy;
+  wire                logic_pushing;
+  wire                logic_popping;
+  wire                logic_empty;
+  wire                logic_full;
+  reg                 _zz_io_pop_valid;
+  wire                when_Stream_l1122;
+  wire       [5:0]    logic_ptrDif;
+  reg [7:0] logic_ram [0:63];
+
+  assign _zz_logic_pushPtr_valueNext_1 = logic_pushPtr_willIncrement;
+  assign _zz_logic_pushPtr_valueNext = {5'd0, _zz_logic_pushPtr_valueNext_1};
+  assign _zz_logic_popPtr_valueNext_1 = logic_popPtr_willIncrement;
+  assign _zz_logic_popPtr_valueNext = {5'd0, _zz_logic_popPtr_valueNext_1};
+  assign _zz_io_availability = (logic_popPtr_value - logic_pushPtr_value);
+  assign _zz_io_pop_payload = 1'b1;
+  assign _zz_logic_ram_port_1 = io_push_payload;
+  always @(posedge clk) begin
+    if(_zz_io_pop_payload) begin
+      _zz_logic_ram_port0 <= logic_ram[logic_popPtr_valueNext];
+    end
+  end
+
+  always @(posedge clk) begin
+    if(_zz_1) begin
+      logic_ram[logic_pushPtr_value] <= _zz_logic_ram_port_1;
+    end
+  end
+
+  always @(*) begin
+    _zz_1 = 1'b0;
+    if(logic_pushing) begin
+      _zz_1 = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    logic_pushPtr_willIncrement = 1'b0;
+    if(logic_pushing) begin
+      logic_pushPtr_willIncrement = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    logic_pushPtr_willClear = 1'b0;
+    if(io_flush) begin
+      logic_pushPtr_willClear = 1'b1;
+    end
+  end
+
+  assign logic_pushPtr_willOverflowIfInc = (logic_pushPtr_value == 6'h3f);
+  assign logic_pushPtr_willOverflow = (logic_pushPtr_willOverflowIfInc && logic_pushPtr_willIncrement);
+  always @(*) begin
+    logic_pushPtr_valueNext = (logic_pushPtr_value + _zz_logic_pushPtr_valueNext);
+    if(logic_pushPtr_willClear) begin
+      logic_pushPtr_valueNext = 6'h0;
+    end
+  end
+
+  always @(*) begin
+    logic_popPtr_willIncrement = 1'b0;
+    if(logic_popping) begin
+      logic_popPtr_willIncrement = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    logic_popPtr_willClear = 1'b0;
+    if(io_flush) begin
+      logic_popPtr_willClear = 1'b1;
+    end
+  end
+
+  assign logic_popPtr_willOverflowIfInc = (logic_popPtr_value == 6'h3f);
+  assign logic_popPtr_willOverflow = (logic_popPtr_willOverflowIfInc && logic_popPtr_willIncrement);
+  always @(*) begin
+    logic_popPtr_valueNext = (logic_popPtr_value + _zz_logic_popPtr_valueNext);
+    if(logic_popPtr_willClear) begin
+      logic_popPtr_valueNext = 6'h0;
+    end
+  end
+
+  assign logic_ptrMatch = (logic_pushPtr_value == logic_popPtr_value);
+  assign logic_pushing = (io_push_valid && io_push_ready);
+  assign logic_popping = (io_pop_valid && io_pop_ready);
+  assign logic_empty = (logic_ptrMatch && (! logic_risingOccupancy));
+  assign logic_full = (logic_ptrMatch && logic_risingOccupancy);
+  assign io_push_ready = (! logic_full);
+  assign io_pop_valid = ((! logic_empty) && (! (_zz_io_pop_valid && (! logic_full))));
+  assign io_pop_payload = _zz_logic_ram_port0;
+  assign when_Stream_l1122 = (logic_pushing != logic_popping);
+  assign logic_ptrDif = (logic_pushPtr_value - logic_popPtr_value);
+  assign io_occupancy = {(logic_risingOccupancy && logic_ptrMatch),logic_ptrDif};
+  assign io_availability = {((! logic_risingOccupancy) && logic_ptrMatch),_zz_io_availability};
+  always @(posedge clk or posedge reset) begin
+    if(reset) begin
+      logic_pushPtr_value <= 6'h0;
+      logic_popPtr_value <= 6'h0;
+      logic_risingOccupancy <= 1'b0;
+      _zz_io_pop_valid <= 1'b0;
+    end else begin
+      logic_pushPtr_value <= logic_pushPtr_valueNext;
+      logic_popPtr_value <= logic_popPtr_valueNext;
+      _zz_io_pop_valid <= (logic_popPtr_valueNext == logic_pushPtr_value);
+      if(when_Stream_l1122) begin
+        logic_risingOccupancy <= logic_pushing;
+      end
+      if(io_flush) begin
+        logic_risingOccupancy <= 1'b0;
       end
     end
   end
@@ -250,6 +483,9 @@ module LayerNorm_Module (
   reg        [7:0]    Bias_delay_2;
   reg        [7:0]    Bias_delay_3;
   reg        [7:0]    Bias_delay_4;
+  reg        [7:0]    Bias_delay_5;
+  reg        [7:0]    Bias_delay_6;
+  reg        [7:0]    Bias_delay_7;
 
   Reci_Sqrt_Compute Stage2 (
     .Channel_Nums                  (Channel_Nums[9:0]                         ), //i
@@ -281,7 +517,7 @@ module LayerNorm_Module (
     .Token_Nums                (Token_Nums[19:0]                        ), //i
     .Scale_Read_Addr           (Stage1_0_Scale_Read_Addr[9:0]           ), //o
     .Scale                     (Scale[7:0]                              ), //i
-    .Bias                      (Bias_delay_4[7:0]                       ), //i
+    .Bias                      (Bias_delay_7[7:0]                       ), //i
     .Sqrt_Out_Valid            (Stage1_0_Sqrt_Out_Valid                 ), //o
     .Sqrt_In_Truncated         (Stage1_0_Sqrt_In_Truncated[31:0]        ), //o
     .ScaleA_Fifo_Popfire       (Stage1_0_ScaleA_Fifo_Popfire            ), //o
@@ -304,6 +540,9 @@ module LayerNorm_Module (
     Bias_delay_2 <= Bias_delay_1;
     Bias_delay_3 <= Bias_delay_2;
     Bias_delay_4 <= Bias_delay_3;
+    Bias_delay_5 <= Bias_delay_4;
+    Bias_delay_6 <= Bias_delay_5;
+    Bias_delay_7 <= Bias_delay_6;
   end
 
 
@@ -362,7 +601,7 @@ module Sum_Xq (
   wire       [63:0]   _zz_SAB_Shifted;
   wire       [63:0]   _zz_SAB_Add_Bias;
   reg                 start_regNext;
-  wire                when_SumXq_Stage1_l134;
+  wire                when_SumXq_Stage1_l136;
   reg        [4:0]    Fsm_currentState;
   reg        [4:0]    Fsm_nextState;
   wire                Fsm_Init_End;
@@ -375,6 +614,7 @@ module Sum_Xq (
   wire                when_WaCounter_l40_1;
   reg        [9:0]    Col_Cnt_count;
   wire                Col_Cnt_valid;
+  wire                when_WaCounter_l40_2;
   reg        [19:0]   Row_Cnt_count;
   wire                Row_Cnt_valid;
   wire                sData_fire;
@@ -392,6 +632,7 @@ module Sum_Xq (
   reg        [9:0]    Write_Row_Mem_Addr;
   reg        [19:0]   Xq_Sum;
   reg                 Xq_Sum_Clear;
+  wire                when_SumXq_Stage1_l353;
   wire                sData_fire_3;
   reg        [18:0]   sData_payload_delay_1;
   reg        [18:0]   sData_payload_delay_2;
@@ -406,6 +647,7 @@ module Sum_Xq (
   reg                 Xq_Sum_Clear_delay_4;
   reg                 Xq_Sum_Clear_delay_5;
   reg                 Xq2C_Sum_Clear;
+  wire                when_SumXq_Stage1_l373;
   reg        [19:0]   Xq_Sum_Old;
   wire       [31:0]   XqC_Substract_M2;
   reg                 Xq_Sum_Clear_delay_1_1;
@@ -446,7 +688,7 @@ module Sum_Xq (
   reg [28:0] Row_Mem [0:1023];
 
   assign _zz_Col_Cnt_valid = (Channel_Nums - 10'h001);
-  assign _zz_Row_Cnt_valid = (Token_Nums - 20'h00001);
+  assign _zz_Row_Cnt_valid = (Token_Nums - 20'h00002);
   assign _zz_Xq_Sum = {{1{sData_payload[18]}}, sData_payload};
   assign _zz_XqC_Substract_M2 = {{3{Read_Row_Mem_Data[28]}}, Read_Row_Mem_Data};
   assign _zz_XqC_Substract_M2_1 = {{12{Xq_Sum_Old[19]}}, Xq_Sum_Old};
@@ -534,12 +776,12 @@ module Sum_Xq (
   end
   `endif
 
-  assign when_SumXq_Stage1_l134 = (start && (! start_regNext));
+  assign when_SumXq_Stage1_l136 = (start && (! start_regNext));
   always @(*) begin
     (* parallel_case *)
     case(1) // synthesis parallel_case
       (((Fsm_currentState) & SUM_XQ_ENUM_IDLE) == SUM_XQ_ENUM_IDLE) : begin
-        if(when_SumXq_Stage1_l134) begin
+        if(when_SumXq_Stage1_l136) begin
           Fsm_nextState = SUM_XQ_ENUM_INIT;
         end else begin
           Fsm_nextState = SUM_XQ_ENUM_IDLE;
@@ -580,7 +822,8 @@ module Sum_Xq (
   assign Init_Count_valid = ((Init_Count_count == 3'b101) && when_WaCounter_l40);
   assign when_WaCounter_l40_1 = ((sData_valid && sData_ready) || ((Fsm_currentState & SUM_XQ_ENUM_FINISH_LAST_ROW) != 5'b00000));
   assign Col_Cnt_valid = ((Col_Cnt_count == _zz_Col_Cnt_valid) && when_WaCounter_l40_1);
-  assign Row_Cnt_valid = ((Row_Cnt_count == _zz_Row_Cnt_valid) && Col_Cnt_valid);
+  assign when_WaCounter_l40_2 = (Col_Cnt_valid && ((Fsm_currentState & SUM_XQ_ENUM_ACCUMU) != 5'b00000));
+  assign Row_Cnt_valid = ((Row_Cnt_count == _zz_Row_Cnt_valid) && when_WaCounter_l40_2);
   assign Fsm_Init_End = Init_Count_valid;
   assign Fsm_Load_Firts_Row_End = ((Row_Cnt_count == 20'h0) && Col_Cnt_valid);
   assign Fsm_Accumu_End = Row_Cnt_valid;
@@ -592,8 +835,10 @@ module Sum_Xq (
   assign sData_fire_1 = (sData_valid && sData_ready);
   assign sData_fire_2 = (sData_valid && sData_ready);
   assign Write_Row_Mem_Data = XqC_Module_P;
+  assign when_SumXq_Stage1_l353 = ((Fsm_currentState & SUM_XQ_ENUM_IDLE) != 5'b00000);
   assign sData_fire_3 = (sData_valid && sData_ready);
   assign Xq2C_Module_A = XqC_Module_P;
+  assign when_SumXq_Stage1_l373 = ((Fsm_currentState & SUM_XQ_ENUM_IDLE) != 5'b00000);
   assign XqC_Substract_M2 = ($signed(_zz_XqC_Substract_M2) - $signed(_zz_XqC_Substract_M2_1));
   assign Sqrt_Out_Valid = Sqrt_Out_Valid_1;
   assign Sqrt_In_Truncated_1 = Sqrt_In[31 : 0];
@@ -682,25 +927,33 @@ module Sum_Xq (
           Col_Cnt_count <= (Col_Cnt_count + 10'h001);
         end
       end
-      if(Col_Cnt_valid) begin
+      if(when_WaCounter_l40_2) begin
         if(Row_Cnt_valid) begin
           Row_Cnt_count <= 20'h0;
         end else begin
           Row_Cnt_count <= (Row_Cnt_count + 20'h00001);
         end
       end
-      if(sData_fire_3) begin
-        if(Xq_Sum_Clear) begin
-          Xq_Sum <= {{1{sData_payload[18]}}, sData_payload};
-        end else begin
-          Xq_Sum <= ($signed(Xq_Sum) + $signed(_zz_Xq_Sum));
+      if(when_SumXq_Stage1_l353) begin
+        Xq_Sum <= 20'h0;
+      end else begin
+        if(sData_fire_3) begin
+          if(Xq_Sum_Clear) begin
+            Xq_Sum <= {{1{sData_payload[18]}}, sData_payload};
+          end else begin
+            Xq_Sum <= ($signed(Xq_Sum) + $signed(_zz_Xq_Sum));
+          end
         end
       end
-      if(Xq2C_Valid) begin
-        if(Xq2C_Sum_Clear) begin
-          Xq2C_Sum <= Xq2C_Module_P;
-        end else begin
-          Xq2C_Sum <= (Xq2C_Sum + Xq2C_Module_P);
+      if(when_SumXq_Stage1_l373) begin
+        Xq2C_Sum <= 48'h0;
+      end else begin
+        if(Xq2C_Valid) begin
+          if(Xq2C_Sum_Clear) begin
+            Xq2C_Sum <= Xq2C_Module_P;
+          end else begin
+            Xq2C_Sum <= (Xq2C_Sum + Xq2C_Module_P);
+          end
         end
       end
       if(Xq_Sum_Clear) begin
@@ -777,7 +1030,7 @@ module Reci_Sqrt_Compute (
   reg        [2:0]    SAB_Fsm_nextState;
   wire                SAB_Fsm_ScaleA_Mul_ReSqrt_End;
   wire                SAB_Fsm_Row_All_Computed;
-  wire                when_SumXq_Stage1_l230;
+  wire                when_SumXq_Stage1_l232;
   reg        [9:0]    SAB_Cnt_count;
   wire                SAB_Cnt_valid;
   wire                when_WaCounter_l40;
@@ -959,7 +1212,7 @@ module Reci_Sqrt_Compute (
         if(SAB_Fsm_Row_All_Computed) begin
           SAB_Fsm_nextState = SCALEA_MUL_RESQRT_ENUM_IDLE;
         end else begin
-          if(when_SumXq_Stage1_l230) begin
+          if(when_SumXq_Stage1_l232) begin
             SAB_Fsm_nextState = SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID;
           end else begin
             if(Recipro_Pointer_Result_valid) begin
@@ -988,7 +1241,7 @@ module Reci_Sqrt_Compute (
     endcase
   end
 
-  assign when_SumXq_Stage1_l230 = (Recipro_Pointer_Result_valid && SAB_Fsm_ScaleA_Mul_ReSqrt_End);
+  assign when_SumXq_Stage1_l232 = (Recipro_Pointer_Result_valid && SAB_Fsm_ScaleA_Mul_ReSqrt_End);
   assign SAB_Cnt_valid = ((SAB_Cnt_count == _zz_SAB_Cnt_valid) && ScaleA_Fifo_Popfire);
   assign SAB_Fsm_ScaleA_Mul_ReSqrt_End = SAB_Cnt_valid;
   assign Recipro_Sqrt_Result_Valid = (((SAB_Fsm_currentState & SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID) != 3'b000) || ((SAB_Fsm_currentState & SCALEA_MUL_RESQRT_ENUM_RESQRT_VALID_AGAIN) != 3'b000));
