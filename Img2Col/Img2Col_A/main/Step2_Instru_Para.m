@@ -44,21 +44,17 @@ fprintf(".OutRow_Count_Times            (%d),\n",io_OutRow_Count_Times          
 fprintf(".OutFeature_Channel_Count_Times(%d),\n",ceil(io_OutFeature_Channel_Count_Times))
 fprintf("===================================================\n")
 
-%% 权重对应指令
+%% 权重对应指令,全部统一用矩阵表示
 [Row,Col]=size(WeightMatrix);
 io_WeightMatrix_Row=Row;
 io_WeightMatrix_Col=Col;
-fprintf(".Matrix_Row                    (%d),\n",io_WeightMatrix_Row)
-fprintf(".Matrix_Col                    (%d),\n",io_WeightMatrix_Col)
+io_OutMatrix_Row=Out_Row*Out_Col;
+io_OutMatrix_Col=Out_Col;
+fprintf(".WeightMatrix_Row                 (%d),\n",io_WeightMatrix_Row)
+fprintf(".OutMatrix_Col                    (%d),\n",io_WeightMatrix_Col)
+fprintf(".OutMatrix_Row                    (%d),\n",io_OutMatrix_Row)
 fprintf("===================================================\n")
-%% 卷积数据排列模块对应参数
-io_In_Channel=Out_Channel;
-io_OutMatrix_Col=Out_Col;%这里应该是实际的图片列数，因为列计数器在循环最外层，内层的是输出通道计数器
-io_OutMatrix_Row=Out_Row;
-fprintf(".In_Channel                    (%d),\n",io_In_Channel)
-fprintf(".Matrix_Col                    (%d),\n",io_OutMatrix_Col)
-fprintf(".Matrix_Row                    (%d),\n",io_OutMatrix_Row)
-fprintf("===================================================\n")
+
 %% 生成上板测试数据+指令
 %Instru1:两个5bit拼起来
 
@@ -97,6 +93,7 @@ if Matrix2Img
     IMG2COL_INSTRU8=dec2hex(bin2dec([OutMatrix_Row+OutMatrix_Col]));
     fprintf("Write_Lite(REG_Table_BASE_ADDR,0x24,0x%s);\n",IMG2COL_INSTRU8)
 else
+    error("已失效");
     OutMatrix_Col=sprintf("%012s",dec2bin(Out_Channel));%图片列数
     %行数是8的倍数,假如输出图片大小为14*14，那么收回去的数据的行数应该是ceil(14*14/8)*8
     OutMatrix_Row=sprintf("%012s",dec2bin(ceil(Out_Row*Out_Col/8)));%图片行
@@ -110,7 +107,8 @@ end
 %发送接收长度
 SendPicture_Len=size(Feature_In,1)*size(Feature_In,2);%单位：字节
 SendWeight_Len=size(WeightMatrix,1)*size(WeightMatrix,2);
+SendQuantFactor_Len=Out_Channel*3*4;%Scale，Shift，Zp，每个参数4字节，每个通道都有一个Factor
 % ReceivePicture_Len=Out_Col*Out_Row*Out_Channel;
 [SendPicture_Len,SendWeight_Len,SendPicture_Len+SendWeight_Len,ReceivePicture_Len];
-fprintf("int SendLength=%d;\n",SendPicture_Len+SendWeight_Len)
-fprintf("int ReceiveLength=%d;\n",ReceivePicture_Len)
+fprintf("SendLength=%d;\n",SendPicture_Len+SendWeight_Len+SendQuantFactor_Len)
+fprintf("ReceiveLength=%d;\n",ReceivePicture_Len)

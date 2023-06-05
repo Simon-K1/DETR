@@ -2,14 +2,16 @@
     % 图片大小，步长等相关信息需要手动配置
 clear
 Drop_Message=1;%将图片继续补零以匹配卷积不丢失信息
-WEIGHT_VERSION=1;%权重缓存模块的版本，可选1（V1），2（V2）
-Feature_Size=322;%图片大小224*224
-Feature_Channel=32;%图片通道32
-Out_Channel=64;
+WEIGHT_VERSION=1;%权重缓存模块的版本，可选1（V1），2（V2，已失效）
+Feature_Size=224;%图片大小224*224
+Feature_Channel=8;%图片通道
+Out_Channel=16;%输出图片通道，要修改
 
-Stride=2;%要修改
-KernelSize=3;%要修改
+Stride=16;%要修改
+KernelSize=16;%要修改
 OutFeatureSize=75;%无需修改，在后面自动推理出来
+assert(mod(Feature_Channel,8)==0,"输入通道必须是8的倍数");
+assert(mod(Out_Channel,8)==0,"输出通道必须是8的倍数");
 %Strdie1
 if Stride==KernelSize
 %     OutFeatureSize=Feature_Size/KernelSize;
