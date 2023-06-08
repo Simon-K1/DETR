@@ -81,5 +81,5 @@ class Tile (Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PEConfi
 
 
 object Tile extends App{
-  SpinalVerilog(new Tile(8,8,20,PEConfig(767,32)))
+  SpinalVerilog(new Tile(16,8,20,PEConfig(767,32)))
 }
