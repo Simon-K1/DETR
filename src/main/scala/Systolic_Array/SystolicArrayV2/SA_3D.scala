@@ -97,13 +97,31 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{//给定宽�
           }
         }
     }
-
 }
 
+class SA_IO(HEIGHT:Int,WIDTH:Int) extends Bundle{
+  val MatrixA=in Vec(SInt(8 bits),WIDTH)
+  val MatrixB=in Vec(SInt(8 bits),WIDTH)
+  val A_Valid=in Vec(Bool(),HEIGHT)
+  val B_Valid=in Vec(Bool(),WIDTH)//数据有效标记
+  //val Matrix_C=out Vec(SInt(ACCU_WITDH bits),HEIGHT)//累加和应该至少是20bits，可以配置为32bit
+  val signCount=in UInt(16 bits)
+}
+class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
+  //SLICE:3维脉动阵列的片数
+  val SA_IOs=Array.ofDim[SA_IO](SLICE)
+  val PEArrays=Array.ofDim[SA_2D](SLICE)
+  for(i<-0 to SLICE-1){
+    SA_IOs(i)=new SA_IO(HEIGHT,WIDTH)
+    PEArrays(i)=new SA_2D(HEIGHT,WIDTH,ACCU_WITDH)
+    PEArrays(i).io<>SA_IOs(i)
+  }
+  
+}
 
 object ConvOutput extends App { 
     val verilog_path="./Simulation/SA_3D/verilog" 
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_2D(8,8,32))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D(8,8,8,32))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }
