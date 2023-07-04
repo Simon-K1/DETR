@@ -1,2 +1,7 @@
-create_ip -name xbip_dsp48_macro -vendor xilinx.com -library ip -version 3.0 -module_name dsp_marco 
+create_ip -name xbip_dsp48_macro -vendor xilinx.com -library ip  -module_name dsp_marco 
+set_property -dict [list CONFIG.Component_Name {dsp_macro} CONFIG.instruction1 {A*B} CONFIG.pipeline_options {By_Tier} CONFIG.tier_4 {true} CONFIG.tier_5 {false} CONFIG.a_width {8} CONFIG.b_width {8} CONFIG.output_properties {Full_Precision} CONFIG.areg_3 {false} CONFIG.areg_4 {true} CONFIG.breg_3 {false} CONFIG.breg_4 {true} CONFIG.creg_3 {false} CONFIG.creg_4 {false} CONFIG.creg_5 {false} CONFIG.mreg_5 {false} CONFIG.preg_6 {false} CONFIG.d_width {18} CONFIG.a_binarywidth {0} CONFIG.b_binarywidth {0} CONFIG.concat_width {48} CONFIG.concat_binarywidth {0} CONFIG.c_binarywidth {0} CONFIG.pcin_binarywidth {0} CONFIG.p_full_width {16} CONFIG.p_width {16} CONFIG.p_binarywidth {0}] [get_ips dsp_marco]
+
+
+
+create_ip -name dsp_macro -vendor xilinx.com -library ip -version 1.0  -module_name dsp_marco 
 set_property -dict [list CONFIG.Component_Name {dsp_macro} CONFIG.instruction1 {A*B} CONFIG.pipeline_options {By_Tier} CONFIG.tier_4 {true} CONFIG.tier_5 {false} CONFIG.a_width {8} CONFIG.b_width {8} CONFIG.output_properties {Full_Precision} CONFIG.areg_3 {false} CONFIG.areg_4 {true} CONFIG.breg_3 {false} CONFIG.breg_4 {true} CONFIG.creg_3 {false} CONFIG.creg_4 {false} CONFIG.creg_5 {false} CONFIG.mreg_5 {false} CONFIG.preg_6 {false} CONFIG.d_width {18} CONFIG.a_binarywidth {0} CONFIG.b_binarywidth {0} CONFIG.concat_width {48} CONFIG.concat_binarywidth {0} CONFIG.c_binarywidth {0} CONFIG.pcin_binarywidth {0} CONFIG.p_full_width {16} CONFIG.p_width {16} CONFIG.p_binarywidth {0}] [get_ips dsp_marco]

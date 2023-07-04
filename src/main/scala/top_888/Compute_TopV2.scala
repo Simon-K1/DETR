@@ -163,17 +163,82 @@ class SA_Conv(Tile_Size: Int, dataWidthIn: Int, dataWidthOut: Int,peConfig:PECon
   io.mData<>Tile.io.PE_OUT
   Tile.io.resultVaild<>io.resultVaild//TODO，优化这里的valid信号数量
 
+  val Tile1=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)//脉动阵列
+  Tile1.addAttribute(" DONT_TOUCH= \"true\" ")
+  Tile1.io.activate:=102
+  Tile1.io.weight :=102
+  Tile1.io.signCount:=102
+  for(i<-0 to 7){
+    Tile1.io.a_Valid(i):=True
+    Tile1.io.b_Valid(i):=True
+  }
+  val Tile2=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)//脉动阵列
+  Tile2.addAttribute(" DONT_TOUCH= \"true\" ")
+  Tile2.io.activate:=102
+  Tile2.io.weight :=102
+  Tile2.io.signCount:=102
+  for(i<-0 to 7){
+    Tile2.io.a_Valid(i):=True
+    Tile2.io.b_Valid(i):=True
+  }
+  val Tile3=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)//脉动阵列
+  Tile3.addAttribute(" DONT_TOUCH= \"true\" ")
+  Tile3.io.activate:=102
+  Tile3.io.weight :=102
+  Tile3.io.signCount:=102
+  for(i<-0 to 7){
+    Tile3.io.a_Valid(i):=True
+    Tile3.io.b_Valid(i):=True
+  }
+  val Tile4=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)//脉动阵列
+  Tile4.addAttribute(" DONT_TOUCH= \"true\" ")
+  Tile4.io.activate:=102
+  Tile4.io.weight :=102
+  Tile4.io.signCount:=102
+  for(i<-0 to 7){
+    Tile4.io.a_Valid(i):=True
+    Tile4.io.b_Valid(i):=True
+  }
+  val Tile5=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)//脉动阵列
+  Tile5.addAttribute(" DONT_TOUCH= \"true\" ")
+  Tile5.io.activate:=102
+  Tile5.io.weight :=102
+  Tile5.io.signCount:=102
+  for(i<-0 to 7){
+    Tile5.io.a_Valid(i):=True
+    Tile5.io.b_Valid(i):=True
+  }
+  val Tile6=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)//脉动阵列
+  Tile6.addAttribute(" DONT_TOUCH= \"true\" ")
+  Tile6.io.activate:=102
+  Tile6.io.weight :=102
+  Tile6.io.signCount:=102
+  for(i<-0 to 7){
+    Tile6.io.a_Valid(i):=True
+    Tile6.io.b_Valid(i):=True
+  }
+    val Tile7=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)//脉动阵列
+  Tile7.addAttribute(" DONT_TOUCH= \"true\" ")
+  Tile7.io.activate:=102
+  Tile7.io.weight :=102
+  Tile7.io.signCount:=102
+  for(i<-0 to 7){
+    Tile7.io.a_Valid(i):=True
+    Tile7.io.b_Valid(i):=True
+  }
+  // for(i<-0 to 6){
+  //   val Tile=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)//脉动阵列
+  //   //val Tile_Output=new ConvArrange//需要改名字，这里是将矩阵格式转化为图片通道优先格式
+  //   //val MatrixFormat_Output=new MatrixOut(64,64,64)//不管是矩阵还是权重都按矩阵格式输出
 
-  val Tile2=Array.ofDim[Tile](7)
-  for(i<-0 to 6){
-    Tile2(i)=new Tile(Tile_Size,dataWidthIn,dataWidthOut,peConfig)
-
-    Tile2(i).io.a_Valid(i):=io.a_Valid(i downto i).asBool
-    Tile2(i).io.b_Valid(i):=io.b_Valid(i downto i).asBool
-    Tile2(i).io.activate  :=io.activate    
-    Tile2(i).io.weight   :=io.weight      
-    Tile2(i).io.signCount  :=io.signCount   
-  } 
+  //   Tile.io.activate:=102
+  //   Tile.io.weight :=102
+  //   Tile.io.signCount:=102
+  //   for(i<-0 to 7){
+  //     Tile.io.a_Valid(i):=True
+  //     Tile.io.b_Valid(i):=True
+  //   }
+  // }
 
   
 }

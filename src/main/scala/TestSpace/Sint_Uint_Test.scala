@@ -66,10 +66,3 @@ class TopTest extends Component{
     // }
     val Datain_io=SubModule.io
 }
-
-object TestGen extends App { 
-    val verilog_path="./testcode_gen" 
-    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ExtendsTest)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new TopTest)
-    //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
-}
