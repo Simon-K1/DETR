@@ -56,7 +56,11 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{//给定宽�
       val B_Valid=in Vec(Bool(),WIDTH)//数据有效标记
       //val Matrix_C=out Vec(SInt(ACCU_WITDH bits),HEIGHT)//累加和应该至少是20bits，可以配置为32bit
       val signCount=in UInt(16 bits)
+
   }
+  
+      val MatrixC=out Vec(SInt(ACCU_WITDH bits),HEIGHT)//输出的矩阵C
+      val C_Valid=out Vec(Bool(),HEIGHT)
 
 
     val PEArry = Array.ofDim[PE](HEIGHT, WIDTH)
@@ -67,6 +71,21 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{//给定宽�
             PEArry(row)(col)=new PE(8,8,ACCU_WITDH)
         }
     }
+    val tmp=Bits(WIDTH bits)
+    
+    for (i<-0 to WIDTH-1){
+      MatrixC(i):=0
+      for(j<-0 to HEIGHT-1){
+        tmp(i):=PEArry(i)(j).io.valid
+        when(tmp(j)){
+          MatrixC(i):=PEArry(i)(j).io.PE_OUT
+        }
+      }
+      C_Valid(i):=tmp.orR
+    }
+    
+
+
     for(row<-0 to HEIGHT-1){
         val signCountTmp=RegNextWhen(io.signCount,start)init(0)//现在需要给SA一个start信号用来存储累加次数了
         for(col<-0 to WIDTH-1){
@@ -99,7 +118,7 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{//给定宽�
     }
 }
 
-class SA_IO(HEIGHT:Int,WIDTH:Int) extends Bundle{
+class SA_Input(HEIGHT:Int,WIDTH:Int) extends Bundle{
   val MatrixA=in Vec(SInt(8 bits),WIDTH)
   val MatrixB=in Vec(SInt(8 bits),WIDTH)
   val A_Valid=in Vec(Bool(),HEIGHT)
@@ -107,14 +126,17 @@ class SA_IO(HEIGHT:Int,WIDTH:Int) extends Bundle{
   //val Matrix_C=out Vec(SInt(ACCU_WITDH bits),HEIGHT)//累加和应该至少是20bits，可以配置为32bit
   val signCount=in UInt(16 bits)
 }
+class SA_Output()extends Component{
+  //输出端口
+}
 class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
   //SLICE:3维脉动阵列的片数
-  val SA_IOs=Array.ofDim[SA_IO](SLICE)
+  val SA_Inputs=Array.ofDim[SA_Input](SLICE)
   val PEArrays=Array.ofDim[SA_2D](SLICE)
   for(i<-0 to SLICE-1){
-    SA_IOs(i)=new SA_IO(HEIGHT,WIDTH)
+    SA_Inputs(i)=new SA_Input(HEIGHT,WIDTH)
     PEArrays(i)=new SA_2D(HEIGHT,WIDTH,ACCU_WITDH)
-    PEArrays(i).io<>SA_IOs(i)
+    PEArrays(i).io<>SA_Inputs(i)//PE的输入IO连接到顶层
   }
   
 }
