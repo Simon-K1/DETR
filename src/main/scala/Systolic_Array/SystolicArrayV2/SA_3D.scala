@@ -85,7 +85,6 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{//给定宽�
     }
     
 
-
     for(row<-0 to HEIGHT-1){
         val signCountTmp=RegNextWhen(io.signCount,start)init(0)//现在需要给SA一个start信号用来存储累加次数了
         for(col<-0 to WIDTH-1){
