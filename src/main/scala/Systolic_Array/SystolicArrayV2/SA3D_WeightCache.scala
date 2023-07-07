@@ -76,7 +76,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
         //必须确保InChannel*KernelSize*KernelSize<2^(WEIGHT_CACHE_MATRIX_ROW_WIDTH)
         //比如我们这里Matrix_Col的位宽是16bit，地址空间就是0~2^16-1,如果我们计算16*16的卷积核，可以得到支持的最大输入通道为2^16/(16*16)=256,所以这里输入通道是有上限的
 
-        val mData=out UInt(64 bits)//out Vec(UInt(8 bits),Config.SA_COL)//out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
+        val mData=out Vec(UInt(8 bits),HEIGHT*SLICE*WIDTH)//out Vec(UInt(8 bits),Config.SA_COL)//out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
         val Raddr_Valid=in Bool()//读Bram使能
         // val OutMatrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
         // val OutMatrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
@@ -97,13 +97,16 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     val InData_Switch=Reg(UInt(SLICE*HEIGHT*WIDTH bits))init(1)//这地方的初始化得是1
     val Matrix_In_MaxCnt=io.Matrix_Row>>(log2Up(DMA_WIDTH/8))//除8，考虑DMA位宽,目前DMA是64bit
     val In_Row_Cnt=ForLoopCounter(io.sData.fire,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,Matrix_In_MaxCnt-1)//右移的原因：要考虑DMA的位宽
+    //输入行计数器：因为数据是一列一列输入的，先进第一列的第一行，第二行。。。。。第二列的第一行，第二列的第二行。。。以此类推
     val In_Col_Cnt=ForLoopCounter(In_Row_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col-1)//
+    //In_Row_Cnt.valid一次，代表完整的一列被输入了。
     //val Raddr=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,io.Matrix_Row-1)//Bram读地址
     val Read_Row_Base_Addr=Reg(UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits))init(0)//读权重的基地址,一列一列读，
     val Write_Row_Base_Addr=Reg(UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits))init(0)//写权重的基地址，一列一列存
     
     //输出行计数器
     val OutRow_Cnt=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,(io.Matrix_Row)-1)//输出行计数器,（要求输出通道必须是8的倍数）
+    //
 
     val OutCol_Cnt=SubstractLoopCounter(OutRow_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col,Config.SA_COL)
     when(io.start){
@@ -115,15 +118,17 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     //为什么加一个RowBaseAddr？
     //我们只需要输入Matirx_Row，对于输入数据：只要右移三位就能拿到In_Row_Cnt的End，
     //同样地，对于输出数据每读完I*Matirx_Row后再从Matrix_Row*(I+1)开始读下一个卷积核的数据
-    val Col_In_8_Cnt=ForLoopCounter(In_Row_Cnt.valid,log2Up(Config.SA_COL),Config.SA_COL-1)//
+    val Col_In_8_Cnt=ForLoopCounter(In_Row_Cnt.valid,log2Up(HEIGHT*WIDTH*SLICE),HEIGHT*WIDTH*SLICE-1)//
+    //比如SA的大小为1*8*8，那么每出8列数据读数据基地址需要自增一下
     when(OutCol_Cnt.valid){
+        Col_In_8_Cnt.clear
         Read_Row_Base_Addr:=0//输出全部数据后，也就是一个完整的输出通道都算完了，读数据基地址移归位
     }elsewhen(OutRow_Cnt.valid){
         Read_Row_Base_Addr:=Read_Row_Base_Addr+io.Matrix_Row
     }
     when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
         InData_Switch:=1
-    }elsewhen(In_Row_Cnt.valid){
+    }elsewhen(In_Row_Cnt.valid){//
         InData_Switch:=InData_Switch.rotateLeft(1)//循环左移1位    
     }
     when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
@@ -136,7 +141,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
 
     //构建8列权重缓存
     
-    val Weight_Cache=Array.tabulate(Config.SA_COL){
+    val Weight_Cache=Array.tabulate(HEIGHT*WIDTH*SLICE){//所需要的权重缓存buf
         i=>def gen()={//这里用了8个4KB的Bram
             //4096*64bit是一个Bram资源，32K
             val Weight_Bram=new xil_SimpleDualBram(64,2048,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
@@ -146,7 +151,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
             Weight_Bram.io.dina:=io.sData.payload
             Weight_Bram.io.ena:=InData_Switch(i downto i).asBool&&io.sData.fire
             Weight_Bram.io.wea:=True
-            io.mData((i+1)*8-1 downto i*8):=Weight_Bram.io.doutb//Delay(,i)
+            io.mData(i):=Weight_Bram.io.doutb//Delay(,i)
             // io.mData(i):=Delay(Weight_Bram.io.doutb,i)
         }
         gen()
@@ -188,7 +193,7 @@ class WeightCache_Stream extends Component{
         val start=in Bool()
         val Matrix_Row=in UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits)
         val Matrix_Col=in UInt(Config.WEIGHT_CACHE_MATRIX_COL_WIDTH bits)
-        val mData=out UInt(64 bits)//out Vec(UInt(8 bits),Config.SA_COL)//out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
+        val mData=out Vec(UInt(8 bits),8*8*8)//out Vec(UInt(8 bits),Config.SA_COL)//out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
         val Raddr_Valid=in Bool()//读Bram使能
         val Weight_Cached=out Bool()//权重缓存完了，给Img2Col一个启动型号
         val LayerEnd=in Bool()//当前网络层计算完毕
@@ -210,8 +215,8 @@ class WeightCache_Stream extends Component{
     WeightCache.io.sData.ready<>io.s_axis_s2mm_tready
 }
 object Weight_Gen extends App { 
-    val verilog_path="./Simulation/SimWeightCache" 
+    val verilog_path="./Simulation/SA_3D/verilog" 
     // printf("=================%d===============",log2Up(7))
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Weight_Cache(8,8,8,64))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Weight_Cache(1,8,8,64))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }
