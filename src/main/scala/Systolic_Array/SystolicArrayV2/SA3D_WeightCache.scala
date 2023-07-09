@@ -76,14 +76,14 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
         //必须确保InChannel*KernelSize*KernelSize<2^(WEIGHT_CACHE_MATRIX_ROW_WIDTH)
         //比如我们这里Matrix_Col的位宽是16bit，地址空间就是0~2^16-1,如果我们计算16*16的卷积核，可以得到支持的最大输入通道为2^16/(16*16)=256,所以这里输入通道是有上限的
 
-        val mData=out Vec(UInt(8 bits),HEIGHT*SLICE*WIDTH)//out Vec(UInt(8 bits),Config.SA_COL)//out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
+        val mData=out Vec(UInt(8 bits),SLICE*WIDTH)//out Vec(UInt(8 bits),Config.SA_COL)//out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
         val Raddr_Valid=in Bool()//读Bram使能
         // val OutMatrix_Col=in UInt(Config.MATRIXC_COL_WIDTH bits)
         // val OutMatrix_Row=in UInt(Config.MATRIXC_ROW_WIDTH bits)
         
         val Weight_Cached=out Bool()//权重缓存完了，给Img2Col一个启动型号
         val LayerEnd=in Bool()//当前网络层计算完毕
-        val MatrixCol_Switch=out UInt(Config.SA_COL bits)//脉动阵列有多少列就需要多少选择信号
+        val MatrixCol_Switch=out UInt(SLICE*WIDTH bits)//脉动阵列有多少列就需要多少选择信号
     //分析：首先，假设输入通道是32，输出通道是256，16*16，那么权重矩阵的每一列有16*16*32=8192个元素，每一列8192代表一个完整的卷积核，也就是对应矩阵的一列
     }
     noIoPrefix()
@@ -94,7 +94,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
 
     //缓存数据,写地址写数据控制
     //按列优先存储数据,有点反直觉，因为我们的矩阵是竖着进脉动阵列的
-    val InData_Switch=Reg(UInt(SLICE*HEIGHT*WIDTH bits))init(1)//这地方的初始化得是1
+    val InData_Switch=Reg(UInt(SLICE*WIDTH bits))init(1)//这地方的初始化得是1
     val Matrix_In_MaxCnt=io.Matrix_Row>>(log2Up(DMA_WIDTH/8))//除8，考虑DMA位宽,目前DMA是64bit
     val In_Row_Cnt=ForLoopCounter(io.sData.fire,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,Matrix_In_MaxCnt-1)//右移的原因：要考虑DMA的位宽
     //输入行计数器：因为数据是一列一列输入的，先进第一列的第一行，第二行。。。。。第二列的第一行，第二列的第二行。。。以此类推
@@ -118,7 +118,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     //为什么加一个RowBaseAddr？
     //我们只需要输入Matirx_Row，对于输入数据：只要右移三位就能拿到In_Row_Cnt的End，
     //同样地，对于输出数据每读完I*Matirx_Row后再从Matrix_Row*(I+1)开始读下一个卷积核的数据
-    val Col_In_8_Cnt=ForLoopCounter(In_Row_Cnt.valid,log2Up(HEIGHT*WIDTH*SLICE),HEIGHT*WIDTH*SLICE-1)//
+    val Col_In_8_Cnt=ForLoopCounter(In_Row_Cnt.valid,log2Up(WIDTH*SLICE),WIDTH*SLICE-1)//
     //比如SA的大小为1*8*8，那么每出8列数据读数据基地址需要自增一下
     when(OutCol_Cnt.valid){
         Col_In_8_Cnt.clear
@@ -141,10 +141,10 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
 
     //构建8列权重缓存
     
-    val Weight_Cache=Array.tabulate(HEIGHT*WIDTH*SLICE){//所需要的权重缓存buf
+    val Weight_Cache=Array.tabulate(WIDTH*SLICE){//所需要的权重缓存buf
         i=>def gen()={//这里用了8个4KB的Bram
             //4096*64bit是一个Bram资源，32K
-            val Weight_Bram=new xil_SimpleDualBram(64,2048,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
+            val Weight_Bram=new xil_SimpleDualBram(DMA_WIDTH,2048,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
             Weight_Bram.io.addra:=(In_Row_Cnt.count+Write_Row_Base_Addr).resized
             Weight_Bram.io.addrb:=(Read_Row_Base_Addr+OutRow_Cnt.count).resized
             // Weight_Bram.io.doutb:=0
@@ -163,28 +163,26 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     Fsm.SA_Computed:=io.LayerEnd
 
 
-    val MatrixCol_Switch=UInt(Config.SA_COL bits)
+    val MatrixCol_Switch=UInt(SLICE*WIDTH bits)
     switch(OutCol_Cnt.count) {
-        for(i<-1 to Config.SA_COL-1){
+        for(i<-1 to SLICE*WIDTH-1){
             is(i) {
                 MatrixCol_Switch(i-1 downto 0).setAll()
-                MatrixCol_Switch(Config.SA_COL-1 downto i).clearAll()
+                MatrixCol_Switch(SLICE*WIDTH-1 downto i).clearAll()
             }
         } 
-
-
         default {
             MatrixCol_Switch.setAll()
         }
     }
     io.MatrixCol_Switch:=RegNext(MatrixCol_Switch)
 }
-class WeightCache_Stream extends Component{
+class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Component{
     val Config=new TopConfig
     val io=new Bundle{
-        def DATA_IN_WIDTH=64
-        val s_axis_s2mm_tdata=in UInt(DATA_IN_WIDTH bits)
-        val s_axis_s2mm_tkeep=in Bits(DATA_IN_WIDTH/8 bits)
+        // def DATA_IN_WIDTH=64
+        val s_axis_s2mm_tdata=in UInt(DMA_WIDTH bits)
+        val s_axis_s2mm_tkeep=in Bits(DMA_WIDTH/8 bits)
         val s_axis_s2mm_tlast=in Bool()
         val s_axis_s2mm_tready=out Bool()
         val s_axis_s2mm_tvalid=in Bool()
@@ -193,14 +191,14 @@ class WeightCache_Stream extends Component{
         val start=in Bool()
         val Matrix_Row=in UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits)
         val Matrix_Col=in UInt(Config.WEIGHT_CACHE_MATRIX_COL_WIDTH bits)
-        val mData=out Vec(UInt(8 bits),8*8*8)//out Vec(UInt(8 bits),Config.SA_COL)//out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
+        val mData=out Vec(UInt(8 bits),SLICE*WIDTH)//out Vec(UInt(8 bits),Config.SA_COL)//out UInt(64 bits)//Vec(UInt(8 bits),Config.SA_COL)
         val Raddr_Valid=in Bool()//读Bram使能
         val Weight_Cached=out Bool()//权重缓存完了，给Img2Col一个启动型号
         val LayerEnd=in Bool()//当前网络层计算完毕
-        val MatrixCol_Switch=out UInt(Config.SA_COL bits)
+        val MatrixCol_Switch=out UInt(SLICE*WIDTH bits)
     }
     noIoPrefix()
-    val WeightCache=new Weight_Cache(8,8,8,64)
+    val WeightCache=new Weight_Cache(SLICE,HEIGHT,WIDTH,DMA_WIDTH)
     WeightCache.io.start:=io.start
     WeightCache.io.Matrix_Col:=io.Matrix_Col
     WeightCache.io.Matrix_Row:=io.Matrix_Row
@@ -217,6 +215,6 @@ class WeightCache_Stream extends Component{
 object Weight_Gen extends App { 
     val verilog_path="./Simulation/SA_3D/verilog" 
     // printf("=================%d===============",log2Up(7))
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Weight_Cache(1,8,8,64))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Weight_Cache(8,8,8,64))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }
