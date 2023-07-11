@@ -74,7 +74,7 @@ case class TopCtrl_Fsm(start:Bool)extends Area{
       }
     }
 }
-class SA32_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
+class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     val Config=TopConfig()
     val Control=new Bundle{
         val start=in Bool()
@@ -114,6 +114,7 @@ class SA32_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
         val OutMatrix_Col                   =in UInt(Config.MATRIXC_COL_WIDTH bits)//输出矩阵的列数，比如脉动阵列最终的输出矩阵C为196*768，那么行数和列数分别书196*768
         val OutMatrix_Row                   =in UInt(Config.MATRIXC_ROW_WIDTH bits)//输出矩阵的行数
     }
+    Img2Col_Instru.setName("Img2Col")
     val Fsm=TopCtrl_Fsm(Control.start)
     val LayerEnd=Bool()
     Fsm.Compute_End:=LayerEnd
@@ -216,7 +217,7 @@ class SA32_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
 
 object SA3D_Img2Col_Generate extends App { 
     val verilog_path="./Simulation/SA_3D/verilog" 
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA32_Top(8,8,8,32))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA3D_Top(8,8,8,32))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }
