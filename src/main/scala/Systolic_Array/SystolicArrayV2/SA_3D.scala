@@ -47,11 +47,10 @@ class PE(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int) extends Component{
 
 
 
-class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{//给定宽和高构建一个2维脉动阵列
+class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,CVALID:Boolean) extends Component{//给定宽和高构建一个2维脉动阵列
   val io=new Bundle{
       val MatrixA=in Vec(SInt(8 bits),WIDTH)
       val MatrixB=in Vec(SInt(8 bits),WIDTH)
-
       val A_Valid=in Vec(Bool(),HEIGHT)
       val B_Valid=in Vec(Bool(),WIDTH)//数据有效标记
       //val Matrix_C=out Vec(SInt(ACCU_WITDH bits),HEIGHT)//累加和应该至少是20bits，可以配置为32bit
@@ -59,8 +58,9 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{//给定宽�
 
   }
   
-      val MatrixC=out Vec(SInt(ACCU_WITDH bits),HEIGHT)//输出的矩阵C
-      val C_Valid=out Vec(Bool(),HEIGHT)
+    val MatrixC=out Vec(SInt(ACCU_WITDH bits),HEIGHT)//输出的矩阵C
+    val C_Valid =   (CVALID) generate Vec(Bool(),HEIGHT)
+
 
 
     val PEArry = Array.ofDim[PE](HEIGHT, WIDTH)
@@ -81,7 +81,9 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{//给定宽�
           MatrixC(i):=PEArry(i)(j).io.PE_OUT
         }
       }
-      C_Valid(i):=tmp.orR
+      if(CVALID){
+        C_Valid(i):=tmp.orR
+      }
     }
     
 
@@ -125,24 +127,28 @@ class SA_Input(HEIGHT:Int,WIDTH:Int) extends Bundle{
   //val Matrix_C=out Vec(SInt(ACCU_WITDH bits),HEIGHT)//累加和应该至少是20bits，可以配置为32bit
   val signCount=in UInt(16 bits)
 }
-class SA_Output()extends Component{
-  //输出端口
-}
+
 class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
   //SLICE:3维脉动阵列的片数
   val SA_Inputs=Array.ofDim[SA_Input](SLICE)
   val PEArrays=Array.ofDim[SA_2D](SLICE)
   for(i<-0 to SLICE-1){
     SA_Inputs(i)=new SA_Input(HEIGHT,WIDTH)
-    PEArrays(i)=new SA_2D(HEIGHT,WIDTH,ACCU_WITDH)
+    PEArrays(i)=new SA_2D(HEIGHT,WIDTH,ACCU_WITDH,i==0)
     PEArrays(i).io<>SA_Inputs(i)//PE的输入IO连接到顶层
   }
+  val Matrix_C=new Bundle{
+    val valid=out Vec(Bool(),HEIGHT)
+    val payload=out Vec(UInt(SLICE*WIDTH bits),HEIGHT)//位宽好像有点大。。。
+  }
+
   
 }
 
 object ConvOutput extends App { 
     val verilog_path="./Simulation/SA_3D/verilog" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D(8,8,8,32))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_2D(8,8,32,false))//
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

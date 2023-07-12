@@ -59,9 +59,9 @@ case class ConvOutput_Fsm(start:Bool)extends Area{
 class ConvArrangeV3(SLICE:Int,HEIGHT:Int,WIDTH:Int) extends Component{//卷积输出数据的数据排列，排列成通道优先的格式
     val Config=TopConfig()
     val io=new Bundle{
-        val sData=in Vec(UInt(8*SLICE bits),HEIGHT)//输入的数据已经对齐
+        val sData=in Vec(UInt(8*SLICE bits),HEIGHT)//前提：输入的数据已经对齐
         val sReady=out Bool()
-        val sValid=in Bits(Config.SA_ROW bits)
+        val sValid=in Bits(HEIGHT bits)//数据全部拼成64bit
         val MatrixCol=in UInt(Config.MATRIXC_COL_WIDTH bits)
         val MatrixRow=in UInt(Config.MATRIXC_ROW_WIDTH bits)//这里应该是log2Up（outfeaturesize^2)
 
@@ -174,7 +174,7 @@ class ConvOutput_Ctrl(SLICE:Int,HEIGHT:Int,WIDTH:Int) extends Component{//卷积
     // 由于脉动阵列一下只能出8个通道，假如输出通道是32，那么fifo要缓存4次才能凑齐一个点的完整通道
     //图片排列格式按通道优先来，所以必须第一个fifo输出完一个点的32通道，第二个fifo才能开始输出，以此类推
     //
-    val OutChannel_Cnt=ForLoopCounter(io.OutData_Cnt_En,Config.MATRIXC_COL_WIDTH-3,(io.OutChannel>>3)-1)//输出通道计数器，一下出8个点，也就是一下出8个通道
+    val OutChannel_Cnt=ForLoopCounter(io.OutData_Cnt_En,Config.MATRIXC_COL_WIDTH-3,(io.OutChannel>>3)-1)//输出通道计数器，因为DMA位宽是64，一下出8个点，也就是一下出8个通道
     // Outchannel_Cnt valid拉高，代表一个像素点被处理完了，这时就要切换到下一个fifo
     val Out_Col_Cnt=ForLoopCounter(OutChannel_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.OutFeatureSize-1)//图片列计数器
     val Out_Row_Cnt=ForLoopCounter(Out_Col_Cnt.valid,Config.MATRIXC_ROW_WIDTH,io.OutFeatureSize-1)//

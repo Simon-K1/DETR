@@ -140,6 +140,7 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     val SubModule_Img2Col       =new Img2ColStreamV2
     val SubModule_SA_3D         =new SA_3D(SLICE,HEIGHT,WIDTH,ACCU_WITDH)//8*8*8的脉动阵列
     val SubModule_WeightCache   =new WeightCache_Stream(8,8,8,64)//权重缓存模块
+    val SubModule_DataArrange    =new ConvArrangeV3(SLICE,HEIGHT,WIDTH)
 
     //todo---这里以后如果添加了矩阵计算模块要重新switch
     for(i<-0 to HEIGHT-1){
@@ -208,11 +209,35 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     // ConvQuant.io.sData.valid<>InputSwitch.m(0).axis_mm2s_tvalid
 //GEMM模块控制=================================================================================================================================
     Fsm.Matrix_Received:=False
+//DataArrange 模块============================================================================================================================
+    val m_axis_mm2s=new Bundle{//一个从接口，两个主接口
+      val Data_Width=64
+      val tdata=out UInt(Data_Width bits)
+      val tkeep=out Bits(Data_Width/8 bits)
+      val tlast=out Bool()
+      val tready=in Bool()
+      val tvalid=out Bool()
+    }
+    SubModule_DataArrange.io.MatrixCol:=Img2Col_Instru.OutMatrix_Col
+    SubModule_DataArrange.io.MatrixRow:=Img2Col_Instru.OutMatrix_Row
+    SubModule_DataArrange.io.start    :=Control.start
+    SubModule_DataArrange.io.OutChannel:=Img2Col_Instru.OutFeature_Channel.resized
+    SubModule_DataArrange.io.OutFeatureSize:=Img2Col_Instru.OutFeature_Size
+    SubModule_DataArrange.io.SwitchConv:=Control.Switch_Conv
 
+    for(i<-0 to SLICE-1){
+      // SubModule_DataArrange.io.sData(i):=SubModule_SA_3D.io
+    }
+    
 
+    m_axis_mm2s.tdata:=SubModule_DataArrange.io.mData.payload
+    m_axis_mm2s.tlast:=SubModule_DataArrange.io.mLast
+    m_axis_mm2s.tvalid:=SubModule_DataArrange.io.mData.valid
+    m_axis_mm2s.tkeep.setAll()
+    SubModule_DataArrange.io.mData.ready:=m_axis_mm2s.tready
 //最后的其他控制+==============================================================================================================================
+    LayerEnd:=SubModule_DataArrange.io.LayerEnd
 
-    LayerEnd:=SubModule_Img2Col.io.LayerEnd
 }
 
 object SA3D_Img2Col_Generate extends App { 
