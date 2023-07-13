@@ -139,7 +139,11 @@ class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
   }
   val Matrix_C=new Bundle{
     val valid=out Vec(Bool(),HEIGHT)
-    val payload=out Vec(UInt(SLICE*WIDTH bits),HEIGHT)//位宽好像有点大。。。
+    val payload=out Vec(UInt(SLICE*ACCU_WITDH bits),HEIGHT)//位宽好像有点大。。。
+  }
+  for(i<- 0 to HEIGHT-1){//遍历所有行
+    Matrix_C.payload(i):=0//
+    Matrix_C.valid(i):=False
   }
 
   

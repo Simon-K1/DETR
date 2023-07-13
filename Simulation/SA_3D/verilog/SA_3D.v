@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : SA_3D
-// Git hash  : 60c2cce5e3551482fb6c3c0cb7695c683dc42c1c
+// Git hash  : 7a5755b572c9b45471f4f0e0332674415fc4cc34
 
 `timescale 1ns/1ps
 
@@ -270,6 +270,22 @@ module SA_3D (
   input               _zz_io_B_Valid_6_7,
   input               _zz_io_B_Valid_7_7,
   input      [15:0]   _zz_io_signCount_7,
+  output              Matrix_C_valid_0,
+  output              Matrix_C_valid_1,
+  output              Matrix_C_valid_2,
+  output              Matrix_C_valid_3,
+  output              Matrix_C_valid_4,
+  output              Matrix_C_valid_5,
+  output              Matrix_C_valid_6,
+  output              Matrix_C_valid_7,
+  output     [255:0]  Matrix_C_payload_0,
+  output     [255:0]  Matrix_C_payload_1,
+  output     [255:0]  Matrix_C_payload_2,
+  output     [255:0]  Matrix_C_payload_3,
+  output     [255:0]  Matrix_C_payload_4,
+  output     [255:0]  Matrix_C_payload_5,
+  output     [255:0]  Matrix_C_payload_6,
+  output     [255:0]  Matrix_C_payload_7,
   input               reset
 );
 
@@ -714,6 +730,22 @@ module SA_3D (
     .clk          (clk                     ), //i
     .reset        (reset                   )  //i
   );
+  assign Matrix_C_payload_0 = 256'h0;
+  assign Matrix_C_valid_0 = 1'b0;
+  assign Matrix_C_payload_1 = 256'h0;
+  assign Matrix_C_valid_1 = 1'b0;
+  assign Matrix_C_payload_2 = 256'h0;
+  assign Matrix_C_valid_2 = 1'b0;
+  assign Matrix_C_payload_3 = 256'h0;
+  assign Matrix_C_valid_3 = 1'b0;
+  assign Matrix_C_payload_4 = 256'h0;
+  assign Matrix_C_valid_4 = 1'b0;
+  assign Matrix_C_payload_5 = 256'h0;
+  assign Matrix_C_valid_5 = 1'b0;
+  assign Matrix_C_payload_6 = 256'h0;
+  assign Matrix_C_valid_6 = 1'b0;
+  assign Matrix_C_payload_7 = 256'h0;
+  assign Matrix_C_valid_7 = 1'b0;
 
 endmodule
 
