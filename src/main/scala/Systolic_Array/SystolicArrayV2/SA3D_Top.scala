@@ -140,7 +140,7 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     val SubModule_Img2Col       =new Img2ColStreamV2
     val SubModule_SA_3D         =new SA_3D(SLICE,HEIGHT,WIDTH,ACCU_WITDH)//8*8*8的脉动阵列
     val SubModule_WeightCache   =new WeightCache_Stream(8,8,8,64)//权重缓存模块
-    val SubModule_DataArrange    =new ConvArrangeV3(SLICE,HEIGHT,WIDTH)
+    val SubModule_DataArrange   =new ConvArrangeV3(SLICE,HEIGHT,WIDTH)
 
     //todo---这里以后如果添加了矩阵计算模块要重新switch
     for(i<-0 to HEIGHT-1){
