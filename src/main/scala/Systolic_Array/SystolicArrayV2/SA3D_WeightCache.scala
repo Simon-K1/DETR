@@ -108,7 +108,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     val OutRow_Cnt=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,(io.Matrix_Row)-1)//输出行计数器,（要求输出通道必须是8的倍数）
     //
 
-    val OutCol_Cnt=SubstractLoopCounter(OutRow_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col,Config.SA_COL)
+    val OutCol_Cnt=SubstractLoopCounter(OutRow_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col,SLICE*WIDTH)
     when(io.start){
         OutCol_Cnt.reset
     }

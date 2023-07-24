@@ -235,12 +235,20 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     m_axis_mm2s.tvalid:=SubModule_DataArrange.io.mData.valid
     m_axis_mm2s.tkeep.setAll()
     SubModule_DataArrange.io.mData.ready:=m_axis_mm2s.tready
+
+    for(i<-0 to HEIGHT-1){//遍历行
+      SubModule_DataArrange.io.sData(i):=SubModule_SA_3D.Matrix_C.payload(i).resized//从现在开始约定好，输出的数据都用vec描述，Vec的大小就是HEIGHT每一行都与DataArrange一一对应
+      SubModule_DataArrange.io.sValid(i):=SubModule_SA_3D.Matrix_C.valid(i)
+    }
+    
+
 //最后的其他控制+==============================================================================================================================
     LayerEnd:=SubModule_DataArrange.io.LayerEnd
-
+//s
 }
 
-object SA3D_Img2Col_Generate extends App { 
+
+object SA3D_Generate extends App { 
     val verilog_path="./Simulation/SA_3D/verilog" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA3D_Top(8,8,8,32))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
