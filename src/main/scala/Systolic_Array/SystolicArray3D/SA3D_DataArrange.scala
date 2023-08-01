@@ -1,4 +1,4 @@
-package Systolic_Array.SystolicArrayV2
+package Systolic_Array.SystolicArray3D
 //实现卷积结果的整理，2023/3/14
 import spinal.core._
 import spinal.lib.slave

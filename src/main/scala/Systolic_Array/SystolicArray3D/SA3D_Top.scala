@@ -1,4 +1,4 @@
-package Systolic_Array.SystolicArrayV2
+package Systolic_Array.SystolicArray3D
 //将img2col模块和SA 3D 模块组合起来
 import spinal.core._
 import spinal.lib.slave

@@ -1,4 +1,4 @@
-package Systolic_Array.SystolicArrayV2
+package Systolic_Array.SystolicArray3D
 //重构权重缓存模块，以适配三维脉动阵列的计算
 import spinal.core._
 import spinal.lib.{slave,master}
@@ -119,8 +119,10 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     //我们只需要输入Matirx_Row，对于输入数据：只要右移三位就能拿到In_Row_Cnt的End，
     //同样地，对于输出数据每读完I*Matirx_Row后再从Matrix_Row*(I+1)开始读下一个卷积核的数据
     val Col_In_8_Cnt=ForLoopCounter(In_Row_Cnt.valid,log2Up(WIDTH*SLICE),WIDTH*SLICE-1)//
-    //比如SA的大小为1*8*8，那么每出8列数据读数据基地址需要自增一下
-    when(OutCol_Cnt.valid){
+        //这个名字得改改，之前写的是8*8的阵列，所以缓存完8列权重数据后，第9列的权重数据缓存到第一个权重Buf，，，以此类推
+
+    
+    when(OutCol_Cnt.valid){//比如SA的大小为1*8*8，那么每出8列数据读数据基地址需要自增一下
         Col_In_8_Cnt.clear
         Read_Row_Base_Addr:=0//输出全部数据后，也就是一个完整的输出通道都算完了，读数据基地址移归位
     }elsewhen(OutRow_Cnt.valid){
