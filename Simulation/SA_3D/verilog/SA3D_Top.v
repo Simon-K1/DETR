@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : SA3D_Top
-// Git hash  : 082e966facb996939eb0e822125b4c350c45502b
+// Git hash  : 006da67d61121d0fc42e739a41fce32523f40221
 
 `timescale 1ns/1ps
 
@@ -4455,8 +4455,8 @@ module Weight_Cache (
   reg                 OutCol_Cnt_valid;
   reg        [5:0]    Col_In_8_Cnt_count;
   reg                 Col_In_8_Cnt_valid;
-  wire                when_SA3D_WeightCache_l129;
-  wire                when_SA3D_WeightCache_l134;
+  wire                when_SA3D_WeightCache_l131;
+  wire                when_SA3D_WeightCache_l136;
   wire                sData_fire_1;
   wire                sData_fire_2;
   wire                sData_fire_3;
@@ -5456,8 +5456,8 @@ module Weight_Cache (
     end
   end
 
-  assign when_SA3D_WeightCache_l129 = ((Fsm_currentState & WEIGHT_CACHE_STATUS_INIT) != 4'b0000);
-  assign when_SA3D_WeightCache_l134 = ((Fsm_currentState & WEIGHT_CACHE_STATUS_INIT) != 4'b0000);
+  assign when_SA3D_WeightCache_l131 = ((Fsm_currentState & WEIGHT_CACHE_STATUS_INIT) != 4'b0000);
+  assign when_SA3D_WeightCache_l136 = ((Fsm_currentState & WEIGHT_CACHE_STATUS_INIT) != 4'b0000);
   assign Fsm_Weight_All_Cached = In_Col_Cnt_valid;
   assign Weight_Cached = In_Col_Cnt_valid;
   assign xil_SimpleDualBram_addra = _zz_addra[10:0];
@@ -6114,14 +6114,14 @@ module Weight_Cache (
           Read_Row_Base_Addr <= (Read_Row_Base_Addr + Matrix_Row);
         end
       end
-      if(when_SA3D_WeightCache_l129) begin
+      if(when_SA3D_WeightCache_l131) begin
         InData_Switch <= 64'h0000000000000001;
       end else begin
         if(In_Row_Cnt_valid) begin
           InData_Switch <= {InData_Switch[62 : 0],InData_Switch[63 : 63]};
         end
       end
-      if(when_SA3D_WeightCache_l134) begin
+      if(when_SA3D_WeightCache_l136) begin
         Write_Row_Base_Addr <= 16'h0;
       end else begin
         if(Col_In_8_Cnt_valid) begin

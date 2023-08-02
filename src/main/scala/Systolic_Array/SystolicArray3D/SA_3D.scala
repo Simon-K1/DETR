@@ -141,6 +141,16 @@ class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     val valid=out Vec(Bool(),HEIGHT)
     val payload=out Vec(UInt(SLICE*ACCU_WITDH bits),HEIGHT)//位宽好像有点大。。。
   }
+
+  //调试信号,将三维脉动阵列的输出重写排列一下
+  val Dbg_Signal=Vec(UInt(ACCU_WITDH bits),SLICE*HEIGHT*WIDTH)
+  //阵列每次能出一个8*64子矩阵
+  for(i<-0 to HEIGHT-1){//遍历HEIGHT
+    for(j<-0 to SLICE-1){//遍历SLICE
+
+    }
+  }
+
   for(i<- 0 to HEIGHT-1){//遍历所有行
     Matrix_C.payload(i):=0//
     Matrix_C.valid(i):=False

@@ -179,6 +179,10 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
         for(j<-0 to SLICE-1){//遍历每个slice，slice是最内层循环
             SubModule_SA_3D.SA_Inputs(j).MatrixB(i):=SubModule_WeightCache.io.mData(i*WIDTH+j).asSInt
             SubModule_SA_3D.SA_Inputs(j).B_Valid(i):=SubModule_WeightCache.io.MatrixCol_Switch(i*WIDTH+j)
+            //这里在仿真的时候很绕，需要注意(见pic0和pic1)
+            
+
+
         }
     }
 
