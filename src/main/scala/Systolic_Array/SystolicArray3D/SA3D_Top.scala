@@ -150,7 +150,7 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
             SubModule_SA_3D.SA_Inputs(i).A_Valid(j):=SubModule_Img2Col.io.mValid(i)
         }
     }
-
+    SubModule_SA_3D.start:=Control.start
 
     SubModule_Img2Col.io.s_axis_s2mm_tdata   <>InputSwitch.m(1).axis_mm2s_tdata
     SubModule_Img2Col.io.s_axis_s2mm_tkeep   <>InputSwitch.m(1).axis_mm2s_tkeep

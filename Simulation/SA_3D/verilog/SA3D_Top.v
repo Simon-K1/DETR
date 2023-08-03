@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : SA3D_Top
-// Git hash  : 006da67d61121d0fc42e739a41fce32523f40221
+// Git hash  : 8fec7cfd2cb0bbadfc192e274484724615d57709
 
 `timescale 1ns/1ps
 
@@ -494,6 +494,7 @@ module SA3D_Top (
     .reset                          (reset                                       )  //i
   );
   SA_3D SubModule_SA_3D (
+    .start              (Control_start                            ), //i
     ._zz_io_MatrixA_0   (SubModule_SA_3D__zz_io_MatrixA_0[7:0]    ), //i
     ._zz_io_MatrixA_1   (SubModule_SA_3D__zz_io_MatrixA_1[7:0]    ), //i
     ._zz_io_MatrixA_2   (SubModule_SA_3D__zz_io_MatrixA_2[7:0]    ), //i
@@ -2206,6 +2207,7 @@ module WeightCache_Stream (
 endmodule
 
 module SA_3D (
+  input               start,
   input      [7:0]    _zz_io_MatrixA_0,
   input      [7:0]    _zz_io_MatrixA_1,
   input      [7:0]    _zz_io_MatrixA_2,
@@ -2479,25 +2481,17 @@ module SA_3D (
   output              Matrix_C_valid_5,
   output              Matrix_C_valid_6,
   output              Matrix_C_valid_7,
-  output     [255:0]  Matrix_C_payload_0,
-  output     [255:0]  Matrix_C_payload_1,
-  output     [255:0]  Matrix_C_payload_2,
-  output     [255:0]  Matrix_C_payload_3,
-  output     [255:0]  Matrix_C_payload_4,
-  output     [255:0]  Matrix_C_payload_5,
-  output     [255:0]  Matrix_C_payload_6,
-  output     [255:0]  Matrix_C_payload_7,
+  output reg [255:0]  Matrix_C_payload_0,
+  output reg [255:0]  Matrix_C_payload_1,
+  output reg [255:0]  Matrix_C_payload_2,
+  output reg [255:0]  Matrix_C_payload_3,
+  output reg [255:0]  Matrix_C_payload_4,
+  output reg [255:0]  Matrix_C_payload_5,
+  output reg [255:0]  Matrix_C_payload_6,
+  output reg [255:0]  Matrix_C_payload_7,
   input               reset
 );
 
-  wire                sA_2D_8_start;
-  wire                sA_2D_9_start;
-  wire                sA_2D_10_start;
-  wire                sA_2D_11_start;
-  wire                sA_2D_12_start;
-  wire                sA_2D_13_start;
-  wire                sA_2D_14_start;
-  wire                sA_2D_15_start;
   wire       [31:0]   sA_2D_8_MatrixC_0;
   wire       [31:0]   sA_2D_8_MatrixC_1;
   wire       [31:0]   sA_2D_8_MatrixC_2;
@@ -2506,6 +2500,14 @@ module SA_3D (
   wire       [31:0]   sA_2D_8_MatrixC_5;
   wire       [31:0]   sA_2D_8_MatrixC_6;
   wire       [31:0]   sA_2D_8_MatrixC_7;
+  wire                sA_2D_8_C_Valid_0;
+  wire                sA_2D_8_C_Valid_1;
+  wire                sA_2D_8_C_Valid_2;
+  wire                sA_2D_8_C_Valid_3;
+  wire                sA_2D_8_C_Valid_4;
+  wire                sA_2D_8_C_Valid_5;
+  wire                sA_2D_8_C_Valid_6;
+  wire                sA_2D_8_C_Valid_7;
   wire       [31:0]   sA_2D_9_MatrixC_0;
   wire       [31:0]   sA_2D_9_MatrixC_1;
   wire       [31:0]   sA_2D_9_MatrixC_2;
@@ -2605,7 +2607,15 @@ module SA_3D (
     .MatrixC_5    (sA_2D_8_MatrixC_5[31:0]), //o
     .MatrixC_6    (sA_2D_8_MatrixC_6[31:0]), //o
     .MatrixC_7    (sA_2D_8_MatrixC_7[31:0]), //o
-    .start        (sA_2D_8_start          ), //i
+    .C_Valid_0    (sA_2D_8_C_Valid_0      ), //o
+    .C_Valid_1    (sA_2D_8_C_Valid_1      ), //o
+    .C_Valid_2    (sA_2D_8_C_Valid_2      ), //o
+    .C_Valid_3    (sA_2D_8_C_Valid_3      ), //o
+    .C_Valid_4    (sA_2D_8_C_Valid_4      ), //o
+    .C_Valid_5    (sA_2D_8_C_Valid_5      ), //o
+    .C_Valid_6    (sA_2D_8_C_Valid_6      ), //o
+    .C_Valid_7    (sA_2D_8_C_Valid_7      ), //o
+    .start        (start                  ), //i
     .clk          (clk                    ), //i
     .reset        (reset                  )  //i
   );
@@ -2651,7 +2661,7 @@ module SA_3D (
     .MatrixC_5    (sA_2D_9_MatrixC_5[31:0] ), //o
     .MatrixC_6    (sA_2D_9_MatrixC_6[31:0] ), //o
     .MatrixC_7    (sA_2D_9_MatrixC_7[31:0] ), //o
-    .start        (sA_2D_9_start           ), //i
+    .start        (start                   ), //i
     .clk          (clk                     ), //i
     .reset        (reset                   )  //i
   );
@@ -2697,7 +2707,7 @@ module SA_3D (
     .MatrixC_5    (sA_2D_10_MatrixC_5[31:0]), //o
     .MatrixC_6    (sA_2D_10_MatrixC_6[31:0]), //o
     .MatrixC_7    (sA_2D_10_MatrixC_7[31:0]), //o
-    .start        (sA_2D_10_start          ), //i
+    .start        (start                   ), //i
     .clk          (clk                     ), //i
     .reset        (reset                   )  //i
   );
@@ -2743,7 +2753,7 @@ module SA_3D (
     .MatrixC_5    (sA_2D_11_MatrixC_5[31:0]), //o
     .MatrixC_6    (sA_2D_11_MatrixC_6[31:0]), //o
     .MatrixC_7    (sA_2D_11_MatrixC_7[31:0]), //o
-    .start        (sA_2D_11_start          ), //i
+    .start        (start                   ), //i
     .clk          (clk                     ), //i
     .reset        (reset                   )  //i
   );
@@ -2789,7 +2799,7 @@ module SA_3D (
     .MatrixC_5    (sA_2D_12_MatrixC_5[31:0]), //o
     .MatrixC_6    (sA_2D_12_MatrixC_6[31:0]), //o
     .MatrixC_7    (sA_2D_12_MatrixC_7[31:0]), //o
-    .start        (sA_2D_12_start          ), //i
+    .start        (start                   ), //i
     .clk          (clk                     ), //i
     .reset        (reset                   )  //i
   );
@@ -2835,7 +2845,7 @@ module SA_3D (
     .MatrixC_5    (sA_2D_13_MatrixC_5[31:0]), //o
     .MatrixC_6    (sA_2D_13_MatrixC_6[31:0]), //o
     .MatrixC_7    (sA_2D_13_MatrixC_7[31:0]), //o
-    .start        (sA_2D_13_start          ), //i
+    .start        (start                   ), //i
     .clk          (clk                     ), //i
     .reset        (reset                   )  //i
   );
@@ -2881,7 +2891,7 @@ module SA_3D (
     .MatrixC_5    (sA_2D_14_MatrixC_5[31:0]), //o
     .MatrixC_6    (sA_2D_14_MatrixC_6[31:0]), //o
     .MatrixC_7    (sA_2D_14_MatrixC_7[31:0]), //o
-    .start        (sA_2D_14_start          ), //i
+    .start        (start                   ), //i
     .clk          (clk                     ), //i
     .reset        (reset                   )  //i
   );
@@ -2927,26 +2937,106 @@ module SA_3D (
     .MatrixC_5    (sA_2D_15_MatrixC_5[31:0]), //o
     .MatrixC_6    (sA_2D_15_MatrixC_6[31:0]), //o
     .MatrixC_7    (sA_2D_15_MatrixC_7[31:0]), //o
-    .start        (sA_2D_15_start          ), //i
+    .start        (start                   ), //i
     .clk          (clk                     ), //i
     .reset        (reset                   )  //i
   );
-  assign Matrix_C_payload_0 = 256'h0;
-  assign Matrix_C_valid_0 = 1'b0;
-  assign Matrix_C_payload_1 = 256'h0;
-  assign Matrix_C_valid_1 = 1'b0;
-  assign Matrix_C_payload_2 = 256'h0;
-  assign Matrix_C_valid_2 = 1'b0;
-  assign Matrix_C_payload_3 = 256'h0;
-  assign Matrix_C_valid_3 = 1'b0;
-  assign Matrix_C_payload_4 = 256'h0;
-  assign Matrix_C_valid_4 = 1'b0;
-  assign Matrix_C_payload_5 = 256'h0;
-  assign Matrix_C_valid_5 = 1'b0;
-  assign Matrix_C_payload_6 = 256'h0;
-  assign Matrix_C_valid_6 = 1'b0;
-  assign Matrix_C_payload_7 = 256'h0;
-  assign Matrix_C_valid_7 = 1'b0;
+  assign Matrix_C_valid_0 = sA_2D_8_C_Valid_0;
+  always @(*) begin
+    Matrix_C_payload_0[31 : 0] = sA_2D_8_MatrixC_0;
+    Matrix_C_payload_0[63 : 32] = sA_2D_9_MatrixC_0;
+    Matrix_C_payload_0[95 : 64] = sA_2D_10_MatrixC_0;
+    Matrix_C_payload_0[127 : 96] = sA_2D_11_MatrixC_0;
+    Matrix_C_payload_0[159 : 128] = sA_2D_12_MatrixC_0;
+    Matrix_C_payload_0[191 : 160] = sA_2D_13_MatrixC_0;
+    Matrix_C_payload_0[223 : 192] = sA_2D_14_MatrixC_0;
+    Matrix_C_payload_0[255 : 224] = sA_2D_15_MatrixC_0;
+  end
+
+  assign Matrix_C_valid_1 = sA_2D_8_C_Valid_1;
+  always @(*) begin
+    Matrix_C_payload_1[31 : 0] = sA_2D_8_MatrixC_1;
+    Matrix_C_payload_1[63 : 32] = sA_2D_9_MatrixC_1;
+    Matrix_C_payload_1[95 : 64] = sA_2D_10_MatrixC_1;
+    Matrix_C_payload_1[127 : 96] = sA_2D_11_MatrixC_1;
+    Matrix_C_payload_1[159 : 128] = sA_2D_12_MatrixC_1;
+    Matrix_C_payload_1[191 : 160] = sA_2D_13_MatrixC_1;
+    Matrix_C_payload_1[223 : 192] = sA_2D_14_MatrixC_1;
+    Matrix_C_payload_1[255 : 224] = sA_2D_15_MatrixC_1;
+  end
+
+  assign Matrix_C_valid_2 = sA_2D_8_C_Valid_2;
+  always @(*) begin
+    Matrix_C_payload_2[31 : 0] = sA_2D_8_MatrixC_2;
+    Matrix_C_payload_2[63 : 32] = sA_2D_9_MatrixC_2;
+    Matrix_C_payload_2[95 : 64] = sA_2D_10_MatrixC_2;
+    Matrix_C_payload_2[127 : 96] = sA_2D_11_MatrixC_2;
+    Matrix_C_payload_2[159 : 128] = sA_2D_12_MatrixC_2;
+    Matrix_C_payload_2[191 : 160] = sA_2D_13_MatrixC_2;
+    Matrix_C_payload_2[223 : 192] = sA_2D_14_MatrixC_2;
+    Matrix_C_payload_2[255 : 224] = sA_2D_15_MatrixC_2;
+  end
+
+  assign Matrix_C_valid_3 = sA_2D_8_C_Valid_3;
+  always @(*) begin
+    Matrix_C_payload_3[31 : 0] = sA_2D_8_MatrixC_3;
+    Matrix_C_payload_3[63 : 32] = sA_2D_9_MatrixC_3;
+    Matrix_C_payload_3[95 : 64] = sA_2D_10_MatrixC_3;
+    Matrix_C_payload_3[127 : 96] = sA_2D_11_MatrixC_3;
+    Matrix_C_payload_3[159 : 128] = sA_2D_12_MatrixC_3;
+    Matrix_C_payload_3[191 : 160] = sA_2D_13_MatrixC_3;
+    Matrix_C_payload_3[223 : 192] = sA_2D_14_MatrixC_3;
+    Matrix_C_payload_3[255 : 224] = sA_2D_15_MatrixC_3;
+  end
+
+  assign Matrix_C_valid_4 = sA_2D_8_C_Valid_4;
+  always @(*) begin
+    Matrix_C_payload_4[31 : 0] = sA_2D_8_MatrixC_4;
+    Matrix_C_payload_4[63 : 32] = sA_2D_9_MatrixC_4;
+    Matrix_C_payload_4[95 : 64] = sA_2D_10_MatrixC_4;
+    Matrix_C_payload_4[127 : 96] = sA_2D_11_MatrixC_4;
+    Matrix_C_payload_4[159 : 128] = sA_2D_12_MatrixC_4;
+    Matrix_C_payload_4[191 : 160] = sA_2D_13_MatrixC_4;
+    Matrix_C_payload_4[223 : 192] = sA_2D_14_MatrixC_4;
+    Matrix_C_payload_4[255 : 224] = sA_2D_15_MatrixC_4;
+  end
+
+  assign Matrix_C_valid_5 = sA_2D_8_C_Valid_5;
+  always @(*) begin
+    Matrix_C_payload_5[31 : 0] = sA_2D_8_MatrixC_5;
+    Matrix_C_payload_5[63 : 32] = sA_2D_9_MatrixC_5;
+    Matrix_C_payload_5[95 : 64] = sA_2D_10_MatrixC_5;
+    Matrix_C_payload_5[127 : 96] = sA_2D_11_MatrixC_5;
+    Matrix_C_payload_5[159 : 128] = sA_2D_12_MatrixC_5;
+    Matrix_C_payload_5[191 : 160] = sA_2D_13_MatrixC_5;
+    Matrix_C_payload_5[223 : 192] = sA_2D_14_MatrixC_5;
+    Matrix_C_payload_5[255 : 224] = sA_2D_15_MatrixC_5;
+  end
+
+  assign Matrix_C_valid_6 = sA_2D_8_C_Valid_6;
+  always @(*) begin
+    Matrix_C_payload_6[31 : 0] = sA_2D_8_MatrixC_6;
+    Matrix_C_payload_6[63 : 32] = sA_2D_9_MatrixC_6;
+    Matrix_C_payload_6[95 : 64] = sA_2D_10_MatrixC_6;
+    Matrix_C_payload_6[127 : 96] = sA_2D_11_MatrixC_6;
+    Matrix_C_payload_6[159 : 128] = sA_2D_12_MatrixC_6;
+    Matrix_C_payload_6[191 : 160] = sA_2D_13_MatrixC_6;
+    Matrix_C_payload_6[223 : 192] = sA_2D_14_MatrixC_6;
+    Matrix_C_payload_6[255 : 224] = sA_2D_15_MatrixC_6;
+  end
+
+  assign Matrix_C_valid_7 = sA_2D_8_C_Valid_7;
+  always @(*) begin
+    Matrix_C_payload_7[31 : 0] = sA_2D_8_MatrixC_7;
+    Matrix_C_payload_7[63 : 32] = sA_2D_9_MatrixC_7;
+    Matrix_C_payload_7[95 : 64] = sA_2D_10_MatrixC_7;
+    Matrix_C_payload_7[127 : 96] = sA_2D_11_MatrixC_7;
+    Matrix_C_payload_7[159 : 128] = sA_2D_12_MatrixC_7;
+    Matrix_C_payload_7[191 : 160] = sA_2D_13_MatrixC_7;
+    Matrix_C_payload_7[223 : 192] = sA_2D_14_MatrixC_7;
+    Matrix_C_payload_7[255 : 224] = sA_2D_15_MatrixC_7;
+  end
+
 
 endmodule
 
@@ -8756,6 +8846,14 @@ module SA_2D (
   output reg [31:0]   MatrixC_5,
   output reg [31:0]   MatrixC_6,
   output reg [31:0]   MatrixC_7,
+  output              C_Valid_0,
+  output              C_Valid_1,
+  output              C_Valid_2,
+  output              C_Valid_3,
+  output              C_Valid_4,
+  output              C_Valid_5,
+  output              C_Valid_6,
+  output              C_Valid_7,
   input               start,
   input               clk,
   input               reset
@@ -9081,14 +9179,6 @@ module SA_2D (
   wire       [7:0]    pE_575_bcount;
   wire       [31:0]   pE_575_PE_OUT;
   wire                pE_575_finish;
-  wire                C_Valid_0;
-  wire                C_Valid_1;
-  wire                C_Valid_2;
-  wire                C_Valid_3;
-  wire                C_Valid_4;
-  wire                C_Valid_5;
-  wire                C_Valid_6;
-  wire                C_Valid_7;
   reg        [7:0]    tmp;
   wire                when_SA_3D_l80;
   wire                when_SA_3D_l80_1;

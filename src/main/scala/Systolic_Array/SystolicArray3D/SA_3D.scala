@@ -59,7 +59,7 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,CVALID:Boolean) extends Componen
   }
   
     val MatrixC=out Vec(SInt(ACCU_WITDH bits),HEIGHT)//输出的矩阵C
-    val C_Valid =   (CVALID) generate Vec(Bool(),HEIGHT)
+    val C_Valid =   (CVALID) generate(out Vec(Bool(),HEIGHT))
 
 
 
@@ -69,15 +69,17 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,CVALID:Boolean) extends Componen
     for(row<-0 to HEIGHT-1){
         for(col<- 0 to WIDTH-1){
             PEArry(row)(col)=new PE(8,8,ACCU_WITDH)
+            PEArry(row)(col).setName("PE"+row.toString+col.toString)
         }
     }
-    val tmp=Bits(WIDTH bits)
+
     
     for (i<-0 to WIDTH-1){
+      val tmp=Bits(WIDTH bits)
       MatrixC(i):=0
       for(j<-0 to HEIGHT-1){
-        tmp(i):=PEArry(i)(j).io.valid
-        when(tmp(j)){
+        tmp(j):=PEArry(i)(j).io.finish
+        when(PEArry(i)(j).io.finish){
           MatrixC(i):=PEArry(i)(j).io.PE_OUT
         }
       }
@@ -130,12 +132,14 @@ class SA_Input(HEIGHT:Int,WIDTH:Int) extends Bundle{
 
 class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
   //SLICE:3维脉动阵列的片数
+  val start =in Bool()//
   val SA_Inputs=Array.ofDim[SA_Input](SLICE)
   val PEArrays=Array.ofDim[SA_2D](SLICE)
   for(i<-0 to SLICE-1){
     SA_Inputs(i)=new SA_Input(HEIGHT,WIDTH)
     PEArrays(i)=new SA_2D(HEIGHT,WIDTH,ACCU_WITDH,i==0)
     PEArrays(i).io<>SA_Inputs(i)//PE的输入IO连接到顶层
+    PEArrays(i).start:=start
   }
   val Matrix_C=new Bundle{
     val valid=out Vec(Bool(),HEIGHT)
@@ -143,18 +147,16 @@ class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
   }
 
   //调试信号,将三维脉动阵列的输出重写排列一下
-  val Dbg_Signal=Vec(UInt(ACCU_WITDH bits),SLICE*HEIGHT*WIDTH)
+  // val Dbg_Signal=Vec(UInt(ACCU_WITDH bits),SLICE*HEIGHT*WIDTH)
   //阵列每次能出一个8*64子矩阵
   for(i<-0 to HEIGHT-1){//遍历HEIGHT
+    Matrix_C.valid(i):=PEArrays(0).C_Valid(i)
     for(j<-0 to SLICE-1){//遍历SLICE
-
+        Matrix_C.payload(i)((j+1)*ACCU_WITDH-1 downto j*ACCU_WITDH):=PEArrays(j).MatrixC(i).asUInt//
     }
   }
 
-  for(i<- 0 to HEIGHT-1){//遍历所有行
-    Matrix_C.payload(i):=0//
-    Matrix_C.valid(i):=False
-  }
+
 
   
 }
