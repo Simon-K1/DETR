@@ -140,6 +140,7 @@ class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     PEArrays(i)=new SA_2D(HEIGHT,WIDTH,ACCU_WITDH,i==0)
     PEArrays(i).io<>SA_Inputs(i)//PE的输入IO连接到顶层
     PEArrays(i).start:=start
+    PEArrays(i).setName("Slice"+i.toString())
   }
   val Matrix_C=new Bundle{
     val valid=out Vec(Bool(),HEIGHT)
