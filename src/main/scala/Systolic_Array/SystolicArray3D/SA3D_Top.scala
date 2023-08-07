@@ -146,8 +146,8 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     for(i<-0 to HEIGHT-1){
         SubModule_SA_3D.SA_Inputs(i).signCount :=Img2Col_Instru.WeightMatrix_Row-1
         for(j<-0 to SLICE-1){
-            SubModule_SA_3D.SA_Inputs(i).MatrixA(j):=SubModule_Img2Col.io.mData((i+1)*8-1 downto i*8).asSInt//SLICE轴的每一行的输入一样
-            SubModule_SA_3D.SA_Inputs(i).A_Valid(j):=SubModule_Img2Col.io.mValid(i)
+            SubModule_SA_3D.SA_Inputs(j).MatrixA(i):=SubModule_Img2Col.io.mData((i+1)*8-1 downto i*8).asSInt//SLICE轴的每一行的输入一样
+            SubModule_SA_3D.SA_Inputs(j).A_Valid(i):=SubModule_Img2Col.io.mValid(i)
         }
     }
     SubModule_SA_3D.start:=Control.start

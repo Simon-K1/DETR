@@ -49,7 +49,7 @@ class PE(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int) extends Component{
 
 class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,CVALID:Boolean) extends Component{//给定宽和高构建一个2维脉动阵列
   val io=new Bundle{
-      val MatrixA=in Vec(SInt(8 bits),WIDTH)
+      val MatrixA=in Vec(SInt(8 bits),HEIGHT)
       val MatrixB=in Vec(SInt(8 bits),WIDTH)
       val A_Valid=in Vec(Bool(),HEIGHT)
       val B_Valid=in Vec(Bool(),WIDTH)//数据有效标记
@@ -106,13 +106,13 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,CVALID:Boolean) extends Componen
             }
           }else{
             if(col==0){//如果不是第一行但是是第一列
-              PEArry(row)(col).io.activate:=PEArry(row)(col).io.acount//获取第row行的输入激活
+              PEArry(row)(col).io.activate:=io.MatrixA(row)//PEArry(row)(col).io.acount//获取第row行的输入激活
               PEArry(row)(col).io.weight  :=PEArry(row-1)(col).io.bcount//权重则为上一行的的权重
               PEArry(row)(col).io.signCount:=signCountTmp
               PEArry(row)(col).io.valid:=Delay(io.A_Valid(row),col)&&Delay(io.B_Valid(col),row)
             }else{//如果不是第一行也不是第一列
-              PEArry(row)(col).io.activate:=PEArry(row-1)(col-1).io.acount//连接输入激活
-              PEArry(row)(col).io.weight  :=PEArry(row-1)(col-1).io.bcount//连接输入权重
+              PEArry(row)(col).io.activate:=PEArry(row)(col-1).io.acount//连接输入激活
+              PEArry(row)(col).io.weight  :=PEArry(row-1)(col).io.bcount//连接输入权重
               PEArry(row)(col).io.signCount:=signCountTmp
               PEArry(row)(col).io.valid:=Delay(io.A_Valid(row),col)&&Delay(io.B_Valid(col),row)
             }
@@ -122,7 +122,7 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,CVALID:Boolean) extends Componen
 }
 
 class SA_Input(HEIGHT:Int,WIDTH:Int) extends Bundle{
-  val MatrixA=in Vec(SInt(8 bits),WIDTH)
+  val MatrixA=in Vec(SInt(8 bits),HEIGHT)//HEIGHT个输入
   val MatrixB=in Vec(SInt(8 bits),WIDTH)
   val A_Valid=in Vec(Bool(),HEIGHT)
   val B_Valid=in Vec(Bool(),WIDTH)//数据有效标记
