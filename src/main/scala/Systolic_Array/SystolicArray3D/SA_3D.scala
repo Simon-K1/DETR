@@ -151,15 +151,14 @@ class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
   // val Dbg_Signal=Vec(UInt(ACCU_WITDH bits),SLICE*HEIGHT*WIDTH)
   //阵列每次能出一个8*64子矩阵
   for(i<-0 to HEIGHT-1){//遍历HEIGHT
-    Matrix_C.valid(i):=PEArrays(0).C_Valid(i)
+    Matrix_C.valid(i):=Delay(PEArrays(0).C_Valid(i),HEIGHT-i+1)
     for(j<-0 to SLICE-1){//遍历SLICE
-        Matrix_C.payload(i)((j+1)*ACCU_WITDH-1 downto j*ACCU_WITDH):=PEArrays(j).MatrixC(i).asUInt//
+        Matrix_C.payload(i)((j+1)*ACCU_WITDH-1 downto j*ACCU_WITDH):=Delay(PEArrays(j).MatrixC(i).asUInt,HEIGHT-i+1)//现在需要让脉动阵列每行出去的数据对齐
     }
   }
 
 
 
-  
 }
 
 object ConvOutput extends App { 

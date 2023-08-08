@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.8.1    git head : 2a7592004363e5b40ec43e1f122ed8641cd8965b
 // Component : SA_2D
-// Git hash  : 8fec7cfd2cb0bbadfc192e274484724615d57709
+// Git hash  : ae0794446f1a331f88fb3854541dace15ffb33b0
 
 `timescale 1ns/1ps
 
@@ -925,7 +925,7 @@ module SA_2D (
     .reset     (reset                         )  //i
   );
   PE PE10 (
-    .activate  (PE10_acount[7:0]                ), //i
+    .activate  (io_MatrixA_1[7:0]               ), //i
     .weight    (PE00_bcount[7:0]                ), //i
     .valid     (PE10_valid                      ), //i
     .signCount (io_signCount_regNextWhen_1[15:0]), //i
@@ -937,8 +937,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE11 (
-    .activate  (PE00_acount[7:0]                ), //i
-    .weight    (PE00_bcount[7:0]                ), //i
+    .activate  (PE10_acount[7:0]                ), //i
+    .weight    (PE01_bcount[7:0]                ), //i
     .valid     (PE11_valid                      ), //i
     .signCount (io_signCount_regNextWhen_1[15:0]), //i
     .acount    (PE11_acount[7:0]                ), //o
@@ -949,8 +949,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE12 (
-    .activate  (PE01_acount[7:0]                ), //i
-    .weight    (PE01_bcount[7:0]                ), //i
+    .activate  (PE11_acount[7:0]                ), //i
+    .weight    (PE02_bcount[7:0]                ), //i
     .valid     (PE12_valid                      ), //i
     .signCount (io_signCount_regNextWhen_1[15:0]), //i
     .acount    (PE12_acount[7:0]                ), //o
@@ -961,8 +961,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE13 (
-    .activate  (PE02_acount[7:0]                ), //i
-    .weight    (PE02_bcount[7:0]                ), //i
+    .activate  (PE12_acount[7:0]                ), //i
+    .weight    (PE03_bcount[7:0]                ), //i
     .valid     (PE13_valid                      ), //i
     .signCount (io_signCount_regNextWhen_1[15:0]), //i
     .acount    (PE13_acount[7:0]                ), //o
@@ -973,8 +973,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE14 (
-    .activate  (PE03_acount[7:0]                ), //i
-    .weight    (PE03_bcount[7:0]                ), //i
+    .activate  (PE13_acount[7:0]                ), //i
+    .weight    (PE04_bcount[7:0]                ), //i
     .valid     (PE14_valid                      ), //i
     .signCount (io_signCount_regNextWhen_1[15:0]), //i
     .acount    (PE14_acount[7:0]                ), //o
@@ -985,8 +985,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE15 (
-    .activate  (PE04_acount[7:0]                ), //i
-    .weight    (PE04_bcount[7:0]                ), //i
+    .activate  (PE14_acount[7:0]                ), //i
+    .weight    (PE05_bcount[7:0]                ), //i
     .valid     (PE15_valid                      ), //i
     .signCount (io_signCount_regNextWhen_1[15:0]), //i
     .acount    (PE15_acount[7:0]                ), //o
@@ -997,8 +997,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE16 (
-    .activate  (PE05_acount[7:0]                ), //i
-    .weight    (PE05_bcount[7:0]                ), //i
+    .activate  (PE15_acount[7:0]                ), //i
+    .weight    (PE06_bcount[7:0]                ), //i
     .valid     (PE16_valid                      ), //i
     .signCount (io_signCount_regNextWhen_1[15:0]), //i
     .acount    (PE16_acount[7:0]                ), //o
@@ -1009,8 +1009,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE17 (
-    .activate  (PE06_acount[7:0]                ), //i
-    .weight    (PE06_bcount[7:0]                ), //i
+    .activate  (PE16_acount[7:0]                ), //i
+    .weight    (PE07_bcount[7:0]                ), //i
     .valid     (PE17_valid                      ), //i
     .signCount (io_signCount_regNextWhen_1[15:0]), //i
     .acount    (PE17_acount[7:0]                ), //o
@@ -1021,7 +1021,7 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE20 (
-    .activate  (PE20_acount[7:0]                ), //i
+    .activate  (io_MatrixA_2[7:0]               ), //i
     .weight    (PE10_bcount[7:0]                ), //i
     .valid     (PE20_valid                      ), //i
     .signCount (io_signCount_regNextWhen_2[15:0]), //i
@@ -1033,8 +1033,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE21 (
-    .activate  (PE10_acount[7:0]                ), //i
-    .weight    (PE10_bcount[7:0]                ), //i
+    .activate  (PE20_acount[7:0]                ), //i
+    .weight    (PE11_bcount[7:0]                ), //i
     .valid     (PE21_valid                      ), //i
     .signCount (io_signCount_regNextWhen_2[15:0]), //i
     .acount    (PE21_acount[7:0]                ), //o
@@ -1045,8 +1045,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE22 (
-    .activate  (PE11_acount[7:0]                ), //i
-    .weight    (PE11_bcount[7:0]                ), //i
+    .activate  (PE21_acount[7:0]                ), //i
+    .weight    (PE12_bcount[7:0]                ), //i
     .valid     (PE22_valid                      ), //i
     .signCount (io_signCount_regNextWhen_2[15:0]), //i
     .acount    (PE22_acount[7:0]                ), //o
@@ -1057,8 +1057,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE23 (
-    .activate  (PE12_acount[7:0]                ), //i
-    .weight    (PE12_bcount[7:0]                ), //i
+    .activate  (PE22_acount[7:0]                ), //i
+    .weight    (PE13_bcount[7:0]                ), //i
     .valid     (PE23_valid                      ), //i
     .signCount (io_signCount_regNextWhen_2[15:0]), //i
     .acount    (PE23_acount[7:0]                ), //o
@@ -1069,8 +1069,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE24 (
-    .activate  (PE13_acount[7:0]                ), //i
-    .weight    (PE13_bcount[7:0]                ), //i
+    .activate  (PE23_acount[7:0]                ), //i
+    .weight    (PE14_bcount[7:0]                ), //i
     .valid     (PE24_valid                      ), //i
     .signCount (io_signCount_regNextWhen_2[15:0]), //i
     .acount    (PE24_acount[7:0]                ), //o
@@ -1081,8 +1081,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE25 (
-    .activate  (PE14_acount[7:0]                ), //i
-    .weight    (PE14_bcount[7:0]                ), //i
+    .activate  (PE24_acount[7:0]                ), //i
+    .weight    (PE15_bcount[7:0]                ), //i
     .valid     (PE25_valid                      ), //i
     .signCount (io_signCount_regNextWhen_2[15:0]), //i
     .acount    (PE25_acount[7:0]                ), //o
@@ -1093,8 +1093,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE26 (
-    .activate  (PE15_acount[7:0]                ), //i
-    .weight    (PE15_bcount[7:0]                ), //i
+    .activate  (PE25_acount[7:0]                ), //i
+    .weight    (PE16_bcount[7:0]                ), //i
     .valid     (PE26_valid                      ), //i
     .signCount (io_signCount_regNextWhen_2[15:0]), //i
     .acount    (PE26_acount[7:0]                ), //o
@@ -1105,8 +1105,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE27 (
-    .activate  (PE16_acount[7:0]                ), //i
-    .weight    (PE16_bcount[7:0]                ), //i
+    .activate  (PE26_acount[7:0]                ), //i
+    .weight    (PE17_bcount[7:0]                ), //i
     .valid     (PE27_valid                      ), //i
     .signCount (io_signCount_regNextWhen_2[15:0]), //i
     .acount    (PE27_acount[7:0]                ), //o
@@ -1117,7 +1117,7 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE30 (
-    .activate  (PE30_acount[7:0]                ), //i
+    .activate  (io_MatrixA_3[7:0]               ), //i
     .weight    (PE20_bcount[7:0]                ), //i
     .valid     (PE30_valid                      ), //i
     .signCount (io_signCount_regNextWhen_3[15:0]), //i
@@ -1129,8 +1129,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE31 (
-    .activate  (PE20_acount[7:0]                ), //i
-    .weight    (PE20_bcount[7:0]                ), //i
+    .activate  (PE30_acount[7:0]                ), //i
+    .weight    (PE21_bcount[7:0]                ), //i
     .valid     (PE31_valid                      ), //i
     .signCount (io_signCount_regNextWhen_3[15:0]), //i
     .acount    (PE31_acount[7:0]                ), //o
@@ -1141,8 +1141,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE32 (
-    .activate  (PE21_acount[7:0]                ), //i
-    .weight    (PE21_bcount[7:0]                ), //i
+    .activate  (PE31_acount[7:0]                ), //i
+    .weight    (PE22_bcount[7:0]                ), //i
     .valid     (PE32_valid                      ), //i
     .signCount (io_signCount_regNextWhen_3[15:0]), //i
     .acount    (PE32_acount[7:0]                ), //o
@@ -1153,8 +1153,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE33 (
-    .activate  (PE22_acount[7:0]                ), //i
-    .weight    (PE22_bcount[7:0]                ), //i
+    .activate  (PE32_acount[7:0]                ), //i
+    .weight    (PE23_bcount[7:0]                ), //i
     .valid     (PE33_valid                      ), //i
     .signCount (io_signCount_regNextWhen_3[15:0]), //i
     .acount    (PE33_acount[7:0]                ), //o
@@ -1165,8 +1165,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE34 (
-    .activate  (PE23_acount[7:0]                ), //i
-    .weight    (PE23_bcount[7:0]                ), //i
+    .activate  (PE33_acount[7:0]                ), //i
+    .weight    (PE24_bcount[7:0]                ), //i
     .valid     (PE34_valid                      ), //i
     .signCount (io_signCount_regNextWhen_3[15:0]), //i
     .acount    (PE34_acount[7:0]                ), //o
@@ -1177,8 +1177,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE35 (
-    .activate  (PE24_acount[7:0]                ), //i
-    .weight    (PE24_bcount[7:0]                ), //i
+    .activate  (PE34_acount[7:0]                ), //i
+    .weight    (PE25_bcount[7:0]                ), //i
     .valid     (PE35_valid                      ), //i
     .signCount (io_signCount_regNextWhen_3[15:0]), //i
     .acount    (PE35_acount[7:0]                ), //o
@@ -1189,8 +1189,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE36 (
-    .activate  (PE25_acount[7:0]                ), //i
-    .weight    (PE25_bcount[7:0]                ), //i
+    .activate  (PE35_acount[7:0]                ), //i
+    .weight    (PE26_bcount[7:0]                ), //i
     .valid     (PE36_valid                      ), //i
     .signCount (io_signCount_regNextWhen_3[15:0]), //i
     .acount    (PE36_acount[7:0]                ), //o
@@ -1201,8 +1201,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE37 (
-    .activate  (PE26_acount[7:0]                ), //i
-    .weight    (PE26_bcount[7:0]                ), //i
+    .activate  (PE36_acount[7:0]                ), //i
+    .weight    (PE27_bcount[7:0]                ), //i
     .valid     (PE37_valid                      ), //i
     .signCount (io_signCount_regNextWhen_3[15:0]), //i
     .acount    (PE37_acount[7:0]                ), //o
@@ -1213,7 +1213,7 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE40 (
-    .activate  (PE40_acount[7:0]                ), //i
+    .activate  (io_MatrixA_4[7:0]               ), //i
     .weight    (PE30_bcount[7:0]                ), //i
     .valid     (PE40_valid                      ), //i
     .signCount (io_signCount_regNextWhen_4[15:0]), //i
@@ -1225,8 +1225,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE41 (
-    .activate  (PE30_acount[7:0]                ), //i
-    .weight    (PE30_bcount[7:0]                ), //i
+    .activate  (PE40_acount[7:0]                ), //i
+    .weight    (PE31_bcount[7:0]                ), //i
     .valid     (PE41_valid                      ), //i
     .signCount (io_signCount_regNextWhen_4[15:0]), //i
     .acount    (PE41_acount[7:0]                ), //o
@@ -1237,8 +1237,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE42 (
-    .activate  (PE31_acount[7:0]                ), //i
-    .weight    (PE31_bcount[7:0]                ), //i
+    .activate  (PE41_acount[7:0]                ), //i
+    .weight    (PE32_bcount[7:0]                ), //i
     .valid     (PE42_valid                      ), //i
     .signCount (io_signCount_regNextWhen_4[15:0]), //i
     .acount    (PE42_acount[7:0]                ), //o
@@ -1249,8 +1249,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE43 (
-    .activate  (PE32_acount[7:0]                ), //i
-    .weight    (PE32_bcount[7:0]                ), //i
+    .activate  (PE42_acount[7:0]                ), //i
+    .weight    (PE33_bcount[7:0]                ), //i
     .valid     (PE43_valid                      ), //i
     .signCount (io_signCount_regNextWhen_4[15:0]), //i
     .acount    (PE43_acount[7:0]                ), //o
@@ -1261,8 +1261,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE44 (
-    .activate  (PE33_acount[7:0]                ), //i
-    .weight    (PE33_bcount[7:0]                ), //i
+    .activate  (PE43_acount[7:0]                ), //i
+    .weight    (PE34_bcount[7:0]                ), //i
     .valid     (PE44_valid                      ), //i
     .signCount (io_signCount_regNextWhen_4[15:0]), //i
     .acount    (PE44_acount[7:0]                ), //o
@@ -1273,8 +1273,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE45 (
-    .activate  (PE34_acount[7:0]                ), //i
-    .weight    (PE34_bcount[7:0]                ), //i
+    .activate  (PE44_acount[7:0]                ), //i
+    .weight    (PE35_bcount[7:0]                ), //i
     .valid     (PE45_valid                      ), //i
     .signCount (io_signCount_regNextWhen_4[15:0]), //i
     .acount    (PE45_acount[7:0]                ), //o
@@ -1285,8 +1285,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE46 (
-    .activate  (PE35_acount[7:0]                ), //i
-    .weight    (PE35_bcount[7:0]                ), //i
+    .activate  (PE45_acount[7:0]                ), //i
+    .weight    (PE36_bcount[7:0]                ), //i
     .valid     (PE46_valid                      ), //i
     .signCount (io_signCount_regNextWhen_4[15:0]), //i
     .acount    (PE46_acount[7:0]                ), //o
@@ -1297,8 +1297,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE47 (
-    .activate  (PE36_acount[7:0]                ), //i
-    .weight    (PE36_bcount[7:0]                ), //i
+    .activate  (PE46_acount[7:0]                ), //i
+    .weight    (PE37_bcount[7:0]                ), //i
     .valid     (PE47_valid                      ), //i
     .signCount (io_signCount_regNextWhen_4[15:0]), //i
     .acount    (PE47_acount[7:0]                ), //o
@@ -1309,7 +1309,7 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE50 (
-    .activate  (PE50_acount[7:0]                ), //i
+    .activate  (io_MatrixA_5[7:0]               ), //i
     .weight    (PE40_bcount[7:0]                ), //i
     .valid     (PE50_valid                      ), //i
     .signCount (io_signCount_regNextWhen_5[15:0]), //i
@@ -1321,8 +1321,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE51 (
-    .activate  (PE40_acount[7:0]                ), //i
-    .weight    (PE40_bcount[7:0]                ), //i
+    .activate  (PE50_acount[7:0]                ), //i
+    .weight    (PE41_bcount[7:0]                ), //i
     .valid     (PE51_valid                      ), //i
     .signCount (io_signCount_regNextWhen_5[15:0]), //i
     .acount    (PE51_acount[7:0]                ), //o
@@ -1333,8 +1333,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE52 (
-    .activate  (PE41_acount[7:0]                ), //i
-    .weight    (PE41_bcount[7:0]                ), //i
+    .activate  (PE51_acount[7:0]                ), //i
+    .weight    (PE42_bcount[7:0]                ), //i
     .valid     (PE52_valid                      ), //i
     .signCount (io_signCount_regNextWhen_5[15:0]), //i
     .acount    (PE52_acount[7:0]                ), //o
@@ -1345,8 +1345,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE53 (
-    .activate  (PE42_acount[7:0]                ), //i
-    .weight    (PE42_bcount[7:0]                ), //i
+    .activate  (PE52_acount[7:0]                ), //i
+    .weight    (PE43_bcount[7:0]                ), //i
     .valid     (PE53_valid                      ), //i
     .signCount (io_signCount_regNextWhen_5[15:0]), //i
     .acount    (PE53_acount[7:0]                ), //o
@@ -1357,8 +1357,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE54 (
-    .activate  (PE43_acount[7:0]                ), //i
-    .weight    (PE43_bcount[7:0]                ), //i
+    .activate  (PE53_acount[7:0]                ), //i
+    .weight    (PE44_bcount[7:0]                ), //i
     .valid     (PE54_valid                      ), //i
     .signCount (io_signCount_regNextWhen_5[15:0]), //i
     .acount    (PE54_acount[7:0]                ), //o
@@ -1369,8 +1369,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE55 (
-    .activate  (PE44_acount[7:0]                ), //i
-    .weight    (PE44_bcount[7:0]                ), //i
+    .activate  (PE54_acount[7:0]                ), //i
+    .weight    (PE45_bcount[7:0]                ), //i
     .valid     (PE55_valid                      ), //i
     .signCount (io_signCount_regNextWhen_5[15:0]), //i
     .acount    (PE55_acount[7:0]                ), //o
@@ -1381,8 +1381,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE56 (
-    .activate  (PE45_acount[7:0]                ), //i
-    .weight    (PE45_bcount[7:0]                ), //i
+    .activate  (PE55_acount[7:0]                ), //i
+    .weight    (PE46_bcount[7:0]                ), //i
     .valid     (PE56_valid                      ), //i
     .signCount (io_signCount_regNextWhen_5[15:0]), //i
     .acount    (PE56_acount[7:0]                ), //o
@@ -1393,8 +1393,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE57 (
-    .activate  (PE46_acount[7:0]                ), //i
-    .weight    (PE46_bcount[7:0]                ), //i
+    .activate  (PE56_acount[7:0]                ), //i
+    .weight    (PE47_bcount[7:0]                ), //i
     .valid     (PE57_valid                      ), //i
     .signCount (io_signCount_regNextWhen_5[15:0]), //i
     .acount    (PE57_acount[7:0]                ), //o
@@ -1405,7 +1405,7 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE60 (
-    .activate  (PE60_acount[7:0]                ), //i
+    .activate  (io_MatrixA_6[7:0]               ), //i
     .weight    (PE50_bcount[7:0]                ), //i
     .valid     (PE60_valid                      ), //i
     .signCount (io_signCount_regNextWhen_6[15:0]), //i
@@ -1417,8 +1417,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE61 (
-    .activate  (PE50_acount[7:0]                ), //i
-    .weight    (PE50_bcount[7:0]                ), //i
+    .activate  (PE60_acount[7:0]                ), //i
+    .weight    (PE51_bcount[7:0]                ), //i
     .valid     (PE61_valid                      ), //i
     .signCount (io_signCount_regNextWhen_6[15:0]), //i
     .acount    (PE61_acount[7:0]                ), //o
@@ -1429,8 +1429,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE62 (
-    .activate  (PE51_acount[7:0]                ), //i
-    .weight    (PE51_bcount[7:0]                ), //i
+    .activate  (PE61_acount[7:0]                ), //i
+    .weight    (PE52_bcount[7:0]                ), //i
     .valid     (PE62_valid                      ), //i
     .signCount (io_signCount_regNextWhen_6[15:0]), //i
     .acount    (PE62_acount[7:0]                ), //o
@@ -1441,8 +1441,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE63 (
-    .activate  (PE52_acount[7:0]                ), //i
-    .weight    (PE52_bcount[7:0]                ), //i
+    .activate  (PE62_acount[7:0]                ), //i
+    .weight    (PE53_bcount[7:0]                ), //i
     .valid     (PE63_valid                      ), //i
     .signCount (io_signCount_regNextWhen_6[15:0]), //i
     .acount    (PE63_acount[7:0]                ), //o
@@ -1453,8 +1453,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE64 (
-    .activate  (PE53_acount[7:0]                ), //i
-    .weight    (PE53_bcount[7:0]                ), //i
+    .activate  (PE63_acount[7:0]                ), //i
+    .weight    (PE54_bcount[7:0]                ), //i
     .valid     (PE64_valid                      ), //i
     .signCount (io_signCount_regNextWhen_6[15:0]), //i
     .acount    (PE64_acount[7:0]                ), //o
@@ -1465,8 +1465,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE65 (
-    .activate  (PE54_acount[7:0]                ), //i
-    .weight    (PE54_bcount[7:0]                ), //i
+    .activate  (PE64_acount[7:0]                ), //i
+    .weight    (PE55_bcount[7:0]                ), //i
     .valid     (PE65_valid                      ), //i
     .signCount (io_signCount_regNextWhen_6[15:0]), //i
     .acount    (PE65_acount[7:0]                ), //o
@@ -1477,8 +1477,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE66 (
-    .activate  (PE55_acount[7:0]                ), //i
-    .weight    (PE55_bcount[7:0]                ), //i
+    .activate  (PE65_acount[7:0]                ), //i
+    .weight    (PE56_bcount[7:0]                ), //i
     .valid     (PE66_valid                      ), //i
     .signCount (io_signCount_regNextWhen_6[15:0]), //i
     .acount    (PE66_acount[7:0]                ), //o
@@ -1489,8 +1489,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE67 (
-    .activate  (PE56_acount[7:0]                ), //i
-    .weight    (PE56_bcount[7:0]                ), //i
+    .activate  (PE66_acount[7:0]                ), //i
+    .weight    (PE57_bcount[7:0]                ), //i
     .valid     (PE67_valid                      ), //i
     .signCount (io_signCount_regNextWhen_6[15:0]), //i
     .acount    (PE67_acount[7:0]                ), //o
@@ -1501,7 +1501,7 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE70 (
-    .activate  (PE70_acount[7:0]                ), //i
+    .activate  (io_MatrixA_7[7:0]               ), //i
     .weight    (PE60_bcount[7:0]                ), //i
     .valid     (PE70_valid                      ), //i
     .signCount (io_signCount_regNextWhen_7[15:0]), //i
@@ -1513,8 +1513,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE71 (
-    .activate  (PE60_acount[7:0]                ), //i
-    .weight    (PE60_bcount[7:0]                ), //i
+    .activate  (PE70_acount[7:0]                ), //i
+    .weight    (PE61_bcount[7:0]                ), //i
     .valid     (PE71_valid                      ), //i
     .signCount (io_signCount_regNextWhen_7[15:0]), //i
     .acount    (PE71_acount[7:0]                ), //o
@@ -1525,8 +1525,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE72 (
-    .activate  (PE61_acount[7:0]                ), //i
-    .weight    (PE61_bcount[7:0]                ), //i
+    .activate  (PE71_acount[7:0]                ), //i
+    .weight    (PE62_bcount[7:0]                ), //i
     .valid     (PE72_valid                      ), //i
     .signCount (io_signCount_regNextWhen_7[15:0]), //i
     .acount    (PE72_acount[7:0]                ), //o
@@ -1537,8 +1537,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE73 (
-    .activate  (PE62_acount[7:0]                ), //i
-    .weight    (PE62_bcount[7:0]                ), //i
+    .activate  (PE72_acount[7:0]                ), //i
+    .weight    (PE63_bcount[7:0]                ), //i
     .valid     (PE73_valid                      ), //i
     .signCount (io_signCount_regNextWhen_7[15:0]), //i
     .acount    (PE73_acount[7:0]                ), //o
@@ -1549,8 +1549,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE74 (
-    .activate  (PE63_acount[7:0]                ), //i
-    .weight    (PE63_bcount[7:0]                ), //i
+    .activate  (PE73_acount[7:0]                ), //i
+    .weight    (PE64_bcount[7:0]                ), //i
     .valid     (PE74_valid                      ), //i
     .signCount (io_signCount_regNextWhen_7[15:0]), //i
     .acount    (PE74_acount[7:0]                ), //o
@@ -1561,8 +1561,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE75 (
-    .activate  (PE64_acount[7:0]                ), //i
-    .weight    (PE64_bcount[7:0]                ), //i
+    .activate  (PE74_acount[7:0]                ), //i
+    .weight    (PE65_bcount[7:0]                ), //i
     .valid     (PE75_valid                      ), //i
     .signCount (io_signCount_regNextWhen_7[15:0]), //i
     .acount    (PE75_acount[7:0]                ), //o
@@ -1573,8 +1573,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE76 (
-    .activate  (PE65_acount[7:0]                ), //i
-    .weight    (PE65_bcount[7:0]                ), //i
+    .activate  (PE75_acount[7:0]                ), //i
+    .weight    (PE66_bcount[7:0]                ), //i
     .valid     (PE76_valid                      ), //i
     .signCount (io_signCount_regNextWhen_7[15:0]), //i
     .acount    (PE76_acount[7:0]                ), //o
@@ -1585,8 +1585,8 @@ module SA_2D (
     .reset     (reset                           )  //i
   );
   PE PE77 (
-    .activate  (PE66_acount[7:0]                ), //i
-    .weight    (PE66_bcount[7:0]                ), //i
+    .activate  (PE76_acount[7:0]                ), //i
+    .weight    (PE67_bcount[7:0]                ), //i
     .valid     (PE77_valid                      ), //i
     .signCount (io_signCount_regNextWhen_7[15:0]), //i
     .acount    (PE77_acount[7:0]                ), //o
