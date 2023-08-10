@@ -1,9 +1,9 @@
 `timescale 1ns / 1ps
 
 module Sim_Systolic3D;
-parameter Mem_Depth =18376;
+parameter Mem_Depth =66570;
 parameter Mem_Width=8*8;//txt数据位宽
-parameter Total_Input_Times=54088;//发完2224*224*64bit数据后mValid需要拉低
+parameter Total_Input_Times=66560;//发完2224*224*64bit数据后mValid需要拉低
 
 parameter Mem2_Depth=300*300*4;//第二个Mem的配置
 parameter Mem2_Width=64;
@@ -65,7 +65,7 @@ parameter Mem2_Width=64;
 
 //    $readmemh("E:\\Transformer\\Transformer_Arithmatic\\Transformer_Main\\TXT\\WeightPicture.txt",mem);//_Modified
 //    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\MM_Test\\WeightMatrix.txt",mem);
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\SA_3D\\33\\K2\\Pic_Wei.txt",mem);//_Modified
+    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\SA_3D\\1616\\K16\\Pic_Wei.txt",mem);//_Modified
     $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\SA_3D\\33\\K2\\WeightData.txt",mem2);//高8bit为Scale，低8bit为Bias
     clk=0;
     start=0;
@@ -162,7 +162,7 @@ parameter Mem2_Width=64;
     end
     else
     begin
-      mValid<=0;
+      mValid<=1;
       sReady<=1;
     end
   end
@@ -239,21 +239,21 @@ SA3D_Top SA_3D(
 //======================================
 .Control_Switch_Conv(1'b1),
 
-.Img2Col_Stride                        (1),
-.Img2Col_Kernel_Size                   (3),
-.Img2Col_Window_Size                   (3),
+.Img2Col_Stride                        (16),
+.Img2Col_Kernel_Size                   (16),
+.Img2Col_Window_Size                   (16),
 .Img2Col_InFeature_Size                (224),
 .Img2Col_InFeature_Channel             (8),
-.Img2Col_OutFeature_Channel            (128),
-.Img2Col_OutFeature_Size               (222),
-.Img2Col_Sliding_Size                  (1),
-.Img2Col_OutCol_Count_Times            (28),
+.Img2Col_OutFeature_Channel            (64),
+.Img2Col_OutFeature_Size               (14),
+.Img2Col_Sliding_Size                  (16),
+.Img2Col_OutCol_Count_Times            (2),
 .Img2Col_InCol_Count_Times             (224),
-.Img2Col_OutRow_Count_Times            (222),
-.Img2Col_OutFeature_Channel_Count_Times(2),
-.Img2Col_WeightMatrix_Row(72), 
-.Img2Col_OutMatrix_Col(128),    
-.Img2Col_OutMatrix_Row(49284),    
+.Img2Col_OutRow_Count_Times            (14),
+.Img2Col_OutFeature_Channel_Count_Times(1),
+.Img2Col_WeightMatrix_Row(2048), 
+.Img2Col_OutMatrix_Col(64),    
+.Img2Col_OutMatrix_Row(196),    
 //.QuantInstru_zeroIn                         ('d15),
 //===================================================================
 
@@ -267,8 +267,8 @@ SA3D_Top SA_3D(
 //.QuantInstru_zeroIn                         ('d15),
 
 //=====================================================================
-//.m_axis_mm2s_tready(1'b1),
-//.m_axis_mm2s_tlast(sLast),
+.m_axis_mm2s_tready(1'b1),
+.m_axis_mm2s_tlast(sLast),
 .clk(clk),
 .reset(rst)
 

@@ -144,12 +144,16 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
 
     //todo---这里以后如果添加了矩阵计算模块要重新switch
     for(i<-0 to HEIGHT-1){
-        SubModule_SA_3D.SA_Inputs(i).signCount :=Img2Col_Instru.WeightMatrix_Row-1
         for(j<-0 to SLICE-1){
             SubModule_SA_3D.SA_Inputs(j).MatrixA(i):=SubModule_Img2Col.io.mData((i+1)*8-1 downto i*8).asSInt//SLICE轴的每一行的输入一样
             SubModule_SA_3D.SA_Inputs(j).A_Valid(i):=SubModule_Img2Col.io.mValid(i)
         }
     }
+    for(j<-0 to SLICE-1){
+      SubModule_SA_3D.SA_Inputs(j).signCount :=Img2Col_Instru.WeightMatrix_Row-1
+    }
+
+    
     SubModule_SA_3D.start:=Control.start
 
     SubModule_Img2Col.io.s_axis_s2mm_tdata   <>InputSwitch.m(1).axis_mm2s_tdata
@@ -177,12 +181,9 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
 
     for(i<-0 to WIDTH-1){//遍历每一列
         for(j<-0 to SLICE-1){//遍历每个slice，slice是最内层循环
-            SubModule_SA_3D.SA_Inputs(j).MatrixB(i):=Delay(SubModule_WeightCache.io.mData(i*WIDTH+j).asSInt,i)
-            SubModule_SA_3D.SA_Inputs(j).B_Valid(i):=Delay(SubModule_WeightCache.io.MatrixCol_Switch(i*WIDTH+j),i)//权重数据在进入SA之前需要做一下延迟
+            SubModule_SA_3D.SA_Inputs(j).MatrixB(i):=Delay(SubModule_WeightCache.io.mData(i*SLICE+j).asSInt,i)
+            SubModule_SA_3D.SA_Inputs(j).B_Valid(i):=Delay(SubModule_WeightCache.io.MatrixCol_Switch(i*SLICE+j),i)//权重数据在进入SA之前需要做一下延迟
             //这里在仿真的时候很绕，需要注意(见pic0和pic1)
-            
-
-
         }
     }
 
@@ -229,9 +230,9 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     SubModule_DataArrange.io.OutFeatureSize:=Img2Col_Instru.OutFeature_Size
     SubModule_DataArrange.io.SwitchConv:=Control.Switch_Conv
 
-    for(i<-0 to SLICE-1){
-      // SubModule_DataArrange.io.sData(i):=SubModule_SA_3D.io
-    }
+    // for(i<-0 to SLICE-1){
+    //   // SubModule_DataArrange.io.sData(i):=SubModule_SA_3D.io
+    // }
     
 
     m_axis_mm2s.tdata:=SubModule_DataArrange.io.mData.payload
@@ -254,7 +255,7 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
 
 object SA3D_Generate extends App { 
     val verilog_path="./Simulation/SA_3D/verilog" 
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA3D_Top(8,8,8,32))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA3D_Top(1,8,64,32))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

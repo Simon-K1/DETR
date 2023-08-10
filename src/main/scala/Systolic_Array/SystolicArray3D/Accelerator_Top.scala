@@ -1,18 +1,20 @@
-package top.topV4
+package Systolic_Array.SystolicArray3D
+
+//加速器 Top模块
+
 import spinal.core._
 
 import RegTable.RegTable
 import spinal.lib.bus.amba4.axilite._
 import spinal.lib.bus.misc.SizeMapping
 import spinal.lib.slave
-// import top.topV3.Conv
 import xip.xil_ila
 
-class ConvTop extends Component{
+class Accelerator_Top extends Component{
   val regSData = slave(AxiLite4(log2Up(1 MiB), 32))//地址位宽-数据位宽
   AxiLite4SpecRenamer(regSData)
   val Regs=new RegTable
-  val core=new Conv
+  val core=new SA3D_Top(8,8,8,32)
   val s_axis_s2mm=new Bundle{
     val Data_Width=64
     val tdata=in UInt(Data_Width bits)
@@ -56,10 +58,10 @@ class ConvTop extends Component{
   core.Img2Col_Instru.OutMatrix_Col                   :=Regs.OutMatrix_Col
   core.Img2Col_Instru.OutMatrix_Row                   :=Regs.OutMatrix_Row//输出矩阵的行数
 
-  core.GemmInstru.HEIGHT                              :=Regs.Gemm_Height
-  core.GemmInstru.WIDTH                               :=Regs.Gemm_Width
+//   core.GemmInstru.HEIGHT                              :=Regs.Gemm_Height
+//   core.GemmInstru.WIDTH                               :=Regs.Gemm_Width
 
-  core.QuantInstru.zeroIn                             :=Regs.Quant_ZeroPoint
+//   core.QuantInstru.zeroIn                             :=Regs.Quant_ZeroPoint
   }
 
 
@@ -68,13 +70,13 @@ class ConvTop extends Component{
 
 
 object Top extends App { 
-    val OnBoard=true
-    var verilog_path="./Simulation/Quant" 
+    val OnBoard=false
+    var verilog_path="./Simulation/SA_3D" 
     if(OnBoard){
         verilog_path="./OnBoard"
     }
     
   
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ConvTop)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Accelerator_Top)
     
 }

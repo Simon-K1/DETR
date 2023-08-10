@@ -74,10 +74,23 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,CVALID:Boolean) extends Componen
     }
 
     
-    for (i<-0 to WIDTH-1){
+    // for (i<-0 to WIDTH-1){
+    //   val tmp=Bits(WIDTH bits)
+    //   MatrixC(i):=0
+    //   for(j<-0 to HEIGHT-1){
+    //     tmp(j):=PEArry(i)(j).io.finish
+    //     when(PEArry(i)(j).io.finish){
+    //       MatrixC(i):=PEArry(i)(j).io.PE_OUT
+    //     }
+    //   }
+    //   if(CVALID){
+    //     C_Valid(i):=tmp.orR
+    //   }
+    // }
+    for (i<-0 to HEIGHT-1){
       val tmp=Bits(WIDTH bits)
       MatrixC(i):=0
-      for(j<-0 to HEIGHT-1){
+      for(j<-0 to WIDTH-1){
         tmp(j):=PEArry(i)(j).io.finish
         when(PEArry(i)(j).io.finish){
           MatrixC(i):=PEArry(i)(j).io.PE_OUT
@@ -87,6 +100,7 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,CVALID:Boolean) extends Componen
         C_Valid(i):=tmp.orR
       }
     }
+
     
 
     for(row<-0 to HEIGHT-1){
@@ -161,9 +175,9 @@ class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
 
 }
 
-object ConvOutput extends App { 
+object ConvOutput extends App { //
     val verilog_path="./Simulation/SA_3D/verilog" 
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D(8,8,8,32))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D(1,8,64,32))
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_2D(8,8,32,false))//
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)

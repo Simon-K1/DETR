@@ -55,11 +55,13 @@ object SubstractLoopCounter{
     
 }
 class SubstractLoopCounter(en:Bool,width:Int,start:UInt,stride:UInt)extends Area{
-    val count = Reg(UInt(width bits)) init start
+    //val count = Reg(UInt(width bits)) init start
+    val count = Reg(UInt(width bits))
+    
     val valid =(count <= stride)&&en//Valid只拉高一下，用于for循环的控制
     when(en) {
         when(valid) {
-            count := start
+            count := start//
         }otherwise{
             count := count - stride
         }
