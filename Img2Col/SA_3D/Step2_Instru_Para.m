@@ -19,26 +19,15 @@ ConvTest=1;%如果测试卷积，则生成卷积指令，否则生成MM指令
 load("matlab.mat")
 io_Stride=Stride;
 io_KernelSize=KernelSize;
-io_Window_Size=KernelSize*Feature_Channel/(Height);
-if io_Window_Size<1
-    io_Window_Size=0;%这里考虑的情况是：存在计算输出通道大于网络输出通道的可能
-                        %比如8*8*8的脉动阵列，一下能算64个输出通道
-else
-    io_Window_Size=ceil(io_Window_Size);
-end
+io_Window_Size=KernelSize*Feature_Channel/Compute_OutChannel;
 io_InFeature_Size=Feature_Size;
 io_InFeature_Channel=Feature_Channel;
 io_OutFeature_Channel=Out_Channel;
 io_OutFeature_Size=OutFeatureSize;
-io_OutCol_Count_Times=OutFeatureSize/(Height);%输出列计数器：比如输出8*8*8阵列，可以同时处理8个输出点的64通道
-if io_OutCol_Count_Times<1
-    io_OutCol_Count_Times=0;
-else
-    io_OutCol_Count_Times=ceil(io_OutCol_Count_Times);
-end
-io_InCol_Count_Times=Feature_Channel*Feature_Size/Height;%目前还是要求输入通道必须是8的倍数
-io_OutFeature_Channel_Count_Times=Out_Channel/(Slice*Width);
-io_Sliding_Size=Feature_Channel*Stride/Height;
+io_OutCol_Count_Times=ceil(OutFeatureSize/Compute_OutChannel);
+io_InCol_Count_Times=Feature_Channel*Feature_Size/Compute_OutChannel;
+io_OutFeature_Channel_Count_Times=Out_Channel/Compute_OutCol;
+io_Sliding_Size=Feature_Channel*Stride/Compute_OutChannel;
 io_OutRow_Count_Times=OutFeatureSize;
 %% io输入参数
 fprintf(".Stride                        (%d),\n",io_Stride                        )

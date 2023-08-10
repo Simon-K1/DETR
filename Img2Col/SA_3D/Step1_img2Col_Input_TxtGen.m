@@ -5,18 +5,17 @@ Drop_Message=1;%将图片继续补零以匹配卷积不丢失信息
 WEIGHT_VERSION=1;%权重缓存模块的版本，可选1（V1），2（V2，已失效）
 Feature_Size=224;%图片大小224*224
 Feature_Channel=8;%图片通道
-Out_Channel=64;%输出图片通道，要修改
+Out_Channel=768;%输出图片通道，要修改
 
 Stride=16;%要修改
 KernelSize=16;%要修改
-assert(Stride<=KernelSize,"Stride must be less than kernelSize");
 %脉动阵列配置
 Slice=8;
 Width=8;
 Height=8;
 
-%Compute_InChannel=Height;%每次计算的输出通道，
-%Compute_OutChannel=Slice*Width;%每次计算的输出列数，先别动
+Compute_OutChannel=Slice*Width*Height;%每次计算的输出通道，
+Compute_OutCol=8;%每次计算的输出列数，先别动
 
 OutFeatureSize=75;%无需修改，在后面自动推理出来
 assert(mod(Feature_Channel,8)==0,"输入通道必须是8的倍数");

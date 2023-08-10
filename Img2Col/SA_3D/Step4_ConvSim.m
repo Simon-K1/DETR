@@ -120,26 +120,4 @@ if 0
         end
     end
 end
-%% 全仿输出数据对比
-if 0
-    Check_Row=14;
-    Check_All=1;
-    fid_raw_W=fopen('阵列输出数据.txt','w');
-    OutNum=8;%设置一下出多少个点
-    %数据重排，按通道优先格式输出
-    for i=1:Out_Row %遍历输出图片的行
-        fprintf(fid_raw_W,'======================Row%d======================\n',i);
-        Matrix_Flattened=OutFeature_3D_UnArranged{i};
-        if i==Check_Row||(Check_All)
-            for j=1:Out_Col%遍历列
-                for k=1:(OutNum):Out_Channel-7%遍历输出通道
-%                     fprintf(fid_raw_W,'%08x%08x%08x%08x%08x%08x%08x%08x\n',Matrix_Flattened(k+7,j),Matrix_Flattened(k+6,j),Matrix_Flattened(k+5,j),Matrix_Flattened(k+4,j),Matrix_Flattened(k+3,j),Matrix_Flattened(k+2,j),Matrix_Flattened(k+1,j),Matrix_Flattened(k,j));%低位第一个点，高位第二个点，
-                      fprintf(fid_raw_W,'%08x%08x\n',Matrix_Flattened(k+1,j),Matrix_Flattened(k,j));%低位第一个点，高位第二个点，
-                end
-            end
-        end
-    end
-    fclose(fid_raw_W);
-end
-
 

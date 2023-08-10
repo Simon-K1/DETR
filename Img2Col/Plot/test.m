@@ -23,3 +23,5 @@ OutChannel_Split_Nums=ceil(Out_Channel/InOut(2));
 arc2_ComputeTime=InChannel_Split_Nums*OutChannel_Split_Nums*(Out_Row*Out_Col)
 SA_ComputeTime
 
+
+
