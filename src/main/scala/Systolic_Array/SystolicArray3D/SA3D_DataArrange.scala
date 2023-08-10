@@ -162,6 +162,7 @@ class ConvOutput_Ctrl(SLICE:Int,HEIGHT:Int,WIDTH:Int) extends Component{//卷积
     noIoPrefix()
     
     val InChannel_Cnt=ForLoopCounter((io.InData_Cnt_En),Config.DATA_GENERATE_CONV_OUT_CHANNEL_WIDTH,(io.OutChannel-1)>>(log2Up(SLICE)))//输入通道计数器，每行一下进一个点，也就是图片的一个通道
+    //这里的InChannel_Cnt可能有点歧义，需以后需要重新取个名字。。#TODO
     val In_Col_Cnt=SubstractLoopCounter(InChannel_Cnt.valid,16,io.OutFeatureSize,HEIGHT)//图片列计数器,做减法这里io.Matrix_Col不需要减1
     //In_Channel_Cnt每次Valid代表已经缓存好了HEIGHT个点的完整通道，所以这里需要除HEIGHT
     when(io.ResetCnt){

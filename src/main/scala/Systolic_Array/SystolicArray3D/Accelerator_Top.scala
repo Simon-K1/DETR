@@ -14,7 +14,7 @@ class Accelerator_Top extends Component{
   val regSData = slave(AxiLite4(log2Up(1 MiB), 32))//地址位宽-数据位宽
   AxiLite4SpecRenamer(regSData)
   val Regs=new RegTable
-  val core=new SA3D_Top(8,8,8,32)
+  val core=new SA3D_Top(1,8,64,32)
   val s_axis_s2mm=new Bundle{
     val Data_Width=64
     val tdata=in UInt(Data_Width bits)
