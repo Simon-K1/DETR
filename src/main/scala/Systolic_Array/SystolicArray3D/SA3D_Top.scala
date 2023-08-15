@@ -5,6 +5,7 @@ import spinal.lib.slave
 import utils._
 import Systolic_Array.Img2ColStreamV2
 import spinal.lib.Delay
+import Systolic_Array.Quant.ConvQuant
 object TopCtrl_Enum extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, WEIGHT_CACHE,RECEIVE_PICTURE,RECEIVE_MATRIX,WAIT_COMPUTE_END= newElement
     //WEIGHT_CACHE:缓存权重
@@ -93,7 +94,9 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
         val tvalid=in Bool()
     }
 
-
+    val QuantInstru=new Bundle{
+      val zeroIn=in UInt(8 bits)//量化零点
+    }
     val Img2Col_Instru=new Bundle{
         val Stride                          =in UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits)//可配置步长
         val Kernel_Size                     =in UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits)//
@@ -141,6 +144,7 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     val SubModule_SA_3D         =new SA_3D(SLICE,HEIGHT,WIDTH,ACCU_WITDH)//8*8*8的脉动阵列
     val SubModule_WeightCache   =new WeightCache_Stream(8,8,8,64)//权重缓存模块
     val SubModule_DataArrange   =new ConvArrangeV3(SLICE,HEIGHT,WIDTH)
+    val SubModule_ConvQuant     =new ConvQuant
 
     //todo---这里以后如果添加了矩阵计算模块要重新switch
     for(i<-0 to HEIGHT-1){
@@ -188,32 +192,45 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     }
 
     SubModule_Img2Col.io.start                      :=Delay(SubModule_WeightCache.io.Weight_Cached,3)&&(Control.Switch_Conv)//权重缓存完了才启动img2col以及卷积计算
-    Fsm.Picture_Received                            :=SubModule_Img2Col.io.LayerEnd//||LH_Gemm.io.LayerEnd---todo
+    // Fsm.Picture_Received                            :=SubModule_Img2Col.io.LayerEnd//||LH_Gemm.io.LayerEnd---重点关注
     Fsm.Switch_Conv                                 :=Control.Switch_Conv
 //WeightCache模块控制=================================================================================================================================
     
     SubModule_WeightCache.io.Matrix_Row :=Img2Col_Instru.WeightMatrix_Row
     SubModule_WeightCache.io.Matrix_Col :=Img2Col_Instru.OutFeature_Channel
     SubModule_WeightCache.io.start      :=Delay(Fsm.nextState===TopCtrl_Enum.WEIGHT_CACHE,3)
-    SubModule_WeightCache.io.Raddr_Valid:=SubModule_Img2Col.io.Raddr_Valid//||LH_Gemm.io.bvalid---todo
-    SubModule_WeightCache.io.LayerEnd   :=LayerEnd//(Control.LayerEnd)
-    Fsm.WeightCached          :=SubModule_WeightCache.io.Weight_Cached//(ConvQuant.io.QuantPara_Cached)---todo
-    // val Weight_Tmp=UInt(64 bits)
+    // SubModule_WeightCache.io.Raddr_Valid:=SubModule_Img2Col.io.Raddr_Valid//||LH_Gemm.io.bvalid---todo，重点关注
+    SubModule_WeightCache.io.LayerEnd   :=LayerEnd
+    // Fsm.WeightCached          :=SubModule_WeightCache.io.Weight_Cached//(ConvQuant.io.QuantPara_Cached)---todo,重点关注
+
     SubModule_WeightCache.io.s_axis_s2mm_tdata <>InputSwitch.m(0).axis_mm2s_tdata//RegNext(InputSwitch.m(0).axis_mm2s_tdata)
     SubModule_WeightCache.io.s_axis_s2mm_tkeep <>InputSwitch.m(0).axis_mm2s_tkeep
     SubModule_WeightCache.io.s_axis_s2mm_tlast <>InputSwitch.m(0).axis_mm2s_tlast
     SubModule_WeightCache.io.s_axis_s2mm_tready<>InputSwitch.m(0).axis_mm2s_tready
     SubModule_WeightCache.io.s_axis_s2mm_tvalid<>InputSwitch.m(0).axis_mm2s_tvalid//RegNext(InputSwitch.m(0).axis_mm2s_tvalid)
-    //当B矩阵缓存完后应该继续缓存量化参数
-    when(SubModule_WeightCache.io.s_axis_s2mm_tready){
-        InputSwitch.m(0).axis_mm2s_tready:=SubModule_WeightCache.io.s_axis_s2mm_tready
-    }otherwise{
-        InputSwitch.m(0).axis_mm2s_tready:=False//ConvQuant.io.sData.ready----todo
-    }
-    // ConvQuant.io.sData.payload<>InputSwitch.m(0).axis_mm2s_tdata
-    // ConvQuant.io.sData.valid<>InputSwitch.m(0).axis_mm2s_tvalid
+    // //当B矩阵缓存完后应该继续缓存量化参数--重点关注
+    // when(SubModule_WeightCache.io.s_axis_s2mm_tready){
+    //     InputSwitch.m(0).axis_mm2s_tready:=SubModule_WeightCache.io.s_axis_s2mm_tready
+    // }otherwise{
+    //     InputSwitch.m(0).axis_mm2s_tready:=SubModule_ConvQuant.io.sData.ready
+    // }
+    // SubModule_ConvQuant.io.sData.payload<>InputSwitch.m(0).axis_mm2s_tdata
+    // SubModule_ConvQuant.io.sData.valid<>InputSwitch.m(0).axis_mm2s_tvalid
 //GEMM模块控制=================================================================================================================================
     Fsm.Matrix_Received:=False
+//ConvQuant 模块============================================================================================================================
+    SubModule_ConvQuant.io.start          :=SubModule_WeightCache.io.Weight_Cached
+    
+    for(i<-0 to HEIGHT-1){
+      SubModule_ConvQuant.io.dataIn(i)         :=S(0)
+    }
+
+    // ConvQuant.io.dataOut<>mData.payload
+    SubModule_ConvQuant.io.LayerEnd       :=LayerEnd//Control.LayerEnd
+    SubModule_ConvQuant.io.OutMatrix_Col  :=Img2Col_Instru.OutFeature_Channel//输出矩阵的列数
+    SubModule_ConvQuant.io.zeroIn         :=QuantInstru.zeroIn
+    SubModule_ConvQuant.io.SAOutput_Valid :=False
+
 //DataArrange 模块============================================================================================================================
     val m_axis_mm2s=new Bundle{//一个从接口，两个主接口
       val Data_Width=64
@@ -230,9 +247,6 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     SubModule_DataArrange.io.OutFeatureSize:=Img2Col_Instru.OutFeature_Size
     SubModule_DataArrange.io.SwitchConv:=Control.Switch_Conv
 
-    // for(i<-0 to SLICE-1){
-    //   // SubModule_DataArrange.io.sData(i):=SubModule_SA_3D.io
-    // }
     
 
     m_axis_mm2s.tdata:=SubModule_DataArrange.io.mData.payload
@@ -245,11 +259,22 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
       SubModule_DataArrange.io.sData(i):=SubModule_SA_3D.Matrix_C.payload(i).resized//从现在开始约定好，输出的数据都用vec描述，Vec的大小就是HEIGHT每一行都与DataArrange一一对应
       SubModule_DataArrange.io.sValid(i):=SubModule_SA_3D.Matrix_C.valid(i)
     }
-    
-
+//============================================================================================================================================
+  //添加新模块后需要重点关注的信号放着这里
+  Fsm.Picture_Received                            :=SubModule_Img2Col.io.LayerEnd//||LH_Gemm.io.LayerEnd---todo
+  SubModule_WeightCache.io.Raddr_Valid            :=SubModule_Img2Col.io.Raddr_Valid//||LH_Gemm.io.bvalid---todo
+  Fsm.WeightCached                                :=SubModule_ConvQuant.io.QuantPara_Cached//(ConvQuant.io.QuantPara_Cached)---todo
+  //当B矩阵缓存完后应该继续缓存量化参数
+  when(SubModule_WeightCache.io.s_axis_s2mm_tready){
+      InputSwitch.m(0).axis_mm2s_tready:=SubModule_WeightCache.io.s_axis_s2mm_tready
+  }otherwise{
+      InputSwitch.m(0).axis_mm2s_tready:=SubModule_ConvQuant.io.sData.ready
+  }
+  SubModule_ConvQuant.io.sData.payload<>InputSwitch.m(0).axis_mm2s_tdata
+  SubModule_ConvQuant.io.sData.valid<>InputSwitch.m(0).axis_mm2s_tvalid
 //最后的其他控制+==============================================================================================================================
     LayerEnd:=SubModule_DataArrange.io.LayerEnd
-//s
+//
 }
 
 

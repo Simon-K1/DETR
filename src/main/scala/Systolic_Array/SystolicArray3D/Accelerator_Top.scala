@@ -61,7 +61,7 @@ class Accelerator_Top extends Component{
 //   core.GemmInstru.HEIGHT                              :=Regs.Gemm_Height
 //   core.GemmInstru.WIDTH                               :=Regs.Gemm_Width
 
-//   core.QuantInstru.zeroIn                             :=Regs.Quant_ZeroPoint
+    core.QuantInstru.zeroIn                             :=Regs.Quant_ZeroPoint
   }
 
 
