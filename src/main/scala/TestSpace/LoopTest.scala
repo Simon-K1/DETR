@@ -23,7 +23,7 @@ class Timer_Cnt extends Component{
         val cnt    =out UInt(32 bits)
 
         val Intc=out Bool()
-        val Interrupt_cnt=out UInt(32 bits)
+        val Interrupt_Coming=out UInt(32 bits)//中断到来
         val Waiting_Detect_interrupt=out Bool()
     }
     noIoPrefix()
@@ -45,33 +45,33 @@ class Timer_Cnt extends Component{
     // assert(MAX_CNT<0xffffffff)
     
 
-    val Interrupt_cnt=Reg(UInt(32 bits))init(0)
+    val Interrupt_Coming=Reg(UInt(32 bits))init(0)
     val Intc=Reg(Bool)init(False)//中断信号
-    when(Interrupt_cnt===MAX_CNT){//等待2秒后，中断产生
+    when(Interrupt_Coming===MAX_CNT){//等待2秒后，中断产生
         Intc:=True
-    }elsewhen(Interrupt_cnt===MAX_CNT+INTERRUPT_LAST){//中断产生后，维持100个周期
+    }elsewhen(Interrupt_Coming===(MAX_CNT+INTERRUPT_LAST-1)){//中断产生后，维持100个周期
         Intc:=False
     }
-    io.Interrupt_cnt:=Interrupt_cnt
+    io.Interrupt_Coming:=Interrupt_Coming
     io.Intc:=Intc
 
     val Interrupt_prepare=Reg(Bool)init(False)//准备中断
     val Start_generate_Interrupt=io.gpio_in(3)//ps给一个启动信号，开始生成中断
     when(Start_generate_Interrupt){
         Interrupt_prepare:=True
-    }elsewhen(Interrupt_cnt===MAX_CNT){//中断计时器数两秒后拉高一下中断
+    }elsewhen(Interrupt_Coming===(MAX_CNT+INTERRUPT_LAST-1)){//中断计时器数两秒后拉高一下中断
         Interrupt_prepare:=False
     }
 
-    when(Interrupt_cnt===MAX_CNT+INTERRUPT_LAST){
-        Interrupt_cnt:=0
+    when(Interrupt_Coming===(MAX_CNT+INTERRUPT_LAST-1)){
+        Interrupt_Coming:=0
     }elsewhen(Interrupt_prepare){
-        Interrupt_cnt:=Interrupt_cnt+1
+        Interrupt_Coming:=Interrupt_Coming+1
     }
 
-    when(Intc){//当中断产生，等待PS那边检测到中断，开始计时
+    when(Intc&(~RegNext(Intc))){//当中断产生，等待PS那边检测到中断，开始计时
         Waiting_Detect_interrupt:=True
-    }elsewhen(restart){
+    }elsewhen(restart){//当PS检测到中断，拉低
         Waiting_Detect_interrupt:=False//当向gpio写2时，说明检测到了中断
     }
 
