@@ -44,6 +44,31 @@ import spinal.core._
 // }
 class MyAxi_Master extends Component{
     
+	// Users to add parameters here
+	// User parameters ends
+	// Do not modify the parameters beyond this line
+	// Base address of targeted slave
+	val C_M_TARGET_SLAVE_BASE_ADDR	= B"32'h40000000"
+	// Burst Length. Supports 1, 2, 4, 8, 16, 32, 64, 128, 256 burst lengths
+	val C_M_AXI_BURST_LEN	= 16
+	// Thread ID Width
+	val C_M_AXI_ID_WIDTH	= 1
+	// Width of Address Bus
+	val C_M_AXI_ADDR_WIDTH	= 32
+	// Width of Data Bus
+	val C_M_AXI_DATA_WIDTH	= 32
+	// Width of User Write Address Bus
+	val C_M_AXI_AWUSER_WIDTH	= 0
+	// Width of User Read Address Bus
+	val C_M_AXI_ARUSER_WIDTH	= 0
+	// Width of User Write Data Bus
+	val C_M_AXI_WUSER_WIDTH	= 0
+	// Width of User Read Data Bus
+	val C_M_AXI_RUSER_WIDTH	= 0
+	// Width of User Response Bus
+	val C_M_AXI_BUSER_WIDTH	= 0
+
+
     val M_AXI_ACLK=in Bool()
     val M_AXI_ARESETN=in Bool()
     val coreClockDomain=ClockDomain(M_AXI_ACLK,M_AXI_ARESETN)
@@ -55,49 +80,49 @@ class MyAxi_Master extends Component{
 		val  ERROR          =out Bool()
 
 		// Master Interface Write Address ID
-		output wire [C_M_AXI_ID_WIDTH-1 : 0] M_AXI_AWID,
+		val M_AXI_AWID		=out UInt(C_M_AXI_ID_WIDTH-1 bits)
 		// Master Interface Write Address
-		output wire [C_M_AXI_ADDR_WIDTH-1 : 0] M_AXI_AWADDR,
+		val M_AXI_AWADDR	=out UInt(C_M_AXI_ADDR_WIDTH-1 bits)
 		// Burst length. The burst length gives the exact number of transfers in a burst
-		output wire [7 : 0] M_AXI_AWLEN,
+		val M_AXI_AWLEN		=out UInt(8 bits)
 		// Burst size. This signal indicates the size of each transfer in the burst
-		output wire [2 : 0] M_AXI_AWSIZE,
+		val M_AXI_AWSIZE	=out UInt(3 bits)//[2 : 0] ,
 		// Burst type. The burst type and the size information, 
     // determine how the address for each transfer within the burst is calculated.
-		output wire [1 : 0] M_AXI_AWBURST,
+		val M_AXI_AWBURST	=out [1 : 0] ,
 		// Lock type. Provides additional information about the
     // atomic characteristics of the transfer.
-		output wire  M_AXI_AWLOCK,
+		val M_AXI_AWLOCK	=out  ,
 		// Memory type. This signal indicates how transactions
     // are required to progress through a system.
-		output wire [3 : 0] M_AXI_AWCACHE,
+		val M_AXI_AWCACHE	=out [3 : 0] ,
 		// Protection type. This signal indicates the privilege
     // and security level of the transaction, and whether
     // the transaction is a data access or an instruction access.
-		output wire [2 : 0] M_AXI_AWPROT,
+		val M_AXI_AWPROT	=out [2 : 0] ,
 		// Quality of Service, QoS identifier sent for each write transaction.
-		output wire [3 : 0] M_AXI_AWQOS,
+		val M_AXI_AWQOS		=out [3 : 0] ,
 		// Optional User-defined signal in the write address channel.
-		output wire [C_M_AXI_AWUSER_WIDTH-1 : 0] M_AXI_AWUSER,
+		val M_AXI_AWUSER	=out [C_M_AXI_AWUSER_WIDTH-1 : 0] ,
 		// Write address valid. This signal indicates that
     // the channel is signaling valid write address and control information.
-		output wire  M_AXI_AWVALID,
+		val M_AXI_AWVALID	=out  ,
 		// Write address ready. This signal indicates that
     // the slave is ready to accept an address and associated control signals
 		input wire  M_AXI_AWREADY,
 		// Master Interface Write Data.
-		output wire [C_M_AXI_DATA_WIDTH-1 : 0] M_AXI_WDATA,
+		val M_AXI_WDATA		=out [C_M_AXI_DATA_WIDTH-1 : 0] ,
 		// Write strobes. This signal indicates which byte
     // lanes hold valid data. There is one write strobe
     // bit for each eight bits of the write data bus.
-		output wire [C_M_AXI_DATA_WIDTH/8-1 : 0] M_AXI_WSTRB,
+		val out [C_M_AXI_DATA_WIDTH/8-1 : 0] M_AXI_WSTRB,
 		// Write last. This signal indicates the last transfer in a write burst.
-		output wire  M_AXI_WLAST,
+		val out  M_AXI_WLAST,
 		// Optional User-defined signal in the write data channel.
-		output wire [C_M_AXI_WUSER_WIDTH-1 : 0] M_AXI_WUSER,
+		val out [C_M_AXI_WUSER_WIDTH-1 : 0] M_AXI_WUSER,
 		// Write valid. This signal indicates that valid write
     // data and strobes are available
-		output wire  M_AXI_WVALID,
+		val out  M_AXI_WVALID,
 		// Write ready. This signal indicates that the slave
     // can accept the write data.
 		input wire  M_AXI_WREADY,
@@ -112,36 +137,36 @@ class MyAxi_Master extends Component{
 		input wire  M_AXI_BVALID,
 		// Response ready. This signal indicates that the master
     // can accept a write response.
-		output wire  M_AXI_BREADY,
+		val out  M_AXI_BREADY,
 		// Master Interface Read Address.
-		output wire [C_M_AXI_ID_WIDTH-1 : 0] M_AXI_ARID,
+		val out [C_M_AXI_ID_WIDTH-1 : 0] M_AXI_ARID,
 		// Read address. This signal indicates the initial
     // address of a read burst transaction.
-		output wire [C_M_AXI_ADDR_WIDTH-1 : 0] M_AXI_ARADDR,
+		val out [C_M_AXI_ADDR_WIDTH-1 : 0] M_AXI_ARADDR,
 		// Burst length. The burst length gives the exact number of transfers in a burst
-		output wire [7 : 0] M_AXI_ARLEN,
+		val out [7 : 0] M_AXI_ARLEN,
 		// Burst size. This signal indicates the size of each transfer in the burst
-		output wire [2 : 0] M_AXI_ARSIZE,
+		val out [2 : 0] M_AXI_ARSIZE,
 		// Burst type. The burst type and the size information, 
     // determine how the address for each transfer within the burst is calculated.
-		output wire [1 : 0] M_AXI_ARBURST,
+		val out [1 : 0] M_AXI_ARBURST,
 		// Lock type. Provides additional information about the
     // atomic characteristics of the transfer.
-		output wire  M_AXI_ARLOCK,
+		val out  M_AXI_ARLOCK,
 		// Memory type. This signal indicates how transactions
     // are required to progress through a system.
-		output wire [3 : 0] M_AXI_ARCACHE,
+		val out [3 : 0] M_AXI_ARCACHE,
 		// Protection type. This signal indicates the privilege
     // and security level of the transaction, and whether
     // the transaction is a data access or an instruction access.
-		output wire [2 : 0] M_AXI_ARPROT,
+		val out [2 : 0] M_AXI_ARPROT,
 		// Quality of Service, QoS identifier sent for each read transaction
-		output wire [3 : 0] M_AXI_ARQOS,
+		val out [3 : 0] M_AXI_ARQOS,
 		// Optional User-defined signal in the read address channel.
-		output wire [C_M_AXI_ARUSER_WIDTH-1 : 0] M_AXI_ARUSER,
+		val out [C_M_AXI_ARUSER_WIDTH-1 : 0] M_AXI_ARUSER,
 		// Write address valid. This signal indicates that
     // the channel is signaling valid read address and control information
-		output wire  M_AXI_ARVALID,
+		val out  M_AXI_ARVALID,
 		// Read address ready. This signal indicates that
     // the slave is ready to accept an address and associated control signals
 		input wire  M_AXI_ARREADY,
@@ -161,7 +186,7 @@ class MyAxi_Master extends Component{
 		input wire  M_AXI_RVALID,
 		// Read ready. This signal indicates that the master can
     // accept the read data and response information.
-		output wire  M_AXI_RREADY
+		val out  M_AXI_RREADY
     
     
     }
