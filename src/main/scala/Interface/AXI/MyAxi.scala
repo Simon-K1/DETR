@@ -1,5 +1,6 @@
 package Interface.AXI
 import spinal.core._
+import spinal.lib.Delay
 // class MyAxi_Master extends Component{
 //         val ACLK=in Bool()
 //         val ARESTn=in Bool()
@@ -42,13 +43,16 @@ import spinal.core._
 //         }
 //     }
 // }
+
+
 class MyAxi_Master extends Component{
-    
-	// Users to add parameters here
-	// User parameters ends
-	// Do not modify the parameters beyond this line
-	// Base address of targeted slave
-	val C_M_TARGET_SLAVE_BASE_ADDR	= B"32'h40000000"
+
+
+
+    val M_AXI_ACLK=in Bool()
+    val M_AXI_ARESETN=in Bool()
+    val coreClockDomain=ClockDomain(M_AXI_ACLK,M_AXI_ARESETN)
+	val C_M_TARGET_SLAVE_BASE_ADDR	= U"32'h40000000"
 	// Burst Length. Supports 1, 2, 4, 8, 16, 32, 64, 128, 256 burst lengths
 	val C_M_AXI_BURST_LEN	= 16
 	// Thread ID Width
@@ -68,128 +72,56 @@ class MyAxi_Master extends Component{
 	// Width of User Response Bus
 	val C_M_AXI_BUSER_WIDTH	= 0
 
+	val io=Axi_Interface()
+	val init_txn_ff=Reg(Bool())init(False)
+	val init_txn_ff2=Reg(Bool())init(False)
+	init_txn_ff:=io.INIT_AXI_TXN
+	val init_txn_pulse=init_txn_ff&&(RegNext(!init_txn_ff))//上升沿检测
+	val Fsm=M_AXI_FSM(init_txn_pulse)
+	Fsm.reads_done:=False
+	Fsm.writes_done:=False
+	
+//===================================写地址通道=============================================================
+	io.M_AXI_AWID:=0//将AWID设置为0
+	val axi_awaddr=Reg(UInt(C_M_AXI_ADDR_WIDTH bits))init(0)//写地址
+	val burst_size_bytes=U(C_M_AXI_BURST_LEN * C_M_AXI_DATA_WIDTH/8)
+	val axi_awvalid=Reg(Bool())init(False)
+	//awaddr控制===============================================================
+	when(init_txn_pulse){//awaddr控制
+		axi_awaddr:=0//每次传输都是从0开始
+	}elsewhen(io.M_AXI_AWREADY&&axi_awvalid){
+		axi_awaddr:=axi_awaddr+burst_size_bytes//每次增加的地址与突发长度和数据位宽有关
+		//这里的突发长度为16，数据位宽为64bit=8B，那么一次突发传输能发16*8=128B的数据，从机拿到起始地址0，然后再自己计算剩下的地址
+		//【注意】只有完成一次完整的突发传输后，从机才能再取一次写地址,
+		//也可以看下面的awvalid的控制，可以看出，每次突发传输也只会发一次写地址
+	}otherwise{//TODO,这里需要这句话嘛？
+		axi_awaddr:=axi_awaddr//所有条件都不满足就保持不变即可，其实这个otherwise语句可以不写
+	}
+	//awvalid控制===============================================================
+	val start_single_burst_write=Reg(Bool())init(False)//这玩意的控制还挺麻烦
+	when(init_txn_pulse){
+		axi_awvalid:=False//
+	}elsewhen(!axi_awvalid&&start_single_burst_write){
+		axi_awvalid:=True//当axi_awvalid无效时并且开始新一轮传输时，说明这时的写地址是有效的
+	}elsewhen(axi_awvalid&&io.M_AXI_AWREADY){
+		axi_awvalid:=False//当写地址发过去后，拉低，因为只要发一次写地址即可，剩下的就是让从机自己去算了
+	}otherwise{
+		axi_awvalid:=axi_awvalid
+	}
+	
+	io.M_AXI_AWADDR		:=C_M_TARGET_SLAVE_BASE_ADDR+axi_awaddr
+	io.M_AXI_AWLEN		:=C_M_AXI_BURST_LEN-1
+	io.M_AXI_AWSIZE		:=log2Up((C_M_AXI_DATA_WIDTH/8)-1)
+	io.M_AXI_AWBURST	:=U"2'b01"
+	io.M_AXI_AWLOCK		:=False
+	io.M_AXI_AWCACHE	:=U"4'b0010"
+	io.M_AXI_AWPROT		:=U"3'b0"
+	io.M_AXI_AWQOS		:=U("4'b0")//U"4'b0"
+	io.M_AXI_AWUSER		:=U(s"${C_M_AXI_AWUSER_WIDTH}'b0")
+	
+	io.M_AXI_AWVALID	:=axi_awvalid
 
-    val M_AXI_ACLK=in Bool()
-    val M_AXI_ARESETN=in Bool()
-    val coreClockDomain=ClockDomain(M_AXI_ACLK,M_AXI_ARESETN)
-    new ClockingArea(coreClockDomain){//如果需要用自己的时钟，需要用
-		val  INIT_AXI_TXNin =in Bool()
-		// Asserts when transaction is complete
-		val  TXN_DONE       =out Bool()
-		// Asserts when ERROR is detected
-		val  ERROR          =out Bool()
-
-		// Master Interface Write Address ID
-		val M_AXI_AWID		=out UInt(C_M_AXI_ID_WIDTH-1 bits)
-		// Master Interface Write Address
-		val M_AXI_AWADDR	=out UInt(C_M_AXI_ADDR_WIDTH-1 bits)
-		// Burst length. The burst length gives the exact number of transfers in a burst
-		val M_AXI_AWLEN		=out UInt(8 bits)
-		// Burst size. This signal indicates the size of each transfer in the burst
-		val M_AXI_AWSIZE	=out UInt(3 bits)//[2 : 0] ,
-		// Burst type. The burst type and the size information, 
-    // determine how the address for each transfer within the burst is calculated.
-		val M_AXI_AWBURST	=out [1 : 0] ,
-		// Lock type. Provides additional information about the
-    // atomic characteristics of the transfer.
-		val M_AXI_AWLOCK	=out  ,
-		// Memory type. This signal indicates how transactions
-    // are required to progress through a system.
-		val M_AXI_AWCACHE	=out [3 : 0] ,
-		// Protection type. This signal indicates the privilege
-    // and security level of the transaction, and whether
-    // the transaction is a data access or an instruction access.
-		val M_AXI_AWPROT	=out [2 : 0] ,
-		// Quality of Service, QoS identifier sent for each write transaction.
-		val M_AXI_AWQOS		=out [3 : 0] ,
-		// Optional User-defined signal in the write address channel.
-		val M_AXI_AWUSER	=out [C_M_AXI_AWUSER_WIDTH-1 : 0] ,
-		// Write address valid. This signal indicates that
-    // the channel is signaling valid write address and control information.
-		val M_AXI_AWVALID	=out  ,
-		// Write address ready. This signal indicates that
-    // the slave is ready to accept an address and associated control signals
-		input wire  M_AXI_AWREADY,
-		// Master Interface Write Data.
-		val M_AXI_WDATA		=out [C_M_AXI_DATA_WIDTH-1 : 0] ,
-		// Write strobes. This signal indicates which byte
-    // lanes hold valid data. There is one write strobe
-    // bit for each eight bits of the write data bus.
-		val out [C_M_AXI_DATA_WIDTH/8-1 : 0] M_AXI_WSTRB,
-		// Write last. This signal indicates the last transfer in a write burst.
-		val out  M_AXI_WLAST,
-		// Optional User-defined signal in the write data channel.
-		val out [C_M_AXI_WUSER_WIDTH-1 : 0] M_AXI_WUSER,
-		// Write valid. This signal indicates that valid write
-    // data and strobes are available
-		val out  M_AXI_WVALID,
-		// Write ready. This signal indicates that the slave
-    // can accept the write data.
-		input wire  M_AXI_WREADY,
-		// Master Interface Write Response.
-		input wire [C_M_AXI_ID_WIDTH-1 : 0] M_AXI_BID,
-		// Write response. This signal indicates the status of the write transaction.
-		input wire [1 : 0] M_AXI_BRESP,
-		// Optional User-defined signal in the write response channel
-		input wire [C_M_AXI_BUSER_WIDTH-1 : 0] M_AXI_BUSER,
-		// Write response valid. This signal indicates that the
-    // channel is signaling a valid write response.
-		input wire  M_AXI_BVALID,
-		// Response ready. This signal indicates that the master
-    // can accept a write response.
-		val out  M_AXI_BREADY,
-		// Master Interface Read Address.
-		val out [C_M_AXI_ID_WIDTH-1 : 0] M_AXI_ARID,
-		// Read address. This signal indicates the initial
-    // address of a read burst transaction.
-		val out [C_M_AXI_ADDR_WIDTH-1 : 0] M_AXI_ARADDR,
-		// Burst length. The burst length gives the exact number of transfers in a burst
-		val out [7 : 0] M_AXI_ARLEN,
-		// Burst size. This signal indicates the size of each transfer in the burst
-		val out [2 : 0] M_AXI_ARSIZE,
-		// Burst type. The burst type and the size information, 
-    // determine how the address for each transfer within the burst is calculated.
-		val out [1 : 0] M_AXI_ARBURST,
-		// Lock type. Provides additional information about the
-    // atomic characteristics of the transfer.
-		val out  M_AXI_ARLOCK,
-		// Memory type. This signal indicates how transactions
-    // are required to progress through a system.
-		val out [3 : 0] M_AXI_ARCACHE,
-		// Protection type. This signal indicates the privilege
-    // and security level of the transaction, and whether
-    // the transaction is a data access or an instruction access.
-		val out [2 : 0] M_AXI_ARPROT,
-		// Quality of Service, QoS identifier sent for each read transaction
-		val out [3 : 0] M_AXI_ARQOS,
-		// Optional User-defined signal in the read address channel.
-		val out [C_M_AXI_ARUSER_WIDTH-1 : 0] M_AXI_ARUSER,
-		// Write address valid. This signal indicates that
-    // the channel is signaling valid read address and control information
-		val out  M_AXI_ARVALID,
-		// Read address ready. This signal indicates that
-    // the slave is ready to accept an address and associated control signals
-		input wire  M_AXI_ARREADY,
-		// Read ID tag. This signal is the identification tag
-    // for the read data group of signals generated by the slave.
-		input wire [C_M_AXI_ID_WIDTH-1 : 0] M_AXI_RID,
-		// Master Read Data
-		input wire [C_M_AXI_DATA_WIDTH-1 : 0] M_AXI_RDATA,
-		// Read response. This signal indicates the status of the read transfer
-		input wire [1 : 0] M_AXI_RRESP,
-		// Read last. This signal indicates the last transfer in a read burst
-		input wire  M_AXI_RLAST,
-		// Optional User-defined signal in the read address channel.
-		input wire [C_M_AXI_RUSER_WIDTH-1 : 0] M_AXI_RUSER,
-		// Read valid. This signal indicates that the channel
-    // is signaling the required read data.
-		input wire  M_AXI_RVALID,
-		// Read ready. This signal indicates that the master can
-    // accept the read data and response information.
-		val out  M_AXI_RREADY
-    
-    
-    }
+	
 
 }
 class AA extends  Component{
@@ -203,6 +135,6 @@ class AA extends  Component{
 object ConvOutput extends App { //
     val verilog_path="./Simulation/MyAxi/verilog" 
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new MyAxi_Master)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new AA)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new MyAxi_Master)
 
 }
