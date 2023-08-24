@@ -8,8 +8,8 @@ case class M_AXI_FSM(start:Bool)extends Area{
     val currentState = Reg(M_AXI_STATUS()) init M_AXI_STATUS.IDLE
     val nextState = M_AXI_STATUS()
     currentState := nextState
-	val writes_done=Bool()
-	val reads_done=Bool()
+	val writes_done=Reg(Bool())init(False)
+	val reads_done=Reg(Bool())init(False)
 	switch(currentState){
 		is(M_AXI_STATUS.IDLE){
 			when(start){
@@ -122,10 +122,10 @@ case class Axi_Interface() extends Bundle{
 // 	val M_AXI_BUSER=in UInt(C_M_AXI_BUSER_WIDTH bits)//[C_M_AXI_BUSER_WIDTH-1 : 0] ,
 // 	// Write response valid. This signal indicates that the
 // // channel is signaling a valid write response.
-// 	val M_AXI_BVALID=in  Bool()//,
+	val M_AXI_BVALID=in  Bool()//,
 // 	// Response ready. This signal indicates that the master
 // // can accept a write response.
-// 	val M_AXI_BREADY=out  Bool()//,
+	val M_AXI_BREADY=out  Bool()//,
 // 	// Master Interface Read Address.
 // 	val M_AXI_ARID=out UInt(C_M_AXI_ID_WIDTH bits)//[C_M_AXI_ID_WIDTH-1 : 0] ,
 // 	// Read address. This signal indicates the initial

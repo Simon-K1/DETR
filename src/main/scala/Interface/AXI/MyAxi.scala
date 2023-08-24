@@ -72,12 +72,24 @@ class MyAxi_Master extends Component{
 	// Width of User Response Bus
 	val C_M_AXI_BUSER_WIDTH	= 0
 
+	val C_MASTER_LENGTH=12
+	val C_NO_BURSTS_REQ=C_MASTER_LENGTH-log2Up((C_M_AXI_BURST_LEN*C_M_AXI_DATA_WIDTH/8)-1);//一般burstsize=总线数据位宽
+	
+	
 	val io=Axi_Interface()
+
+	val axi_bready=Reg(Bool())init(False)
+	io.M_AXI_BREADY:=axi_bready
+
 	val init_txn_ff=Reg(Bool())init(False)
 	val init_txn_ff2=Reg(Bool())init(False)
 	init_txn_ff:=io.INIT_AXI_TXN
 	val init_txn_pulse=init_txn_ff&&(RegNext(!init_txn_ff))//上升沿检测
 	val Fsm=M_AXI_FSM(init_txn_pulse)
+	val write_burst_counter=Reg(UInt(C_NO_BURSTS_REQ bits))init(0)
+	when(io.M_AXI_BVALID&& (write_burst_counter(C_NO_BURSTS_REQ) && axi_bready)){
+
+	}
 	Fsm.reads_done:=False
 	Fsm.writes_done:=False
 	
@@ -99,6 +111,22 @@ class MyAxi_Master extends Component{
 	}
 	//awvalid控制===============================================================
 	val start_single_burst_write=Reg(Bool())init(False)//这玩意的控制还挺麻烦
+	val burst_write_active		=Reg(Bool())init(False)
+	when(init_txn_pulse){
+		burst_write_active:=False
+	}elsewhen(start_single_burst_write){
+		burst_write_active:=True
+	}elsewhen(io.M_AXI_BVALID&&axi_bready){
+		burst_write_active:=False
+	}
+	when(Fsm.currentState===M_AXI_STATUS.INIT_WRITE){
+		when(~axi_awvalid && ~start_single_burst_write && (~burst_write_active)){
+			//如果当前状态处于INIT_WIRTE，并且axi_awvalid没拉高
+			start_single_burst_write:=True//则启动一次突发写传输
+		}otherwise{//当写地址被发过去后，axi_awvalid就会拉低
+			start_single_burst_write:=False
+		}
+	}
 	when(init_txn_pulse){
 		axi_awvalid:=False//
 	}elsewhen(!axi_awvalid&&start_single_burst_write){
