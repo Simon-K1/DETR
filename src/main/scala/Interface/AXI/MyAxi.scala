@@ -75,10 +75,10 @@ class MyAxi_Master extends Component{
 	val C_MASTER_LENGTH=12
 	val C_NO_BURSTS_REQ=C_MASTER_LENGTH-log2Up((C_M_AXI_BURST_LEN*C_M_AXI_DATA_WIDTH/8)-1);//一般burstsize=总线数据位宽
 	
-	
 	val io=Axi_Interface()
 
 	val axi_bready=Reg(Bool())init(False)
+	val axi_awvalid=Reg(Bool())init(False)
 	io.M_AXI_BREADY:=axi_bready
 
 	val init_txn_ff=Reg(Bool())init(False)
@@ -87,17 +87,39 @@ class MyAxi_Master extends Component{
 	val init_txn_pulse=init_txn_ff&&(RegNext(!init_txn_ff))//上升沿检测
 	val Fsm=M_AXI_FSM(init_txn_pulse)
 	val write_burst_counter=Reg(UInt(C_NO_BURSTS_REQ bits))init(0)
-	when(io.M_AXI_BVALID&& (write_burst_counter(C_NO_BURSTS_REQ) && axi_bready)){
-
+	//状态机里的写完成标志,用于状态跳转到Read状态
+	//The writes_done should be associated with a bready response
+	when(init_txn_pulse){
+		Fsm.writes_done:=False
+	}elsewhen(io.M_AXI_BVALID&& (write_burst_counter(C_NO_BURSTS_REQ) && axi_bready)){
+		Fsm.writes_done:=True
+	}otherwise{
+		Fsm.writes_done:=Fsm.writes_done
 	}
-	Fsm.reads_done:=False
-	Fsm.writes_done:=False
+
+	//write_burst_counter，还不太明白这个write_burst_counter是干啥的？
+	when(init_txn_pulse){
+		write_burst_counter:=0//启动的时候，重置为0
+	}elsewhen(io.M_AXI_AWREADY && axi_awvalid){//当成功写入一个地址后
+		when(~write_burst_counter(C_NO_BURSTS_REQ)){//只要还没数满，那就一直数
+			write_burst_counter:=write_burst_counter+1
+		}otherwise{
+			write_burst_counter:=write_burst_counter//数满了，就停下来
+		}
+	}
 	
 //===================================写地址通道=============================================================
+	//地址通道没有过多的传输，每个burst发一个首地址即可
+	//awaddr
+	//awvalid
+	//awready
+	//bready
+	//bvalid
+
 	io.M_AXI_AWID:=0//将AWID设置为0
 	val axi_awaddr=Reg(UInt(C_M_AXI_ADDR_WIDTH bits))init(0)//写地址
-	val burst_size_bytes=U(C_M_AXI_BURST_LEN * C_M_AXI_DATA_WIDTH/8)
-	val axi_awvalid=Reg(Bool())init(False)
+	val burst_size_bytes=U(C_M_AXI_BURST_LEN * C_M_AXI_DATA_WIDTH/8)//burst_size:一次突发传输的字节数=总线数据位宽
+	
 	//awaddr控制===============================================================
 	when(init_txn_pulse){//awaddr控制
 		axi_awaddr:=0//每次传输都是从0开始
@@ -112,13 +134,15 @@ class MyAxi_Master extends Component{
 	//awvalid控制===============================================================
 	val start_single_burst_write=Reg(Bool())init(False)//这玩意的控制还挺麻烦
 	val burst_write_active		=Reg(Bool())init(False)
+	//burst_write_active的作用就是用来标记当前是否处于传输状态
 	when(init_txn_pulse){
 		burst_write_active:=False
-	}elsewhen(start_single_burst_write){
+	}elsewhen(start_single_burst_write){//当一次突发传输被启动后，burst_write_active就拉高
 		burst_write_active:=True
-	}elsewhen(io.M_AXI_BVALID&&axi_bready){
+	}elsewhen(io.M_AXI_BVALID && axi_bready){//写传输的response，当从机给了个反馈，burst_write_active即可拉低
 		burst_write_active:=False
 	}
+
 	when(Fsm.currentState===M_AXI_STATUS.INIT_WRITE){
 		when(~axi_awvalid && ~start_single_burst_write && (~burst_write_active)){
 			//如果当前状态处于INIT_WIRTE，并且axi_awvalid没拉高
@@ -136,6 +160,8 @@ class MyAxi_Master extends Component{
 	}otherwise{
 		axi_awvalid:=axi_awvalid
 	}
+
+
 	
 	io.M_AXI_AWADDR		:=C_M_TARGET_SLAVE_BASE_ADDR+axi_awaddr
 	io.M_AXI_AWLEN		:=C_M_AXI_BURST_LEN-1
