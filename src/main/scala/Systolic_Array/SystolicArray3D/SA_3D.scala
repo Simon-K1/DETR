@@ -171,10 +171,9 @@ class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     }
   }
 
-
-
 }
-
+//2023、9、13：todo:将来要在这里再加一个模块，用来将三维输出转化为二维输出，这样的话，后面的其他模块就不需要适配三维的数据格式了，只需要适配二维格式即可
+//具体查看当前文件夹下的pic2.png
 object ConvOutput extends App { //
     val verilog_path="./Simulation/SA_3D/verilog" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D(1,8,64,32))

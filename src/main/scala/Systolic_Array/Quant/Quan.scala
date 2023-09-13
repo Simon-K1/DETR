@@ -1,3 +1,6 @@
+//这里的量化用于全部的矩阵计算
+//量化计算：
+
 package Systolic_Array.Quant
 import spinal.core._
 import spinal.lib._
@@ -93,6 +96,9 @@ class ConvQuant extends Component{
         val dataOut  =out UInt (Config.SA_ROW * 8 bits)//一次出8个8bit，因为脉动阵列有8行
         val zeroIn   =in UInt(8 bits)
         val SAOutput_Valid=in Bool()//脉动阵列输出的数据有效标志，用于将量化参数从
+
+
+        
     }
     
     noIoPrefix()
