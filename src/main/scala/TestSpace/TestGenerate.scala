@@ -1,5 +1,7 @@
 package TestSpace
 import spinal.core._
+import TestSpace.AD9361.{TX_DDR,IQ_concat}
+
 object TestGen extends App { 
     val verilog_path="src/main/scala/TestSpace" 
     // val test=new TopTest

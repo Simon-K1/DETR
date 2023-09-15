@@ -1,4 +1,4 @@
-package  TestSpace
+package  TestSpace.AD9361
 import  spinal.core._
 class ODDR_Module extends BlackBox {
   val io = new Bundle {

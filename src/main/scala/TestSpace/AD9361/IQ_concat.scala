@@ -1,4 +1,4 @@
-package TestSpace
+package TestSpace.AD9361
 
 import spinal.core._
 
