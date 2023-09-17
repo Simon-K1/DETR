@@ -156,7 +156,7 @@ class ConvQuant extends Component{
 }
 
 object QuantGen extends App { 
-    val verilog_path="./Simulation/Quant" 
+    val verilog_path="./verilog/Quant" 
     (0 to 8).foreach(i=>{
         printf("%d\n",i)
     })

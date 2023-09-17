@@ -658,7 +658,7 @@ class Img2ColStreamV2 extends Component{
 }
 
 object Img2ColGen extends App { 
-    val verilog_path="./Simulation/SimImg2Col" 
+    val verilog_path="./verilog/SimImg2Col" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Img2Col_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)

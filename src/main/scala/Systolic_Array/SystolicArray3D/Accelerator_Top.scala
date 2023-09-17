@@ -71,7 +71,7 @@ class Accelerator_Top extends Component{
 
 object Top extends App { 
     val OnBoard=false
-    var verilog_path="./Simulation/SA_3D" 
+    var verilog_path="./verilog/SA_3D" 
     if(OnBoard){
         verilog_path="./OnBoard"
     }

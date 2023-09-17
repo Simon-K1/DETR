@@ -73,8 +73,12 @@ class MyAxi_Master extends Component{
 	val C_M_AXI_BUSER_WIDTH	= 0
 
 	val C_MASTER_LENGTH=12
+	//由于有4K地址边界限制，4K=1111_1111_1111=4095
+	//需要考虑一个突发传输消耗掉的地址数量就是burst_size*burst_length(这里就是16*8=128)
+	//那么为了不跨越4K边界，最多可以连续突发传输多少次呢：4096/128--->12-6(数据位宽)
+
 	val C_NO_BURSTS_REQ=C_MASTER_LENGTH-log2Up((C_M_AXI_BURST_LEN*C_M_AXI_DATA_WIDTH/8)-1);//一般burstsize=总线数据位宽
-	
+	print("%d======",C_NO_BURSTS_REQ)
 	val io=Axi_Interface()
 
 	val axi_bready=Reg(Bool())init(False)
@@ -91,7 +95,7 @@ class MyAxi_Master extends Component{
 	//The writes_done should be associated with a bready response
 	when(init_txn_pulse){
 		Fsm.writes_done:=False
-	}elsewhen(io.M_AXI_BVALID&& (write_burst_counter(C_NO_BURSTS_REQ) && axi_bready)){
+	}elsewhen(io.M_AXI_BVALID&& (write_burst_counter(C_NO_BURSTS_REQ-1) && axi_bready)){
 		Fsm.writes_done:=True
 	}otherwise{
 		Fsm.writes_done:=Fsm.writes_done
@@ -101,7 +105,7 @@ class MyAxi_Master extends Component{
 	when(init_txn_pulse){
 		write_burst_counter:=0//启动的时候，重置为0
 	}elsewhen(io.M_AXI_AWREADY && axi_awvalid){//当成功写入一个地址后
-		when(~write_burst_counter(C_NO_BURSTS_REQ)){//只要还没数满，那就一直数
+		when(~write_burst_counter(C_NO_BURSTS_REQ-1)){//只要还没数满，那就一直数
 			write_burst_counter:=write_burst_counter+1
 		}otherwise{
 			write_burst_counter:=write_burst_counter//数满了，就停下来
@@ -161,6 +165,11 @@ class MyAxi_Master extends Component{
 		axi_awvalid:=axi_awvalid
 	}
 
+	//开始控制axi_bready
+	when(init_txn_pulse){
+		
+	}
+
 
 	
 	io.M_AXI_AWADDR		:=C_M_TARGET_SLAVE_BASE_ADDR+axi_awaddr
@@ -178,16 +187,14 @@ class MyAxi_Master extends Component{
 	
 
 }
+
 class AA extends  Component{
     val AA=in UInt(0 bits)//0bit的会直接优化掉
     val BB=in UInt(1 bits)
 }
 
-
-
-
 object ConvOutput extends App { //
-    val verilog_path="./Simulation/MyAxi/verilog" 
+    val verilog_path="./verilog/MyAxi/verilog" 
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new MyAxi_Master)
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new MyAxi_Master)
 

@@ -766,7 +766,7 @@ class LayerNorm_Top extends Component{
 // }
 
 object Sum_Xq_Gen extends App { //到目前为止,layernorm需要80的dsp
-    val verilog_path="./Simulation/SimLayerNorm/verilog" 
+    val verilog_path="././verilog/MyAxi/SimLayerNorm/verilog" 
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Sum_Xq)
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Reci_Sqrt_Compute)
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new LayerNorm_Top)

@@ -211,7 +211,7 @@ class WeightCache_Stream extends Component{
     
 }
 object Weight_Gen extends App { 
-    val verilog_path="./Simulation/SimWeightCache" 
+    val verilog_path="./verilog/SimWeightCache" 
     // printf("=================%d===============",log2Up(7))
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Weight_Cache)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)

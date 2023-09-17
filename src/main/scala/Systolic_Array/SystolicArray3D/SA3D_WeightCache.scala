@@ -215,7 +215,7 @@ class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends C
     WeightCache.io.sData.ready<>io.s_axis_s2mm_tready
 }
 object Weight_Gen extends App { 
-    val verilog_path="./Simulation/SA_3D/verilog" 
+    val verilog_path="./verilog/SA_3D/verilog" 
     // printf("=================%d===============",log2Up(7))
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Weight_Cache(8,8,8,64))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)

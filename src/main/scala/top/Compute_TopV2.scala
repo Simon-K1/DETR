@@ -388,8 +388,8 @@ class Conv extends Component{
 
 
 object Top extends App { 
-    val OnBoard=true
-    var verilog_path="./Simulation/Quant" 
+    val OnBoard=false
+    var verilog_path="./verilog/Quant" 
     if(OnBoard){
         verilog_path="./OnBoard"
     }

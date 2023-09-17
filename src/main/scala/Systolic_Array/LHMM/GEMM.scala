@@ -322,6 +322,6 @@ class GemmCache extends Component {
 
 }
 object GemmCacheV1 extends App{
-  val verilog_path="./Simulation/gemm"
+  val verilog_path="./verilog/gemm"
   SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new GemmCache)
 }

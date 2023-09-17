@@ -169,7 +169,7 @@ class Zero(convConfig: TopConfig) extends Component {
 }
 
 object GeneVerilog extends App { 
-    val verilog_path="./Simulation/SimImg2Col" 
+    val verilog_path="./verilog/SimImg2Col" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Shift(TopConfig()))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)

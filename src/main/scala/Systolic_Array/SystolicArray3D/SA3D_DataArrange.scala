@@ -225,7 +225,7 @@ class GemmOutput_Ctrl(SLICE:Int,HEIGHT:Int,WIDTH:Int) extends Component{//Gemmè¾
 
 
 object ConvOutputV3 extends App { 
-    val verilog_path="./Simulation/SA_3D/verilog" 
+    val verilog_path="./verilog/SA_3D/verilog" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ConvArrangeV3(8,8,8))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
