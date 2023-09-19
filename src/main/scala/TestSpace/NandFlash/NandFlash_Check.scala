@@ -21,7 +21,7 @@ case class RW_Fsm(start:Bool)extends Area{
     val read_done=Bool()
     val check_done=Bool()
     val is_last_test=Bool()
-
+    val check_next_page=Bool()
     switch(currentState){
         is(RW_STATUS.IDLE){
             when(start){
@@ -63,8 +63,10 @@ case class RW_Fsm(start:Bool)extends Area{
         is(RW_STATUS.IS_LAST_TEST){
             when(is_last_test){
                 nextState:=RW_STATUS.IDLE
-            }otherwise{
+            }elsewhen(check_next_page){
                 nextState:=RW_STATUS.CLEAR
+            }otherwise{
+                nextState:=RW_STATUS.IS_LAST_TEST
             }
         }
     }
@@ -76,9 +78,10 @@ class NandFlash_Check(CHECK_TIMES_WIDTH:Int,CHECK_DATA_NUM_WIDTH:Int,WRITE_HEAD_
     val io =new Bundle{
         val start=in Bool()
         val device_ready=in Bool()//设备ready，比如发了一个clear信号出去，需要等待的时间从1.5ms到7ms不等，在这期间无法再对设备进行操作
+        val Check_Next_Page_En=in Bool()//读写下一页，可以一直给1，也可以在外面手动触发
         val Check_Times=in UInt(CHECK_TIMES_WIDTH bits)//写次数
         val Check_Data_Num=in UInt(CHECK_DATA_NUM_WIDTH bits)//写数据量
-        val Check_Start_Addr=in UInt(24 bits)//写起始地址(用于测试，之后的Wr_Addr会不断累加4K)
+        //val Check_Start_Addr=in UInt(24 bits)//写起始地址(用于测试，之后的Wr_Addr会不断累加4K)
         val Wr_Addr=out UInt(24 bits)//实际的写起始地址
 
         val done_flag=out Bool()//读写是否完成的flag
@@ -120,6 +123,8 @@ class NandFlash_Check(CHECK_TIMES_WIDTH:Int,CHECK_DATA_NUM_WIDTH:Int,WRITE_HEAD_
     Fsm.write_done:=Wr_Delay_Cnt.msb&&io.device_ready
     when(io.start){
         Wr_Delay_Cnt:=0
+    }elsewhen(Fsm.nextState===RW_STATUS.CLEAR){
+        Wr_Delay_Cnt:=0
     }elsewhen(Write_Done_Flag){
         Wr_Delay_Cnt:=Wr_Delay_Cnt+1
     }elsewhen(Wr_Delay_Cnt.msb){
@@ -134,7 +139,7 @@ class NandFlash_Check(CHECK_TIMES_WIDTH:Int,CHECK_DATA_NUM_WIDTH:Int,WRITE_HEAD_
     }
 
 
-    val wdata_cahce=new xil_SimpleDualBram(8,8192,8,"NdFlash_Mem",true)
+    val wdata_cahce=new xil_SimpleDualBram(8,9000,8,"NdFlash_Mem",true)
     wdata_cahce.io.addra:=wr_cnt.count.resized
     wdata_cahce.io.dina:=io.wr_data
     wdata_cahce.io.ena:=io.wr_valid
@@ -147,7 +152,7 @@ class NandFlash_Check(CHECK_TIMES_WIDTH:Int,CHECK_DATA_NUM_WIDTH:Int,WRITE_HEAD_
     val Rd_Delay_Cnt=Reg(UInt(10 bits))init(0)
 
     Fsm.read_done:=rd_cnt.valid
-    val rdata_cahce=new xil_SimpleDualBram(8,8192,8,"NdFlash_Mem",false)
+    val rdata_cahce=new xil_SimpleDualBram(8,9000,8,"NdFlash_Mem",false)
     rdata_cahce.io.addra:=rd_cnt.count.resized
     
     
@@ -201,48 +206,47 @@ class NandFlash_Check(CHECK_TIMES_WIDTH:Int,CHECK_DATA_NUM_WIDTH:Int,WRITE_HEAD_
     
 
     //=================================================
-        //写一次读一次，需要统计可以写多少次，读多少次
+        //写一次读一次，需要统计可以写多少次，读多少次,每次都按页读按页写
+    val update_page=Fsm.currentState===RW_STATUS.IS_LAST_TEST&&(Fsm.nextState===RW_STATUS.CLEAR)
+    val Page_Cnt=ForLoopCounter(update_page,log2Up(128),128-1)
+    val Block_Cnt=ForLoopCounter(Page_Cnt.valid,log2Up(2048),2048-1)
+    val Plane_Cnt=ForLoopCounter(Block_Cnt.valid,1,2-1)
+    val LUN_Cnt=ForLoopCounter(Plane_Cnt.valid,1,2-1)
+    when(Fsm.currentState===RW_STATUS.IDLE){
+        Page_Cnt.clear
+        Block_Cnt.clear
+        Plane_Cnt.clear
+        LUN_Cnt.clear
+    }
+
     val Check_Times_Cnt=Reg(UInt(CHECK_TIMES_WIDTH bits))init(0)
         //ForLoopCounter(,CHECK_TIMES_WIDTH,io.Check_Times-1)
-    when(Fsm.currentState===RW_STATUS.IS_LAST_TEST&&(Fsm.nextState===RW_STATUS.CLEAR)){
+    when(update_page){
         Check_Times_Cnt:=Check_Times_Cnt+1
     }elsewhen(io.start){
         Check_Times_Cnt:=0
     }
     Fsm.is_last_test:=Check_Times_Cnt===(io.Check_Times-1)
+    Fsm.check_next_page:=io.Check_Next_Page_En
 
-    val Wr_Addr=Reg(UInt(24 bits))init(0)
-    when(io.start){
-        Wr_Addr:=io.Check_Start_Addr
-    }elsewhen(Fsm.nextState===RW_STATUS.IS_LAST_TEST){
-        Wr_Addr:=Wr_Addr+4096//4096的地址步长（4k）
-    }
+
+    val Wr_Addr=U"4'b0"@@LUN_Cnt.count@@(Block_Cnt.count)@@(Plane_Cnt.count@@Page_Cnt.count)
+    // when(io.start){
+    //     Wr_Addr:=io.Check_Start_Addr
+    // }elsewhen(Fsm.nextState===RW_STATUS.IS_LAST_TEST){
+    //     Wr_Addr:=Wr_Addr+4096//4096的地址步长（4k）
+    // }
     io.Wr_Addr:=Wr_Addr
 
     io.done_flag:=Error_Flag
 
 
-
-    // val verilogstr="ODDR #(\n" +
-    // ".DDR_CLK_EDGE(\"SAME_EDGE\"),\n" +
-    // ".INIT(1'b0),    \n" +
-    // ".SRTYPE(\"SYNC\") \n" +
-    // ") ODDR_inst (\n" +
-    // ".Q(Q),   \n" +
-    // ".C(C),   \n" +
-    // ".CE(CE), \n" +
-    // ".D1(D1), \n" +
-    // ".D2(D2), \n" +
-    // ".R(R),   \n" +
-    // ".S(S)    \n" +
-    // ");\n"
-    // setInlineVerilog(verilogstr);
 }
 
 object TestGen extends App { 
     val verilog_path="src/main/scala/TestSpace/NandFlash" 
     // val test=new TopTest
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains =ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new NandFlash_Check(16,32))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains =ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new NandFlash_Check(24,32))
 
     
 }

@@ -13,5 +13,9 @@ ila_2 ilaCheck(
     .probe10(Check_Addr2),
     .probe11(Error_Flag),
     .probe12(wdata_cahce_doutb),
-    .probe13(rdata_cahce_doutb)
+    .probe13(rdata_cahce_doutb),
+    .probe14(Wr_Addr),
+    .probe15(Page_Cnt_count),
+    .probe16(Block_Cnt_count),
+    .probe17({Plane_Cnt_count,LUN_Cnt_count})
 );
