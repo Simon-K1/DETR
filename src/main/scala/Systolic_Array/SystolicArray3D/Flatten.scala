@@ -17,6 +17,7 @@ class Flatten(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,FIFO_DEPTH:Int=64) e
 
 
   val Data_Cache=new Array[StreamFifo[UInt]](HEIGHT)//传入数组的类型参数应该也是一个类型，而不是一个实例
+  
   val Data_Converter=new Array[AxisDataConverter](HEIGHT)
 //如果只有1个SLICE,就没必要加FIFO和WIDTH Converter,直接输入连输出就行了
   if(SLICE==1){
@@ -27,6 +28,7 @@ class Flatten(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,FIFO_DEPTH:Int=64) e
   }else{
     for(i<- 0 to HEIGHT-1){//遍历行（脉动阵列的输出，从上往下）
         Data_Cache(i)=new StreamFifo(UInt(ACCU_WITDH*SLICE bits),FIFO_DEPTH)//FIFO的深度默认为64
+        Data_Cache(i).setDefinitionName("Flatten_Fifo")
         Data_Converter(i)=new AxisDataConverter(SLICE*ACCU_WITDH,ACCU_WITDH)
 
         for(j<-0 to SLICE-1){//遍历SLICE，

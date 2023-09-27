@@ -664,36 +664,85 @@ class LayerNorm_Top extends Component{
         val Token_Nums=in UInt(Config.TOKEN_NUMS_WIDTH bits)//TokenNums 的值由外部编译器给出,比如197行矩阵,如果并Pipeline设置为1,那么这里的值是197
         //如果PipeLine设置为8,那么这里的值是25,计算公式为ceil(TokenNums/Pipeline)
 
-        val ScaleBias_sValid=in Bool()
+        //val ScaleBias_sValid=in Bool()
         val ScaleBias_sReady=out Bool()
-        val Scale=in SInt(8 bits)//暂时让Scale和Bias作为输入
-        val Bias=in SInt(8 bits)//不知道8bit够不够用，planB就是之后将8bit改为32bit
+        //val Scale=in SInt(8 bits)//暂时让Scale和Bias作为输入
+        //val Bias=in SInt(8 bits)//不知道8bit够不够用，planB就是之后将8bit改为32bit
         val mData=master Stream(SInt(8*Config.LAYERNORM_PIPELINE bits))
         val mLast=out Bool()
 
+        val QuantPara_Cached=out Bool()//量化参数全部被缓存完成
+        val ScaleBias_In=slave Stream(UInt(64 bits))//DMA位宽为64 bits
     }
+    val Fsm=LayerNorm_Fsm(io.start)
+
+    //这里改成这样是因为之前写的layernorm输入的scale和bias是拼成16bit直接输入的，
+    //但是考虑到Dma位宽是64bit，需要加一个widthconverter
+    val ScaleBias_sValid=Bool()
+    val ScaleBias_sReady=Bool() 
+    io.ScaleBias_sReady:=ScaleBias_sReady
+
+    
+    val Scale=SInt(8 bits)//暂时让Scale和Bias作为输入
+    val Bias=SInt(8 bits)//不知道8bit够不够用，planB就是之后将8bit改为32bit
+
+    val ScaleBias_Converter=new AxisDataConverter(64,16)//将64bit输入转成16bit
+    ScaleBias_Converter.setDefinitionName("LayerNorm_ScaleBias_Converter")
+
+    ScaleBias_Converter.inStream.payload:=io.ScaleBias_In.payload
+    ScaleBias_Converter.inStream.valid:=io.ScaleBias_In.valid&&(Fsm.currentState===LayerNorm_Status.LOAD_QUANT_DATA)
+    io.ScaleBias_In.ready:=ScaleBias_Converter.inStream.ready
+
+    Bias:=ScaleBias_Converter.outStream.payload(15 downto 8).asSInt//高8位为Bias
+    Scale:=ScaleBias_Converter.outStream.payload(15 downto 8).asSInt//低8位为Scale
+    ScaleBias_Converter.outStream.ready:=ScaleBias_sReady
+    ScaleBias_Converter.outStream.valid<>ScaleBias_sValid
+
+
+
     val SubModule=new LayerNorm_Module
     noIoPrefix()
-    val Fsm=LayerNorm_Fsm(io.start)
+    
     val Init_Count=ForLoopCounter(Fsm.currentState===LayerNorm_Status.INIT,log2Up(5),5)//初始化数5下
+    val ScaleBias_Cached=Reg(Bool())init(False)//Scale和Bias都被缓存完了，下一步就是缓存量化因子
+
+    val Ptf_In_Cnt=ForLoopCounter(io.ScaleBias_In.valid&&ScaleBias_Cached,10,(io.Channel_Nums>>5)-1)//因为以一个地址对应32个ptf量化因子
+    val Ptf_Out_Cnt=ForLoopCounter(io.sValid,15,io.Channel_Nums-1)//因为以一个地址对应32个ptf量化因子
     Fsm.Init_End:=Init_Count.valid
 
-    val QuantCache_Cnt=ForLoopCounter(io.ScaleBias_sValid&&io.ScaleBias_sReady,Config.CHANNEL_NUMS_WIDTH,io.Channel_Nums-1)
-    Fsm.QuantData_Loaded:=QuantCache_Cnt.valid
-    val ScaleMem=new xil_SimpleDualBram(Config.SCALE_WIDTH,1024,Config.SCALE_WIDTH,"ScaleMem",true)
+    val QuantCache_Cnt=ForLoopCounter(ScaleBias_sValid&&ScaleBias_sReady,Config.CHANNEL_NUMS_WIDTH,io.Channel_Nums-1)
+    io.QuantPara_Cached:=Ptf_In_Cnt.valid//给外部的信号
+    Fsm.QuantData_Loaded:=Ptf_In_Cnt.valid//当PTF量化因子被缓存完了，那么LayerNorm的全部量化参数到此也全部缓存完了
+    val ScaleMem=new xil_SimpleDualBram(Config.SCALE_WIDTH,1024,Config.SCALE_WIDTH,"ScaleMem",true)//在外面再挂一个位宽转换叭
     val BiasMem=new xil_SimpleDualBram(Config.SCALE_WIDTH,1024,Config.SCALE_WIDTH,"ScaleMem",false)
-
-    ScaleMem.io.dina        :=io.Scale.asUInt
+    val PTF_FactorMem=new xil_SimpleDualBram(64,1024,2,"ScaleMem",false)//PTF量化因子
+    when(io.start){
+        ScaleBias_Cached:=False//复位
+    }elsewhen(QuantCache_Cnt.valid){
+        ScaleBias_Cached:=True//当量化参数Scale bias都被缓存完后，下一步继续缓存PTF量化因子。
+    }
+    ScaleMem.io.dina        :=Scale.asUInt
     ScaleMem.io.addra       :=QuantCache_Cnt.count
-    ScaleMem.io.ena         :=io.ScaleBias_sValid&&io.ScaleBias_sReady
+    ScaleMem.io.ena         :=ScaleBias_sValid&&ScaleBias_sReady
     ScaleMem.io.addrb       :=SubModule.io.Scale_Read_Addr
     ScaleMem.io.wea          :=True
 
-    BiasMem.io.dina         :=io.Bias.asUInt
+    BiasMem.io.dina         :=Bias.asUInt
     BiasMem.io.addra        :=QuantCache_Cnt.count
-    BiasMem.io.ena          :=io.ScaleBias_sValid&&io.ScaleBias_sReady
+    BiasMem.io.ena          :=ScaleBias_sValid&&ScaleBias_sReady
     BiasMem.io.addrb        :=SubModule.io.Bias_Read_Addr
     BiasMem.io.wea          :=True
+
+    
+    
+    PTF_FactorMem.io.dina   :=io.ScaleBias_In.payload
+    PTF_FactorMem.io.addra  :=Ptf_In_Cnt.count
+    PTF_FactorMem.io.ena    :=io.ScaleBias_In.valid&&ScaleBias_Cached
+    PTF_FactorMem.io.addrb  :=Ptf_Out_Cnt.count//进一个数，就读一个量化因子出来
+    PTF_FactorMem.io.wea    :=True
+
+
+
 
     SubModule.io.Scale          :=ScaleMem.io.doutb.asSInt
     SubModule.io.Bias           :=BiasMem.io.doutb.asSInt
@@ -706,9 +755,9 @@ class LayerNorm_Top extends Component{
     SubModule.io.start          :=Fsm.QuantData_Loaded
     io.sReady                   :=SubModule.io.sReady&&(Fsm.currentState===LayerNorm_Status.WAIT_COMPUTE_END)//只有处于这个状态才能进数据
     when(Fsm.currentState===LayerNorm_Status.LOAD_QUANT_DATA){
-        io.ScaleBias_sReady:=True
+        ScaleBias_sReady:=True
     }otherwise{
-        io.ScaleBias_sReady:=False
+        ScaleBias_sReady:=False
     }
 
     // io.mLast:=SubModule.io.mLast

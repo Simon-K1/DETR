@@ -9,7 +9,7 @@ case class TopConfig(){
     
     val TOKEN_NUMS_WIDTH=20//token 因为单并行度的话就是197，但是8并行度这里需要改为25，矩阵需要被补0
         //TokenNums也就是矩阵的行数,最大支持1024*1024的图片展开
-    val LAYERNORM_PIPELINE=1//8并行度
+    val LAYERNORM_PIPELINE=8//8并行度
     
     val XQ_DATA_WIDTH=19//Xq-Zp，也就是处理了Ptf之后可以直接参与计算的Xq-Zp，因为数据需要移位0，1，2，3，8bit<<3-->所以最终的量化数据位宽是11bit
     //2023/5/51修正：因为(Xq-Zp)为16bit，不能用8bit来表示
