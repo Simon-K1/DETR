@@ -37,7 +37,7 @@ else
     io_OutCol_Count_Times=ceil(io_OutCol_Count_Times);
 end
 io_InCol_Count_Times=Feature_Channel*Feature_Size/Height;%目前还是要求输入通道必须是8的倍数
-io_OutFeature_Channel_Count_Times=Out_Channel/(Slice*Width);
+io_OutFeature_Channel_Count_Times=ceil(Out_Channel/(Slice*Width));
 io_Sliding_Size=Feature_Channel*Stride/Height;
 io_OutRow_Count_Times=OutFeatureSize;
 %% io输入参数

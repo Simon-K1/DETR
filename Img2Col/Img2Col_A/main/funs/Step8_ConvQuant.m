@@ -18,7 +18,7 @@ for i=1:MatrixCol
     Scale(i)=bin2dec(Scale_bin);
 end
 %创建随机的Bias
-for i=1:2:MatrixCol
+for i=1:1:MatrixCol
     Bias_24=reshape(dec2bin(randi([0,1],[1,24])),1,[]);%低24位
     Bias_Dec=dec2bin(randi([0,16],[1]));%一个随机的移位值
     Bias_7=[reshape(dec2bin(zeros(1,7-size(Bias_Dec,2))),1,[]) Bias_Dec];%创建7bit数据，不够7bit就补零
@@ -29,7 +29,7 @@ for i=1:2:MatrixCol
 end
 
 %创建随机shift
-for i=1:2:MatrixCol
+for i=1:1:MatrixCol
     Shift(i)=bin2dec(Fixed_Length_Bin(randi([0,18],1),32));
     
 end
@@ -61,7 +61,8 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix)
         Bias_Shift=bin2dec(BinSlice(Bias_Bin,[30,24]));%Bias的移位值
         Bias_Shift;
         Bias_Tmp=[repmat(Bias_Bin(1),[1,8+Bias_Shift]),BinSlice(Bias_Bin,[23,0]),repmat('0',[1,16-Bias_Shift])];        
-        BiasAdd=bin2dec(Bias_Tmp)+Matrix(i);
+        BiasAdd=bin2dec(Bias_Tmp)+Matrix(i)*2^16;%需要注意这里的计算都是补码计算,所以出来的可能是49bit，所以还是得截后48bit
+        BiasAdd=bin2dec(Fixed_Length_Bin(BiasAdd,48));%截取后48位
 
         %加完Bias，再乘Scale  48bit*32bit-----------------------------------
         ScaleMul=Scale(i)*BiasAdd;
