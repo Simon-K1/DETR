@@ -16,6 +16,7 @@ Channel_Num=size(Weight,2);%获取输出通道数
         %这里直接截余取整，不再四舍五入
     end
 %% 第二步：
+
 end
 
 
