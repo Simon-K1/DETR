@@ -55,6 +55,12 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix)
 %第一步：先加Bias
     %对Bias进行处理
     Bias_Bin_All=dec2bin(Bias);
+
+    
+    Bias_Result=zeros(3,Sz_Matrix(2));
+    Bias_Result(1,:)=Matrix(1,:)*2^16;
+    Scale_Result=zeros(3,Sz_Matrix(2));
+
     for i=1:Sz_Matrix(2)%遍历所有列
         %先加Bias-----------------------------------------------------------
         Bias_Bin=Bias_Bin_All(i,:);
@@ -62,10 +68,24 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix)
         Bias_Shift;
         Bias_Tmp=[repmat(Bias_Bin(1),[1,8+Bias_Shift]),BinSlice(Bias_Bin,[23,0]),repmat('0',[1,16-Bias_Shift])];        
         BiasAdd=bin2dec(Bias_Tmp)+Matrix(i)*2^16;%需要注意这里的计算都是补码计算,所以出来的可能是49bit，所以还是得截后48bit
-        BiasAdd=bin2dec(Fixed_Length_Bin(BiasAdd,48));%截取后48位
+        BiasAdd=Complt2Sourcd(Fixed_Length_Bin(BiasAdd,48));%截取后48位取补码
+            %需要注意的是，BiasAdd是有符号数并且是补码，所以在做有符号乘法之前需要处理一下补码的有符号计算
+                %不能简单的用BiasAdd=bin2dec(Fixed_Length_Bin(BiasAdd,48))来计算。        
+            %将计算数据存下来
+            Bias_Result(2,i)=bin2dec(Bias_Tmp);
+            Bias_Result(3,i)=BiasAdd;
 
         %加完Bias，再乘Scale  48bit*32bit-----------------------------------
-        ScaleMul=Scale(i)*BiasAdd;
+
+        
+        ScaleMul=Scale(i)*BiasAdd;%结果为79~48的截位
+        sign=char((ScaleMul<0)+48);
+        ScaleMul=Complt2Sourcd(BinSlice(dec2bin(ScaleMul),[79,48],sign));
+            %同样地，将计算数据存下来
+            Scale_Result(1,i)=BiasAdd;
+            Scale_Result(2,i)=Scale(i);
+            Scale_Result(3,i)=ScaleMul;
+
 
         %乘完Scale再shift---------------------------------------------------
         ScaleMul_Bin=dec2bin(ScaleMul);
