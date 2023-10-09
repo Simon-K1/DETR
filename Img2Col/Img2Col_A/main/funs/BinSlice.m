@@ -5,6 +5,10 @@ function Output = BinSlice(bin,range,varargin)
         Output=Fixed_Length_Bin(0,range(1)+1);
         return
     end
+    if bin2dec(bin)==0
+        Output=Fixed_Length_Bin(0,range(1)+1);
+        return;
+    end
     if size(bin,2)<(range(1)+1)
         %bin=Fixed_Length_Bin(bin2dec(bin),range(1)+1);
         

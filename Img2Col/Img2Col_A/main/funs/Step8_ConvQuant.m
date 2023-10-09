@@ -47,11 +47,12 @@ fclose all;
 end
 
 %% 模拟卷积量化计算
-function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix)
+function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix,ZeroPoint)
     
     Sz_Matrix=size(Matrix);
     assert(Sz_Matrix(1)==1);%输入一个向量
     Quat_Out=zeros(Sz_Matrix);
+    AddZero=zeros(Sz_Matrix);
 %第一步：先加Bias
     %对Bias进行处理
     Bias_Bin_All=dec2bin(Bias);
@@ -93,11 +94,15 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix)
 
         %乘完Scale再shift---------------------------------------------------
         ScaleMul_Bin=dec2bin(ScaleMul);
+        sign=char(49-(ScaleMul>=0));%这里就是判断有没有符号，是不是负数
         Shift(i);
-       
-        DataShift=BinSlice(ScaleMul_Bin,[size(ScaleMul_Bin,2)-1,Shift(i)]);%如果shift=1，那么就去掉最后那一位即可
+            %又叒出bug了，需要注意4bit无法表示-8，因为1000可以是8也可以是-8.。。麻了
+        DataShift=[BinSlice(ScaleMul_Bin,[size(ScaleMul_Bin,2)-1,Shift(i)])];%如果shift=1，那么就去掉最后那一位即可
             %还有一个四舍五入的过程，
-            sign=DataShift(1);
+        if bin2dec(DataShift)~=0
+            DataShift=[repmat(sign,[1,Shift(i)]),DataShift];
+        end
+        
         DataShift=Complt2Sourcd([DataShift(1) BinSlice(DataShift,[15,1],sign)])+(DataShift(end)-48);
             DataShift_Result(1,i)=ScaleMul;
             DataShift_Result(2,i)=Shift(i);
@@ -105,7 +110,14 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix)
         
         
         %最后加zeropoint
+        AddZero(i)=DataShift+ZeroPoint;
+        if AddZero(i)<0
+            AddZero(i)=0;
+        else 
+            if AddZero(i)>255
+                AddZero(i)=255;
+            end
+        end
     end
-
 
 end
