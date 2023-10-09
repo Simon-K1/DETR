@@ -5,7 +5,7 @@ end
 
 
 function [Bias,Scale,Shift] = Gen_Rand_Data(MatrixRow,MatrixCol)%生成随机数据
-
+%generate rand data
 Bias=zeros(1,MatrixCol);%32bit  [1bit符号位][7bit 移位值][24bit实际值]
 Scale=zeros(1,MatrixCol);
 Shift=zeros(1,MatrixCol);
@@ -14,7 +14,7 @@ fid=fopen("Scale_Bias_Shift.txt","w");
 
 %创建随机的Scale
 for i=1:MatrixCol
-    Scale_bin=Fixed_Length_Bin(randi([1,2^32-1],1),32);
+    Scale_bin=Fixed_Length_Bin(randi([1,2^16-1],1),32);
     Scale(i)=bin2dec(Scale_bin);
 end
 %创建随机的Bias
@@ -60,7 +60,7 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix)
     Bias_Result=zeros(3,Sz_Matrix(2));
     Bias_Result(1,:)=Matrix(1,:)*2^16;
     Scale_Result=zeros(3,Sz_Matrix(2));
-
+    DataShift_Result=zeros(3,Sz_Matrix(2));
     for i=1:Sz_Matrix(2)%遍历所有列
         %先加Bias-----------------------------------------------------------
         Bias_Bin=Bias_Bin_All(i,:);
@@ -80,7 +80,11 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix)
         
         ScaleMul=Scale(i)*BiasAdd;%结果为79~48的截位
         sign=char((ScaleMul<0)+48);
-        ScaleMul=Complt2Sourcd(BinSlice(dec2bin(ScaleMul),[79,48],sign));
+        if ScaleMul<intmin('int64')
+            %dec2hex无法处理int64以外的数据，只能手动转二进制
+            error("dec is to big");
+        end
+        ScaleMul=Complt2Sourcd(BinSlice(dec2bin(ScaleMul),[79,48],sign));%补码转源码
             %同样地，将计算数据存下来
             Scale_Result(1,i)=BiasAdd;
             Scale_Result(2,i)=Scale(i);
@@ -90,10 +94,16 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix)
         %乘完Scale再shift---------------------------------------------------
         ScaleMul_Bin=dec2bin(ScaleMul);
         Shift(i);
+       
         DataShift=BinSlice(ScaleMul_Bin,[size(ScaleMul_Bin,2)-1,Shift(i)]);%如果shift=1，那么就去掉最后那一位即可
-            %还有一个四舍五入的过程        
-        DataShift=[DataShift(1),BinSlice(DataShift,[15,1])];
-        Quat_Out(i)=bin2dec(DataShift)
+            %还有一个四舍五入的过程，
+            sign=DataShift(1);
+        DataShift=Complt2Sourcd([DataShift(1) BinSlice(DataShift,[15,1],sign)])+(DataShift(end)-48);
+            DataShift_Result(1,i)=ScaleMul;
+            DataShift_Result(2,i)=Shift(i);
+            DataShift_Result(3,i)=DataShift;
+        
+        
         %最后加zeropoint
     end
 
