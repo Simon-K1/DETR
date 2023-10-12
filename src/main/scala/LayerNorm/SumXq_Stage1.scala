@@ -652,11 +652,11 @@ case class LayerNorm_Fsm(start:Bool)extends Area{
         }
     }
 }
-class LayerNorm_Top extends Component{
+class LayerNorm_Top extends Component{//#todo 这里一堆计数器，以后应该再优化一下
     //添加Scale，Bias的缓存模块
     val Config=TopConfig()
     val io=new Bundle{
-        val sData=in Vec( SInt(Config.XQ_DATA_WIDTH bits),Config.LAYERNORM_PIPELINE)
+        val sData=in Vec( SInt(8 bits),Config.LAYERNORM_PIPELINE)
         val sValid=in Bool()
         val sReady=out Bool()
         val start=in Bool()//计算启动信号
@@ -665,7 +665,7 @@ class LayerNorm_Top extends Component{
         //如果PipeLine设置为8,那么这里的值是25,计算公式为ceil(TokenNums/Pipeline)
 
         //val ScaleBias_sValid=in Bool()
-        val ScaleBias_sReady=out Bool()
+        
         //val Scale=in SInt(8 bits)//暂时让Scale和Bias作为输入
         //val Bias=in SInt(8 bits)//不知道8bit够不够用，planB就是之后将8bit改为32bit
         val mData=master Stream(SInt(8*Config.LAYERNORM_PIPELINE bits))
@@ -673,14 +673,15 @@ class LayerNorm_Top extends Component{
 
         val QuantPara_Cached=out Bool()//量化参数全部被缓存完成
         val ScaleBias_In=slave Stream(UInt(64 bits))//DMA位宽为64 bits
+        val ZeroPoint=in SInt(8 bits)
     }
     val Fsm=LayerNorm_Fsm(io.start)
 
     //这里改成这样是因为之前写的layernorm输入的scale和bias是拼成16bit直接输入的，
     //但是考虑到Dma位宽是64bit，需要加一个widthconverter
     val ScaleBias_sValid=Bool()
-    val ScaleBias_sReady=Bool() 
-    io.ScaleBias_sReady:=ScaleBias_sReady
+    val ScaleBias_sReady=Bool() //这个ready是给width converter用的
+    //io.ScaleBias_sReady:=ScaleBias_sReady
 
     
     val Scale=SInt(8 bits)//暂时让Scale和Bias作为输入
@@ -694,7 +695,7 @@ class LayerNorm_Top extends Component{
     io.ScaleBias_In.ready:=ScaleBias_Converter.inStream.ready
 
     Bias:=ScaleBias_Converter.outStream.payload(15 downto 8).asSInt//高8位为Bias
-    Scale:=ScaleBias_Converter.outStream.payload(15 downto 8).asSInt//低8位为Scale
+    Scale:=ScaleBias_Converter.outStream.payload(7 downto 0).asSInt//低8位为Scale
     ScaleBias_Converter.outStream.ready:=ScaleBias_sReady
     ScaleBias_Converter.outStream.valid<>ScaleBias_sValid
 
@@ -706,16 +707,18 @@ class LayerNorm_Top extends Component{
     val Init_Count=ForLoopCounter(Fsm.currentState===LayerNorm_Status.INIT,log2Up(5),5)//初始化数5下
     val ScaleBias_Cached=Reg(Bool())init(False)//Scale和Bias都被缓存完了，下一步就是缓存量化因子
 
-    val Ptf_In_Cnt=ForLoopCounter(io.ScaleBias_In.valid&&ScaleBias_Cached,10,(io.Channel_Nums>>5)-1)//因为以一个地址对应32个ptf量化因子
+
+    //#todo 这里有一个bug，如果io.channelNums=24，那么(io.channelNums>>5)-1就变成-1了
+    val Ptf_In_Cnt=ForLoopCounter(io.ScaleBias_In.valid&&io.ScaleBias_In.ready&&ScaleBias_Cached,10,(io.Channel_Nums<U(0))?U(32)|((io.Channel_Nums>>5)-1))//因为以一个地址对应32个ptf量化因子
     val Ptf_Out_Cnt=ForLoopCounter(io.sValid,15,io.Channel_Nums-1)//因为以一个地址对应32个ptf量化因子
     Fsm.Init_End:=Init_Count.valid
 
-    val QuantCache_Cnt=ForLoopCounter(ScaleBias_sValid&&ScaleBias_sReady,Config.CHANNEL_NUMS_WIDTH,io.Channel_Nums-1)
+    val QuantCache_Cnt=ForLoopCounter((ScaleBias_sValid&&ScaleBias_sReady)&&(~ScaleBias_Cached),Config.CHANNEL_NUMS_WIDTH,io.Channel_Nums-1)
     io.QuantPara_Cached:=Ptf_In_Cnt.valid//给外部的信号
     Fsm.QuantData_Loaded:=Ptf_In_Cnt.valid//当PTF量化因子被缓存完了，那么LayerNorm的全部量化参数到此也全部缓存完了
     val ScaleMem=new xil_SimpleDualBram(Config.SCALE_WIDTH,1024,Config.SCALE_WIDTH,"ScaleMem",true)//在外面再挂一个位宽转换叭
     val BiasMem=new xil_SimpleDualBram(Config.SCALE_WIDTH,1024,Config.SCALE_WIDTH,"ScaleMem",false)
-    val PTF_FactorMem=new xil_SimpleDualBram(64,1024,2,"ScaleMem",false)//PTF量化因子
+    val PTF_FactorMem=new xil_SimpleDualBram(64,1024,2,"PtfMem",true)//PTF量化因子
     when(io.start){
         ScaleBias_Cached:=False//复位
     }elsewhen(QuantCache_Cnt.valid){
@@ -723,13 +726,13 @@ class LayerNorm_Top extends Component{
     }
     ScaleMem.io.dina        :=Scale.asUInt
     ScaleMem.io.addra       :=QuantCache_Cnt.count
-    ScaleMem.io.ena         :=ScaleBias_sValid&&ScaleBias_sReady
+    ScaleMem.io.ena         :=(ScaleBias_sValid&&ScaleBias_sReady)&&(~ScaleBias_Cached)
     ScaleMem.io.addrb       :=SubModule.io.Scale_Read_Addr
     ScaleMem.io.wea          :=True
 
     BiasMem.io.dina         :=Bias.asUInt
     BiasMem.io.addra        :=QuantCache_Cnt.count
-    BiasMem.io.ena          :=ScaleBias_sValid&&ScaleBias_sReady
+    BiasMem.io.ena          :=(ScaleBias_sValid&&ScaleBias_sReady)&&(~ScaleBias_Cached)
     BiasMem.io.addrb        :=SubModule.io.Bias_Read_Addr
     BiasMem.io.wea          :=True
 
@@ -749,7 +752,10 @@ class LayerNorm_Top extends Component{
     SubModule.io.Channel_Nums   :=io.Channel_Nums
     SubModule.io.Token_Nums     :=io.Token_Nums
     // SubModule.io.mData          <>io.mData
-    SubModule.io.sData          :=io.sData
+    for(i<-0 to Config.LAYERNORM_PIPELINE-1){
+        SubModule.io.sData(i)          :=((io.sData(i)).resize(16)+io.ZeroPoint)<<(PTF_FactorMem.io.doutb)
+    }
+    
     SubModule.io.sValid         :=io.sValid&&io.sReady
     // io.sReady                   :=SubModule.io.sReady
     SubModule.io.start          :=Fsm.QuantData_Loaded

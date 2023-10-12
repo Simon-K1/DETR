@@ -8,6 +8,7 @@ import spinal.lib.Delay
 import Systolic_Array.Quant.ConvQuant
 import LayerNorm.LayerNorm_Top
 import spinal.lib.StreamWidthAdapter
+import Systolic_Array.Quant.Quan
 object TopCtrl_Enum extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, WEIGHT_CACHE,RECEIVE_PICTURE,RECEIVE_MATRIX,WAIT_COMPUTE_END= newElement
     //WEIGHT_CACHE:缓存权重
@@ -247,12 +248,7 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     SubModule_ConvQuant.io.SAOutput_Valid :=SubModule_Flatten.mData(0).valid
     
 //LayerNorm---(ConvQuant --> LayerNorm)=====================================================================================================
-    val DELAY_TIMES=10//#todo 延迟的级数，需要确定
-    val LayerNorm_ScaleBiasIn=new AxisDataConverter(64,16)
-    LayerNorm_ScaleBiasIn.inStream.payload:=InputSwitch.m(0).axis_mm2s_tdata
-    LayerNorm_ScaleBiasIn.inStream.valid  :=InputSwitch.m(0).axis_mm2s_tvalid
-    
-
+    val DELAY_TIMES=15//#todo 延迟的级数，需要确定
 
     SubModule_LayerNorm.io.start          :=SubModule_ConvQuant.io.QuantPara_Cached//当ConvQuant模块的权重缓存完后，才能启动Layernorm
     for(i<-0 to HEIGHT-1){//还是决定实现8并行度的LayerNorm
@@ -266,9 +262,12 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     SubModule_LayerNorm.io.ScaleBias_In.payload:=InputSwitch.m(0).axis_mm2s_tdata
     SubModule_LayerNorm.io.ScaleBias_In.valid:=InputSwitch.m(0).axis_mm2s_tvalid
     // SubModule_LayerNorm.io.ScaleBias_In.ready<>InputSwitch.m(0).axis_mm2s_tready
-
+    SubModule_LayerNorm.io.ZeroPoint:=QuantInstru.zeroIn.asSInt
     //SubModule_LayerNorm.io.mData.payload(7 downto 0)
-    SubModule_LayerNorm.io.mData.ready:=False
+    SubModule_LayerNorm.io.mData.ready:=SubModule_DataArrange.io.sReady//#todo 以后这个mready应该接到外部输出
+    for(i<- 0 to HEIGHT-1){
+      SubModule_LayerNorm.io.mData.payload((i+1)*8-1 downto i*8).asUInt<>SubModule_DataArrange.io.sData(i)
+    }
 
 //DataArrange 模块--(ConvQuant-->DataArrange)============================================================================================================================
     val m_axis_mm2s=new Bundle{//一个从接口，两个主接口
@@ -297,8 +296,8 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
 
     for(i<-0 to HEIGHT-1){//遍历行
       
-      SubModule_DataArrange.io.sData(i):=SubModule_ConvQuant.io.dataOut((i+1)*8-1 downto i*8)//从现在开始约定好，输出的数据都用vec描述，Vec的大小就是HEIGHT每一行都与DataArrange一一对应
-      SubModule_DataArrange.io.sValid(i):=Delay(SubModule_SA_3D.Matrix_C.valid(i),DELAY_TIMES)
+      //SubModule_DataArrange.io.sData(i):=SubModule_ConvQuant.io.dataOut((i+1)*8-1 downto i*8)//从现在开始约定好，输出的数据都用vec描述，Vec的大小就是HEIGHT每一行都与DataArrange一一对应
+      SubModule_DataArrange.io.sValid(i):=SubModule_LayerNorm.io.mData.valid
     }
 
 
@@ -314,7 +313,7 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
   }elsewhen(SubModule_ConvQuant.io.sData.ready){
       InputSwitch.m(0).axis_mm2s_tready:=SubModule_ConvQuant.io.sData.ready
   }otherwise{
-      InputSwitch.m(0).axis_mm2s_tready:=SubModule_LayerNorm.io.ScaleBias_sReady//最后再存LayerNorm的：Scale和Bias
+      InputSwitch.m(0).axis_mm2s_tready:=SubModule_LayerNorm.io.ScaleBias_In.ready//最后再存LayerNorm的：Scale和Bias
   }
   SubModule_ConvQuant.io.sData.payload<>InputSwitch.m(0).axis_mm2s_tdata
   SubModule_ConvQuant.io.sData.valid<>InputSwitch.m(0).axis_mm2s_tvalid
@@ -322,6 +321,7 @@ class SA3D_Top(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
     LayerEnd:=SubModule_DataArrange.io.LayerEnd
 //
 }
+
 
 
 object SA3D_Generate extends App { 

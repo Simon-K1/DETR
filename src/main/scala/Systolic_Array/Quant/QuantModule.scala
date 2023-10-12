@@ -124,7 +124,7 @@ class Shift(convConfig: TopConfig) extends Component {
         }
         out
     }
-
+    
     (0 until convConfig.SA_ROW).foreach { i =>
         port.dataOut(i) := <<(port.dataIn(i), port.quan)
     }
@@ -174,3 +174,4 @@ object GeneVerilog extends App {
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }
+
