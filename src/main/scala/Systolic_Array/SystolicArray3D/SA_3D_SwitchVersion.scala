@@ -212,4 +212,88 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
         SubModule_Flatten.sData.valid(i)     :=SubModule_SA_3D.Matrix_C.valid(i)
       }
     }
+    SubModule_ConvQuant.io.start          :=Control.start&Control.Switch(QUANT_NUM)
+    for(i<-0 to HEIGHT-1){
+      SubModule_ConvQuant.io.dataIn(i)         :=SubModule_Flatten.mData(i).payload.asSInt
+    }    
+        // ConvQuant.io.dataOut<>mData.payload
+    SubModule_ConvQuant.io.LayerEnd       :=LayerEnd//Control.LayerEnd
+    SubModule_ConvQuant.io.OutMatrix_Col  :=Img2Col_Instru.OutFeature_Channel//输出矩阵的列数
+    SubModule_ConvQuant.io.zeroIn         :=QuantInstru.zeroIn
+    SubModule_ConvQuant.io.SAOutput_Valid :=SubModule_Flatten.mData(0).valid
+    SubModule_ConvQuant.io.sData.payload<>  InputSwitch.m(QUANT_NUM).axis_mm2s_tdata
+    SubModule_ConvQuant.io.sData.valid<>    InputSwitch.m(QUANT_NUM).axis_mm2s_tvalid
+    SubModule_ConvQuant.io.sData.ready<>    InputSwitch.m(QUANT_NUM).axis_mm2s_tready
+
+    //Quant完了再加一个Switch
+    val Quant_Switch=new Axis_Switch_S2M(2,64)
+    Quant_Switch.io.Switch:=0 //#todo 待修改
+    for(i<-0 to HEIGHT){
+        Quant_Switch.s0_axis_s2mm.tdata((i+1)*8-1 downto i*8):=SubModule_ConvQuant.io.dataIn(i).asUInt
+        Quant_Switch.s0_axis_s2mm.tkeep.setAll()
+        Quant_Switch.s0_axis_s2mm.tlast:=False
+        Quant_Switch.s0_axis_s2mm.tready:=False
+    }
+    
+
+    //DataArrange 模块--(ConvQuant-->DataArrange)============================================================================================================================
+    val DELAY_TIMES=15//#todo 延迟的级数，需要确定
+    val m_axis_mm2s=new Bundle{//一个从接口，两个主接口
+      val Data_Width=64
+      val tdata=out UInt(Data_Width bits)
+      val tkeep=out Bits(Data_Width/8 bits)
+      val tlast=out Bool()
+      val tready=in Bool()
+      val tvalid=out Bool()
+    }
+    
+    SubModule_DataArrange.io.MatrixCol:=Img2Col_Instru.OutMatrix_Col
+    SubModule_DataArrange.io.MatrixRow:=Img2Col_Instru.OutMatrix_Row
+    SubModule_DataArrange.io.start    :=Control.start&Control.Switch(WEIGHT_NUM)//只要缓存权重，那么一定会启动Arrange模块。
+    SubModule_DataArrange.io.OutChannel:=Img2Col_Instru.OutFeature_Channel.resized
+    SubModule_DataArrange.io.OutFeatureSize:=Img2Col_Instru.OutFeature_Size
+    SubModule_DataArrange.io.SwitchConv:=False//#todo 以后这里添加了Gemm后，要记得修改
+
+
+    m_axis_mm2s.tdata:=SubModule_DataArrange.io.mData.payload
+    m_axis_mm2s.tlast:=SubModule_DataArrange.io.mLast
+    m_axis_mm2s.tvalid:=SubModule_DataArrange.io.mData.valid
+    m_axis_mm2s.tkeep.setAll()
+    SubModule_DataArrange.io.mData.ready:=m_axis_mm2s.tready
+    for(i<-0 to HEIGHT-1){//遍历行
+      SubModule_DataArrange.io.sData(i):=SubModule_ConvQuant.io.dataOut((i+1)*8-1 downto i*8)//从现在开始约定好，输出的数据都用vec描述，Vec的大小就是HEIGHT每一行都与DataArrange一一对应
+      SubModule_DataArrange.io.sValid(i):=Delay(SubModule_SA_3D.Matrix_C.valid(i),DELAY_TIMES)
+    }
+
+
+    //LayerNrom===============================================================================================================================================================
+    //val DELAY_TIMES=15//#todo 延迟的级数，需要确定
+
+    SubModule_LayerNorm.io.start          :=Control.start&Control.Switch(LAYERNORM_NUM)//当ConvQuant模块的权重缓存完后，才能启动Layernorm
+    for(i<-0 to HEIGHT-1){//还是决定实现8并行度的LayerNorm
+      SubModule_LayerNorm.io.sData(i)     :=(SubModule_ConvQuant.io.dataOut((i+1)*8-1 downto i*8).asSInt).resized//这里输入的数据是(Xq-Zp)移位后的19bit数据
+    }
+    SubModule_LayerNorm.io.sValid         :=Delay(SubModule_SA_3D.Matrix_C.valid(0),DELAY_TIMES)
+    
+    SubModule_LayerNorm.io.Channel_Nums   :=Img2Col_Instru.OutMatrix_Col.resized//ChannelNum也就就是矩阵C的列数
+    SubModule_LayerNorm.io.Token_Nums     :=((Img2Col_Instru.OutMatrix_Row>>log2Up(HEIGHT))+Img2Col_Instru.OutMatrix_Row((log2Up(HEIGHT)-1) downto log2Up(HEIGHT)-1)).resized//TokenNum即矩阵C的列数(默认layerNorm的并行的为1)
+    //这里实际上是在执行TokenNums=ceil(OutMatric_Row/8)这个向上取整的操作
+    SubModule_LayerNorm.io.ScaleBias_In.payload:=InputSwitch.m(0).axis_mm2s_tdata
+    SubModule_LayerNorm.io.ScaleBias_In.valid:=InputSwitch.m(0).axis_mm2s_tvalid
+    // SubModule_LayerNorm.io.ScaleBias_In.ready<>InputSwitch.m(0).axis_mm2s_tready
+    SubModule_LayerNorm.io.ZeroPoint:=QuantInstru.zeroIn.asSInt
+    //SubModule_LayerNorm.io.mData.payload(7 downto 0)
+    SubModule_LayerNorm.io.mData.ready:=SubModule_DataArrange.io.sReady//#todo 以后这个mready应该接到外部输出
+    for(i<- 0 to HEIGHT-1){
+      SubModule_LayerNorm.io.mData.payload((i+1)*8-1 downto i*8).asUInt<>SubModule_DataArrange.io.sData(i)
+    }
 }   
+
+
+object SA_3D_Switch extends App { //
+    val verilog_path="./verilog/SA_3D/verilog" 
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(1,8,64,32))
+    
+    //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
+    //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
+}
