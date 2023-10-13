@@ -85,6 +85,8 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     val Control=new Bundle{
         val start=in Bool()
         val Switch             =in Bits(MODULE_NUM bits)//模块选择
+        val Dma_TX_Int         =in Bool()//DMA发送中断，也就是DMA那边数据已经发送完成了
+        //val InputSwitch        =in Bits(MODULE_NUM bits)
     }
     val s_axis_s2mm=new Bundle{//一个从接口，两个主接口
         val Data_Width=64
@@ -118,28 +120,30 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
         val OutMatrix_Col                   =in UInt(Config.MATRIXC_COL_WIDTH bits)//输出矩阵的列数，比如脉动阵列最终的输出矩阵C为196*768，那么行数和列数分别书196*768
         val OutMatrix_Row                   =in UInt(Config.MATRIXC_ROW_WIDTH bits)//输出矩阵的行数
         
+        
         //val LayerNorm_TokenNums             =in UInt(16 bits)//TokenNums Ceil(OutMatrix_Row/8)
 
     }
     Img2Col_Instru.setName("Img2Col")
-    val Fsm=TopCtrl_Fsm(Control.start)
-    val LayerEnd=Bool()
-    Fsm.Compute_End:=LayerEnd
-    val InitCnt=WaCounter(Fsm.currentState===TopCtrl_Enum.INIT,3,5)
-    Fsm.Inited:=InitCnt.valid
+    // val Fsm=TopCtrl_Fsm(Control.start)
+    val LayerEnd=Control.Dma_TX_Int
+    // Fsm.Compute_End:=LayerEnd
+    // val InitCnt=WaCounter(Fsm.currentState===TopCtrl_Enum.INIT,3,5)
+    // Fsm.Inited:=InitCnt.valid
 
     val InputSwitch=new Axis_Switch_S2M(MODULE_NUM,64)//5个接口
+    InputSwitch.io.Switch:=Control.Switch
     InputSwitch.setDefinitionName("Compute_DataIn_Switch")
 
     
     InputSwitch.s0_axis_s2mm<>s_axis_s2mm
 
 
-    val WEIGHT_NUM  =1
-    val QUANT_NUM   =2
-    val IMG2COL_NUM =3
-    val LAYERNORM_NUM=4
-    val SOFTTMAX_NUM=5
+    val WEIGHT_NUM  =0
+    val QUANT_NUM   =1
+    val IMG2COL_NUM =2
+    val LAYERNORM_NUM=3
+    val SOFTTMAX_NUM=4
 
     noIoPrefix()
     val SubModule_WeightCache   =new WeightCache_Stream(8,8,8,64)//1
@@ -196,6 +200,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     SubModule_WeightCache.io.Matrix_Col :=Img2Col_Instru.OutFeature_Channel
     SubModule_WeightCache.io.start      :=Control.Switch(WEIGHT_NUM)&Control.start
     // SubModule_WeightCache.io.Raddr_Valid:=SubModule_Img2Col.io.Raddr_Valid//||LH_Gemm.io.bvalid---todo，重点关注
+    SubModule_WeightCache.io.Raddr_Valid            :=SubModule_Img2Col.io.Raddr_Valid
     SubModule_WeightCache.io.LayerEnd   :=LayerEnd
     // Fsm.WeightCached          :=SubModule_WeightCache.io.Weight_Cached//(ConvQuant.io.QuantPara_Cached)---todo,重点关注
 
@@ -228,12 +233,15 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     //Quant完了再加一个Switch
     val Quant_Switch=new Axis_Switch_S2M(2,64)
     Quant_Switch.io.Switch:=0 //#todo 待修改
-    for(i<-0 to HEIGHT){
-        Quant_Switch.s0_axis_s2mm.tdata((i+1)*8-1 downto i*8):=SubModule_ConvQuant.io.dataIn(i).asUInt
-        Quant_Switch.s0_axis_s2mm.tkeep.setAll()
-        Quant_Switch.s0_axis_s2mm.tlast:=False
-        Quant_Switch.s0_axis_s2mm.tready:=False
+    for(i<-0 to HEIGHT-1){
+        
+
+        // Quant_Switch.s0_axis_s2mm.tready:=False
+        // Quant_Switch.s0_axis_s2mm.tvalid
     }
+    Quant_Switch.s0_axis_s2mm.tdata:=SubModule_ConvQuant.io.dataOut
+    Quant_Switch.s0_axis_s2mm.tkeep.setAll()
+    Quant_Switch.s0_axis_s2mm.tlast:=False
     
 
     //DataArrange 模块--(ConvQuant-->DataArrange)============================================================================================================================
@@ -259,9 +267,9 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     m_axis_mm2s.tlast:=SubModule_DataArrange.io.mLast
     m_axis_mm2s.tvalid:=SubModule_DataArrange.io.mData.valid
     m_axis_mm2s.tkeep.setAll()
-    SubModule_DataArrange.io.mData.ready:=m_axis_mm2s.tready
+    SubModule_DataArrange.io.mData.ready:=True//#todo 要修改
     for(i<-0 to HEIGHT-1){//遍历行
-      SubModule_DataArrange.io.sData(i):=SubModule_ConvQuant.io.dataOut((i+1)*8-1 downto i*8)//从现在开始约定好，输出的数据都用vec描述，Vec的大小就是HEIGHT每一行都与DataArrange一一对应
+      SubModule_DataArrange.io.sData(i):=Quant_Switch.m(0).axis_mm2s_tdata((i+1)*8-1 downto i*8)//从现在开始约定好，输出的数据都用vec描述，Vec的大小就是HEIGHT每一行都与DataArrange一一对应
       SubModule_DataArrange.io.sValid(i):=Delay(SubModule_SA_3D.Matrix_C.valid(i),DELAY_TIMES)
     }
 
@@ -271,28 +279,31 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
 
     SubModule_LayerNorm.io.start          :=Control.start&Control.Switch(LAYERNORM_NUM)//当ConvQuant模块的权重缓存完后，才能启动Layernorm
     for(i<-0 to HEIGHT-1){//还是决定实现8并行度的LayerNorm
-      SubModule_LayerNorm.io.sData(i)     :=(SubModule_ConvQuant.io.dataOut((i+1)*8-1 downto i*8).asSInt).resized//这里输入的数据是(Xq-Zp)移位后的19bit数据
+      SubModule_LayerNorm.io.sData(i)     :=Quant_Switch.m(1).axis_mm2s_tdata((i+1)*8-1 downto i*8).asSInt
     }
     SubModule_LayerNorm.io.sValid         :=Delay(SubModule_SA_3D.Matrix_C.valid(0),DELAY_TIMES)
     
     SubModule_LayerNorm.io.Channel_Nums   :=Img2Col_Instru.OutMatrix_Col.resized//ChannelNum也就就是矩阵C的列数
     SubModule_LayerNorm.io.Token_Nums     :=((Img2Col_Instru.OutMatrix_Row>>log2Up(HEIGHT))+Img2Col_Instru.OutMatrix_Row((log2Up(HEIGHT)-1) downto log2Up(HEIGHT)-1)).resized//TokenNum即矩阵C的列数(默认layerNorm的并行的为1)
     //这里实际上是在执行TokenNums=ceil(OutMatric_Row/8)这个向上取整的操作
-    SubModule_LayerNorm.io.ScaleBias_In.payload:=InputSwitch.m(0).axis_mm2s_tdata
-    SubModule_LayerNorm.io.ScaleBias_In.valid:=InputSwitch.m(0).axis_mm2s_tvalid
+    SubModule_LayerNorm.io.ScaleBias_In.payload:=InputSwitch.m(LAYERNORM_NUM).axis_mm2s_tdata
+    SubModule_LayerNorm.io.ScaleBias_In.valid:=InputSwitch.m(LAYERNORM_NUM).axis_mm2s_tvalid
+    InputSwitch.m(LAYERNORM_NUM).axis_mm2s_tready:=SubModule_LayerNorm.io.ScaleBias_In.ready
+
     // SubModule_LayerNorm.io.ScaleBias_In.ready<>InputSwitch.m(0).axis_mm2s_tready
     SubModule_LayerNorm.io.ZeroPoint:=QuantInstru.zeroIn.asSInt
     //SubModule_LayerNorm.io.mData.payload(7 downto 0)
-    SubModule_LayerNorm.io.mData.ready:=SubModule_DataArrange.io.sReady//#todo 以后这个mready应该接到外部输出
-    for(i<- 0 to HEIGHT-1){
-      SubModule_LayerNorm.io.mData.payload((i+1)*8-1 downto i*8).asUInt<>SubModule_DataArrange.io.sData(i)
+    SubModule_LayerNorm.io.mData.ready:=True//#todo 以后这个mready应该接到外部输出
+    for(i<- 0 to HEIGHT-1){//#todo 要修改
+      //SubModule_LayerNorm.io.mData.payload((i+1)*8-1 downto i*8).asUInt<>SubModule_DataArrange.io.sData(i)
     }
 }   
 
 
+
 object SA_3D_Switch extends App { //
     val verilog_path="./verilog/SA_3D/verilog" 
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(1,8,64,32))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(1,8,64,32,4))
     
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
