@@ -1,17 +1,6 @@
-% Test=[195    65    73]
-% reshape(dec2hex(fliplr(Test))',1,[])
-% %% 生成所有计算参数
-% clear
-% Feature_Size=224;
-% Feature_Channel=32;
-% KernelSize=16;
-% Stride=16;
-% Compute_OutChannel=8;
-% Compute_OutCol=8;
-% Out_Channel=32;
-% OutFeatureSize=14;
 %% 第二步：生成对应的指令(用于仿真)
 clear
+addpath("funs\");
     %开关-------------------------------------------
 Matrix2Img=1;%将矩阵转化为通道优先的3D图片
 ConvTest=1;%如果测试卷积，则生成卷积指令，否则生成MM指令
@@ -40,7 +29,10 @@ io_InCol_Count_Times=Feature_Channel*Feature_Size/Height;%目前还是要求输�
 io_OutFeature_Channel_Count_Times=ceil(Out_Channel/(Slice*Width));
 io_Sliding_Size=Feature_Channel*Stride/Height;
 io_OutRow_Count_Times=OutFeatureSize;
+QuantInstru_zeroIn=37;%待修改
 %% io输入参数
+fprintf(".QuantInstru_zeroIn            (%d)\n",QuantInstru_zeroIn                         )
+
 fprintf(".Stride                        (%d),\n",io_Stride                        )
 fprintf(".Kernel_Size                   (%d),\n",io_KernelSize                    )
 fprintf(".Window_Size                   (%d),\n",io_Window_Size                   )
@@ -115,11 +107,57 @@ end
 else
     ["在Step7中实现矩阵测试"]
 end
-%发送接收长度
-SendPicture_Len=size(Feature_In,1)*size(Feature_In,2);%单位：字节
+
+% QUANTREG1:0x2c,量化因子
+fprintf("Write_Lite(REG_Table_BASE_ADDR,0x2C,0x%s);\n",dec2hex(QuantInstru_zeroIn))
+%% 收发数据量计算
+%单位：字节
+SendPicture_Len=size(Feature_In,1)*size(Feature_In,2);
 SendWeight_Len=size(WeightMatrix,1)*size(WeightMatrix,2);
 SendQuantFactor_Len=Out_Channel*3*4;%Scale，Shift，Zp，每个参数4字节，每个通道都有一个Factor
 % ReceivePicture_Len=Out_Col*Out_Row*Out_Channel;
 [SendPicture_Len,SendWeight_Len,SendPicture_Len+SendWeight_Len,ReceivePicture_Len];
 fprintf("SendLength=%d;\n",SendPicture_Len+SendWeight_Len+SendQuantFactor_Len)
 fprintf("ReceiveLength=%d;\n",ReceivePicture_Len)
+
+
+%% 卷积计算：先发权重，再发量化参数，最后发送图片
+%输入switch
+MASK_SWITCH_WEIGHT  =0;%代表的bit位置，第0bit，第1bit。。。
+MASK_SWITCH_QUANT   =1;
+MASK_SWITCH_IMG2COL =2;
+MASK_SWITCH_LAYERNORM=3;
+MASK_SWITCH_SOFTTMAX=4;
+
+WEIGHT_BASE_ADDR='MEM_BASE_ADDR + 0x00300000';
+%0x4 控制寄存器
+%第一步：启动权重缓存：,配置下面这些开关：
+    %配置方法：比如要算卷积，那么需要启动的模块有权重缓存模块，量化模块，Img2Col模块和DataArrange模块共4个模块
+    %首先需要启动权重缓存模块，InSwitch_Weight=1,在启动完权重缓存模块的调试还需要启动DataArrange模块
+
+    %然后向权重缓存模块发送权重数据
+    %发送完权重数据后，需要将输入数据通路切换到量化模块，继续缓存量化数据
+    %量化数据缓存完后，即可将输入数据通路切换到Img2Col，开始启动卷积计算即可
+Start=1;
+InSwitch_Weight=1;
+InSwitch_Img2col=0;
+InSwitch_Quant=0;
+InSwitch_Layernorm=0;
+
+QuantSwicth_LayerNorm=0;
+QuantSwicth_Softmax=0;
+QuantSwitch_DataArrange=1;
+
+OutSwitch_LayerNorm=0;
+OutSwitch_Softmax=0;
+OutSwitch_DataArrange=1;
+
+SwitchCtrl=[InSwitch_Layernorm,InSwitch_Img2col,InSwitch_Quant,InSwitch_Weight];
+QuantSwitch=[0,QuantSwicth_Softmax,QuantSwicth_LayerNorm,QuantSwitch_DataArrange];
+OutSwitchCtrl=[0,QuantSwicth_Softmax,QuantSwicth_LayerNorm,QuantSwitch_DataArrange];
+Ctrl=[OutSwitchCtrl,QuantSwitch,SwitchCtrl,0,0,Start];
+
+fprintf("Write_Lite(REG_Table_BASE_ADDR,0x4,0x%s);\n//启动权重缓存并且启动DataArrange分路",dec2hex(bin2dec(char(Ctrl+48))))
+Write_DMA(SendWeight_Len);%发送权重数据
+
+

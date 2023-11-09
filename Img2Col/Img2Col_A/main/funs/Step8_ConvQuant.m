@@ -14,7 +14,7 @@ fid=fopen("Scale_Bias_Shift.txt","w");
 
 %创建随机的Scale
 for i=1:MatrixCol
-    Scale_bin=Fixed_Length_Bin(randi([1,2^16-1],1),32);
+    Scale_bin=Fixed_Length_Bin(randi([1,2^24-1],1),32);
     Scale(i)=bin2dec(Scale_bin);
 end
 %创建随机的Bias
@@ -30,7 +30,7 @@ end
 
 %创建随机shift
 for i=1:1:MatrixCol
-    Shift(i)=bin2dec(Fixed_Length_Bin(randi([0,18],1),32));
+    Shift(i)=bin2dec(Fixed_Length_Bin(randi([0,4],1),32));
     
 end
 %生成txt文件
