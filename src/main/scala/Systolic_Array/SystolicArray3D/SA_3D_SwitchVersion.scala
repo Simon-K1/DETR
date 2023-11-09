@@ -86,6 +86,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     val Control=new Bundle{
         val start=in Bool()
         val Switch             =in Bits(MODULE_NUM bits)//模块选择
+        val QuantSwitch        =in Bits(2 bits)//模块选择
         val OutputSwitch       =in Bits(2 bits)
         val Dma_TX_Int         =in Bool()//DMA发送中断，也就是DMA那边数据已经发送完成了
         //val InputSwitch        =in Bits(MODULE_NUM bits)
@@ -128,7 +129,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     }
     Img2Col_Instru.setName("Img2Col")
     // val Fsm=TopCtrl_Fsm(Control.start)
-    val LayerEnd=Control.Dma_TX_Int
+    val LayerEnd=Control.Dma_TX_Int//DMA发送数据完毕的中断
     // Fsm.Compute_End:=LayerEnd
     // val InitCnt=WaCounter(Fsm.currentState===TopCtrl_Enum.INIT,3,5)
     // Fsm.Inited:=InitCnt.valid
@@ -136,19 +137,21 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     val InputSwitch=new Axis_Switch_S2M(MODULE_NUM,64)//5个接口
     // val ConvQuantSwitch=new Axis_Switch_M2S(3,64)//卷积量化模块出来switch一下
     val Quant_Switch=new Axis_Switch_S2M(2,64)
+    
     val OutputSwitch=new Axis_Switch_M2S(2,64)//
     InputSwitch.io.Switch:=Control.Switch
-    InputSwitch.setDefinitionName("Compute_DataIn_Switch")
+    InputSwitch.setDefinitionName("Compute_DataIn_Switch")//#todo 这些常用的可配置模块应该对其重命名
 
     
     InputSwitch.s0_axis_s2mm<>s_axis_s2mm
 
 
-    val WEIGHT_NUM  =0
-    val QUANT_NUM   =1
-    val IMG2COL_NUM =2
-    val LAYERNORM_NUM=3
-    val SOFTTMAX_NUM=4
+    val SWITCH_WEIGHT  =0
+    val SWITCH_QUANT   =1
+    val SWITCH_IMG2COL =2
+    val SWITCH_LAYERNORM=3
+    val SWITCH_SOFTTMAX=4
+    //数据流程：先缓存权重，包块卷积计算权重，量化权重，非线性算子的权重，最后再进图片
 
     noIoPrefix()
     val SubModule_WeightCache   =new WeightCache_Stream(8,8,8,64)//1
@@ -172,11 +175,11 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
       SubModule_SA_3D.SA_Inputs(j).signCount :=Img2Col_Instru.WeightMatrix_Row-1
     }
     SubModule_SA_3D.start:=Control.start
-    SubModule_Img2Col.io.s_axis_s2mm_tdata   <>InputSwitch.m(IMG2COL_NUM).axis_mm2s_tdata
-    SubModule_Img2Col.io.s_axis_s2mm_tkeep   <>InputSwitch.m(IMG2COL_NUM).axis_mm2s_tkeep
-    SubModule_Img2Col.io.s_axis_s2mm_tlast   <>InputSwitch.m(IMG2COL_NUM).axis_mm2s_tlast
-    SubModule_Img2Col.io.s_axis_s2mm_tready  <>InputSwitch.m(IMG2COL_NUM).axis_mm2s_tready
-    SubModule_Img2Col.io.s_axis_s2mm_tvalid  <>InputSwitch.m(IMG2COL_NUM).axis_mm2s_tvalid
+    SubModule_Img2Col.io.s_axis_s2mm_tdata   <>InputSwitch.m(SWITCH_IMG2COL).axis_mm2s_tdata
+    SubModule_Img2Col.io.s_axis_s2mm_tkeep   <>InputSwitch.m(SWITCH_IMG2COL).axis_mm2s_tkeep
+    SubModule_Img2Col.io.s_axis_s2mm_tlast   <>InputSwitch.m(SWITCH_IMG2COL).axis_mm2s_tlast
+    SubModule_Img2Col.io.s_axis_s2mm_tready  <>InputSwitch.m(SWITCH_IMG2COL).axis_mm2s_tready
+    SubModule_Img2Col.io.s_axis_s2mm_tvalid  <>InputSwitch.m(SWITCH_IMG2COL).axis_mm2s_tvalid
     
     SubModule_Img2Col.io.Stride                        <>Img2Col_Instru.Stride                        
     SubModule_Img2Col.io.Kernel_Size                   <>Img2Col_Instru.Kernel_Size                   
@@ -199,21 +202,21 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
         }
     }
 
-    SubModule_Img2Col.io.start                      :=Control.start&Control.Switch(IMG2COL_NUM)//启动Img2Col，必须在权重缓存完后才能启动Img2Col，缓存的权重中还包含了量化因子
+    SubModule_Img2Col.io.start                      :=Control.start&Control.Switch(SWITCH_IMG2COL)//启动Img2Col，必须在权重缓存完后才能启动Img2Col，缓存的权重中还包含了量化因子
     
     SubModule_WeightCache.io.Matrix_Row :=Img2Col_Instru.WeightMatrix_Row
     SubModule_WeightCache.io.Matrix_Col :=Img2Col_Instru.OutFeature_Channel
-    SubModule_WeightCache.io.start      :=Control.Switch(WEIGHT_NUM)&Control.start
+    SubModule_WeightCache.io.start      :=Control.Switch(SWITCH_WEIGHT)&Control.start
     // SubModule_WeightCache.io.Raddr_Valid:=SubModule_Img2Col.io.Raddr_Valid//||LH_Gemm.io.bvalid---todo，重点关注
     SubModule_WeightCache.io.Raddr_Valid            :=SubModule_Img2Col.io.Raddr_Valid
     SubModule_WeightCache.io.LayerEnd   :=LayerEnd
     // Fsm.WeightCached          :=SubModule_WeightCache.io.Weight_Cached//(ConvQuant.io.QuantPara_Cached)---todo,重点关注
 
-    SubModule_WeightCache.io.s_axis_s2mm_tdata <>InputSwitch.m(WEIGHT_NUM).axis_mm2s_tdata//RegNext(InputSwitch.m(0).axis_mm2s_tdata)
-    SubModule_WeightCache.io.s_axis_s2mm_tkeep <>InputSwitch.m(WEIGHT_NUM).axis_mm2s_tkeep
-    SubModule_WeightCache.io.s_axis_s2mm_tlast <>InputSwitch.m(WEIGHT_NUM).axis_mm2s_tlast
-    SubModule_WeightCache.io.s_axis_s2mm_tready<>InputSwitch.m(WEIGHT_NUM).axis_mm2s_tready
-    SubModule_WeightCache.io.s_axis_s2mm_tvalid<>InputSwitch.m(WEIGHT_NUM).axis_mm2s_tvalid//RegNext(InputSwitch.m(0).axis_mm2s_tvalid)
+    SubModule_WeightCache.io.s_axis_s2mm_tdata <>InputSwitch.m(SWITCH_WEIGHT).axis_mm2s_tdata//RegNext(InputSwitch.m(0).axis_mm2s_tdata)
+    SubModule_WeightCache.io.s_axis_s2mm_tkeep <>InputSwitch.m(SWITCH_WEIGHT).axis_mm2s_tkeep
+    SubModule_WeightCache.io.s_axis_s2mm_tlast <>InputSwitch.m(SWITCH_WEIGHT).axis_mm2s_tlast
+    SubModule_WeightCache.io.s_axis_s2mm_tready<>InputSwitch.m(SWITCH_WEIGHT).axis_mm2s_tready
+    SubModule_WeightCache.io.s_axis_s2mm_tvalid<>InputSwitch.m(SWITCH_WEIGHT).axis_mm2s_tvalid//RegNext(InputSwitch.m(0).axis_mm2s_tvalid)
     
     //卷积量化模块==============================================================================================================
     val DELAY_TIMES=15//#todo 延迟的级数，需要确定
@@ -223,7 +226,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
         SubModule_Flatten.sData.valid(i)     :=SubModule_SA_3D.Matrix_C.valid(i)
       }
     }
-    SubModule_ConvQuant.io.start          :=Control.start&Control.Switch(QUANT_NUM)
+    SubModule_ConvQuant.io.start          :=Control.start&Control.Switch(SWITCH_QUANT)
     for(i<-0 to HEIGHT-1){
       SubModule_ConvQuant.io.dataIn(i)         :=SubModule_Flatten.mData(i).payload.asSInt
     }    
@@ -232,13 +235,13 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     SubModule_ConvQuant.io.OutMatrix_Col  :=Img2Col_Instru.OutFeature_Channel//输出矩阵的列数
     SubModule_ConvQuant.io.zeroIn         :=QuantInstru.zeroIn
     SubModule_ConvQuant.io.SAOutput_Valid :=SubModule_Flatten.mData(0).valid
-    SubModule_ConvQuant.io.sData.payload<>  InputSwitch.m(QUANT_NUM).axis_mm2s_tdata
-    SubModule_ConvQuant.io.sData.valid<>    InputSwitch.m(QUANT_NUM).axis_mm2s_tvalid
-    SubModule_ConvQuant.io.sData.ready<>    InputSwitch.m(QUANT_NUM).axis_mm2s_tready
+    SubModule_ConvQuant.io.sData.payload<>  InputSwitch.m(SWITCH_QUANT).axis_mm2s_tdata
+    SubModule_ConvQuant.io.sData.valid<>    InputSwitch.m(SWITCH_QUANT).axis_mm2s_tvalid
+    SubModule_ConvQuant.io.sData.ready<>    InputSwitch.m(SWITCH_QUANT).axis_mm2s_tready
 
     //Quant完了再加一个Switch
     
-    Quant_Switch.io.Switch:=0 //#todo 待修改
+    Quant_Switch.io.Switch:=Control.QuantSwitch //#todo 待修改
     
     Quant_Switch.s0_axis_s2mm.tdata:=SubModule_ConvQuant.io.dataOut//对COnvQuant出来的数据进行switch
     Quant_Switch.s0_axis_s2mm.tkeep.setAll()
@@ -252,10 +255,10 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     
     SubModule_DataArrange.io.MatrixCol:=Img2Col_Instru.OutMatrix_Col
     SubModule_DataArrange.io.MatrixRow:=Img2Col_Instru.OutMatrix_Row
-    SubModule_DataArrange.io.start    :=Control.start&Control.Switch(WEIGHT_NUM)//只要缓存权重，那么一定会启动Arrange模块。
+    SubModule_DataArrange.io.start    :=Control.start&Control.Switch(SWITCH_WEIGHT)//只要缓存权重，那么一定会启动Arrange模块。
     SubModule_DataArrange.io.OutChannel:=Img2Col_Instru.OutFeature_Channel.resized
     SubModule_DataArrange.io.OutFeatureSize:=Img2Col_Instru.OutFeature_Size
-    SubModule_DataArrange.io.SwitchConv:=False//#todo 以后这里添加了Gemm后，要记得修改
+    SubModule_DataArrange.io.SwitchConv:=Control.Switch(SWITCH_IMG2COL)//#todo 以后这里添加了Gemm后，要记得修改
 
 
     OutputSwitch.s(0).axis_s2mm_tdata:=SubModule_DataArrange.io.mData.payload
@@ -273,7 +276,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     //LayerNrom===============================================================================================================================================================
     //val DELAY_TIMES=15//#todo 延迟的级数，需要确定
 
-    SubModule_LayerNorm.io.start          :=Control.start&Control.Switch(LAYERNORM_NUM)//当ConvQuant模块的权重缓存完后，才能启动Layernorm
+    SubModule_LayerNorm.io.start          :=Control.start&Control.Switch(SWITCH_LAYERNORM)//当ConvQuant模块的权重缓存完后，才能启动Layernorm
     for(i<-0 to HEIGHT-1){//还是决定实现8并行度的LayerNorm
       SubModule_LayerNorm.io.sData(i)     :=Quant_Switch.m(1).axis_mm2s_tdata((i+1)*8-1 downto i*8).asSInt
     }
@@ -282,9 +285,9 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     SubModule_LayerNorm.io.Channel_Nums   :=Img2Col_Instru.OutMatrix_Col.resized//ChannelNum也就就是矩阵C的列数
     SubModule_LayerNorm.io.Token_Nums     :=((Img2Col_Instru.OutMatrix_Row>>log2Up(HEIGHT))+Img2Col_Instru.OutMatrix_Row((log2Up(HEIGHT)-1) downto log2Up(HEIGHT)-1)).resized//TokenNum即矩阵C的列数(默认layerNorm的并行的为1)
     //这里实际上是在执行TokenNums=ceil(OutMatric_Row/8)这个向上取整的操作
-    SubModule_LayerNorm.io.ScaleBias_In.payload:=InputSwitch.m(LAYERNORM_NUM).axis_mm2s_tdata
-    SubModule_LayerNorm.io.ScaleBias_In.valid:=InputSwitch.m(LAYERNORM_NUM).axis_mm2s_tvalid
-    InputSwitch.m(LAYERNORM_NUM).axis_mm2s_tready:=SubModule_LayerNorm.io.ScaleBias_In.ready
+    SubModule_LayerNorm.io.ScaleBias_In.payload:=InputSwitch.m(SWITCH_LAYERNORM).axis_mm2s_tdata
+    SubModule_LayerNorm.io.ScaleBias_In.valid:=InputSwitch.m(SWITCH_LAYERNORM).axis_mm2s_tvalid
+    InputSwitch.m(SWITCH_LAYERNORM).axis_mm2s_tready:=SubModule_LayerNorm.io.ScaleBias_In.ready
 
     // SubModule_LayerNorm.io.ScaleBias_In.ready<>InputSwitch.m(0).axis_mm2s_tready
     SubModule_LayerNorm.io.ZeroPoint:=QuantInstru.zeroIn.asSInt

@@ -9,8 +9,10 @@ import spinal.lib.bus.amba4.axilite._
 import spinal.lib.bus.misc.SizeMapping
 import spinal.lib.slave
 import xip.xil_ila
+import utils.TopConfig
 
 class Accelerator_Top extends Component{
+  val Config=TopConfig()
   val regSData = slave(AxiLite4(log2Up(1 MiB), 32))//地址位宽-数据位宽
   AxiLite4SpecRenamer(regSData)
   val Regs=new RegTable
@@ -62,15 +64,18 @@ class Accelerator_Top extends Component{
 //   core.GemmInstru.WIDTH                               :=Regs.Gemm_Width
 
     core.QuantInstru.zeroIn                             :=Regs.Quant_ZeroPoint
+
+
   }
 
 
 
 class Accelerator_TopV2 extends Component{
+  val Config=TopConfig()
   val regSData = slave(AxiLite4(log2Up(1 MiB), 32))//地址位宽-数据位宽
   AxiLite4SpecRenamer(regSData)
   val Regs=new RegTable
-  val core=new SA_3D_SwitchVersion(1,8,64,32,4)
+  val core=new SA_3D_SwitchVersion(1,8,64,32,4)//采用上位机手动switch的方法
   val s_axis_s2mm=new Bundle{
     val Data_Width=64
     val tdata=in UInt(Data_Width bits)
@@ -95,6 +100,7 @@ class Accelerator_TopV2 extends Component{
     core.Control.start                                  :=Regs.Start
     core.Control.Dma_TX_Int                             :=Dma_TX_Int
     core.Control.Switch                                 :=Regs.SwitchCtrl
+    core.Control.QuantSwitch                            :=Regs.QuantSwitch(1 downto 0)
     core.Control.OutputSwitch                           :=Regs.OutSwitchCtrl(1 downto 0)
     //   core.Control.Switch_Conv                            :=Regs.SwitchConv
     // core.Control
@@ -123,6 +129,37 @@ class Accelerator_TopV2 extends Component{
     core.QuantInstru.zeroIn                             :=Regs.Quant_ZeroPoint
 
     core.setDefinitionName("SA3D_Top")
+
+  if(Config.ila){
+    val Debug_Signals=Array[Bits](
+      core.Control.start.asBits,
+      core.Control.Dma_TX_Int.asBits,
+      core.Control.Switch.asBits,
+      core.Control.QuantSwitch.asBits,
+      core.Control.OutputSwitch.asBits,
+      core.Img2Col_Instru.Stride.asBits,                        
+      core.Img2Col_Instru.Kernel_Size.asBits,                   
+      core.Img2Col_Instru.Window_Size.asBits,                   
+      core.Img2Col_Instru.InFeature_Size.asBits,                
+      core.Img2Col_Instru.InFeature_Channel.asBits,             
+      core.Img2Col_Instru.OutFeature_Channel.asBits,            
+      core.Img2Col_Instru.OutFeature_Size.asBits,               
+      core.Img2Col_Instru.Sliding_Size.asBits,                  
+      core.Img2Col_Instru.OutCol_Count_Times.asBits,            
+      core.Img2Col_Instru.InCol_Count_Times.asBits,             
+      core.Img2Col_Instru.OutRow_Count_Times.asBits,            
+      core.Img2Col_Instru.OutFeature_Channel_Count_Times.asBits,
+          
+      core.Img2Col_Instru.WeightMatrix_Row.asBits,              
+      core.Img2Col_Instru.OutMatrix_Col.asBits,                 
+      core.Img2Col_Instru.OutMatrix_Row.asBits,
+      core.QuantInstru.zeroIn.asBits                 
+  )
+    val ila=new xil_ila(Debug_Signals,true,"ila_Accelerator_Top")
+    for(i<-0 to Debug_Signals.length-1){
+        ila.probe(i):=Debug_Signals(i)
+    }
+  }
   }
 
 

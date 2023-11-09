@@ -16,7 +16,7 @@ class Xq2C extends BlackBox{
     noIoPrefix()
     mapClockDomain(clock=io.CLK)
 }
-class Test extends Component{
+class Test11 extends Component{
     val a=Reg(SInt(20 bits))init(0)
     val b=Reg(SInt(8 bits))init(0)
     val hh=new Xq2C
