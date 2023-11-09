@@ -120,5 +120,9 @@ case class TopConfig(){
     val QUANT_FACTOR_WIDTH=32   
     //以下配置来源于刘炜的卷积加速器
         val addChannelTimesWidth=32//通道累加后的脉动阵列输出位宽
-        
+    
+
+
+    //调试设置
+    val ila=true
 }

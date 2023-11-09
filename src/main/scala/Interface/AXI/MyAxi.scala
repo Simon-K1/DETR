@@ -194,7 +194,7 @@ class AA extends  Component{
 }
 
 object ConvOutput extends App { //
-    val verilog_path="./verilog/MyAxi/verilog" 
+    val verilog_path="./verilog/MyAxi/" 
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new MyAxi_Master)
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new MyAxi_Master)
 

@@ -5,7 +5,7 @@ import utils._
 import spinal.lib.Delay
 import spinal.lib.StreamFifo
 // import spinal.core.internals.Operator
-import xip.xil_SimpleDualBram
+import xip.{xil_SimpleDualBram,xil_ila}
 class WaddrOffset_Fifo extends StreamFifo(UInt(16 bits),32+1)//必须加一，比如我们需要实现16*16的卷积，如果fifo深度设置为32，32个fifo会被存满，fifo.push.ready会拉低,不能出现这种情况
 class RaddrOffset_Fifo extends StreamFifo(UInt(16 bits),32)
 class DataGen_Bram extends BlackBox{//黑盒，入32bit，出16 bit,Activation Bram，也就是SA左边挂的那块Bram
@@ -550,6 +550,17 @@ class  Img2Col_OutPut extends Component{
     io.Raddr_Valid:=(Fsm.currentState===IMG2COL_OUTPUT_ENUM.SA_COMPUTE)&&io.mReady
     Fsm.LayerEnd:=io.LayerEnd
     RaddrFifo1.io.flush:=Fsm.currentState===IMG2COL_OUTPUT_ENUM.IDLE
+
+
+        //ila===============================================================================================
+    if(Config.ila){
+        val Debug_Signals=Array[Bits](Fsm.currentState.asBits,io.SA_Idle.asBits,io.SA_End.asBits)
+        val ila=new xil_ila(Debug_Signals,true,"ila_Img2Col")
+        for(i<-0 to Debug_Signals.length-1){
+            ila.probe(i):=Debug_Signals(i)
+        }
+    }
+
 }
 
 class Img2ColStreamV2 extends Component{
@@ -655,6 +666,8 @@ class Img2ColStreamV2 extends Component{
     //     //Out_Data_Counter.clear
     //     In_Data_Counter.clear
     // }
+
+
 }
 
 object Img2ColGen extends App { 

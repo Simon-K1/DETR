@@ -32,11 +32,12 @@ class xil_ila(ports:Array[Bits],genTcl:Boolean=false,componentName: String="NoNa
         tclHeader.write(tcl_Cmd)
         tclHeader.close()
     }
+    setDefinitionName(componentName)
 
 }
 
 
-class Timer_Cnt_V2 extends Component{
+class ila_test extends Component{
     val io=new Bundle{
         val gpio_in=in Bits(3 bits)
         val cnt    =out UInt(32 bits)
@@ -54,9 +55,9 @@ class Timer_Cnt_V2 extends Component{
     io.cnt:=cnt
 
     val Debug_Signals=Array[Bits](io.gpio_in,restart.asBits,cnt.asBits)
-    val Timer_Cnt_V2_ila=new xil_ila(Debug_Signals,true,"Timer_Cnt_V2_ila")
+    val ila_test=new xil_ila(Debug_Signals,true,"ila_test")
     for(i<-0 to Debug_Signals.length-1){
-        Timer_Cnt_V2_ila.probe(i):=Debug_Signals(i)
+        ila_test.probe(i):=Debug_Signals(i)
     }
 
 }
@@ -65,5 +66,5 @@ object ila_gen extends App {
     val verilog_path="./testcode_gen" 
     
     // printf("=================%d===============",log2Up(7))
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Timer_Cnt_V2)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ila_test)
 }
