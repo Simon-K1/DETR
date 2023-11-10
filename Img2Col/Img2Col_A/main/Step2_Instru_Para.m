@@ -1,6 +1,6 @@
 %% 第二步：生成对应的指令(用于仿真)
 clear
-addpath("funs\");
+% addpath("funs\");
     %开关-------------------------------------------
 Matrix2Img=1;%将矩阵转化为通道优先的3D图片
 ConvTest=1;%如果测试卷积，则生成卷积指令，否则生成MM指令
@@ -160,4 +160,27 @@ Ctrl=[OutSwitchCtrl,QuantSwitch,SwitchCtrl,0,0,Start];
 fprintf("Write_Lite(REG_Table_BASE_ADDR,0x4,0x%s);\n//启动权重缓存并且启动DataArrange分路",dec2hex(bin2dec(char(Ctrl+48))))
 Write_DMA(SendWeight_Len);%发送权重数据
 
+%发完权重后继续发量化参数
+Start=1;
+InSwitch_Weight=0;
+InSwitch_Img2col=0;
+InSwitch_Quant=1;
+InSwitch_Layernorm=0;
 
+SwitchCtrl=[InSwitch_Layernorm,InSwitch_Img2col,InSwitch_Quant,InSwitch_Weight];
+QuantSwitch=[0,QuantSwicth_Softmax,QuantSwicth_LayerNorm,QuantSwitch_DataArrange];
+OutSwitchCtrl=[0,QuantSwicth_Softmax,QuantSwicth_LayerNorm,QuantSwitch_DataArrange];
+Ctrl=[OutSwitchCtrl,QuantSwitch,SwitchCtrl,0,0,Start];
+fprintf("Write_Lite(REG_Table_BASE_ADDR,0x4,0x%s);//发送量化参数\n",dec2hex(bin2dec(char(Ctrl+48))))
+Write_DMA(SendQuantFactor_Len);%发送量化参数
+
+%最后发送图片数据并且接收计算结果
+Start=1;
+InSwitch_Weight=0;
+InSwitch_Img2col=1;
+InSwitch_Quant=0;
+InSwitch_Layernorm=0;
+SwitchCtrl=[InSwitch_Layernorm,InSwitch_Img2col,InSwitch_Quant,InSwitch_Weight];
+Ctrl=[OutSwitchCtrl,QuantSwitch,SwitchCtrl,0,0,Start];
+fprintf("Write_Lite(REG_Table_BASE_ADDR,0x4,0x%s);//发送图片数据并接收计算结果\n",dec2hex(bin2dec(char(Ctrl+48))))
+ReadWrite_DMA("WEIGHT_BASE_ADDR",SendPicture_Len,"CONV_RESULT_BASE_ADDR",ReceivePicture_Len);
