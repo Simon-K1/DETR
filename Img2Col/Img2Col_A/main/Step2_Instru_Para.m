@@ -89,7 +89,7 @@ fprintf("Write_Lite(REG_Table_BASE_ADDR,0x1c,0x%s%04s);\n",dec2hex(io_OutFeature
 fprintf("Write_Lite(REG_Table_BASE_ADDR,0x20,0x%s);\n",dec2hex(io_WeightMatrix_Row))
 
 %Instru8:20+12
-ReceivePicture_Len=Out_Col*Out_Row*Out_Channel;
+% ReceivePicture_Len=Out_Col*Out_Row*Out_Channel;
 if Matrix2Img
     OutMatrix_Row=sprintf("%020s",dec2bin(io_OutMatrix_Row));%图片行数
     OutMatrix_Col=sprintf("%012s",dec2bin(io_OutMatrix_Col));%图片列数
@@ -115,12 +115,18 @@ fprintf("Write_Lite(REG_Table_BASE_ADDR,0x2C,0x%s);\n",dec2hex(QuantInstru_zeroI
 SendPicture_Len=size(Feature_In,1)*size(Feature_In,2);
 SendWeight_Len=size(WeightMatrix,1)*size(WeightMatrix,2);
 SendQuantFactor_Len=Out_Channel*3*4;%Scale，Shift，Zp，每个参数4字节，每个通道都有一个Factor
-% ReceivePicture_Len=Out_Col*Out_Row*Out_Channel;
+ReceivePicture_Len=Out_Col*Out_Row*Out_Channel;
 [SendPicture_Len,SendWeight_Len,SendPicture_Len+SendWeight_Len,ReceivePicture_Len];
 fprintf("SendLength=%d;\n",SendPicture_Len+SendWeight_Len+SendQuantFactor_Len)
 fprintf("ReceiveLength=%d;\n",ReceivePicture_Len)
 
-
+%% 地址配置---权重-量化参数-图片(这样子编排顺序是为了仿真的时候方便)
+MEM_BASE_ADDR           =0x01000000;
+WEIGHT_BASE_ADDR		=(MEM_BASE_ADDR + 0x00100000);
+QUANT_BASE_ADDR         =(WEIGHT_BASE_ADDR + SendWeight_Len);
+PICTURE_BASE_ADDR		=(QUANT_BASE_ADDR + SendQuantFactor_Len);
+CONV_RESULT_BASE_ADDR	=(MEM_BASE_ADDR + 0x10000000);
+fprintf("bin文件写入地址:%d bin文件大小：%d\n",WEIGHT_BASE_ADDR,SendPicture_Len+SendWeight_Len+SendQuantFactor_Len);
 %% 卷积计算：先发权重，再发量化参数，最后发送图片
 %输入switch
 MASK_SWITCH_WEIGHT  =0;%代表的bit位置，第0bit，第1bit。。。
@@ -129,7 +135,7 @@ MASK_SWITCH_IMG2COL =2;
 MASK_SWITCH_LAYERNORM=3;
 MASK_SWITCH_SOFTTMAX=4;
 
-WEIGHT_BASE_ADDR='MEM_BASE_ADDR + 0x00300000';
+
 %0x4 控制寄存器
 %第一步：启动权重缓存：,配置下面这些开关：
     %配置方法：比如要算卷积，那么需要启动的模块有权重缓存模块，量化模块，Img2Col模块和DataArrange模块共4个模块
@@ -157,8 +163,8 @@ QuantSwitch=[0,QuantSwicth_Softmax,QuantSwicth_LayerNorm,QuantSwitch_DataArrange
 OutSwitchCtrl=[0,QuantSwicth_Softmax,QuantSwicth_LayerNorm,QuantSwitch_DataArrange];
 Ctrl=[OutSwitchCtrl,QuantSwitch,SwitchCtrl,0,0,Start];
 
-fprintf("Write_Lite(REG_Table_BASE_ADDR,0x4,0x%s);\n//启动权重缓存并且启动DataArrange分路",dec2hex(bin2dec(char(Ctrl+48))))
-Write_DMA(SendWeight_Len);%发送权重数据
+fprintf("Write_Lite(REG_Table_BASE_ADDR,0x4,0x%s);\n//启动权重缓存并且启动DataArrange分路\n",dec2hex(bin2dec(char(Ctrl+48))))
+Write_DMA(SendWeight_Len,string(WEIGHT_BASE_ADDR));%发送权重数据
 
 %发完权重后继续发量化参数
 Start=1;
@@ -172,7 +178,7 @@ QuantSwitch=[0,QuantSwicth_Softmax,QuantSwicth_LayerNorm,QuantSwitch_DataArrange
 OutSwitchCtrl=[0,QuantSwicth_Softmax,QuantSwicth_LayerNorm,QuantSwitch_DataArrange];
 Ctrl=[OutSwitchCtrl,QuantSwitch,SwitchCtrl,0,0,Start];
 fprintf("Write_Lite(REG_Table_BASE_ADDR,0x4,0x%s);//发送量化参数\n",dec2hex(bin2dec(char(Ctrl+48))))
-Write_DMA(SendQuantFactor_Len);%发送量化参数
+Write_DMA(SendQuantFactor_Len,string(QUANT_BASE_ADDR));%发送量化参数
 
 %最后发送图片数据并且接收计算结果
 Start=1;
@@ -183,4 +189,4 @@ InSwitch_Layernorm=0;
 SwitchCtrl=[InSwitch_Layernorm,InSwitch_Img2col,InSwitch_Quant,InSwitch_Weight];
 Ctrl=[OutSwitchCtrl,QuantSwitch,SwitchCtrl,0,0,Start];
 fprintf("Write_Lite(REG_Table_BASE_ADDR,0x4,0x%s);//发送图片数据并接收计算结果\n",dec2hex(bin2dec(char(Ctrl+48))))
-ReadWrite_DMA("WEIGHT_BASE_ADDR",SendPicture_Len,"CONV_RESULT_BASE_ADDR",ReceivePicture_Len);
+ReadWrite_DMA(string(PICTURE_BASE_ADDR),SendPicture_Len,string(CONV_RESULT_BASE_ADDR),ReceivePicture_Len);

@@ -51,7 +51,7 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix,ZeroPoint)
     
     Sz_Matrix=size(Matrix);
     assert(Sz_Matrix(1)==1);%输入一个向量
-    Quat_Out=zeros(Sz_Matrix);
+    
     AddZero=zeros(Sz_Matrix);
 %第一步：先加Bias
     %对Bias进行处理
@@ -100,7 +100,7 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix,ZeroPoint)
         DataShift=[BinSlice(ScaleMul_Bin,[size(ScaleMul_Bin,2)-1,Shift(i)])];%如果shift=1，那么就去掉最后那一位即可
             %还有一个四舍五入的过程，
         if bin2dec(DataShift)~=0
-            DataShift=[repmat(sign,[1,Shift(i)]),DataShift];
+            DataShift=[repmat(sign,[1,32-size(DataShift,2)]),DataShift];%这里不如直接补成32bit得了
         end
         
         DataShift=Complt2Sourcd([DataShift(1) BinSlice(DataShift,[15,1],sign)])+(DataShift(end)-48);
@@ -119,5 +119,6 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix,ZeroPoint)
             end
         end
     end
+    Quat_Out={Bias_Result;Scale_Result;DataShift_Result;AddZero};
 
 end

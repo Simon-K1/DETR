@@ -11,7 +11,7 @@ end
 %脉动阵列出来的图片用元胞数组存储，但是计算还是按矩阵计算那样来描述
 OutFeature_3D_UnArranged;%
 
-Step8_ConvQuant().ConvQuant_Compute(Scale,Bias,Shift,OutFeature_3D_UnArranged{1}(:,1)',134)%输入的应该是第一行的第一个点的全部通道，即OutFeature_3D_UnArranged{row}(通道,col)
+Quant_Result=Step8_ConvQuant().ConvQuant_Compute(Scale,Bias,Shift,OutFeature_3D_UnArranged{1}(:,1)',37)%输入的应该是第一行的第一个点的全部通道，即OutFeature_3D_UnArranged{row}(通道,col)
 %% 暂时插一段layernorm的数据
 %64bit中包含4个16bit，每个16bit中包含8bit scale和shift
 %同样地，每个64bit包含32个ptf，每个ptf为2bit
