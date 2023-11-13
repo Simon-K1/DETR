@@ -230,6 +230,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     for(i<-0 to HEIGHT-1){
       SubModule_ConvQuant.io.dataIn(i)         :=SubModule_Flatten.mData(i).payload.asSInt
     }    
+    
         // ConvQuant.io.dataOut<>mData.payload
     SubModule_ConvQuant.io.LayerEnd       :=LayerEnd//Control.LayerEnd
     SubModule_ConvQuant.io.OutMatrix_Col  :=Img2Col_Instru.OutFeature_Channel//输出矩阵的列数

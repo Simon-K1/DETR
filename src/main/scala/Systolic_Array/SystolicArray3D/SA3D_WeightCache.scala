@@ -109,7 +109,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     //
 
     val OutCol_Cnt=SubstractLoopCounter(OutRow_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col,SLICE*WIDTH)
-    when(io.start){
+    when(io.start&&Fsm.currentState===WEIGHT_CACHE_STATUS.IDLE){//修了一个bug，2023.11.12，如果在运行的中途start又一不小心拉高了，就会出问题
         OutCol_Cnt.reset
     }
 
@@ -214,6 +214,7 @@ class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends C
     WeightCache.io.sData.valid<>io.s_axis_s2mm_tvalid
     WeightCache.io.sData.ready<>io.s_axis_s2mm_tready
 }
+
 object Weight_Gen extends App { 
     val verilog_path="./verilog/SA_3D/verilog" 
     // printf("=================%d===============",log2Up(7))
