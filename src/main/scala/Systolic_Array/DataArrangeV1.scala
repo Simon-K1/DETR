@@ -168,7 +168,7 @@ class ConvArrange extends Component{//卷积输出数据的数据排列，排列
 
 
 object ConvOutput extends App { 
-    val verilog_path="./Simulation/SimSystolic/verilog" 
+    val verilog_path="./verilog/SimSystolic/verilog" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ConvArrange)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)

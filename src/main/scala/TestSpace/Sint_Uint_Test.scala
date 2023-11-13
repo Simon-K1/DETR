@@ -16,7 +16,7 @@ class Xq2C extends BlackBox{
     noIoPrefix()
     mapClockDomain(clock=io.CLK)
 }
-class Test extends Component{
+class Test11 extends Component{
     val a=Reg(SInt(20 bits))init(0)
     val b=Reg(SInt(8 bits))init(0)
     val hh=new Xq2C
@@ -65,11 +65,4 @@ class TopTest extends Component{
     //     val datain=SubModule.io.gray
     // }
     val Datain_io=SubModule.io
-}
-
-object TestGen extends App { 
-    val verilog_path="./testcode_gen" 
-    // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ExtendsTest)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new TopTest)
-    //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

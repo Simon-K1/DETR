@@ -180,7 +180,7 @@ class GemmOutput_Ctrl extends Component{//Gemm输出控制
 
 
 object ConvOutputV3 extends App { 
-    val verilog_path="./Simulation/SimSystolic/verilog" 
+    val verilog_path="./verilog/SimSystolic/verilog" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new ConvArrangeV3)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)

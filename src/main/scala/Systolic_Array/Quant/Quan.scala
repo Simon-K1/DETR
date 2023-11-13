@@ -1,3 +1,6 @@
+//这里的量化用于全部的矩阵计算
+//量化计算：
+
 package Systolic_Array.Quant
 import spinal.core._
 import spinal.lib._
@@ -79,20 +82,23 @@ class ConvQuant extends Component{
     val Config=TopConfig()
     val io=new Bundle{
         val start=in Bool()
-        val sData=slave Stream(UInt(64 bits))//DMA位宽应该是64bits
+        val sData=slave Stream(UInt(64 bits))//DMA位宽应该是64bits，这里进的是量化参数
 
         // val Bias    =out UInt(32 bits)//输出Bias，Scale，Shift等量化参数
         // val Scale   =out UInt(32 bits)
         // val Shift   =out UInt(32 bits)
 
         val OutMatrix_Col=in UInt(16 bits)//输出通道数量，也是输出矩阵的列数
-        val LayerEnd=in Bool()//待定
+        val LayerEnd=in Bool()//待定，这是外部给的信号
         val QuantPara_Cached=out Bool()//量化参数缓存完成
         //=================================
         val dataIn   =in Vec(SInt(Config.addChannelTimesWidth bits),Config.SA_ROW)//sum(q1*q2)的值
         val dataOut  =out UInt (Config.SA_ROW * 8 bits)//一次出8个8bit，因为脉动阵列有8行
         val zeroIn   =in UInt(8 bits)
         val SAOutput_Valid=in Bool()//脉动阵列输出的数据有效标志，用于将量化参数从
+
+
+        
     }
     
     noIoPrefix()
@@ -150,7 +156,7 @@ class ConvQuant extends Component{
 }
 
 object QuantGen extends App { 
-    val verilog_path="./Simulation/Quant" 
+    val verilog_path="./verilog/Quant" 
     (0 to 8).foreach(i=>{
         printf("%d\n",i)
     })

@@ -34,7 +34,8 @@ object ForLoopCounter{
     //def apply(en:Bool,width:Int,stride:UInt,subs:Boolean)=new ForLoopCounter(en,width,stride)
 }
 class ForLoopCounter(en:Bool,width:Int,cnt:UInt)extends Area{
-    val count = Reg(UInt(width bits)) init 0
+    val width_tmp=if(width==0){1}else{width}
+    val count = Reg(UInt(width_tmp bits)) init 0
     val valid =(count === cnt)&&en//Valid只拉高一下，用于for循环的控制
     when(en) {
         when(valid) {
@@ -54,11 +55,13 @@ object SubstractLoopCounter{
     
 }
 class SubstractLoopCounter(en:Bool,width:Int,start:UInt,stride:UInt)extends Area{
-    val count = Reg(UInt(width bits)) init start
+    //val count = Reg(UInt(width bits)) init start
+    val count = Reg(UInt(width bits))
+    
     val valid =(count <= stride)&&en//Valid只拉高一下，用于for循环的控制
     when(en) {
         when(valid) {
-            count := start
+            count := start//
         }otherwise{
             count := count - stride
         }

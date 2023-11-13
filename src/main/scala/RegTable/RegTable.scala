@@ -24,6 +24,9 @@ class RegTable extends Component{
 	val Start=Control_Reg.field(Bool(),WO,doc="Ps Start Img2Col_Start(only for test)").asOutput()
 	val SwitchConv=Control_Reg.field(Bool(),WO,doc="1:Start Conv Compute\n").asOutput()
 	val Matrix2Img=Control_Reg.field(Bool(),WO,doc="reshape Matrix into 3D Feature\n").asOutput()
+	val SwitchCtrl=Control_Reg.field(Bits(4 bits),WO,doc="Switch Control of Input Data").asOutput()
+	val QuantSwitch=Control_Reg.field(Bits(4 bits),WO,doc="Switch Control of Quant Data").asOutput
+	val OutSwitchCtrl=Control_Reg.field(Bits(4 bits),WO,doc="Switch Control of Output Data").asOutput()
 	//val OutSwitch=Control_Reg.field(Bits(2 bits),WO,doc="ConvOutput Switch").asOutput()
 
 
@@ -77,7 +80,7 @@ class RegTable extends Component{
 
 
 object RegTable_Gen extends App { 
-    val verilog_path="./testcode_gen/RegTable" //注意是高复位
+    val verilog_path="./verilog/SA_3D"  //注意是高复位
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new RegTable)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

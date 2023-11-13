@@ -5,6 +5,10 @@ import utils._
 import spinal.lib.Delay
 import spinal.lib.StreamFifo
 import xip.Mul
+import Systolic_Array.Quant.Quan
+import xip.xil_SimpleDualBram
+import javax.xml.transform.OutputKeys
+import Systolic_Array.ConvOutput_Ctrl
 //实现8并行度的累加计算
 object SUM_XQ_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, LOAD_FIRST_ROW,ACCUMU,FINISH_LAST_ROW = newElement
@@ -272,13 +276,14 @@ class Ptf_Module extends Component{
 class Sum_Xq extends Component{
     val Config=TopConfig()
     val io=new Bundle{
-        val sData=slave Stream( SInt(11 bits))//输入数据88bit，一次进8行，每行一个点（8bit),进来的数据为Xq-Zeropoint的值，所以是有符号数据
+        val sData=slave Stream( SInt(Config.XQ_DATA_WIDTH bits))//输入数据88bit，一次进8行，每行一个点（8bit),进来的数据为Xq-Zeropoint的值，所以是有符号数据
+        //11bit是在外面处理了ptf量化因子后的值
         val start=in Bool()//计算启动信号
 
         val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
-
+        val Token_Nums=in UInt(Config.TOKEN_NUMS_WIDTH bits)
         
-        val Scale_Read_Addr=out UInt(log2Up(Config.CHANNEL_NUMS) bits)
+        val Scale_Read_Addr=out UInt(Config.CHANNEL_NUMS_WIDTH bits)
         val Scale=in SInt(8 bits)//暂时让Scale和Bias作为输入
         val Bias=in SInt(8 bits)//不知道8bit够不够用，，planB就是之后将8bit改为32bit
 
@@ -297,10 +302,11 @@ class Sum_Xq extends Component{
 
     
     val Fsm=SUM_XQ_FSM(io.start&&(!RegNext(io.start)))
-    val Init_Count=WaCounter(Fsm.currentState===SUM_XQ_ENUM.INIT,log2Up(5),5)//初始化数5下
-    val Col_Cnt=WaCounter(io.sData.valid&&io.sData.ready||Fsm.currentState===SUM_XQ_ENUM.FINISH_LAST_ROW, log2Up(Config.CHANNEL_NUMS), Config.CHANNEL_NUMS-1)//创建输入数据的列计数器
-    val Row_Cnt=WaCounter(Col_Cnt.valid, log2Up(Config.TOKEN_NUMS), Config.TOKEN_NUMS)//创建输入数据行计数器                                                            
+    val Init_Count=ForLoopCounter(Fsm.currentState===SUM_XQ_ENUM.INIT,log2Up(5),5)//初始化数5下
+    val Col_Cnt=ForLoopCounter(io.sData.valid&&io.sData.ready||Fsm.currentState===SUM_XQ_ENUM.FINISH_LAST_ROW, Config.CHANNEL_NUMS_WIDTH, io.Channel_Nums-1)//创建输入数据的列计数器
+    val Row_Cnt=ForLoopCounter((Col_Cnt.valid)&&Fsm.currentState===SUM_XQ_ENUM.ACCUMU, Config.TOKEN_NUMS_WIDTH, io.Token_Nums-2)//创建输入数据行计数器                                                            
                                                                 //Row_Cnt的值对应的是当前正在处理的行数，所以这里不该减一
+    //23/5/25修正bug↑：将行计数器的减1改成了减2，比如Tokennums=2，那么行计数器应该是0，可以类推的。                                                    
     Fsm.Init_End:=Init_Count.valid
     
     Fsm.Load_Firts_Row_End:=(Row_Cnt.count===0)&&Col_Cnt.valid//当行计数为0时，说明处于第一行，当列计数拉高时，说明第一行加载完了
@@ -309,7 +315,7 @@ class Sum_Xq extends Component{
 
     io.sData.ready:=(Fsm.currentState=/=SUM_XQ_ENUM.IDLE)&&(Fsm.currentState=/=SUM_XQ_ENUM.INIT)&&(Fsm.currentState=/=SUM_XQ_ENUM.FINISH_LAST_ROW)//暂时只考虑到这么多，只要不处于这两个状态应该都能接受数据吧
     //创建一个mem用于缓存8行数据，因为A需要计算完均值再做减法===============================================================
-    val Row_Mem=new Mem(SInt(Config.XQC_P_WIDTH bits),Config.CHANNEL_NUMS)//64位宽，384深度，用于存储sint的Xq*C
+    val Row_Mem=new Mem(SInt(Config.XQC_P_WIDTH bits),Config.MAX_CHANNEL_NUMS)//64位宽，384深度，用于存储sint的Xq*C
     
 
     val Read_Row_Mem_Data=Row_Mem.readSync(Col_Cnt.count,io.sData.fire||Fsm.currentState===SUM_XQ_ENUM.FINISH_LAST_ROW)//这里采用的就是：来一个数读一下
@@ -344,8 +350,9 @@ class Sum_Xq extends Component{
     val Xq_Sum=Reg(SInt(Config.XQ_SUM_WIDTH bits))init(0)
     val Xq_Sum_Clear=RegNext(Col_Cnt.valid)//累加和清零,延一拍
 
-
-    when(io.sData.fire){//如果当前数据有效，需要判断是继续累加还是重新开始累加
+    when(Fsm.currentState===SUM_XQ_ENUM.IDLE){
+            Xq_Sum:=0
+        }elsewhen(io.sData.fire){//如果当前数据有效，需要判断是继续累加还是重新开始累加
         when(Xq_Sum_Clear){
             Xq_Sum:=io.sData.payload.resized
         }otherwise{
@@ -363,7 +370,9 @@ class Sum_Xq extends Component{
     val Xq2C_Valid=Delay(XqC_Valid,Config.XQ2C_PIPELINE)
     val Xq2C_Sum_Clear=Delay(Xq_Sum_Clear,Config.XQ2C_PIPELINE+Config.XQC_PIPELINE)//Xq进来，valid拉高，计算累加和，Xq然后和C计算，延迟XqC_Pipeline拍，出来的结果继续和Xq计算，延迟Xq2c_Pipeline拍
 
-    when(Xq2C_Valid){//如果当前数据有效，需要判断是继续累加还是重新开始累加
+    when(Fsm.currentState===SUM_XQ_ENUM.IDLE){
+        Xq2C_Sum:=0
+    }elsewhen(Xq2C_Valid){//如果当前数据有效，需要判断是继续累加还是重新开始累加
         when(Xq2C_Sum_Clear){
             Xq2C_Sum:=(Xq2C_Module.io.P.asUInt).resized
         }otherwise{
@@ -399,7 +408,7 @@ class Sum_Xq extends Component{
     io.Sqrt_Out_Valid:=Sqrt_Out_Valid
     val Sqrt_In=RegNextWhen(Xq2C_Sum-XqSum_Pow.io.P.asUInt,Xq2C_Sum_Clear)init(0)//这样写会出来毛刺，，，，，，
     //分析发现Xq2C的结果是最后出来的，所以当Xq2C最后被算出来，CXq-M2,Xq_Sum,Xq_Sum_Pow都被算出来了
-    val Sqrt_In_Truncated=Sqrt_In(31 downto 0)
+    val Sqrt_In_Truncated=Sqrt_In(31 downto 0)//这里为什么要取后32位而不是前32位？（半后年再看这行代码看不懂了，23、5、22，已解决）
     val Truncated_Success=Sqrt_In===Sqrt_In_Truncated//先转32单精度，再执行根号下分之一计算，得到单精度浮点
     io.Sqrt_In_Truncated:=Sqrt_In_Truncated
 
@@ -421,16 +430,16 @@ class Sum_Xq extends Component{
     // val ScaleA_Mul_ReSqrt=new Scale_A_ReciproSqrt
     val ScaleA_Mul_ReSqrt=Mul(Config.SCALE_A_RECIPROSQRT_Aport_WIDTH,Config.SCALE_A_RECIPROSQRT_Bport_WIDTH,Config.SCALE_A_RECIPROSQRT_Pport_WIDTH,"signed","unsigned",Config.SCALE_A_RECIPROSQRT_PIPELINE,"DSP",this.clockDomain,"Scale_A_ReciproSqrt",Config.SCALE_A_RECIPROSQRT_Pport_WIDTH-1,0,true)
     ScaleA_Mul_ReSqrt.io.A:=ScaleMulA_Fifo.io.pop.payload
-    ScaleA_Mul_ReSqrt.io.B:=U"1'b1"@@(io.Recipro_Sqrt_Result(22 downto 0))
+    ScaleA_Mul_ReSqrt.io.B:=U"1'b1"@@(io.Recipro_Sqrt_Result(22 downto 0))//拿到尾数部分
     val ScaleA_Mul_ReSqrt_Result_Valid=Delay(ScaleMulA_Fifo.io.pop.fire,Config.SCALE_A_RECIPROSQRT_PIPELINE)
     
 
     //拿到结果后执行动态移位再加上Bias
     //由于Scale不能和Bias同时进来，所以需要对Bias的读取额外处理一下
-    val Exp_Part=io.Recipro_Sqrt_Result(30 downto 23)
+    val Exp_Part=io.Recipro_Sqrt_Result(30 downto 23)//指数部分
     val Right_Shift_Num0=150-Exp_Part
-    val SAB_Shifted=ScaleA_Mul_ReSqrt.io.P>>Delay(Right_Shift_Num0,Config.SCALE_A_RECIPROSQRT_PIPELINE)//这里位宽会不会超？
-    val SAB_Add_Bias=SAB_Shifted.asSInt+io.Bias
+    val SAB_Shifted=(ScaleA_Mul_ReSqrt.io.P).asSInt>>Delay(Right_Shift_Num0,Config.SCALE_A_RECIPROSQRT_PIPELINE)//这里位宽会不会超？
+    val SAB_Add_Bias=SAB_Shifted+io.Bias
     val SAB_Add_Bias_Truncated=SAB_Add_Bias(7 downto 0)//加完bias咋就变成8bit了。。。
 
     io.mData.payload:=SAB_Add_Bias_Truncated
@@ -441,14 +450,18 @@ class Sum_Xq extends Component{
 class Reci_Sqrt_Compute extends Component{
     val Config=TopConfig()
     val io=new Bundle{
+        val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)
+        val Token_Nums=in UInt(Config.TOKEN_NUMS_WIDTH bits)
         val Sqrt_In_Valid=in Vec(Bool(),8)
-        val Sqrt_In_Truncated=in Vec(UInt(32 bits),Config.PIPELINE)
+        val Sqrt_In_Truncated=in Vec(UInt(32 bits),Config.LAYERNORM_PIPELINE)
         val ScaleA_Fifo_Popfire=in Bool()
-
-        val Recipro_Sqrt_Result_Latch=out Vec(UInt(32 bits),Config.PIPELINE)
+    
+        val Recipro_Sqrt_Result_Latch=out Vec(UInt(32 bits),Config.LAYERNORM_PIPELINE)
         val Recipro_Sqrt_Result_Valid=out Bool()
-        val Bias_Read_Addr=out UInt(log2Up(Config.CHANNEL_NUMS) bits)
+        val Bias_Read_Addr=out UInt(Config.CHANNEL_NUMS_WIDTH bits)
 
+        val mLast=out Bool()
+        
     }
     noIoPrefix()
 //开始计算根号下分之一，先转单精度再计算
@@ -471,19 +484,22 @@ class Reci_Sqrt_Compute extends Component{
     }
 //计算Scale*A*B=============================================================
 
-    val Recipro_Pointer_Result=WaCounter(Reci_Sqrt.m_axis_result.tvalid,log2Up(Config.PIPELINE),Config.PIPELINE-1)
+    val Recipro_Pointer_Result=ForLoopCounter(Reci_Sqrt.m_axis_result.tvalid,log2Up(Config.LAYERNORM_PIPELINE),Config.LAYERNORM_PIPELINE-1)
     //这个Pointer是用来标识计算完的根号分之一结果的
-    val Recipro_Sqrt_Result_Latch=out Vec(UInt(32 bits),Config.PIPELINE)//由于Recipro_Sqrt出来的有效结果只会保持一个周期，所以得缓存一下
+    val Recipro_Sqrt_Result_Latch=out Vec(UInt(32 bits),Config.LAYERNORM_PIPELINE)//由于Recipro_Sqrt出来的有效结果只会保持一个周期，所以得缓存一下
 
 
     // Exp_Part:=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer.count===0))?(Reci_Sqrt.m_axis_result.tdata(30 downto 23))|RegNext(Exp_Part)
-    val SAB_Fsm=ScaleA_Mul_Resqrt_Fsm(Recipro_Pointer_Result.count===Config.PIPELINE-1)//最后还是决定等8个sqrt都算完了才启动后面的计算，因为后面还得读取Bias，8个sqrt对齐后读取bias就会变得方便一些
-    val SAB_Cnt=WaCounter(io.ScaleA_Fifo_Popfire,log2Up(Config.CHANNEL_NUMS),Config.CHANNEL_NUMS-1)//当Fifo除了384个点后，一行就算完了
+    // val SAB_Fsm=ScaleA_Mul_Resqrt_Fsm(Recipro_Pointer_Result.count===Config.LAYERNORM_PIPELINE-1)//最后还是决定等8个sqrt都算完了才启动后面的计算，因为后面还得读取Bias，8个sqrt对齐后读取bias就会变得方便一些
+        //23/5/23修了一个bug↑
+    val SAB_Fsm=ScaleA_Mul_Resqrt_Fsm(Recipro_Pointer_Result.valid)//最后还是决定等8个sqrt都算完了才启动后面的计算，因为后面还得读取Bias，8个sqrt对齐后读取bias就会变得方便一些
+
+    val SAB_Cnt=ForLoopCounter(io.ScaleA_Fifo_Popfire,Config.CHANNEL_NUMS_WIDTH,io.Channel_Nums-1)//当Fifo出了384个点后，一行就算完了
     SAB_Fsm.ScaleA_Mul_ReSqrt_End:=SAB_Cnt.valid
 
     io.Recipro_Sqrt_Result_Valid:=(SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID)||(SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID_AGAIN)
-    io.Bias_Read_Addr:=WaCounter(SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID,log2Up(Config.CHANNEL_NUMS),Config.CHANNEL_NUMS-1).count//Delay(SAB_Cnt.count,Config.SCALE_A_RECIPROSQRT_PIPELINE-1)//减一的原因：外部读取Bias需要一个周期
-    for(i<-0 to Config.PIPELINE-1){
+    io.Bias_Read_Addr:=ForLoopCounter(SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID,Config.CHANNEL_NUMS_WIDTH,io.Channel_Nums-1).count//Delay(SAB_Cnt.count,Config.SCALE_A_RECIPROSQRT_PIPELINE-1)//减一的原因：外部读取Bias需要一个周期
+    for(i<-0 to Config.LAYERNORM_PIPELINE-1){
         Recipro_Sqrt_Result_Latch(i):=(Reci_Sqrt.m_axis_result.tvalid&&(Recipro_Pointer_Result.count===i))?(Reci_Sqrt.m_axis_result.tdata)|RegNext(Recipro_Sqrt_Result_Latch(i))
         io.Recipro_Sqrt_Result_Latch(i):=((RegNext(SAB_Cnt.valid)&&SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.RESQRT_VALID)||SAB_Fsm.currentState===SCALEA_MUL_RESQRT_ENUM.IDLE)?Recipro_Sqrt_Result_Latch(i)|RegNext(io.Recipro_Sqrt_Result_Latch(i))
 //如果下层还在计算SAB，也就是下层比上层慢，只有当SAB计算完才能切换ReciSqrt
@@ -494,7 +510,7 @@ class Reci_Sqrt_Compute extends Component{
 
     //=======================================================================================================
     switch(Sqrt_Compute_Fsm.currentState){//这里控制定点转浮点模块
-        for(i <-1 to Config.PIPELINE){
+        for(i <-1 to Config.LAYERNORM_PIPELINE){
             is(SQRT_COMPUTE_ENUM.COMPUTE(i)){
                 //Fi32_2_Single.s_axis_a.tdata:=io.Sqrt_In_Truncated(i)//有一种可能Fi32_2_Single还没准备好但是累加和已经计算好了这种可能，，，
                 Fi32_2_Single.s_axis_a.tvalid:=True//只会拉高一个周期
@@ -504,45 +520,53 @@ class Reci_Sqrt_Compute extends Component{
             Fi32_2_Single.s_axis_a.tvalid:=False
         }   
     }
-    val Recipro_Pointer_DataIn=WaCounter(Fi32_2_Single.s_axis_a.tvalid&&Fi32_2_Single.s_axis_a.tready,log2Up(Config.PIPELINE),Config.PIPELINE-1)
-    Fi32_2_Single.s_axis_a.tdata:= Recipro_Pointer_DataIn.count.muxList(for(i <- 0 until Config.PIPELINE) yield (i, io.Sqrt_In_Truncated(i)))
+    val Recipro_Pointer_DataIn=ForLoopCounter(Fi32_2_Single.s_axis_a.tvalid&&Fi32_2_Single.s_axis_a.tready,log2Up(Config.LAYERNORM_PIPELINE),Config.LAYERNORM_PIPELINE-1)
+    if(Config.LAYERNORM_PIPELINE==1){Fi32_2_Single.s_axis_a.tdata:=io.Sqrt_In_Truncated(0)}else{Fi32_2_Single.s_axis_a.tdata:=Recipro_Pointer_DataIn.count.muxList(for(i <- 0 until Config.LAYERNORM_PIPELINE) yield (i, io.Sqrt_In_Truncated(i)))}
                                                                 //这里改成muxListDc也行，需要研究研究
-    val Row_Cnt=WaCounter(SAB_Cnt.valid,log2Up(Config.TOKEN_NUMS),Config.TOKEN_NUMS-1)//加一个这个是为了最后计算完了状态跳转
+    val Row_Cnt=ForLoopCounter(SAB_Cnt.valid,Config.TOKEN_NUMS_WIDTH,io.Token_Nums-1)//加一个这个是为了最后计算完了状态跳转
                                                                                       //这里也是得减一                                                                        
     SAB_Fsm.Row_All_Computed:=Row_Cnt.valid&&SAB_Cnt.valid//当处于最后一行并且最后一列算完了
+    io.mLast:=SAB_Fsm.Row_All_Computed
 }
 
 class LayerNorm_Module extends Component{
     val Config=TopConfig()
     val io=new Bundle{
-        val sData=slave Stream( SInt(16*8 bits))//输入数据88bit，一次进8行，每行一个点（8bit),进来的数据为Xq-Zeropoint的值，所以是有符号数据
+        val sData=in Vec( SInt(Config.XQ_DATA_WIDTH bits),Config.LAYERNORM_PIPELINE)//输入数据88bit，一次进8行，每行一个点（8bit),进来的数据为Xq-Zeropoint的值，所以是有符号数据
+        val sValid=in Bool()
+        val sReady=out Bool()
         val start=in Bool()//计算启动信号
 
         val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
+        val Token_Nums=in UInt(Config.TOKEN_NUMS_WIDTH bits)
 
-        val Bias_Read_Addr=out UInt(log2Up(Config.CHANNEL_NUMS) bits)
-        val Scale_Read_Addr=out UInt(log2Up(Config.CHANNEL_NUMS) bits)
+        val Bias_Read_Addr=out UInt(Config.CHANNEL_NUMS_WIDTH bits)
+        val Scale_Read_Addr=out UInt(Config.CHANNEL_NUMS_WIDTH bits)
         val Scale=in SInt(8 bits)//暂时让Scale和Bias作为输入
-        val Bias=in SInt(8 bits)//不知道8bit够不够用，，planB就是之后将8bit改为32bit
+        val Bias=in SInt(8 bits)//不知道8bit够不够用，planB就是之后将8bit改为32bit
 
-        val mData=master Stream(SInt(8*8 bits))
+        val mData=master Stream(SInt(8*Config.LAYERNORM_PIPELINE bits))
+        val mLast=out Bool()
     }
     noIoPrefix()
 
     val Stage2=new Reci_Sqrt_Compute//一个模块用于计算根号分之一
-    val Stage1=Array.tabulate(8)(i=>{
+    val Stage1=Array.tabulate(Config.LAYERNORM_PIPELINE)(i=>{
         def gen():Sum_Xq={
             val Stage1=new Sum_Xq
             //Stage1与顶层Io接口连接=============================
             // Stage1.io.sData.payload<>io.sData.payload((Config.XQ_DATA_WIDTH)*(i+1)-1 downto Config.XQ_DATA_WIDTH*i)
-            Stage1.io.sData.payload<>io.sData.payload((16)*(i+1)-1-5 downto 16*i)//-5是因为因为测试数据生成的是16bit*8，但是我们只取其中的11bit即可
+            // Stage1.io.sData.payload<>io.sData.payload((Config.XQ_DATA_WIDTH)*(i+1)-1 downto (Config.XQ_DATA_WIDTH)*i)//-5是因为因为测试数据生成的是16bit*8，但是我们只取其中的11bit即可
+            Stage1.io.sData.payload<>io.sData(i)
 
-            Stage1.io.sData.valid<>io.sData.valid
+            Stage1.io.sData.valid<>io.sValid
 
             Stage1.io.start:=io.start
             Stage1.io.Channel_Nums:=io.Channel_Nums
+            Stage1.io.Token_Nums:=io.Token_Nums
             Stage1.io.Scale:=io.Scale
-            Stage1.io.Bias:=Delay(io.Bias,Config.SCALE_A_RECIPROSQRT_PIPELINE-1)//减一的原因：待更新
+            Stage1.io.Bias:=Delay(io.Bias,Config.SCALE_A_RECIPROSQRT_PIPELINE-1+3)//减一的原因：待更新
+            //23、5、25：这里又加3是看波形图算出来的。。。不知道为啥。。
             //Stage1和Stage2之间的连接===========================
             Stage1.io.Sqrt_In_Truncated<>Stage2.io.Sqrt_In_Truncated(i)
             Stage1.io.Sqrt_Out_Valid<>Stage2.io.Sqrt_In_Valid(i)
@@ -555,12 +579,211 @@ class LayerNorm_Module extends Component{
         gen()
     })
     Stage1(0).io.ScaleA_Fifo_Popfire<>Stage2.io.ScaleA_Fifo_Popfire
-    Stage1(0).io.sData.ready<>io.sData.ready
+    Stage1(0).io.sData.ready<>io.sReady
     Stage1(0).io.Scale_Read_Addr<>io.Scale_Read_Addr
     //根号分之一与顶层接口连接============================
     Stage2.io.Bias_Read_Addr<>io.Bias_Read_Addr
+    Stage2.io.Channel_Nums:=io.Channel_Nums
+    Stage2.io.Token_Nums    :=io.Token_Nums
     io.mData.valid:=Stage1(0).io.mData.valid
+    io.mLast:=Stage2.io.mLast
+}
+
+object LayerNorm_Status extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
+    val IDLE, INIT, LOAD_QUANT_DATA,WAIT_MREADY,WAIT_COMPUTE_END,WAIT_OUTPUT_END = newElement
+    //LOAD_QUANT_DATA:加载量化参数
+    //WAIT_MREADY:最后新加的一个状态，用来处反压23、5、24
+    //WAIT_END:等待量化计算全部结束，需要注意：这时数据输出还没结束
+}
+case class LayerNorm_Fsm(start:Bool)extends Area{
+    val currentState = Reg(LayerNorm_Status()) init LayerNorm_Status.IDLE
+    val nextState = LayerNorm_Status()
+    currentState := nextState
+
+    val Init_End=Bool()
+    val QuantData_Loaded=Bool()//量化参数加载完毕
+    val Compute_End=Bool()//计算结束
+    val Output_End=Bool()//输出结束
+    val mReady=Bool()
+    switch(currentState){
+        is(LayerNorm_Status.IDLE){
+            when(start){
+                nextState:=LayerNorm_Status.INIT
+            }otherwise{
+                nextState:=LayerNorm_Status.IDLE
+            }
+        }
+        is(LayerNorm_Status.INIT){
+            when(Init_End){
+                nextState:=LayerNorm_Status.LOAD_QUANT_DATA
+            }otherwise{
+                nextState:=LayerNorm_Status.INIT
+            }
+        }
+        is(LayerNorm_Status.LOAD_QUANT_DATA){
+            when(QuantData_Loaded){
+                nextState:=LayerNorm_Status.WAIT_MREADY
+            }otherwise{
+                nextState:=LayerNorm_Status.LOAD_QUANT_DATA
+            }
+        }
+        is(LayerNorm_Status.WAIT_MREADY){
+            when(mReady){
+                nextState:=LayerNorm_Status.WAIT_COMPUTE_END
+            }otherwise{
+                nextState:=LayerNorm_Status.WAIT_MREADY
+            }
+        }
+        is(LayerNorm_Status.WAIT_COMPUTE_END){
+            when(!mReady){
+                nextState:=LayerNorm_Status.WAIT_MREADY
+            }elsewhen(Compute_End){
+                nextState:=LayerNorm_Status.WAIT_OUTPUT_END
+            }otherwise{
+                nextState:=LayerNorm_Status.WAIT_COMPUTE_END
+            }
+        }
+        is(LayerNorm_Status.WAIT_OUTPUT_END){
+            when(Output_End){
+                nextState:=LayerNorm_Status.IDLE
+            }otherwise{
+                nextState:=LayerNorm_Status.WAIT_OUTPUT_END
+            }
+        }
+    }
+}
+class LayerNorm_Top extends Component{//#todo 这里一堆计数器，以后应该再优化一下
+    //添加Scale，Bias的缓存模块
+    val Config=TopConfig()
+    val io=new Bundle{
+        val sData=in Vec( SInt(8 bits),Config.LAYERNORM_PIPELINE)
+        val sValid=in Bool()
+        val sReady=out Bool()
+        val start=in Bool()//计算启动信号
+        val Channel_Nums=in UInt(Config.CHANNEL_NUMS_WIDTH bits)//12bit--最大4095
+        val Token_Nums=in UInt(Config.TOKEN_NUMS_WIDTH bits)//TokenNums 的值由外部编译器给出,比如197行矩阵,如果并Pipeline设置为1,那么这里的值是197
+        //如果PipeLine设置为8,那么这里的值是25,计算公式为ceil(TokenNums/Pipeline)
+
+        //val ScaleBias_sValid=in Bool()
+        
+        //val Scale=in SInt(8 bits)//暂时让Scale和Bias作为输入
+        //val Bias=in SInt(8 bits)//不知道8bit够不够用，planB就是之后将8bit改为32bit
+        val mData=master Stream(SInt(8*Config.LAYERNORM_PIPELINE bits))
+        val mLast=out Bool()
+
+        val QuantPara_Cached=out Bool()//量化参数全部被缓存完成
+        val ScaleBias_In=slave Stream(UInt(64 bits))//DMA位宽为64 bits
+        val ZeroPoint=in SInt(8 bits)
+    }
+    val Fsm=LayerNorm_Fsm(io.start)
+
+    //这里改成这样是因为之前写的layernorm输入的scale和bias是拼成16bit直接输入的，
+    //但是考虑到Dma位宽是64bit，需要加一个widthconverter
+    val ScaleBias_sValid=Bool()
+    val ScaleBias_sReady=Bool() //这个ready是给width converter用的
+    //io.ScaleBias_sReady:=ScaleBias_sReady
+
     
+    val Scale=SInt(8 bits)//暂时让Scale和Bias作为输入
+    val Bias=SInt(8 bits)//不知道8bit够不够用，planB就是之后将8bit改为32bit
+
+    val ScaleBias_Converter=new AxisDataConverter(64,16)//将64bit输入转成16bit
+    ScaleBias_Converter.setDefinitionName("LayerNorm_ScaleBias_Converter")
+
+    ScaleBias_Converter.inStream.payload:=io.ScaleBias_In.payload
+    ScaleBias_Converter.inStream.valid:=io.ScaleBias_In.valid&&(Fsm.currentState===LayerNorm_Status.LOAD_QUANT_DATA)
+    io.ScaleBias_In.ready:=ScaleBias_Converter.inStream.ready
+
+    Bias:=ScaleBias_Converter.outStream.payload(15 downto 8).asSInt//高8位为Bias
+    Scale:=ScaleBias_Converter.outStream.payload(7 downto 0).asSInt//低8位为Scale
+    ScaleBias_Converter.outStream.ready:=ScaleBias_sReady
+    ScaleBias_Converter.outStream.valid<>ScaleBias_sValid
+
+
+
+    val SubModule=new LayerNorm_Module
+    noIoPrefix()
+    
+    val Init_Count=ForLoopCounter(Fsm.currentState===LayerNorm_Status.INIT,log2Up(5),5)//初始化数5下
+    val ScaleBias_Cached=Reg(Bool())init(False)//Scale和Bias都被缓存完了，下一步就是缓存量化因子
+
+
+    //#todo 这里有一个bug，如果io.channelNums=24，那么(io.channelNums>>5)-1就变成-1了
+    val Ptf_In_Cnt=ForLoopCounter(io.ScaleBias_In.valid&&io.ScaleBias_In.ready&&ScaleBias_Cached,10,(io.Channel_Nums<U(0))?U(32)|((io.Channel_Nums>>5)-1))//因为以一个地址对应32个ptf量化因子
+    val Ptf_Out_Cnt=ForLoopCounter(io.sValid,15,io.Channel_Nums-1)//因为以一个地址对应32个ptf量化因子
+    Fsm.Init_End:=Init_Count.valid
+
+    val QuantCache_Cnt=ForLoopCounter((ScaleBias_sValid&&ScaleBias_sReady)&&(~ScaleBias_Cached),Config.CHANNEL_NUMS_WIDTH,io.Channel_Nums-1)
+    io.QuantPara_Cached:=Ptf_In_Cnt.valid//给外部的信号
+    Fsm.QuantData_Loaded:=Ptf_In_Cnt.valid//当PTF量化因子被缓存完了，那么LayerNorm的全部量化参数到此也全部缓存完了
+    val ScaleMem=new xil_SimpleDualBram(Config.SCALE_WIDTH,1024,Config.SCALE_WIDTH,"ScaleMem",true)//在外面再挂一个位宽转换叭
+    val BiasMem=new xil_SimpleDualBram(Config.SCALE_WIDTH,1024,Config.SCALE_WIDTH,"ScaleMem",false)
+    val PTF_FactorMem=new xil_SimpleDualBram(64,1024,2,"PtfMem",true)//PTF量化因子
+    when(io.start){
+        ScaleBias_Cached:=False//复位
+    }elsewhen(QuantCache_Cnt.valid){
+        ScaleBias_Cached:=True//当量化参数Scale bias都被缓存完后，下一步继续缓存PTF量化因子。
+    }
+    ScaleMem.io.dina        :=Scale.asUInt
+    ScaleMem.io.addra       :=QuantCache_Cnt.count
+    ScaleMem.io.ena         :=(ScaleBias_sValid&&ScaleBias_sReady)&&(~ScaleBias_Cached)
+    ScaleMem.io.addrb       :=SubModule.io.Scale_Read_Addr
+    ScaleMem.io.wea          :=True
+
+    BiasMem.io.dina         :=Bias.asUInt
+    BiasMem.io.addra        :=QuantCache_Cnt.count
+    BiasMem.io.ena          :=(ScaleBias_sValid&&ScaleBias_sReady)&&(~ScaleBias_Cached)
+    BiasMem.io.addrb        :=SubModule.io.Bias_Read_Addr
+    BiasMem.io.wea          :=True
+
+    
+    
+    PTF_FactorMem.io.dina   :=io.ScaleBias_In.payload
+    PTF_FactorMem.io.addra  :=Ptf_In_Cnt.count
+    PTF_FactorMem.io.ena    :=io.ScaleBias_In.valid&&ScaleBias_Cached
+    PTF_FactorMem.io.addrb  :=Ptf_Out_Cnt.count//进一个数，就读一个量化因子出来
+    PTF_FactorMem.io.wea    :=True
+
+
+
+
+    SubModule.io.Scale          :=ScaleMem.io.doutb.asSInt
+    SubModule.io.Bias           :=BiasMem.io.doutb.asSInt
+    SubModule.io.Channel_Nums   :=io.Channel_Nums
+    SubModule.io.Token_Nums     :=io.Token_Nums
+    // SubModule.io.mData          <>io.mData
+    for(i<-0 to Config.LAYERNORM_PIPELINE-1){
+        SubModule.io.sData(i)          :=((io.sData(i)).resize(16)+io.ZeroPoint)<<(PTF_FactorMem.io.doutb)
+    }
+    
+    SubModule.io.sValid         :=io.sValid&&io.sReady
+    // io.sReady                   :=SubModule.io.sReady
+    SubModule.io.start          :=Fsm.QuantData_Loaded
+    io.sReady                   :=SubModule.io.sReady&&(Fsm.currentState===LayerNorm_Status.WAIT_COMPUTE_END)//只有处于这个状态才能进数据
+    when(Fsm.currentState===LayerNorm_Status.LOAD_QUANT_DATA){
+        ScaleBias_sReady:=True
+    }otherwise{
+        ScaleBias_sReady:=False
+    }
+
+    // io.mLast:=SubModule.io.mLast
+    Fsm.mReady:=io.mData.ready
+    
+    Fsm.Compute_End:=SubModule.io.mLast
+
+
+    //数据反压还要考虑数据延时：即使停止输入数据，但是模块内部流水线上还残留一些数据，所以需要将这些残留的数据收集起来
+    //在输出端再接一个小fifo用于缓存
+    val OutPut_Cache=new StreamFifo(SInt(8*Config.LAYERNORM_PIPELINE bits),64)
+    OutPut_Cache.setDefinitionName("LayerNorm_OutputCache_Fifo")
+    OutPut_Cache.io.push<>SubModule.io.mData
+    OutPut_Cache.io.pop<>io.mData
+
+    val OutCol_Cnt=ForLoopCounter(io.mData.fire,Config.CHANNEL_NUMS_WIDTH,io.Channel_Nums-1)
+    val OutRow_Cnt=ForLoopCounter(OutCol_Cnt.valid,Config.CHANNEL_NUMS_WIDTH,io.Token_Nums-1)
+    Fsm.Output_End:=io.mLast
+    io.mLast:=OutRow_Cnt.valid
+
 }
 // class LayerNorm_Top extends Component{
 //     val LN_Compute=new LayerNorm_Module
@@ -597,10 +820,11 @@ class LayerNorm_Module extends Component{
 //     LN_Compute.io.start<>io.start
 // }
 
-object Sum_Xq_Gen extends App { 
-    val verilog_path="./Simulation/SimLayerNorm/verilog" 
+object Sum_Xq_Gen extends App { //到目前为止,layernorm需要80的dsp
+    val verilog_path="././verilog/MyAxi/SimLayerNorm/verilog" 
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Sum_Xq)
     // SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Reci_Sqrt_Compute)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new LayerNorm_Module)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new LayerNorm_Top)
+
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

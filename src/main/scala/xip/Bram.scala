@@ -26,7 +26,10 @@ class xil_SimpleDualBram(inwidth:Int=8,indepth:Int=8,outwidth:Int=8,componentNam
     if(genTcl){
         FileUtils.forceMkdir(new File(Tcl_File_Path + File.separator + "tcl"))
         val tclHeader = new PrintWriter(new File(Tcl_File_Path + File.separator + "tcl" + File.separator + s"generate$componentName.tcl"))
-        val tcl_Cmd=s"create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $componentName\n"+
+        val tcl_Cmd=s"set mulExit [lsearch -exact [get_ips $componentName] $componentName]\n" +
+            s"if { $$mulExit <0} {\n" +
+            s"create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $componentName\n" +
+            s"}\n"+
         s"set_property -dict [list CONFIG.Memory_Type {Simple_Dual_Port_RAM} "+
         s"CONFIG.Assume_Synchronous_Clk {true} "+
         s"CONFIG.Write_Width_A {$inwidth} "+

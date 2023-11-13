@@ -124,7 +124,7 @@ class Shift(convConfig: TopConfig) extends Component {
         }
         out
     }
-
+    
     (0 until convConfig.SA_ROW).foreach { i =>
         port.dataOut(i) := <<(port.dataIn(i), port.quan)
     }
@@ -169,8 +169,9 @@ class Zero(convConfig: TopConfig) extends Component {
 }
 
 object GeneVerilog extends App { 
-    val verilog_path="./Simulation/SimImg2Col" 
+    val verilog_path="./verilog/SimImg2Col" 
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Shift(TopConfig()))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }
+

@@ -1,12 +1,12 @@
 `timescale 1ns / 1ps
 
-module Sim_Layernorm_Quant;
-parameter Mem_Depth =412000;
-parameter Mem_Width=8*8;//txt数据位宽
-parameter Total_Input_Times=412000;//发完2224*224*64bit数据后mValid需要拉低
+module Sim_LayernormV2;
+parameter Mem_Depth =197*768;
+parameter Mem_Width=20;//txt数据位宽
+parameter Total_Input_Times=197*768;//发完2224*224*64bit数据后mValid需要拉低
 
-parameter Mem2_Depth=300*300*4;//第二个Mem的配置
-parameter Mem2_Width=64;
+parameter Mem2_Depth=768;//第二个Mem的配置
+parameter Mem2_Width=16;
 
   reg clk;
   reg rst;
@@ -20,7 +20,7 @@ parameter Mem2_Width=64;
   wire sValid;
   wire sLast;//获取sLast信号，第二次启动。
   wire Start_Again_En;
-  assign Start_Again_En=1;//需要仿真再次启动
+  assign Start_Again_En=0;//需要仿真再次启动
   reg start;
   reg start2;
   wire [63:0]sData;
@@ -64,9 +64,9 @@ parameter Mem2_Width=64;
   begin
 
 //    $readmemh("E:\\Transformer\\Transformer_Arithmatic\\Transformer_Main\\TXT\\WeightPicture.txt",mem);//_Modified
-//    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K33\\S1_320_320\\WeightPicture.txt",mem);
-    $readmemh("E:\\Transformer\\Sim_File\\SimQuant\\WeightPicture.txt",mem);//_Modified
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\K1616\\S16\\WeightData.txt",mem2);//高8bit为Scale，低8bit为Bias
+//    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\MM_Test\\WeightMatrix.txt",mem);
+    $readmemh("E:\\Transformer\\Matlab\\LayerNorm_Txt_Gen\\Generated_Files\\522\\Xq_LayerNorm乘掩码19bit.txt",mem);//_Modified
+    $readmemh("E:\\Transformer\\Matlab\\LayerNorm_Txt_Gen\\Generated_Files\\522\\Scale_Bias.txt",mem2);//高8bit为Scale，低8bit为Bias
     clk=0;
     start=0;
     rst=1;
@@ -155,7 +155,7 @@ parameter Mem2_Width=64;
       mValid<=0;
       sReady<=0;
     end
-    else if(Total_Cnt<64&&Input_Total_Cnt<Total_Input_Times)
+    else if(Total_Cnt<32&&Input_Total_Cnt<Total_Input_Times)
     begin
       mValid<=1'b1;
       sReady<=1;
@@ -222,42 +222,27 @@ always@(posedge clk)
       mValid2<=1;
     end
   end
+wire [18:0]mem_19bit;
+assign mem_19bit=mem[mem_addr];
+LayerNorm_Top Layernorm(
+.sData_0(mem[mem_addr][18:0]),//  input      [18:0]   
+.sValid(mValid),//  input               
+.sReady(mReady),//  output              
+.start(start),//  input               
+.Channel_Nums('d768),//  input      [9:0]    
+.Token_Nums('d197),//  input      [19:0]   
+.ScaleBias_sValid(mValid2),//  input               
+.ScaleBias_sReady(mReady2),//  output reg          
+.Scale(mem2[mem_addr2][15:8]),//  input      [7:0]    
+.Bias(mem2[mem_addr2][7:0]),//  input      [7:0]    
+.mData_valid(sValid),//  output              
+.mData_ready(sReady),//  input               
+.mData_payload(),//  output     [7:0]    
+.mLast(sLast),//  output              
+.clk(clk),//  input               
+.reset(rst)//  input               
 
-Conv ConvUnit(
-.Control_start(start),
-.Control_Switch_Conv(1'b1),
-.Control_Matrix2Img(0),
-//.Control_Inswitch(0),
-//.s_axis_s2mm_tkeep(),
-//.s_axis_s2mm_tlast(),
-.s_axis_s2mm_tready(mReady),
-.s_axis_s2mm_tvalid(mValid),
-.s_axis_s2mm_tdata(mem[mem_addr]),
-//.m_axis_mm2s_tdata(),
-//.m_axis_mm2s_tkeep(),
-//.m_axis_mm2s_tlast(),
-//.m_axis_mm2s_tready(1'b1),
-//.m_axis_mm2s_tvalid(),
-
-//======================================
-.Img2Col_Stride                        (2),
-.Img2Col_Kernel_Size                   (3),
-.Img2Col_Window_Size                   (12),
-.Img2Col_InFeature_Size                (322),
-.Img2Col_InFeature_Channel             (32),
-.Img2Col_OutFeature_Channel            (64),
-.Img2Col_OutFeature_Size               (160),
-.Img2Col_Sliding_Size                  (8),
-.Img2Col_OutCol_Count_Times            (20),
-.Img2Col_InCol_Count_Times             (1288),
-.Img2Col_OutRow_Count_Times            (160),
-.Img2Col_OutFeature_Channel_Count_Times(8),
-.Img2Col_WeightMatrix_Row                    (288),
-//======================================
-.clk(clk),
-.reset(rst)
 );
-
 
 
 
