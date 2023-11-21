@@ -83,7 +83,7 @@ function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix,ZeroPoint)
         sign=char((ScaleMul<0)+48);
         if ScaleMul<intmin('int64')
             %dec2hex无法处理int64以外的数据，只能手动转二进制
-            error("dec is to big");
+            error("dec2hex无法处理int64以外的数据，只能手动转二进制\n:dec is to big");
         end
         ScaleMul=Complt2Sourcd(BinSlice(dec2bin(ScaleMul),[79,48],sign));%补码转源码
             %同样地，将计算数据存下来

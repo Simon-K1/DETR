@@ -27,3 +27,6 @@ fprintf("权重数据所占资源数量:%d KB\n",MemSize)
 fprintf("所需Bram个数：%d \n",MemSize/4)
 Conv_Compute_Time=((OutFeatureSize^2*Out_Channel)/(8*8))*(KernelSize^2*Feature_Channel+8)*5/1000000
 Conv_Compute_Time=((OutFeatureSize^2*Out_Channel)/(8*8*8))*(KernelSize^2*Feature_Channel+8)*5/1000000
+
+Gop=(KernelSize^2)*Feature_Channel*2*(OutFeatureSize^2*Out_Channel)
+Gops=(Gop/10^9)/(Conv_Compute_Time/1000)

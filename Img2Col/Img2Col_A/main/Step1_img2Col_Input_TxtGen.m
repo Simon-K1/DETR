@@ -3,16 +3,16 @@
 clear
 Drop_Message=1;%将图片继续补零以匹配卷积不丢失信息
 WEIGHT_VERSION=1;%权重缓存模块的版本，可选1（V1），2（V2，已失效）
-Feature_Size=224;%图片大小224*224
-Feature_Channel=8;%图片通道
-Out_Channel=32;%输出图片通道，要修改
+Feature_Size=20;%图片大小224*224
+Feature_Channel=128;%图片通道
+Out_Channel=8;%输出图片通道，要修改
 
-Stride=16;%要修改
-KernelSize=16;%要修改
+Stride=1;%要修改
+KernelSize=1;%要修改
 assert(Stride<=KernelSize,"Stride must be less than kernelSize");
 %脉动阵列配置
-Slice=8;
-Width=8;
+Slice=1;
+Width=64;
 Height=8;
 
 %Compute_InChannel=Height;%每次计算的输出通道，
@@ -127,4 +127,54 @@ else% 权重格式版本2，
 end
 
 dec2bin(bin2dec('000000000000000000110001101000010000000000000000')+bin2dec('111111111111111111100111000101101111111011000000'))
+
+if 0%读取pytorch生成的bin文件
+    %先读取权重
+    fid=fopen("WeightIn.bin")
+    WeightMatrix=fread(fid,size(WeightMatrix),"int8")
+    fclose(fid);
+    %读取量化参数
+    fid=fopen("WeightIn.bin")
+    Weight_Quant_Data=fread(fid)
+    fclose(fid);
+    Quant_Data=Weight_Quant_Data(size(WeightMatrix,1)*size(WeightMatrix,2)+1:end);
+
+    fid=fopen("Bias_Scale_Shift.bin",'w')
+    fwrite(fid,Quant_Data,'uint8');%这里必须按uint8来写
+    fclose(fid);
+    fid=fopen("Bias_Scale_Shift.bin",'r')
+    Bias_Scale_Shift=fread(fid,'uint32')
+    fclose(fid);
+    Scale=zeros(1,Out_Channel);
+    Shift=zeros(1,Out_Channel);
+    Bias=zeros(1,Out_Channel);
+    for i=1:Out_Channel
+        Bias(i)=Bias_Scale_Shift(i)
+    end
+    for i=Out_Channel+1:2*Out_Channel
+        Scale(i-Out_Channel)=Bias_Scale_Shift(i)
+    end
+    for i=2*Out_Channel+1:3*Out_Channel
+        Shift(i-Out_Channel*2)=Bias_Scale_Shift(i)
+    end
+    save("matlab.mat")
+    %再读图片
+    fid=fopen("PictureIn.bin","r")
+    Feature_In=fread(fid,fliplr(size(Feature_In)),"uint8")'
+    fclose(fid);
+    save("matlab.mat")
+end
+if 0
+    %% 将上板的bin文件转换为txt仿真文件
+    PreFix="WeightIn";
+    fid=fopen(PreFix+".bin","r");
+    data=fread(fid);
+    fclose(fid);
+    data=reshape(data,8,[]);
+    fid=fopen(PreFix+".txt",'w');
+    for i=1:size(data,2)
+        fprintf(fid,"%02x%02x%02x%02x%02x%02x%02x%02x\n",fliplr(data(:,i)'));
+    end
+    fclose(fid);
+end
 

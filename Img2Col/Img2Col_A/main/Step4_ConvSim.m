@@ -142,4 +142,7 @@ if 0
     fclose(fid_raw_W);
 end
 
-
+if 0
+    %检查第一个点的卷积计算
+    reshape(Feature_In(1:KernelSize,1:(Feature_Channel*KernelSize))',1,[])*WeightMatrix(:,1)
+end

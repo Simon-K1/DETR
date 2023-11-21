@@ -29,7 +29,7 @@ io_InCol_Count_Times=Feature_Channel*Feature_Size/Height;%目前还是要求输�
 io_OutFeature_Channel_Count_Times=ceil(Out_Channel/(Slice*Width));
 io_Sliding_Size=Feature_Channel*Stride/Height;
 io_OutRow_Count_Times=OutFeatureSize;
-QuantInstru_zeroIn=37;%待修改
+QuantInstru_zeroIn=59;%待修改
 %% io输入参数
 fprintf(".QuantInstru_zeroIn            (%d)\n",QuantInstru_zeroIn                         )
 
@@ -127,6 +127,11 @@ QUANT_BASE_ADDR         =(WEIGHT_BASE_ADDR + SendWeight_Len);
 PICTURE_BASE_ADDR		=(QUANT_BASE_ADDR + SendQuantFactor_Len);
 CONV_RESULT_BASE_ADDR	=(MEM_BASE_ADDR + 0x10000000);
 fprintf("bin文件写入地址:%d bin文件大小：%d\n",WEIGHT_BASE_ADDR,SendPicture_Len+SendWeight_Len+SendQuantFactor_Len);
+
+%% 仿真switch时间控制
+SendWeight_Len/8;
+SendQuantFactor_Len/8;
+
 %% 卷积计算：先发权重，再发量化参数，最后发送图片
 %输入switch
 MASK_SWITCH_WEIGHT  =0;%代表的bit位置，第0bit，第1bit。。。

@@ -55,16 +55,7 @@ ReceivePicture_Len=Out_Col*Out_Row*Out_Channel;
 [SendPicture_Len,SendWeight_Len,SendPicture_Len+SendWeight_Len,ReceivePicture_Len];
 fprintf("SendLength=%d;\n",SendPicture_Len+SendWeight_Len+SendQuantFactor_Len)
 fprintf("ReceiveLength=%d;\n",ReceivePicture_Len)
-%% 将上板的bin文件转换为txt仿真文件
-fid=fopen("OnBoardTest.bin","r")
-data=fread(fid)
-fclose(fid);
-data=reshape(data,8,[]);
-fid=fopen("OnBoardTest.txt",'w');
-for i=1:size(data,2)
-    fprintf(fid,"%02x%02x%02x%02x%02x%02x%02x%02x\n",fliplr(data(:,i)'));
-end
-fclose(fid);
+
 %% 创建全仿COE文件
 if 0
     command = 'bin2coe -i Weight_Picture.bin -w 64 -o Weight_Picture.coe';
