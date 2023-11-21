@@ -70,12 +70,12 @@ class Accelerator_Top extends Component{
 
 
 
-class Accelerator_TopV2 extends Component{
+class Accelerator_TopV2(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODULE_NUM:Int=5) extends Component{
   val Config=TopConfig()
   val regSData = slave(AxiLite4(log2Up(1 MiB), 32))//地址位宽-数据位宽
   AxiLite4SpecRenamer(regSData)
   val Regs=new RegTable
-  val core=new SA_3D_SwitchVersion(1,8,64,32,4)//采用上位机手动switch的方法
+  val core=new SA_3D_SwitchVersion(SLICE,HEIGHT,WIDTH,ACCU_WITDH,MODULE_NUM)//(1,8,64,32,4)//采用上位机手动switch的方法
   val s_axis_s2mm=new Bundle{
     val Data_Width=64
     val tdata=in UInt(Data_Width bits)
@@ -164,7 +164,7 @@ class Accelerator_TopV2 extends Component{
 
 
 
-object Top extends App { 
+object Top extends App { //
     val OnBoard=false
     var verilog_path="./verilog/SA_3D" 
     if(OnBoard){
@@ -172,6 +172,6 @@ object Top extends App {
     }
     
   
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Accelerator_TopV2)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Accelerator_TopV2(2,8,64,32,4))
     
 }

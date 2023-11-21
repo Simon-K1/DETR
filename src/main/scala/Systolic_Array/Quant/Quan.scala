@@ -97,12 +97,13 @@ class ConvQuant extends Component{
         val zeroIn   =in UInt(8 bits)
         val SAOutput_Valid=in Bool()//脉动阵列输出的数据有效标志，用于将量化参数从
 
-
+        val Quant_State=out Bool()//2023.11.20添加这个信号是为了给外面一个ready信号
         
     }
     
     noIoPrefix()
     val Fsm=ConvQuan_Fsm(io.start&&(~RegNext(io.start)))
+    io.Quant_State:=Fsm.currentState===ConvQuan_ENUM.QUANT
     val Init_Count=WaCounter(Fsm.currentState===ConvQuan_ENUM.INIT,3,5)//数5下进行初始化
     Fsm.Init_End:=Init_Count.valid
     Fsm.LayerEnd:=io.LayerEnd//结束信号由外层给到

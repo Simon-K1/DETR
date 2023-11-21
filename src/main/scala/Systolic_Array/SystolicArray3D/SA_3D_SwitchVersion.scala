@@ -154,14 +154,14 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     //数据流程：先缓存权重，包块卷积计算权重，量化权重，非线性算子的权重，最后再进图片
 
     noIoPrefix()
-    val SubModule_WeightCache   =new WeightCache_Stream(8,8,8,64)//1
+    val SubModule_WeightCache   =new WeightCache_Stream(SLICE,HEIGHT,WIDTH,64)//1
     val SubModule_ConvQuant     =new ConvQuant//2
     val SubModule_Img2Col       =new Img2ColStreamV2//3
     val SubModule_LayerNorm     =new LayerNorm_Top//4
     // val SubModule_Softmax       =new SoftMax_Top //5
     val SubModule_SA_3D         =new SA_3D(SLICE,HEIGHT,WIDTH,ACCU_WITDH)//8*8*8的脉动阵列
     val SubModule_Flatten       =new Flatten(SLICE,HEIGHT,WIDTH,ACCU_WITDH)
-    val SubModule_DataArrange   =new ConvArrangeV3(SLICE,HEIGHT,WIDTH)
+    val SubModule_DataArrange   =new ConvArrangeV3(1,HEIGHT,WIDTH)//由于前面已经有一个Flatten模块，所以后面的数据都是2维的矩阵
     
     
     //#todo---这里以后如果添加了矩阵计算模块要重新switch
@@ -223,12 +223,14 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     for(i<-0 to HEIGHT-1){
       for(j<-0 to SLICE-1){
         SubModule_Flatten.sData.payload(i)(j):=SubModule_SA_3D.Matrix_C.payload(i)(ACCU_WITDH*(j+1)-1 downto ACCU_WITDH*j)
-        SubModule_Flatten.sData.valid(i)     :=SubModule_SA_3D.Matrix_C.valid(i)
+        // SubModule_Flatten.sData.valid(i)     :=SubModule_SA_3D.Matrix_C.valid(i)
       }
+      SubModule_Flatten.sData.valid(i)     :=SubModule_SA_3D.Matrix_C.valid(i)
     }
     SubModule_ConvQuant.io.start          :=Control.start&Control.Switch(SWITCH_QUANT)
     for(i<-0 to HEIGHT-1){
       SubModule_ConvQuant.io.dataIn(i)         :=SubModule_Flatten.mData(i).payload.asSInt
+      SubModule_ConvQuant.io.Quant_State       <>SubModule_Flatten.mData(i).ready
     }    
     
         // ConvQuant.io.dataOut<>mData.payload
@@ -335,8 +337,9 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
 
 
 object SA_3D_Switch extends App { //
-    val verilog_path="./verilog/SA_3D" 
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(1,8,64,32,4))
+    val verilog_path="./verilog/SA_3D" //(1,8,64,32,4)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(2,8,64,32,4))
+    //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(8,8,16,32,4))
     
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
