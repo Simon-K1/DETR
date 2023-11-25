@@ -1,1 +1,0 @@
-net = importONNXNetwork("exported_onnx.onnx",'TargetNetwork','dagnetwork')
