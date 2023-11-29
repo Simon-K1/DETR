@@ -146,7 +146,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     val Weight_Cache=Array.tabulate(WIDTH*SLICE){//所需要的权重缓存buf
         i=>def gen()={//这里用了8个4KB的Bram
             //4096*64bit是一个Bram资源，32K
-            val Weight_Bram=new xil_SimpleDualBram(DMA_WIDTH,1024,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
+            val Weight_Bram=new xil_SimpleDualBram(DMA_WIDTH,8192,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
             Weight_Bram.io.addra:=(In_Row_Cnt.count+Write_Row_Base_Addr).resized
             Weight_Bram.io.addrb:=(Read_Row_Base_Addr+OutRow_Cnt.count).resized
             // Weight_Bram.io.doutb:=0

@@ -271,7 +271,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     SubModule_DataArrange.io.mData.ready:=OutputSwitch.s(0).axis_s2mm_tready
     for(i<-0 to HEIGHT-1){//遍历行
       SubModule_DataArrange.io.sData(i):=Quant_Switch.m(0).axis_mm2s_tdata((i+1)*8-1 downto i*8)//从现在开始约定好，输出的数据都用vec描述，Vec的大小就是HEIGHT每一行都与DataArrange一一对应
-      SubModule_DataArrange.io.sValid(i):=Delay(SubModule_SA_3D.Matrix_C.valid(i),DELAY_TIMES)
+      SubModule_DataArrange.io.sValid(i):=Delay(SubModule_Flatten.mData(i).valid,DELAY_TIMES)
     }
     Quant_Switch.m(0).axis_mm2s_tready:=SubModule_DataArrange.io.sReady
 
@@ -338,7 +338,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
 
 object SA_3D_Switch extends App { //
     val verilog_path="./verilog/SA_3D" //(1,8,64,32,4)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(2,8,64,32,4))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(3,8,64,32,4))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(8,8,16,32,4))
     
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
