@@ -6,6 +6,7 @@ import spinal.lib.StreamFifo
 import utils.AxisDataConverter
 import spinal.lib.slave
 import spinal.lib.master
+import xip.xil_ila
 
 class Flatten(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,FIFO_DEPTH:Int=64) extends Component{
   val sData=new Bundle{//数据输入
@@ -40,6 +41,26 @@ class Flatten(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,FIFO_DEPTH:Int=64) e
     }
   }
 
+  val Debug_signals=Array[Bits](
+      mData(0).payload.asBits,
+      mData(1).payload.asBits,
+      mData(2).payload.asBits,
+      mData(3).payload.asBits,
+      mData(4).payload.asBits,
+      mData(5).payload.asBits,
+      mData(6).payload.asBits,
+      mData(7).payload.asBits,
+      mData(0).valid.asBits,
+      mData(1).valid.asBits,
+      mData(2).valid.asBits,
+      mData(3).valid.asBits,
+      mData(4).valid.asBits,
+      mData(5).valid.asBits,
+      mData(6).valid.asBits,
+      mData(7).valid.asBits
+    )
+    val ila=new xil_ila(Debug_signals,true,"ila Flatten")
+    for(i<-0 to Debug_signals.length-1){ila.probe(i):=Debug_signals(i)}
 }
 object Flatten_Gene extends  App{
     val verilog_path="./verilog/SA_3D/verilog" 
