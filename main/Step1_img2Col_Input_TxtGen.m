@@ -3,15 +3,15 @@
 clear
 Drop_Message=1;%将图片继续补零以匹配卷积不丢失信息
 WEIGHT_VERSION=1;%权重缓存模块的版本，可选1（V1），2（V2，已失效）
-Feature_Size=20;%图片大小224*224
-Feature_Channel=128;%图片通道
-Out_Channel=8;%输出图片通道，要修改
+Feature_Size=224;%图片大小224*224
+Feature_Channel=8;%图片通道
+Out_Channel=24;%输出图片通道，要修改
 
-Stride=1;%要修改
-KernelSize=1;%要修改
+Stride=16;%要修改
+KernelSize=16;%要修改
 assert(Stride<=KernelSize,"Stride must be less than kernelSize");
 %脉动阵列配置
-Slice=1;
+Slice=3;
 Width=64;
 Height=8;
 
@@ -164,17 +164,6 @@ if 0%读取pytorch生成的bin文件
     fclose(fid);
     save("matlab.mat")
 end
-if 0
-    %% 将上板的bin文件转换为txt仿真文件
-    PreFix="WeightIn";
-    fid=fopen(PreFix+".bin","r");
-    data=fread(fid);
-    fclose(fid);
-    data=reshape(data,8,[]);
-    fid=fopen(PreFix+".txt",'w');
-    for i=1:size(data,2)
-        fprintf(fid,"%02x%02x%02x%02x%02x%02x%02x%02x\n",fliplr(data(:,i)'));
-    end
-    fclose(fid);
-end
-
+% fid=fopen("Test.txt",'w');
+% fprintf(fid,"%f",0.222142413);
+% fclose(fid);

@@ -4,12 +4,14 @@ load("matlab.mat")
 Picture_Flattened=reshape(Feature_In',1,[]);
 if WEIGHT_VERSION==1
     WeightMatrix_Flattened=reshape(WeightMatrix,1,[]);
-    assert(exist("Scale","var"),"如果还没有生成量化参数，需要先到step8生成随机的量化参数，更新matlab.mat后再重新生成上板bin文件");
-    %
+    if ~exist("Scale","var"),
+    warning("如果还没有生成量化参数，需要先生成随机的量化参数，更新matlab.mat后再重新生成上板bin文件\n开始生成随机量化参数\n");
+    [Bias,Scale,Shift]=Step8_ConvQuant().Gen_Rand_Data(OutFeatureSize^2,Out_Channel);
+    save("matlab.mat");
+    end
     Scale_Flattened=reshape(Scale,1,[]);
     Bias_Flattened=reshape(Bias,1,[]);
     Shift_Flattened=reshape(Shift,1,[]);
-
 else
     %这里先默认权重的列数为8的倍数，或者输出图片的通道为8的倍数
     WeightMatrix_Flattened=[];
@@ -56,8 +58,3 @@ ReceivePicture_Len=Out_Col*Out_Row*Out_Channel;
 fprintf("SendLength=%d;\n",SendPicture_Len+SendWeight_Len+SendQuantFactor_Len)
 fprintf("ReceiveLength=%d;\n",ReceivePicture_Len)
 
-%% 创建全仿COE文件
-if 0
-    command = 'bin2coe -i Weight_Picture.bin -w 64 -o Weight_Picture.coe';
-    [status,cmdout] = system(command)
-end

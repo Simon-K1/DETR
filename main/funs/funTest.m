@@ -8,3 +8,8 @@ ConvQuant(Weight,Scale,Zp)
 a=rand(100,100);
 b=rand(100,100);
 lp_loss(a,b,2,"NONE")
+
+
+
+%% 
+Fixed_Length_Hex(-15,4)

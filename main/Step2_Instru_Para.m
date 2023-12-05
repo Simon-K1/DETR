@@ -33,18 +33,18 @@ QuantInstru_zeroIn=59;%待修改
 %% io输入参数
 fprintf(".QuantInstru_zeroIn            (%d)\n",QuantInstru_zeroIn                         )
 
-fprintf(".Stride                        (%d),\n",io_Stride                        )
-fprintf(".Kernel_Size                   (%d),\n",io_KernelSize                    )
-fprintf(".Window_Size                   (%d),\n",io_Window_Size                   )
-fprintf(".InFeature_Size                (%d),\n",io_InFeature_Size                )
-fprintf(".InFeature_Channel             (%d),\n",io_InFeature_Channel             )
-fprintf(".OutFeature_Channel            (%d),\n",io_OutFeature_Channel            )
-fprintf(".OutFeature_Size               (%d),\n",io_OutFeature_Size               )
-fprintf(".Sliding_Size                  (%d),\n",io_Sliding_Size)
-fprintf(".OutCol_Count_Times            (%d),\n",io_OutCol_Count_Times            )
-fprintf(".InCol_Count_Times             (%d),\n",io_InCol_Count_Times             )
-fprintf(".OutRow_Count_Times            (%d),\n",io_OutRow_Count_Times            )
-fprintf(".OutFeature_Channel_Count_Times(%d),\n",ceil(io_OutFeature_Channel_Count_Times))
+fprintf(".Img2Col_Stride                        (%d),\n",io_Stride                        )
+fprintf(".Img2Col_Kernel_Size                   (%d),\n",io_KernelSize                    )
+fprintf(".Img2Col_Window_Size                   (%d),\n",io_Window_Size                   )
+fprintf(".Img2Col_InFeature_Size                (%d),\n",io_InFeature_Size                )
+fprintf(".Img2Col_InFeature_Channel             (%d),\n",io_InFeature_Channel             )
+fprintf(".Img2Col_OutFeature_Channel            (%d),\n",io_OutFeature_Channel            )
+fprintf(".Img2Col_OutFeature_Size               (%d),\n",io_OutFeature_Size               )
+fprintf(".Img2Col_Sliding_Size                  (%d),\n",io_Sliding_Size)
+fprintf(".Img2Col_OutCol_Count_Times            (%d),\n",io_OutCol_Count_Times            )
+fprintf(".Img2Col_InCol_Count_Times             (%d),\n",io_InCol_Count_Times             )
+fprintf(".Img2Col_OutRow_Count_Times            (%d),\n",io_OutRow_Count_Times            )
+fprintf(".Img2Col_OutFeature_Channel_Count_Times(%d),\n",ceil(io_OutFeature_Channel_Count_Times))
 fprintf("===================================================\n")
 
 %% 权重对应指令,全部统一用矩阵表示
@@ -53,9 +53,9 @@ io_WeightMatrix_Row=Row;
 io_WeightMatrix_Col=Col;
 io_OutMatrix_Row=Out_Row*Out_Col;
 io_OutMatrix_Col=Out_Col;
-fprintf(".WeightMatrix_Row                 (%d),\n",io_WeightMatrix_Row)
-fprintf(".OutMatrix_Col                    (%d),\n",io_WeightMatrix_Col)
-fprintf(".OutMatrix_Row                    (%d),\n",io_OutMatrix_Row)
+fprintf(".Img2Col_WeightMatrix_Row                 (%d),\n",io_WeightMatrix_Row)
+fprintf(".Img2Col_OutMatrix_Col                    (%d),\n",io_WeightMatrix_Col)
+fprintf(".Img2Col_OutMatrix_Row                    (%d),\n",io_OutMatrix_Row)
 fprintf("===================================================\n")
 
 %% 生成上板测试数据+指令

@@ -9,7 +9,7 @@ fprintf("输入通道：%d\n卷积核大小：%d\n输出通道：%d\n",Feature_C
 fprintf("权重数据所占资源数量:%d KB\n",MemSize)
 fprintf("所需Bram个数：%d \n",MemSize/4)
 %% 检查读写地址有没有超,一开始默认的地址位宽都是16位
-SA_Col=8;%脉动阵列列数
+SA_Col=Slice*Width;%脉动阵列列数
 DMA_Width=8;%权重缓存模块的DMA位宽,单位：字节
 InDepth=Row*Col/(SA_Col*DMA_Width);%也就是Spianl中设置的Mem的最小深度
 OutDepth=Row*Col/SA_Col;
