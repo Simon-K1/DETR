@@ -15,7 +15,7 @@ from models import *
 parser = argparse.ArgumentParser(description='FQ-ViT')
 
 TestCfg=dict(
-    model="vit_base",
+    model="vit_large",
     data="E:/Transformer/DataSets/imagenet/imagenet2012mini",#"E:/Transformer/DataSets/imageValfull",
     quant=True,
     ptf=True,
