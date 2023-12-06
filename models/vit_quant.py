@@ -453,10 +453,10 @@ def My_Tiny_Vit(pretrained=False,
                           cfg=None,
                           **kwargs):
     model = VisionTransformer(
-        patch_size=16,
-        embed_dim=384,
+        patch_size=4,
+        embed_dim=192,
         depth=6,
-        num_heads=6,
+        num_heads=1,
         mlp_ratio=4,
         qkv_bias=True,
         norm_layer=partial(QIntLayerNorm, eps=1e-6),

@@ -73,9 +73,10 @@ def seed(seed=0):
 
 
 def main():
-    Train_En=False
-    Pretrain=True
-    Pretrain_Path=r"E:\Transformer\Transformer_Arithmatic\QuanFqVit\float_pth\littleData80.2896.85.pth"
+    Train_En=False#是否训练
+    Pretrain=False#是否使用预训练权重
+    Pretrain_Path=r"E:\Transformer\Transformer_Arithmatic\Transformer_Main\float_pth\d6_ed192_cl391.1698.32.pth"
+    Saved_Pth_Name='d6_ed192_cl3_h1_'
     args = parser.parse_args()
     seed(args.seed)
 
@@ -117,7 +118,7 @@ def main():
     )
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=4,
+        batch_size=2,
         shuffle=True,
         num_workers=args.num_workers,
         pin_memory=True,
@@ -129,7 +130,7 @@ def main():
             state_dict = torch.load(Pretrain_Path)
             model.load_state_dict(state_dict)
         top1,top5=validate(1,val_loader,model,criterion,device)
-        train(20,train_loader,val_loader,model, criterion, device,'float_pth','SoftmaxPow2')
+        train(2,train_loader,val_loader,model, criterion, device,'float_pth',Saved_Pth_Name)
 
 
 
@@ -146,7 +147,7 @@ def main():
 #     return model
 
     if not Train_En:
-        model_file=r"E:\Transformer\Transformer_Arithmatic\QuanFqVit\float_pth\MiniTran2\Minitrain2_91.920.pth"
+        model_file=r"E:\Transformer\Transformer_Arithmatic\Transformer_Main\float_pth\d6_ed192_cl3_h1_90.4897.6.pth"
         state_dict = torch.load(model_file)
         model.load_state_dict(state_dict)
         model.to(device)
