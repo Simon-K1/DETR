@@ -59,7 +59,7 @@ class Flatten(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,FIFO_DEPTH:Int=64) e
       mData(6).valid.asBits,
       mData(7).valid.asBits
     )
-    val ila=new xil_ila(Debug_signals,true,"ila Flatten")
+    val ila=new xil_ila(Debug_signals,true,"ila_Flatten")
     for(i<-0 to Debug_signals.length-1){ila.probe(i):=Debug_signals(i)}
 }
 object Flatten_Gene extends  App{
