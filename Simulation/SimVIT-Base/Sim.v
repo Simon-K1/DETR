@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module Sim_Systolic3D_33;
+module Sim_VitBase;
 parameter Mem_Depth =247936;
 parameter Mem_Width=8*8;//txt数据位宽
 parameter Total_Input_Times=247936;//发完2224*224*64bit数据后mValid需要拉低
@@ -8,6 +8,8 @@ parameter Total_Input_Times=247936;//发完2224*224*64bit数据后mValid需要�
 parameter Mem2_Depth=300*300*4;//第二个Mem的配置
 parameter Mem2_Width=64;
 
+parameter WeightTxt_Length=196608;
+parameter QuantTxt_Length=1152;
   reg clk;
   reg rst;
 
@@ -65,7 +67,8 @@ parameter Mem2_Width=64;
 
 //    $readmemh("E:\\Transformer\\Transformer_Arithmatic\\Transformer_Main\\TXT\\WeightPicture.txt",mem);//_Modified
 //    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\MM_Test\\WeightMatrix.txt",mem);
-    $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\Test\\SA_3D\\Vit-Base\\OnBoard_Test.txt",mem);//_Modified
+    $readmemh("E:\\Transformer\\Matlab\\main\\Tests\\SA_3D\\VIt-Base\\OnBoardTest.txt",mem);
+    
     $readmemh("E:\\Transformer\\Matlab\\Img2Col\\Img2Col_A\\main\\SA_3D\\33\\K2\\WeightData.txt",mem2);//高8bit为Scale，低8bit为Bias
     clk=0;
     start=0;
@@ -85,14 +88,27 @@ parameter Mem2_Width=64;
 
   end
   always#5 clk=~clk;//100M时钟
+//  reg testlast;
 initial begin
      Control_Switch=4'b0001;
      #20000
      Control_Switch=4'b0001;
-     #(196608+1000)
+     #(WeightTxt_Length*10+1000)
      Control_Switch=4'b0010;
-     #(1152+1000)
+     #(11520+1000)
      Control_Switch=4'b0100;
+
+     if (sLast)begin
+        Control_Switch='d0;
+        #1000
+         Control_Switch=4'b0001;
+         #20000
+         Control_Switch=4'b0001;
+         #(WeightTxt_Length*10+1000)
+         Control_Switch=4'b0010;
+         #(QuantTxt_Length*10+1000)
+         Control_Switch=4'b0100;
+     end
 end
 
   //全局计数器，用于控制Mvalid和Sready
@@ -266,7 +282,6 @@ SA3D_Top SA_3D(
 .Img2Col_WeightMatrix_Row                 (2048),
 .Img2Col_OutMatrix_Col                    (768),
 .Img2Col_OutMatrix_Row                    (196),
-//.QuantInstru_zeroIn                         ('d15),
 //===================================================================
 
 //.Img2Col_OutFeature_Channel                 (8),
@@ -279,7 +294,8 @@ SA3D_Top SA_3D(
 //.QuantInstru_zeroIn                         ('d15),
 
 //=====================================================================
-.m_axis_mm2s_tready(1'b1),
+.m_axis_mm2s_tready(sReady),
+.m_axis_mm2s_tvalid(sValid),
 .m_axis_mm2s_tlast(sLast),
 .clk(clk),
 .reset(rst)

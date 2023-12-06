@@ -115,7 +115,7 @@ case class TopConfig(){
     val MATRIXC_COL_WIDTH=12//最大可支持的输出矩阵大小为2^12=4096列，也可以认为是4096个输出通道
     val MATRIXC_ROW_WIDTH=20//输出矩阵的行数可能会很大，比如1024*1024，2048*2048
     //卷积和矩阵量化==============================================================================================
-    val QUAN_MAX_MATRIX_COL=512//目前先拿一个Bram存Scale，Bias这些信息
+    val QUAN_MAX_MATRIX_COL=1024//目前先拿一个Bram存Scale，Bias这些信息
 
     val QUANT_FACTOR_WIDTH=32   
     //以下配置来源于刘炜的卷积加速器
