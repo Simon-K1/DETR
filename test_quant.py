@@ -11,11 +11,12 @@ from PIL import Image
 from thop import profile#计算gops的
 from config import Config
 from models import *
+from models.vit_quant import MyVit_Base
 
 parser = argparse.ArgumentParser(description='FQ-ViT')
 
 TestCfg=dict(
-    model="vit_large",
+    model="vit_MyVitBase",
     data="E:/Transformer/DataSets/imagenet/imagenet2012mini",#"E:/Transformer/DataSets/imageValfull",
     quant=True,
     ptf=True,
@@ -25,7 +26,8 @@ TestCfg=dict(
     calib_iter=10,
     val_batchsize=16,
     num_workers=8,
-    print_freq=1
+    print_freq=1,
+    PreTrain=True
 )
 
 
@@ -74,6 +76,7 @@ def str2model(name):
         'swin_tiny': swin_tiny_patch4_window7_224,
         'swin_small': swin_small_patch4_window7_224,
         'swin_base': swin_base_patch4_window7_224,
+        'vit_MyVitBase':MyVit_Base
     }
     print('Model: %s' % d[name].__name__)
     return d[name]
@@ -103,20 +106,23 @@ def main():
 
     device = torch.device(args.device)
     cfg = Config(args.ptf, args.lis, args.quant_method)
-    model = str2model(args.model)(pretrained=True, cfg=cfg)
+    model = str2model(args.model)(pretrained=TestCfg['PreTrain'], cfg=cfg)
     model = model.to(device)
-    if False:
-        #python test_quant.py deit_small E:/Transformer/DataSets/imagenet/imagenet2012mini
-        #http://www.bryh.cn/a/47127.html，计算量解释
-        print(args.model," model 相关参数:================================")
-        total = sum([param.nelement() for param in model.parameters()])
-        print('  + Number of params: %.2fM' % (total / 1e6))
+    input=torch.rand([1,3,224,224]).to(device)
+    print(model(input))
+    
+    # if not args.quant:
+    #     #python test_quant.py deit_small E:/Transformer/DataSets/imagenet/imagenet2012mini
+    #     #http://www.bryh.cn/a/47127.html，计算量解释
+    #     print(args.model," model 相关参数:================================")
+    #     total = sum([param.nelement() for param in model.parameters()])
+    #     print('  + Number of params: %.2fM' % (total / 1e6))
 
-        input = torch.randn(1, 3, 224, 224).to(device)
-        flops, params = profile(model, (input,))
-        print('flops: ', flops, 'params: ', params)
+    # input = torch.randn(1, 3, 224, 224).to(device)
+    # flops, params = profile(model, (input,))
+    # print('flops: ', flops, 'params: ', params)
 
-        exit()
+    # exit()
     # Note: Different models have different strategies of data preprocessing.
     model_type = args.model.split('_')[0]
     if model_type == 'deit':

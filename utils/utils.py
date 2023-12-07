@@ -200,4 +200,6 @@ def train(epoch,train_loader, val_loader,model, criterion, device,save_path,pref
 
         model.eval()  # change into test model
         top1,top5=validate(100,val_loader,model,criterion,device)
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
         torch.save(model.state_dict(), save_path+"/"+prefix+str(round(top1, 2))+str(round(top5, 2))+".pth")

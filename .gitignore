@@ -122,6 +122,7 @@ datasets/
 *.pth
 *.py~
 *.sh~
+*.bin
 
 
 MyTransformer/vit-pytorch-main/

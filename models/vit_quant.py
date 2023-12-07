@@ -583,3 +583,24 @@ def vit_large_patch16_224(pretrained=False,
 
         load_weights_from_npz(model, url, check_hash=True)
     return model
+def MyVit_Base(pretrained=False,
+                         quant=False,
+                         calibrate=False,
+                         cfg=None,
+                         **kwargs):
+    model = VisionTransformer(patch_size=16,
+                              embed_dim=768,
+                              depth=12,
+                              num_heads=12,
+                              mlp_ratio=4,
+                              qkv_bias=True,
+                              norm_layer=partial(QIntLayerNorm, eps=1e-6),
+                              quant=quant,
+                              calibrate=calibrate,
+                              input_quant=True,
+                              cfg=cfg,
+                              **kwargs)
+    if pretrained:
+        state_dict = torch.load(r'E:\Transformer\Transformer_Arithmatic\Transformer_Main\float_pth\MyVitBase91.8498.76.pth')
+        model.load_state_dict(state_dict)
+    return model
