@@ -12,7 +12,7 @@ from PIL import Image
 from thop import profile#计算gops的
 from config import Config
 # from models import *
-from models.vit_quant import My_Tiny_Vit,vit_base_patch16_224
+from models.vit_quant import My_Tiny_Vit, MyVit_Base,vit_base_patch16_224
 
 from utils.utils import *
 parser = argparse.ArgumentParser(description='FQ-ViT')
@@ -67,18 +67,18 @@ def seed(seed=0):
 
 
 def main():
-    Train_En=False
-    Pretrain=True
+    Train_En=True
+    Pretrain=False
     Pretrain_Path=r"E:\Transformer\Transformer_Arithmatic\QuanFqVit\float_pth\littleData80.2896.85.pth"
     args = parser.parse_args()
     seed(args.seed)
 
     device = torch.device(args.device)
     cfg = Config(args.ptf, args.lis, args.quant_method)
-    model = My_Tiny_Vit(pretrained=False, cfg=cfg)
+    model = MyVit_Base(pretrained=False, cfg=cfg)
     exampleInput=torch.rand(1,3,224,224)
-    # print(model(exampleInput))
-    model(exampleInput)
+    print(model(exampleInput))
+    # model(exampleInput)
 
     # print(My_Tiny_Vit.input_quant)
     # exit()
@@ -122,8 +122,8 @@ def main():
         if Pretrain:
             state_dict = torch.load(Pretrain_Path)
             model.load_state_dict(state_dict)
-        top1,top5=validate(1,val_loader,model,criterion,device)
-        train(20,train_loader,val_loader,model, criterion, device,'float_pth','SoftmaxPow2')
+            top1,top5=validate(1,val_loader,model,criterion,device)
+        train(20,train_loader,val_loader,model, criterion, device,'float_pth','MyVitBase')
 
 
 

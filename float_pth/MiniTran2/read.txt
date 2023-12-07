@@ -1,2 +1,0 @@
-使用softmax pow2训练，
-用minitrain2训练
