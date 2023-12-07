@@ -242,11 +242,13 @@ class QIntLayerNorm(nn.LayerNorm):
                 in_quantizer=None,
                 out_quantizer=None,
                 in_scale_expand=1):
+        x1=0
         if self.mode == 'ln':
             x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias,
                              self.eps)
+        
         elif self.mode == 'int':#
-            if False:
+            if True:
                 in_scale = in_quantizer.scale
                 if in_scale_expand != 1:
                     in_scale = in_scale.unsqueeze(-1).expand(
@@ -276,9 +278,9 @@ class QIntLayerNorm(nn.LayerNorm):
                     torch.pow(2, N)).round()
 
                 x_q = ((A_sign * M * x_q + B) / torch.pow(2, N)).round()
-                x = x_q * out_scale
+                x1 = x_q * out_scale
 
-            else:
+            if True:
                 in_scale = in_quantizer.scale
                 if in_scale_expand != 1:
                     in_scale = in_scale.unsqueeze(-1).expand(
@@ -372,8 +374,30 @@ class QIntLayerNorm(nn.LayerNorm):
 
                 # x_q = ((A_sign * M * x_q + B) / torch.pow(2, N)).round()
                 # x = x_q * out_scale
+                #统计误差
+                Correct=F.layer_norm(x, self.normalized_shape, self.weight, self.bias,self.eps)
+                error1=(x1-Correct).sum()
+                error2=(x-Correct).sum()
+                error3=(x-x1).sum()
+
+                Correct=Correct.view(1,-1)
+                fp64=x1.view(1,-1)
+                fpga=x
+                fpga=fpga.view(1,-1)
+                
+                similarity1 = F.cosine_similarity(fp64, Correct)
+                similarity2 = F.cosine_similarity(Correct, fpga)
+                similarity3 = F.cosine_similarity(fp64, fpga)
+                print("余弦距离1:", similarity1.item())
+                print("余弦距离2:", similarity2.item())
+                print("余弦距离3:", similarity3.item())
         else:
             raise NotImplementedError
+        
+
+
+
+        
         return x
 
 

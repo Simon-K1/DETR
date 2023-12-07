@@ -24,7 +24,7 @@ TestCfg=dict(
     quant_method="ema",
     calib_batchsize=1,
     calib_iter=10,
-    val_batchsize=16,
+    val_batchsize=1,
     num_workers=8,
     print_freq=1,
     PreTrain=True
@@ -109,7 +109,7 @@ def main():
     model = str2model(args.model)(pretrained=TestCfg['PreTrain'], cfg=cfg)
     model = model.to(device)
     input=torch.rand([1,3,224,224]).to(device)
-    print(model(input))
+    # print(model(input))
     
     # if not args.quant:
     #     #python test_quant.py deit_small E:/Transformer/DataSets/imagenet/imagenet2012mini
