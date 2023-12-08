@@ -1,6 +1,6 @@
 %% 用于上板测试失败，需要仿真或者上板前需要仿真
 %% 将上板的bin文件转换为txt仿真文件
-if 1
+if 0
     PreFix="OnBoardTest";
 
     fid=fopen(PreFix+".bin","r");

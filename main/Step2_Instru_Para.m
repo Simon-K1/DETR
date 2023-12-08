@@ -31,7 +31,7 @@ io_Sliding_Size=Feature_Channel*Stride/Height;
 io_OutRow_Count_Times=OutFeatureSize;
 QuantInstru_zeroIn=59;%待修改
 %% io输入参数
-fprintf(".QuantInstru_zeroIn            (%d)\n",QuantInstru_zeroIn                         )
+fprintf(".QuantInstru_zeroIn            (%d),\n",QuantInstru_zeroIn                         )
 
 fprintf(".Img2Col_Stride                        (%d),\n",io_Stride                        )
 fprintf(".Img2Col_Kernel_Size                   (%d),\n",io_KernelSize                    )

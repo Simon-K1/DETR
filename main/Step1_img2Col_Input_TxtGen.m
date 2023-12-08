@@ -164,6 +164,6 @@ if 0%读取pytorch生成的bin文件
     fclose(fid);
     save("matlab.mat")
 end
-% fid=fopen("Test.txt",'w');
-% fprintf(fid,"%f",0.222142413);
-% fclose(fid);
+fid=fopen("Test.txt",'w');
+fprintf(fid,"%.10f",12345678901.1234567890123456789);
+fclose(fid);
