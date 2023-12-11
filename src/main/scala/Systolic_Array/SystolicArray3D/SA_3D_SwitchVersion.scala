@@ -10,6 +10,8 @@ import LayerNorm.LayerNorm_Top
 import spinal.lib.StreamWidthAdapter
 import Systolic_Array.Quant.Quan
 import xip.xil_ila
+import Systolic_Array.LHMM.GEMM_Fsm
+import Systolic_Array.LHMM.GemmCache
 //Switch模块是不是得添加一些组合逻辑，不然可能时序过不去
 class Axis_Switch_M2S(Slave_Port_Num:Int,Data_Width:Int) extends Component{
     val io=new Bundle{//master to Slave,一个master口转成多个Slave口
@@ -81,7 +83,7 @@ class Axis_Switch_S2M(Master_Port_Num:Int,Data_Width:Int) extends Component{
     }
 }
 
-class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODULE_NUM:Int=5) extends Component{
+class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODULE_NUM:Int=6) extends Component{
     val Config=TopConfig()
     val Control=new Bundle{
         val start=in Bool()
@@ -127,13 +129,24 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
         //val LayerNorm_TokenNums             =in UInt(16 bits)//TokenNums Ceil(OutMatrix_Row/8)
 
     }
+    val Gemm_Instru=new Bundle{
+        val Gemm_Height=in UInt(16 bits)
+        val Gemm_Width=in UInt(16 bits)
+    }
     Img2Col_Instru.setName("Img2Col")
     // val Fsm=TopCtrl_Fsm(Control.start)
     val LayerEnd=Control.Dma_TX_Int//DMA发送数据完毕的中断
     // Fsm.Compute_End:=LayerEnd
     // val InitCnt=WaCounter(Fsm.currentState===TopCtrl_Enum.INIT,3,5)
     // Fsm.Inited:=InitCnt.valid
-
+    val SWITCH_WEIGHT  =0
+    val SWITCH_QUANT   =1
+    val SWITCH_IMG2COL =2
+    val SWITCH_LAYERNORM=3
+    val SWITCH_GEMM=4
+    val SWITCH_SOFTTMAX=5
+    
+    //数据流程：先缓存权重，包块卷积计算权重，量化权重，非线性算子的权重，最后再进图片
     val InputSwitch=new Axis_Switch_S2M(MODULE_NUM,64)//5个接口
     // val ConvQuantSwitch=new Axis_Switch_M2S(3,64)//卷积量化模块出来switch一下
     val Quant_Switch=new Axis_Switch_S2M(2,64)
@@ -146,12 +159,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     InputSwitch.s0_axis_s2mm<>s_axis_s2mm
 
 
-    val SWITCH_WEIGHT  =0
-    val SWITCH_QUANT   =1
-    val SWITCH_IMG2COL =2
-    val SWITCH_LAYERNORM=3
-    val SWITCH_SOFTTMAX=4
-    //数据流程：先缓存权重，包块卷积计算权重，量化权重，非线性算子的权重，最后再进图片
+
 
     noIoPrefix()
     val SubModule_WeightCache   =new WeightCache_Stream(SLICE,HEIGHT,WIDTH,64)//1
@@ -162,13 +170,22 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     val SubModule_SA_3D         =new SA_3D(SLICE,HEIGHT,WIDTH,ACCU_WITDH)//8*8*8的脉动阵列
     val SubModule_Flatten       =new Flatten(SLICE,HEIGHT,WIDTH,ACCU_WITDH)
     val SubModule_DataArrange   =new ConvArrangeV3(1,HEIGHT,WIDTH)//由于前面已经有一个Flatten模块，所以后面的数据都是2维的矩阵
-    
+    val SubModule_GEMM          =new GemmCache
     
     //#todo---这里以后如果添加了矩阵计算模块要重新switch
-    for(i<-0 to HEIGHT-1){
-        for(j<-0 to SLICE-1){
-            SubModule_SA_3D.SA_Inputs(j).MatrixA(i):=SubModule_Img2Col.io.mData((i+1)*8-1 downto i*8).asSInt//SLICE轴的每一行的输入一样
-            SubModule_SA_3D.SA_Inputs(j).A_Valid(i):=SubModule_Img2Col.io.mValid(i)
+    when(Control.Switch(SWITCH_GEMM)){
+        for(i<-0 to HEIGHT-1){
+            for(j<-0 to SLICE-1){
+                SubModule_SA_3D.SA_Inputs(j).MatrixA(i):=SubModule_GEMM.io.mData((i+1)*8-1 downto i*8).asSInt//SLICE轴的每一行的输入一样
+                SubModule_SA_3D.SA_Inputs(j).A_Valid(i):=SubModule_GEMM.io.validOut(i)
+            }
+        }
+    }otherwise{    
+        for(i<-0 to HEIGHT-1){
+            for(j<-0 to SLICE-1){
+                SubModule_SA_3D.SA_Inputs(j).MatrixA(i):=SubModule_Img2Col.io.mData((i+1)*8-1 downto i*8).asSInt//SLICE轴的每一行的输入一样
+                SubModule_SA_3D.SA_Inputs(j).A_Valid(i):=SubModule_Img2Col.io.mValid(i)
+            }
         }
     }
     for(j<-0 to SLICE-1){
@@ -180,7 +197,9 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     SubModule_Img2Col.io.s_axis_s2mm_tlast   <>InputSwitch.m(SWITCH_IMG2COL).axis_mm2s_tlast
     SubModule_Img2Col.io.s_axis_s2mm_tready  <>InputSwitch.m(SWITCH_IMG2COL).axis_mm2s_tready
     SubModule_Img2Col.io.s_axis_s2mm_tvalid  <>InputSwitch.m(SWITCH_IMG2COL).axis_mm2s_tvalid
-    
+    SubModule_GEMM.io.sData.payload          <>InputSwitch.m(SWITCH_GEMM).axis_mm2s_tdata
+    SubModule_GEMM.io.sData.valid            <>InputSwitch.m(SWITCH_GEMM).axis_mm2s_tvalid
+    SubModule_GEMM.io.sData.ready            <>InputSwitch.m(SWITCH_GEMM).axis_mm2s_tready
     SubModule_Img2Col.io.Stride                        <>Img2Col_Instru.Stride                        
     SubModule_Img2Col.io.Kernel_Size                   <>Img2Col_Instru.Kernel_Size                   
     SubModule_Img2Col.io.Window_Size                   <>Img2Col_Instru.Window_Size                   
@@ -193,6 +212,12 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     SubModule_Img2Col.io.OutRow_Count_Times            <>Img2Col_Instru.OutRow_Count_Times            
     SubModule_Img2Col.io.OutFeature_Channel_Count_Times<>Img2Col_Instru.OutFeature_Channel_Count_Times
     SubModule_Img2Col.io.Sliding_Size                  <>Img2Col_Instru.Sliding_Size  
+
+    SubModule_GEMM.io.HIGHT                             <>Gemm_Instru.Gemm_Height.resized
+    SubModule_GEMM.io.WIDTH                             <>Gemm_Instru.Gemm_Width.resized
+    SubModule_GEMM.io.WEIGHTCOL                         <>Img2Col_Instru.OutFeature_Channel.resized//这里矩阵计算的列位宽暂时先设置为最大就12bit
+    val GemmStart=Control.start&Control.Switch(SWITCH_GEMM)
+    SubModule_GEMM.io.start                             :=RegNext(~GemmStart)&GemmStart
 
     for(i<-0 to WIDTH-1){//遍历每一列
         for(j<-0 to SLICE-1){//遍历每个slice，slice是最内层循环
@@ -217,6 +242,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     SubModule_WeightCache.io.s_axis_s2mm_tlast <>InputSwitch.m(SWITCH_WEIGHT).axis_mm2s_tlast
     SubModule_WeightCache.io.s_axis_s2mm_tready<>InputSwitch.m(SWITCH_WEIGHT).axis_mm2s_tready
     SubModule_WeightCache.io.s_axis_s2mm_tvalid<>InputSwitch.m(SWITCH_WEIGHT).axis_mm2s_tvalid//RegNext(InputSwitch.m(0).axis_mm2s_tvalid)
+    
     
     //卷积量化模块==============================================================================================================
     val DELAY_TIMES=15//#todo 延迟的级数，需要确定

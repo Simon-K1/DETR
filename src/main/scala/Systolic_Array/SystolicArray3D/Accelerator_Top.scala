@@ -123,7 +123,8 @@ class Accelerator_TopV2(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODULE
 
     core.Img2Col_Instru.OutMatrix_Col                   :=Regs.OutMatrix_Col
     core.Img2Col_Instru.OutMatrix_Row                   :=Regs.OutMatrix_Row//输出矩阵的行数
-
+    core.Gemm_Instru.Gemm_Height                        :=Regs.Gemm_Height
+    core.Gemm_Instru.Gemm_Width                         :=Regs.Gemm_Width
 //   core.GemmInstru.HEIGHT                              :=Regs.Gemm_Height
 //   core.GemmInstru.WIDTH                               :=Regs.Gemm_Width
     core.QuantInstru.zeroIn                             :=Regs.Quant_ZeroPoint
@@ -153,7 +154,9 @@ class Accelerator_TopV2(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODULE
       core.Img2Col_Instru.WeightMatrix_Row.asBits,              
       core.Img2Col_Instru.OutMatrix_Col.asBits,                 
       core.Img2Col_Instru.OutMatrix_Row.asBits,
-      core.QuantInstru.zeroIn.asBits                 
+      core.QuantInstru.zeroIn.asBits       
+
+             
   )
     val ila=new xil_ila(Debug_Signals,true,"ila_Accelerator_Top")
     for(i<-0 to Debug_Signals.length-1){
@@ -172,6 +175,6 @@ object Top extends App { //
     }
     
   
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Accelerator_TopV2(3,8,64,32,4))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Accelerator_TopV2(3,8,64,32,5))
     
 }

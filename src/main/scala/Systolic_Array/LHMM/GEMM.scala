@@ -10,7 +10,7 @@ import utils.SubstractLoopCounter
 case class configGemm(){
   val WH_WIDTH = 13
   val W_WIDTH = 16
-  val SA_COL =8
+  val SA_COL =8//2023.12.11 这名字取得真无语
   val dataWidthIn = 64
   val dataWidthOut = 64
 }
