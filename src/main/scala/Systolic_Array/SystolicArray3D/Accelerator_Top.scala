@@ -11,7 +11,7 @@ import spinal.lib.slave
 import xip.xil_ila
 import utils.TopConfig
 
-class Accelerator_Top extends Component{
+class Accelerator_Top extends Component{//此版本已失效（此版本用的是一个大状态机做全局控制，现在已经不那样用了）
   val Config=TopConfig()
   val regSData = slave(AxiLite4(log2Up(1 MiB), 32))//地址位宽-数据位宽
   AxiLite4SpecRenamer(regSData)

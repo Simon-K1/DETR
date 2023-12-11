@@ -7,7 +7,8 @@ import utils.AxisDataConverter
 import spinal.lib.slave
 import spinal.lib.master
 import xip.xil_ila
-
+//2023、12、9 Flatten模块存在的一个bug：当inChannel<SLICE*WIDTH时，也就是存在一些脉动阵列的列没被使用，这样会导致WidthConverter最后会有残留无效数据
+  //初步解决办法：每次重新计算时，flush一下fifo
 class Flatten(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,FIFO_DEPTH:Int=64) extends Component{
   val sData=new Bundle{//数据输入
     val valid=in Vec(Bool(),HEIGHT)
@@ -41,7 +42,7 @@ class Flatten(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,FIFO_DEPTH:Int=64) e
     }
   }
 
-  val Debug_signals=Array[Bits](
+  val Debug_Signals=Array[Bits](
       mData(0).payload.asBits,
       mData(1).payload.asBits,
       mData(2).payload.asBits,
@@ -59,8 +60,29 @@ class Flatten(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,FIFO_DEPTH:Int=64) e
       mData(6).valid.asBits,
       mData(7).valid.asBits
     )
-    val ila=new xil_ila(Debug_signals,true,"ila_Flatten")
-    for(i<-0 to Debug_signals.length-1){ila.probe(i):=Debug_signals(i)}
+    val Debug_Name=Array[String](
+      "mData_payload0",
+      "mData_payload1",
+      "mData_payload2",
+      "mData_payload3",
+      "mData_payload4",
+      "mData_payload5",
+      "mData_payload6",
+      "mData_payload7",
+      "mData_valid0",
+      "mData_valid1",
+      "mData_valid2",
+      "mData_valid3",
+      "mData_valid4",
+      "mData_valid5",
+      "mData_valid6",
+      "mData_valid7"
+    )
+    val ila=new xil_ila(Debug_Signals,true,"ila_Flatten")
+    for(i<-0 to Debug_Signals.length-1){
+      ila.probe(i):=Debug_Signals(i)
+      Debug_Signals(i).setName(Debug_Name(i))
+    }
 }
 object Flatten_Gene extends  App{
     val verilog_path="./verilog/SA_3D/verilog" 

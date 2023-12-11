@@ -101,6 +101,16 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,CVALID:Boolean) extends Componen
       }
     }
 
+    //跑200M时发现这个地方的Cvalid时序有问题，想了一个新办法，让数据流水输出而不是switch输出
+    
+    // for(i<-0 to HEIGHT-1){
+    //   val Output_Pipeline=Vec(Reg(SInt(32 bits))init(0),WIDTH)
+    //   MatrixC(i)=PEArry(i)(0).io.finish?RegNext(PEArry(i)(0).io.PE_OUT)|
+    //   C_Valid(i):=RegNext()
+    //   for(j<-0 to WIDTH-1){
+        
+    //   }
+    // }
     
 
     for(row<-0 to HEIGHT-1){
