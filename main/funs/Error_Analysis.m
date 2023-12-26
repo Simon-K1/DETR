@@ -1,10 +1,6 @@
-%% 卷积完了之后，开始layernorm计算
-%layerNorm的输入数据是一个矩二维矩阵
-clear
-load("tensors.mat");
-
-%% 统计LayerNorm的误差
-load("tensors.mat");
+function [outputArg1,outputArg2] = Error_Analysis(Correct,x)
+%UNTITLED3 误差分析
+%   输入两个二维矩阵
 % 第一步：检查最大误差和最小误差
 Error=abs(Correct-x);
 Fpga_Error_Max=max(Error,[],'all');
@@ -30,6 +26,8 @@ num01=sum((Correct-x)<0.1,'all');
 num001=sum((Correct-x)<0.01,'all');
 num0001=sum((Correct-x)<0.001,'all');
 num00001=sum((Correct-x)<0.0001,'all');
+
+
 %%
 figure 
 x=Fpga_Error_Min:0.01:Fpga_Error_Max
@@ -41,7 +39,9 @@ hold on
 plot3(x, y+1, z, 'b-', 'LineWidth', 2)
 hold on
 plot3(x+0.1, y+2, z, 'b-', 'LineWidth', 2)
-%% 
+
+
+%% 绘制误差热度图
 figure 
 errorMatrix = abs(Error);
 % 绘制误差图
@@ -52,6 +52,8 @@ colorbar
 title('Error Map')
 xlabel('Column')
 ylabel('Row')
+
+%% 绘制三维误差分布
 %% 
 figure 
 surf(Error)
@@ -65,36 +67,6 @@ ylabel('Row')
 zlabel('Error')
 % 添加颜色栏
 colorbar
-%% 
-figure 
-bar3(nums)
-%% 饼状图
-values = [30, 20, 15, 35];
-categories = {'Category 1', 'Category 2', 'Category 3', 'Category 4'};
-pie(nums(1:end))
-nums(1,:)/sum(nums)
 
-%% 
-% 创建示例数据
-x = [1, 2, 3, 4];  % x轴坐标
-z = [5, 8, 12, 6; 9, 2, 7, 10; 3, 6, 4, 9];  % 柱状图的高度/数量
-
-% 生成匹配z行数的y轴坐标向量
-y = 1:size(z, 1);
-
-% 绘制三维柱状图
-bar3(x,y,z)
-
-% 在每个柱子顶部显示数量
-[m, n] = size(z);
-for i = 1:m
-    for j = 1:n
-        text(x(j), y(i), z(i, j), num2str(z(i, j)), 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom');
-    end
 end
 
-% 添加标题和轴标签
-title('3D Bar Chart Example')
-xlabel('X')
-ylabel('Y')
-zlabel('Count')

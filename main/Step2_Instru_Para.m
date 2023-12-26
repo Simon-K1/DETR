@@ -154,6 +154,7 @@ InSwitch_Weight=1;
 InSwitch_Img2col=0;
 InSwitch_Quant=0;
 InSwitch_Layernorm=0;
+InSwitch_Gemm=0;
 
 QuantSwicth_LayerNorm=0;
 QuantSwicth_Softmax=0;
@@ -178,7 +179,7 @@ InSwitch_Img2col=0;
 InSwitch_Quant=1;
 InSwitch_Layernorm=0;
 
-SwitchCtrl=[InSwitch_Layernorm,InSwitch_Img2col,InSwitch_Quant,InSwitch_Weight];
+SwitchCtrl=[InSwitch_Gemm,InSwitch_Layernorm,InSwitch_Img2col,InSwitch_Quant,InSwitch_Weight];
 QuantSwitch=[0,QuantSwicth_Softmax,QuantSwicth_LayerNorm,QuantSwitch_DataArrange];
 OutSwitchCtrl=[0,QuantSwicth_Softmax,QuantSwicth_LayerNorm,QuantSwitch_DataArrange];
 Ctrl=[OutSwitchCtrl,QuantSwitch,SwitchCtrl,0,0,Start];

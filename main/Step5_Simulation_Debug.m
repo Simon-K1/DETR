@@ -24,3 +24,17 @@ if 0
     command = 'bin2coe -i Weight_Picture.bin -w 64 -o Weight_Picture.coe';
     [status,cmdout] = system(command)
 end
+
+%% 单独仿真PE（dsp reuse）
+if 1
+    MatrixA=randi([0,255],[1,768]);
+    MatrixB=randi([-128,127],[768,2]);
+    MatrixC=MatrixA*MatrixB;
+
+    MatrixA_Flatten=reshape(MatrixA',1,[]);
+    fid=fopen("Test.txt",'w');
+    for j=1:size(MatrixA,2)
+        fprintf(fid,"%02s%02s%02s\n",dec2hex(MatrixA(1,j)),dec2hex(MatrixB(j,1)),dec2hex(MatrixB(j,2)));
+    end
+    fclose all
+end

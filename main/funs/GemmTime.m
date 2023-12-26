@@ -1,0 +1,23 @@
+
+function [WeightCache_Time,Compute_Time,MACs]=GemmTime(A_Size,B_Size,SA_Size,Freq,DMA_WIDTH)
+    % SA[Slice,Height,Width]
+    
+    assert(A_Size(2)==B_Size(1));
+    
+    if(~exist("Freq","var"))
+        Freq=200%默认200M,输入参数默认为时钟周期
+        warning("频率设置为200M")
+    end
+    if(~exist("DMA_WIDTH",'var'))
+        DMA_WIDTH=8;
+    end
+    CLK_CYCLE=((1/(Freq*10^6))*10^9)/10^6 ;%单位用ms来表示
+    %输出矩阵的大小：
+    C_Size=[A_Size(1),B_Size(2)];
+    WeightCache_Time=(B_Size(1)*B_Size(2)/DMA_WIDTH)*CLK_CYCLE;
+    Tmp1=ceil(((C_Size(1)*C_Size(2))/(SA_Size(1)*SA_Size(2)*SA_Size(3))));%脉动阵列每次可以出3*8*64个点，那么需要出多少次
+    Compute_Time=Tmp1*(A_Size(2)+SA_Size(3)-1)*CLK_CYCLE;
+
+    MACs=(A_Size(1)*B_Size(2))*(A_Size(2)*2)/10^9;
+    
+end
