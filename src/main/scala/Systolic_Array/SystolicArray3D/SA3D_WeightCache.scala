@@ -60,7 +60,7 @@ case class WeightCache_Fsm(start:Bool)extends Area{
     }
 }
 
-class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Component{
+class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int,W_Depth:Int=1024) extends Component{
     //应该创建8列缓存单元,卷积核循环填充到这8个缓存单元中
     val Config=TopConfig()
     val io=new Bundle{
@@ -146,7 +146,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     val Weight_Cache=Array.tabulate(WIDTH*SLICE){//所需要的权重缓存buf
         i=>def gen()={//这里用了8个4KB的Bram
             //4096*64bit是一个Bram资源，32K
-            val Weight_Bram=new xil_SimpleDualBram(DMA_WIDTH,1536,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
+            val Weight_Bram=new xil_SimpleDualBram(DMA_WIDTH,W_Depth,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
             Weight_Bram.io.addra:=(In_Row_Cnt.count+Write_Row_Base_Addr).resized
             Weight_Bram.io.addrb:=(Read_Row_Base_Addr+OutRow_Cnt.count).resized
             // Weight_Bram.io.doutb:=0
@@ -179,7 +179,8 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     }
     io.MatrixCol_Switch:=RegNext(MatrixCol_Switch)
 }
-class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Component{
+class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int,W_Depth:Int=1024) extends Component{
+    //Write Depth :权重缓存模块的写深度,默认可以支持VIT-BASE
     val Config=new TopConfig
     val io=new Bundle{
         // def DATA_IN_WIDTH=64
@@ -200,7 +201,7 @@ class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends C
         val MatrixCol_Switch=out UInt(SLICE*WIDTH bits)
     }
     noIoPrefix()
-    val WeightCache=new Weight_Cache(SLICE,HEIGHT,WIDTH,DMA_WIDTH)
+    val WeightCache=new Weight_Cache(SLICE,HEIGHT,WIDTH,DMA_WIDTH,W_Depth)
     WeightCache.io.start:=io.start
     WeightCache.io.Matrix_Col:=io.Matrix_Col
     WeightCache.io.Matrix_Row:=io.Matrix_Row

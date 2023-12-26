@@ -4,7 +4,7 @@ import spinal.core._
 import org.apache.commons.io.FileUtils
 import utils.Tcl_Config.Tcl_File_Path
 import java.io.File,java.io.PrintWriter//输出函数
-class xil_SimpleDualBram(inwidth:Int=8,indepth:Int=8,outwidth:Int=8,componentName: String,genTcl:Boolean) extends BlackBox{
+class xil_SimpleDualBram(inwidth:Int=8,indepth:Int=8,outwidth:Int=8,componentName: String,genTcl:Boolean,File_Path:String=Tcl_File_Path) extends BlackBox{
     //这个Bram tcl以后应该加入配置：用Bram搭还是lut搭
     //Xilinx 简单双口Bram
     val io=new Bundle{//component要求out有驱动，但是black box不要求out的驱动
@@ -25,8 +25,8 @@ class xil_SimpleDualBram(inwidth:Int=8,indepth:Int=8,outwidth:Int=8,componentNam
     mapCurrentClockDomain(io.clkb)
 
     if(genTcl){
-        FileUtils.forceMkdir(new File(Tcl_File_Path + File.separator + "tcl"))
-        val tclHeader = new PrintWriter(new File(Tcl_File_Path + File.separator + "tcl" + File.separator + s"generate$componentName.tcl"))
+        FileUtils.forceMkdir(new File(File_Path + File.separator + "tcl"))
+        val tclHeader = new PrintWriter(new File(File_Path + File.separator + "tcl" + File.separator + s"generate$componentName.tcl"))
         val tcl_Cmd=s"set mulExit [lsearch -exact [get_ips $componentName] $componentName]\n" +
             s"if { $$mulExit <0} {\n" +
             s"create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $componentName\n" +

@@ -3,7 +3,6 @@ package Systolic_Array.SystolicArray3D
 //2023/10/12  实在不知道怎么办了，数据流先不管他了，直接把计算完的数据收回来放DDR里，之后再重新发回去得了
 import spinal.core._
 import utils._
-import Systolic_Array.Img2ColStreamV2
 import spinal.lib.Delay
 import Systolic_Array.Quant.ConvQuant
 import LayerNorm.LayerNorm_Top
@@ -83,7 +82,7 @@ class Axis_Switch_S2M(Master_Port_Num:Int,Data_Width:Int) extends Component{
     }
 }
 
-class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODULE_NUM:Int=6) extends Component{
+class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODULE_NUM:Int=6,WW_Detpth:Int=1024) extends Component{
     val Config=TopConfig()
     val Control=new Bundle{
         val start=in Bool()
@@ -162,7 +161,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
 
 
     noIoPrefix()
-    val SubModule_WeightCache   =new WeightCache_Stream(SLICE,HEIGHT,WIDTH,64)//1
+    val SubModule_WeightCache   =new WeightCache_Stream(SLICE,HEIGHT,WIDTH,64,WW_Detpth)//1
     val SubModule_ConvQuant     =new ConvQuant//2
     val SubModule_Img2Col       =new Img2ColStreamV2//3
     val SubModule_LayerNorm     =new LayerNorm_Top//4
