@@ -14,10 +14,15 @@ function [WeightCache_Time,Compute_Time,MACs]=GemmTime(A_Size,B_Size,SA_Size,Fre
     CLK_CYCLE=((1/(Freq*10^6))*10^9)/10^6 ;%单位用ms来表示
     %输出矩阵的大小：
     C_Size=[A_Size(1),B_Size(2)];
-    WeightCache_Time=(B_Size(1)*B_Size(2)/DMA_WIDTH)*CLK_CYCLE;
+    WeightCache_Time_All=(B_Size(1)*B_Size(2)/DMA_WIDTH)*CLK_CYCLE;
+    WeightCache_Time=0%(SA_Size(1)*SA_Size(3)*A_Size(2)/DMA_WIDTH)*CLK_CYCLE
+    %只需缓存第一轮也就是SLICE*WIDTH列的数据，剩下的数据可以边算边缓存
+    
     Tmp1=ceil(((C_Size(1)*C_Size(2))/(SA_Size(1)*SA_Size(2)*SA_Size(3))));%脉动阵列每次可以出3*8*64个点，那么需要出多少次
     Compute_Time=Tmp1*(A_Size(2)+SA_Size(3)-1)*CLK_CYCLE;
 
+    %感觉上面那种算法不太对
+    Compute_Time=ceil(A_Size(1)/SA_Size(2))*ceil(B_Size(2)/(SA_Size(1)*SA_Size(3)))*(A_Size(2)+SA_Size(3)-1)*CLK_CYCLE
     MACs=(A_Size(1)*B_Size(2))*(A_Size(2)*2)/10^9;
     
 end
