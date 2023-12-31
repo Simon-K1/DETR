@@ -12,7 +12,8 @@ from thop import profile#计算gops的
 from config import Config
 from models import *
 from models.vit_quant import MyVit_Base
-
+import matplotlib.pyplot as plt
+import scipy.io as sio
 parser = argparse.ArgumentParser(description='FQ-ViT')
 
 TestCfg=dict(
@@ -316,4 +317,14 @@ def build_transform(input_size=224,
 
 
 if __name__ == '__main__':
+
+
+    # 创建一个示例矩阵
+    matrix = torch.randn(197, 768)
+    # 使用plt.imshow()显示热度图
+    plt.imshow(matrix, cmap='hot', interpolation='nearest')
+    # 添加颜色条
+    plt.colorbar()
+    # 显示图像
+    plt.show()
     main()

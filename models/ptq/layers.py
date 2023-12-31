@@ -2,12 +2,12 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-
+import matplotlib.pyplot as plt
 from .bit_type import BIT_TYPE_DICT
 from .observer import build_observer
 from .quantizer import build_quantizer
 import struct
-
+import scipy.io as sio
 class QConv2d(nn.Conv2d):
 
     def __init__(self,
@@ -375,22 +375,29 @@ class QIntLayerNorm(nn.LayerNorm):
                 # x_q = ((A_sign * M * x_q + B) / torch.pow(2, N)).round()
                 # x = x_q * out_scale
                 #统计误差
-                Correct=F.layer_norm(x, self.normalized_shape, self.weight, self.bias,self.eps)
-                error1=(x1-Correct).sum()
-                error2=(x-Correct).sum()
-                error3=(x-x1).sum()
+                if False:
+                    Correct=F.layer_norm(x, self.normalized_shape, self.weight, self.bias,self.eps)
+                    matrices = [Correct.squeeze().to('cpu'), x1.squeeze().to('cpu'), x.squeeze().to('cpu')]
+                    plot_heatmaps(matrices)    
+                    error1=(x1-Correct).sum()
+                    error2=(x-Correct).sum()
+                    error3=(x-x1).sum()
 
-                Correct=Correct.view(1,-1)
-                fp64=x1.view(1,-1)
-                fpga=x
-                fpga=fpga.view(1,-1)
-                
-                similarity1 = F.cosine_similarity(fp64, Correct)
-                similarity2 = F.cosine_similarity(Correct, fpga)
-                similarity3 = F.cosine_similarity(fp64, fpga)
-                print("余弦距离1:", similarity1.item())
-                print("余弦距离2:", similarity2.item())
-                print("余弦距离3:", similarity3.item())
+                    Correct=Correct.view(1,-1)
+                    fp64=x1.view(1,-1)
+                    fpga=x
+                    fpga=fpga.view(1,-1)
+                    
+                    similarity1 = F.cosine_similarity(fp64, Correct)
+                    similarity2 = F.cosine_similarity(Correct, fpga)
+                    similarity3 = F.cosine_similarity(fp64, fpga)
+                    print("余弦距离1:", similarity1.item())
+                    print("余弦距离2:", similarity2.item())
+                    print("余弦距离3:", similarity3.item())
+
+
+                if True: #将tensor转化为matlab格式
+                    tensors_to_mat(matrices, 'tensors.mat')
         else:
             raise NotImplementedError
         
@@ -418,7 +425,7 @@ class QIntSoftmax(nn.Module):
         self.quant = quant
         self.calibrate = calibrate
         self.last_calibrate = last_calibrate
-        self.bit_type = bit_type
+        self.bit_type = bit_type#这里是4bit，也就是最大可支持的移位值为15
         self.calibration_mode = calibration_mode
         self.observer_str = observer_str
         self.quantizer_str = quantizer_str
@@ -434,7 +441,7 @@ class QIntSoftmax(nn.Module):
         x_log_floor = x.log2().floor()
         big = x_log_floor
         extra_mask = (x - 2**big) >= 2**(big - 1)
-        big[extra_mask] = big[extra_mask] + 1
+        big[extra_mask] = big[extra_mask] + 1#这里其实是在做四舍五入，你自己手算一下就明白了2023.12.17
         return big
 
     @staticmethod
@@ -470,7 +477,40 @@ class QIntSoftmax(nn.Module):
         exp_int, exp_scaling_factor = int_exp(x_int, scaling_factor)
         exp_int_sum = exp_int.sum(dim=-1, keepdim=True)
         return exp_int, exp_int_sum
-
+    @staticmethod
+    def Softmax_FPGA(x, scaling_factor):
+        print("模拟FPGA计算")
+        def int_polynomial(x_int, scaling_factor):
+            coef = [0.35815147, 0.96963238, 1.]  # ax**2 + bx + c
+            coef[1] /= coef[0]
+            coef[2] /= coef[0]
+            b_int = torch.floor(coef[1] / scaling_factor)
+            c_int = torch.floor(coef[2] / scaling_factor**2)
+            z = x_int + b_int
+            z = x_int * z
+            z = z + c_int
+            scaling_factor = coef[0] * scaling_factor**2
+            return z, scaling_factor
+                
+        def int_exp(x_int, scaling_factor):
+            ln2 = -0.6931  # -ln2
+            n = 30  # sufficiently large integer
+            x0_int = torch.floor(scaling_factor/ln2)
+            x_int = torch.max(x_int, n * x0_int)
+            z = torch.floor(x_int / x0_int)
+            r = x_int*(scaling_factor*(1+torch.floor()))#x_int - x0_int * q
+            exp_int, exp_scaling_factor = int_polynomial(r, scaling_factor)
+            exp_int = torch.clamp(torch.floor(exp_int * 2**(n - q)), min=0)
+            scaling_factor = exp_scaling_factor / 2**n
+            return exp_int, scaling_factor
+        x_int = x / scaling_factor
+        x_int_max, _ = x_int.max(dim=-1, keepdim=True)
+        x_int = x_int - x_int_max
+        exp_int, exp_scaling_factor = int_exp(x_int, scaling_factor)
+        exp_int_sum = exp_int.sum(dim=-1, keepdim=True)
+        return exp_int, exp_int_sum         
+    
+          
     def forward(self, x, scale):
         Pow2=False
         if self.log_i_softmax and scale is not None:
@@ -478,10 +518,16 @@ class QIntSoftmax(nn.Module):
                 exp_int, exp_int_sum = self.int_softmax(x, scale)
                 softmax_out = torch.round(exp_int_sum / exp_int)
                 rounds = self.log_round(softmax_out)
-                mask = rounds >= 2**self.bit_type.bits
+                mask = rounds >= 2**self.bit_type.bits#这里的bits为4，不是8，需要注意
                 qlog = torch.clamp(rounds, 0, 2**self.bit_type.bits - 1)
                 deq_softmax = 2**(-qlog)
                 deq_softmax[mask] = 0
+                Correct=x.softmax(dim=-1)
+                matrices = [Correct.squeeze().to('cpu'), deq_softmax.squeeze().to('cpu')]
+                if False: #将tensor转化为matlab格式
+                    tensors_to_mat(matrices, 'Softmax_tensors.mat')
+
+
                 return deq_softmax#这里返回的也是反量化后的浮点值，下层模块拿到这些浮点值后再用一下量化就又变成定点了
             else:
                 Row_Sum=(torch.pow(2,x-x.max(-1).values.unsqueeze(-1))).sum(-1).unsqueeze(-1)#先算一下每一行的指数累加和作为分母                
@@ -517,3 +563,37 @@ class QIntSoftmax(nn.Module):
             #我们对softmax不量化,直接用2的指数幂进行输出试一下
 
             return x
+def plot_heatmaps(matrices):
+    num_matrices = len(matrices)
+
+    # 创建包含子图的图形
+    fig, axes = plt.subplots(1, num_matrices, figsize=(4*num_matrices, 4))
+
+    for i in range(num_matrices):
+        matrix = matrices[i]
+
+        # 在每个子图上显示热度图
+        axes[i].imshow(matrix, cmap='hot', interpolation='nearest')
+        axes[i].set_title(f'Matrix {i+1}')
+
+    # 调整子图之间的间距
+    plt.tight_layout()
+
+    # 显示图像
+    plt.show()
+def tensors_to_mat(tensors, file_path):
+    # 创建一个字典，将变量名与对应的 NumPy 数组关联起来
+    data = {}
+    for i, tensor in enumerate(tensors):
+        # 将张量转换为 NumPy 数组
+        array = tensor.numpy()
+        # 使用默认的变量名 "tensor" + 数字索引
+        var_name = f'tensor{i+1}'
+        data[var_name] = array
+
+    # 保存为 .mat 文件
+    sio.savemat(file_path, data)
+    # 创建示例张量
+tensor1 = torch.randn(197, 768)
+tensor2 = torch.randn(197, 768)
+tensor3 = torch.randn(197, 768)
