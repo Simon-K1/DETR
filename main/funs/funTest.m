@@ -13,3 +13,6 @@ lp_loss(a,b,2,"NONE")
 
 %% 
 Fixed_Length_Hex(-15,4)
+%% 
+subplot(2,2,1);
+AbsError(randi(10,10),randi(10,10))

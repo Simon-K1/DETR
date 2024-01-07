@@ -47,13 +47,16 @@ if exist("matlab.mat",'file')
     Encoder_Macs=Encoder_Macs+QK_MACs*HeadNums;
     fprintf(fid,"QK^T：Mac:%.3f,Delay:%.3f,Gops:%.3f\n",QK_MACs*HeadNums,QK_Compute,QK_Gops);
     %SoftMax
-    SoftMax_Time=(ceil(A_Size(1)/LayerNorm_Parall)+1)*(B_Size(2)+randi([10,33],1,1))*CLK_CYCLE;
+    SoftMax_Time=(ceil(A_Size(1)/LayerNorm_Parall)+1)*(A_Size(1)+randi([10,33],1,1))*CLK_CYCLE;
     Encoder_Time=Encoder_Time+SoftMax_Time;
     fprintf(fid,"Softmax%.3f\n",SoftMax_Time);
     %QKV
     %Softmax的结果量化到4bit，所以这里的脉动阵列的列数应该*2
     %在计算QKV时V作为A矩阵输入，Attn作为B矩阵输入
-    [QKV_Cache,QKV_Compute,QKV_MACs]=GemmTime([C_Size(2)/HeadNums,C_Size(1)],[C_Size(1),C_Size(1)],[Slice,Height,Width*2],Freq,DMA_WDITH)
+    [QKV_Cache,QKV_Compute,QKV_MACs]=GemmTime([C_Size(2)/HeadNums,C_Size(1)],[C_Size(1),C_Size(1)],[Slice,Height,Width*2],Freq,DMA_WDITH);
+    %下面这一条是预估不转置计算时的情况，结果显示计算资源被严重浪费并并且计算效率减少到了之前的1/6
+    %[QKV_Cache,QKV_Compute,QKV_MACs]=GemmTime([C_Size(1),C_Size(1)],[C_Size(1),C_Size(2)/HeadNums],[Slice,Height,Width*2],Freq,DMA_WDITH);
+    
     QKV_Compute=QKV_Compute*HeadNums;
     QKV_Gops=QKV_MACs*HeadNums/QKV_Compute*10^3;
     Encoder_Time=Encoder_Time+QKV_Compute;
@@ -94,12 +97,13 @@ if exist("matlab.mat",'file')
     Total_Time=Total_Time+LayerNorm_Time
     
     [FCN_Cache,FCN_Compute,FCN_MACs]=GemmTime([1,C_Size(2)],[C_Size(2),1000],[Slice,Height,Width],Freq,DMA_WDITH);
+%     [FCN_Cache,FCN_Compute,FCN_MACs]=GemmTime([1000,C_Size(2)],[C_Size(2),1],[Slice,Height,Width],Freq,DMA_WDITH);
     FCN_Compute=FCN_Compute+FCN_Cache;
-    FCN_Gops=FCN_MACs/FCN_Compute;
+    FCN_Gops=FCN_MACs/FCN_Compute*10^3;
     Total_Time=Total_Time+FCN_Compute;
     Total_Macs=Total_Macs+FCN_MACs;
     Total_Gops=Total_Macs/Total_Time*10^3;
-    fprintf(fid,"FCN：Mac:%.3f,Delay:%.3f,Gops:%.3f\n",FCN_MACs,FCN_Compute,Linear_Gops);
+    fprintf(fid,"FCN：Mac:%.3f,Delay:%.3f,Gops:%.3f\n",FCN_MACs,FCN_Compute,FCN_Gops);
     fprintf(fid,"Total：Mac:%.3f,Delay:%.3f,Gops:%.3f\n",Total_Macs,Total_Time,Total_Gops);
     
     fclose all;
