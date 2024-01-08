@@ -378,7 +378,7 @@ class QIntLayerNorm(nn.LayerNorm):
                 if False:
                     Correct=F.layer_norm(x, self.normalized_shape, self.weight, self.bias,self.eps)
                     matrices = [Correct.squeeze().to('cpu'), x1.squeeze().to('cpu'), x.squeeze().to('cpu')]
-                    plot_heatmaps(matrices)    
+                    # plot_heatmaps(matrices)    
                     error1=(x1-Correct).sum()
                     error2=(x-Correct).sum()
                     error3=(x-x1).sum()
@@ -396,8 +396,8 @@ class QIntLayerNorm(nn.LayerNorm):
                     print("余弦距离3:", similarity3.item())
 
 
-                if True: #将tensor转化为matlab格式
-                    tensors_to_mat(matrices, 'tensors.mat')
+                if False: #将tensor转化为matlab格式
+                    tensors_to_mat(matrices, r'E:\Transformer\Transformer_Arithmatic\Transformer_Main\matlab\tensors.mat')
         else:
             raise NotImplementedError
         
