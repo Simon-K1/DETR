@@ -1,7 +1,7 @@
 %% 第一步： 生成8x输入通道的测试数据，包含32输入通道的图片和32输出通道的卷积权重
     % 图片大小，步长等相关信息需要手动配置
 clear
-ProjDir="E:\Transformer\Matlab\main\Tests\SA_3D\SA_4_8_64\Vit-Base";%修改
+ProjDir="E:\Transformer\Matlab\main\Tests\SA_3D\SA_1_8_8\CNN_K3_S1_IC8_Oc32";%修改
 if exist(ProjDir,'dir')
     warning("文件夹已经存在！！")
     cd(ProjDir)
@@ -13,15 +13,15 @@ Drop_Message=1;%将图片继续补零以匹配卷积不丢失信息
 WEIGHT_VERSION=1;%权重缓存模块的版本，可选1（V1），2（V2，已失效）
 Feature_Size=224;%图片大小224*224
 Feature_Channel=8;%图片通道
-Out_Channel=768;%输出图片通道，要修改
+Out_Channel=32;%输出图片通道，要修改
 
-Stride=16;%要修改
-KernelSize=16;%要修改
+Stride=1;%要修改
+KernelSize=3;%要修改
 assert(Stride<=KernelSize,"Stride must be less than kernelSize");
 %脉动阵列配置
-Slice=4;
+Slice=1;
 Height=8;%不要改
-Width=64;
+Width=8;
 HeadNums=12;%记得修改HeadNums，Tiny=3,Small=6,base=12
 
 %Compute_InChannel=Height;%每次计算的输出通道，
