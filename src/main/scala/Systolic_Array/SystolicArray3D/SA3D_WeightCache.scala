@@ -7,6 +7,7 @@ import xip.xil_SimpleDualBram
 import spinal.core
 import scala.tools.reflect.FrontEnd
 import spinal.lib.Delay
+import xip.xil_ila
 //实现权重矩阵的缓存与输出计算
 //初步思路:在所有计算开始前应该先缓存所有权重,
     //如果片上资源不够,应该进行矩阵切块,这里将权重矩阵切4块,也就是需要调用计算模块4次
@@ -178,6 +179,27 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int,W_Depth:Int=1024
         }
     }
     io.MatrixCol_Switch:=RegNext(MatrixCol_Switch)
+    
+    if(true){
+        val Debug_Signals=Array[Bits](
+            MatrixCol_Switch.asBits,
+            OutCol_Cnt.count.asBits,
+            Col_In_8_Cnt.count.asBits,
+            In_Row_Cnt.count.asBits,
+            In_Col_Cnt.count.asBits,
+            InData_Switch.asBits,
+            io.sData.ready.asBits,
+            io.sData.valid.asBits,
+            Fsm.currentState.asBits
+        )
+        
+        val Debug_Name=Array[String]("MatrixCol_Switch","OutCol_Cnt","Col_In_8_Cnt","In_Row_Cnt","In_Col_Cnt","InData_Switch","sready","svalid","fsm")
+        val ila=new xil_ila(Debug_Signals,true,"ila_Weightcache")
+        for(i<-0 to Debug_Signals.length-1){
+            ila.probe(i):=Debug_Signals(i)
+            Debug_Signals(i).setName("Debug_"+Debug_Name(i))
+        }
+    }
 }
 class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int,W_Depth:Int=1024) extends Component{
     //Write Depth :权重缓存模块的写深度,默认可以支持VIT-BASE
@@ -214,6 +236,8 @@ class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int,W_Depth:In
     WeightCache.io.sData.payload<>io.s_axis_s2mm_tdata
     WeightCache.io.sData.valid<>io.s_axis_s2mm_tvalid
     WeightCache.io.sData.ready<>io.s_axis_s2mm_tready
+    
+
 }
 
 object Weight_Gen extends App { 

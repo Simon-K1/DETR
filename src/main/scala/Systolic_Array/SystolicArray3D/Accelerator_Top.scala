@@ -181,13 +181,14 @@ object Top extends App { //
     Tcl_Config.Tcl_File_Path=verilog_path
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Accelerator_TopV2(Slice,Height,Width,Accu_Width,Nums,WW_Depth))
   }
-  GenerateTop(1,8,8,32,5,24576)
-  GenerateTop(2,8,8,32,5,12288)  
-  GenerateTop(3,8,8,32,5,8192)  
-  GenerateTop(3,8,64,32,5,1024)  
-  GenerateTop(4,8,32,32,5,1536)  
-  GenerateTop(4,8,64,32,5,768)  
+  //在Message_Conv那里看如何设置Bram深度
+  // GenerateTop(1,8,8,32,5,24576)
+  // GenerateTop(2,8,8,32,5,12288)  
+  // GenerateTop(3,8,8,32,5,8192)  
+  // GenerateTop(3,8,64,32,5,1024)  
+  // GenerateTop(4,8,32,32,5,1536)  
+  // GenerateTop(4,8,64,32,5,768)  
     
-    
+  GenerateTop(1,8,8,32,5,288)  
     
 }
