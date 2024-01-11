@@ -178,6 +178,7 @@ InSwitch_Weight=0;
 InSwitch_Img2col=0;
 InSwitch_Quant=1;
 InSwitch_Layernorm=0;
+InSwitch_Gemm=0;
 
 SwitchCtrl=[InSwitch_Gemm,InSwitch_Layernorm,InSwitch_Img2col,InSwitch_Quant,InSwitch_Weight];
 QuantSwitch=[0,QuantSwicth_Softmax,QuantSwicth_LayerNorm,QuantSwitch_DataArrange];
@@ -192,7 +193,11 @@ InSwitch_Weight=0;
 InSwitch_Img2col=1;
 InSwitch_Quant=0;
 InSwitch_Layernorm=0;
+InSwitch_Gemm=0;
+
 SwitchCtrl=[InSwitch_Gemm,InSwitch_Layernorm,InSwitch_Img2col,InSwitch_Quant,InSwitch_Weight];
 Ctrl=[OutSwitchCtrl,QuantSwitch,SwitchCtrl,0,0,Start];
 fprintf("Write_Lite(REG_Table_BASE_ADDR,0x4,0x%s);//发送图片数据并接收计算结果\n",dec2hex(bin2dec(char(Ctrl+48))))
 ReadWrite_DMA(string(PICTURE_BASE_ADDR),SendPicture_Len,string(CONV_RESULT_BASE_ADDR),ReceivePicture_Len);
+
+
