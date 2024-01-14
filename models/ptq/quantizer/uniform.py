@@ -1,4 +1,6 @@
 # Copyright (c) MEGVII Inc. and its affiliates. All Rights Reserved.
+import math
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -38,4 +40,9 @@ class UniformQuantizer(BaseQuantizer):
         scale = scale.reshape(range_shape)
         zero_point = zero_point.reshape(range_shape)
         outputs = (inputs - zero_point) * scale
+
+
+
+
         return outputs
+    

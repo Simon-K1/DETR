@@ -1,4 +1,6 @@
 # Copyright (c) MEGVII Inc. and its affiliates. All Rights Reserved.
+import math
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
@@ -82,7 +84,7 @@ class QConv2d(nn.Conv2d):
                 self.groups,
             )
         weight =self.quantizer(self.weight)#先对权重量化，再反量化回浮点
-        if True:#模拟硬件量化计算，重写整形前向传播公式，
+        if False:#模拟硬件量化计算，重写整形前向传播公式，
             Shift_Num=torch.tensor(32)#放大移位
             # print("输入激活的维度:",x.shape)
             # print("ScaleIn 维度:",in_quantizer.scale.shape)
@@ -135,10 +137,30 @@ class QConv2d(nn.Conv2d):
                     ff.close()
 
             return (Cq.round()-Z3)*S3
-
         else:
-            return (F.conv2d(x, weight, self.bias, self.stride, self.padding,
-                        self.dilation, self.groups))
+            if True:
+                #移植祖传代码的量化
+                S1 = in_quantizer.scale #ScaleIn 
+                Z1   =in_quantizer.zero_point
+                S2=torch.reshape(self.quantizer.scale,[-1,1,1,1])
+                Z2=0#self.quantizer.zero_point
+
+                S3= out_quantizer.scale #ScaleOut
+                Z3=out_quantizer.zero_point
+                #目前可以暂时认为输入输出的S，Z的维度都是1。
+            
+
+            #第一步：获取Shift
+                SCALE, N_REAL = gen_M_N(S1, S2, S3)
+                bias = new_bias(Z1, weight, self.bias)
+
+
+
+                return (F.conv2d(x, weight, self.bias, self.stride, self.padding,
+                            self.dilation, self.groups))
+            else:
+                return (F.conv2d(x, weight, self.bias, self.stride, self.padding,
+                            self.dilation, self.groups))
     
 
 
@@ -597,3 +619,368 @@ def tensors_to_mat(tensors, file_path):
 tensor1 = torch.randn(197, 768)
 tensor2 = torch.randn(197, 768)
 tensor3 = torch.randn(197, 768)
+
+
+
+#移植祖传代码中的量化============================================
+def gen_B(S1, S2, S3):  # 第一组  β即N_REAL  +++++求shitf++++
+    M = (S1 * S2) / S3
+    M.squeeze()
+    M=M.cpu()#先将tensor放到cpu上
+    M = M.numpy()
+    
+    daxiao = S2.shape[0]  # 第一层权重的shape[0]是32 shape[0]表示行数 是一维大小位32的列向量
+    SCALE = np.zeros(daxiao, dtype=np.uint32, order='C')  # 相当于32个输出通道 每个对应一组shift
+    N_REAL = np.zeros(daxiao, dtype=np.uint32, order='C')
+    for i, ii in enumerate(M):  # enumerate() 函数用于将一个可遍历的数据对象(如列表、元组或字符串)组合为一个索引序列，同时列出数据和数据下标
+
+        while not (ii >= 0.5 and ii <= 1.0):  # 左移到（0.5，1） 左移一次相当于*2
+            ii *= 2
+        pass
+        mmmm = ii * (2 ** 32)  # 乘2^32
+
+        SCALE[i] = mmmm.astype(np.int32)
+
+    for i, ii in enumerate(M):
+        N_REAL[i] = round(math.log(SCALE[i] / ii, 2)) - 32   # fpga加了1这里要减1,  β值也是m维 相当于存的mmmm
+        if N_REAL[i] !=0:
+            N_REAL[i]=N_REAL[i]-1
+
+    return N_REAL
+
+
+def gen_M_N(S1, S2, S3):  # 第二组求M'即M  ++++++返回scale和shift+++++
+    daxiao = S2.shape[0]
+    M = np.zeros(daxiao, dtype=np.uint32, order='C')
+    N_REAL = gen_B(S1, S2, S3)
+    M = np.zeros(S2.shape[0])
+    
+    for i, ii in enumerate(M):
+        Scale=(S1*S2[i]/S3).cpu()
+        # Scale=Scale.numpy
+        M[i] = (torch.round(Scale * (2 ** (32 + N_REAL[i] + 1)))).numpy()  # s1s2/s3 *2^(32+β+1)
+    M = M.astype(np.uint32)
+    # exit()
+    return M, N_REAL
+
+
+# r_b=s1*s2*q_b
+# r_b是量化前的bias,q_b是量化后的bias
+def gen_int_bias(s1, s2, bias_float):  # 求bias/s1s2即bb
+    aa = bias_float / s1
+    # print(bias_float)
+    # exit()
+    bb = torch.div(aa, s2)  # 对应元素做除法
+
+    # for i, m in enumerate(bb):
+    #     bb[i] = round(m.item())
+    # bias = bb.int()
+    return bb
+
+
+def gen_M(s1, s2, s3):
+    aa = s1 * s2
+    M = aa / s3
+    return M
+
+
+def new_bias(z1, q2, bias):  # 求最终的bias=bias/s1s2-q2z1
+    q2 = q2.type(torch.float64)
+    bias1 = z1 * q2
+    shape = bias1.shape
+    n_bias = np.zeros(shape[0], dtype=np.float64, order='C')
+    for m in range(shape[0]):  # bias1的维度是M C K K 将C K K 做累加 变成M维
+        n_bias[m] = bias1[m, :, :, :].sum()  # 从第一组开始一直有m组，m是输出通道数
+        # print()
+        n_bias[m] = (bias[m] - n_bias[m])  # 做减法
+    # print(n_bias) 第一层n_bias是一维32个
+    # exit()
+    daxiao = shape[0]  # 第一层是32
+    SCALE = np.zeros(daxiao, dtype=np.float64, order='C')
+    # N_REAL = np.zeros(daxiao, dtype=np.float32, order='C')
+    N_REAL = []
+    for i, ii in enumerate(n_bias):  # i和ii就是从n_bias中取值
+        index = 0
+
+        while not (abs(ii) >= (2 ** 23) and abs(ii) <= (2 ** 24)):
+            if index >= 16:  # fpga里面最多移动16位,所有成到16就停止了,这样精度也够了
+                break
+            else:
+                ii *= 2
+                index = index + 1
+
+        N_REAL.append(index)
+        SCALE[i] = round(ii)
+    out_bias = []
+    for index in range(shape[0]):
+        data_integer_old = ('{:024b}'.format(int(SCALE[index]) & 0xffffff))  # {:024b} 24位2二进制不足补0；& 0xffffff按位与
+        n = N_REAL[index]
+        symbol = '0'
+        if n_bias[index] < 0:  # 符号位
+            symbol = '1'#这里也不是多此一举，因为如果你给一个uint24，MSB=1，那么你在FPGA那边如何分辨这是正数还是负数，所以还是需要1bit的符号位来帮助fpga做判断的
+        elif n_bias[index] > 0:
+            symbol = '0'
+        data_integer = data_integer_old[8:]
+        data_decimal = '{:07b}'.format(int(n))
+        out_bias1 = symbol + str(data_decimal) + str(data_integer_old)  # 1bit+7bit+24bit
+        a = int(out_bias1, 2)  # 转成int型 out_bias1为二进制 ；a是十进制
+        out_bias.append(a)  # 一个一个写入out_bias
+    # print(out_bias)
+    # exit()
+    return out_bias
+
+
+def get_add_bias(new, shape, old):  # 补0
+    for kernel_num in range(shape):
+        new[kernel_num] = old[kernel_num]
+    return new
+
+
+def get_add_SCALE(new, shape, old):  # 补0
+    for kernel_num in range(shape):
+        new[kernel_num] = old[kernel_num]
+    return new
+
+
+def get_add_NREAL(new, shape, old):  # 补0
+    for kernel_num in range(shape):
+        new[kernel_num] = old[kernel_num]
+    return new
+
+
+def get_weight(new_weight, shape, weight, inchannel):  # 八入八出操作 输入通道inchannel不固定 输出通道outchannel为8
+    j = 0
+
+    shift_num = 0
+    for index in range(inchannel):
+        if (inchannel == (1 << index)):  # index不停左移一位直到与inchannel相等 来判断移了几位   2的shift_num次方=inchannel
+            shift_num = index
+            break
+    # if shape[0] == 32 and shape[1] == 64 and shape[2] == 1:
+    #     # print("shape:",new_weight.shape)
+    #     with open('weight_1x1_8i8o(2).txt', 'a')as f:
+    #         f.write('-' * 40 + '\n')
+    #         f.write(str(shape) + '\n')
+    for i in range(shape[2]):  # mckk  K
+        for ii in range(shape[3]):  # K
+            for kernel_times in range(shape[0] >> 3):  # >>右移三位 因为输出通道outchannel默认为8 卷积核个数
+                for channel_in_times in range(shape[1] >> shift_num):  # 右移shift_num 输入通道数
+                    for iii in range(8):  # shape[0] >> 3 右移了3次即2^3 要补8次
+                        for iiii in range(
+                                inchannel):  # shape[1] >> shift_num 右移了shift_num即2^shift_num 要补inchannel次(2^shift_num =inchannel)
+                            # print('++++++++++++++++++')
+                            weight[j] = new_weight[kernel_times * 8 + iii][channel_in_times * inchannel + iiii][i][ii]
+                            # if shape[0] == 32 and shape[1] == 64 and shape[2] == 1:
+                            # with open('weight_1x1_8i8o(2).txt', 'a')as f:
+                            #     f.write(str(kernel_times * 8 + iii) + ',')
+                            #     f.write(str(channel_in_times * inchannel + iiii) + ',')
+                            #     f.write(str(i) + ',')
+                            #     f.write(str(ii) + '\n')
+                            #
+                            j += 1
+    # exit()
+    return weight
+
+
+def add_weight_channel(new_weig, weig, shape):  # 补0 把weig存入new_weig；new_weig是全0，
+    for kernel_num in range(shape[0]):
+        for channel_in_num in range(shape[1]):
+            for row in range(shape[2]):
+                for col in range(shape[3]):
+                    new_weig[kernel_num][channel_in_num][row][col] = weig[kernel_num][channel_in_num][row][col]
+    return new_weig
+
+
+def tensorr(x):
+    tensor_py = torch.from_numpy(np.load(x))  # 创建tensor
+    return tensor_py
+
+
+def get_weight2(new_weight, shape, weight):  # 四维权重写成一维
+    j = 0
+    for kernel_times in range(shape[0]):
+        for channel_in_times in range(shape[1]):
+            for i in range(shape[2]):
+                for ii in range(shape[3]):
+                    # print('++++++++++++++++++')
+                    weight[j] = new_weight[kernel_times][channel_in_times][i][ii]
+                    j += 1
+    return weight
+
+class Gene_OnBoard_Test_Files:
+    def __init__(
+        self,
+        quant_scale1=None,
+        quant_zero_point1=None,
+        quant_scale2=None,
+        quant_zero_point2=None,
+        quant_scale3=None,
+        quant_zero_point3=None,
+        first_convs=0,
+        coe_name=None
+    ):
+        self.quant_scale1 = quant_scale1
+        self.quant_zero_point1 = quant_zero_point1
+        self.quant_scale2 = quant_scale2
+        self.quant_zero_point2 = quant_zero_point2
+        self.quant_scale3 = quant_scale3
+        self.quant_zero_point3 = quant_zero_point3
+        self.first_convs = first_convs
+        self.coe_name = coe_name
+
+    def Gene_OnBoard_Test_Files(self,bias,q_weight,block=0,coee=1):
+        coe_name = self.coe_name
+        bias = np.array(bias.data.cpu().numpy(),
+                        dtype=np.float64)  # 将tensor转成numpy;  bias.data.cpu()把bias.data放入cpu；a.data.cpu().numpy()把tensor转换成numpy的格式
+        SCALE, N_REAL = gen_M_N(self.quant_scale1, self.quant_scale2, self.quant_scale3)
+        bias = new_bias(self.quant_zero_point1, q_weight, bias)
+        # bias = bias.astype(np.uint32)
+        q_weight = np.array(q_weight.data.cpu().numpy(), dtype=np.int8)
+        # print("q_weight.shape=", q_weight.shape)  # 输出每一层的权重
+        shape = q_weight.shape  # 第一层[32,1,3,3]
+        if (shape[1] % 8 != 0):  # 变成8的倍数 FPGA必须要8的倍数  shape[0]是输出通道数 不足补0；（kernel_num卷积核的数量即输出通道数）
+            channel_in_num = shape[1] + 8 - shape[1] % 8
+        else:
+            channel_in_num = shape[1]
+        # kernel_num = shape[0]  # shape[0]是输出通道数
+        if (shape[0] % 8 != 0):  # 变成8的倍数 FPGA必须要8的倍数  shape[0]是输出通道数 不足补0；（kernel_num卷积核的数量即输出通道数）
+            kernel_num = shape[0] + 8 - shape[0] % 8
+        else:
+            kernel_num = shape[0]
+        new_weig = np.zeros((kernel_num, channel_in_num, shape[2], shape[3]))  # 全0  存储新权重
+        # new_weight是补0后的四维权重
+        new_weight = add_weight_channel(new_weig, q_weight, shape)  # 补0   因为kernel_num变了多出来的补成0，用旧权重覆盖。
+        new_shape = new_weight.shape  # new_shape是变成8的倍数后的权重的shape
+        daxiao = new_shape[0] * new_shape[1] * new_shape[2] * new_shape[3]  # 四个维度总共有多少点
+        # print("有多少卷积点daxiao=", daxiao)
+        weight = np.zeros(daxiao, dtype=np.uint8, order='C')  # 生成右daxiao个的ny数组(一维！！！)；c代表与c语言类似，行优先；F代表列优先
+        # weight_name = "../8358_onecls_weight_spinal/all_weight_3_2.dat"  # 生成权重文件的名字
+        global weight_name
+        # weight_name = "../spinal_weight/onecls_all_5_52.dat"  # 生成权重文件的名字
+        if block != 0 and coee == 1:  # 如果分块；block!=0分块 coee=1才写文件
+            shape_block = []
+            daxiao_new = []
+            # 如果将weight分成4块  例如256 384 3 3 分成四个64 384 3 3  让每个分别进行kkmc生成coe
+            for shape_num in range(block):  # 分块操作
+                print(int(new_shape[0] / block * (
+                        1 + shape_num)))  # 输出通道数m/block就是每块多少个 * （1+shaoe_num） 如果分成四块：第一次循环0到64 第二次64到128  第三次128到192 第四次192到256
+                shape_block.append(int(new_shape[0] / block * (1 + shape_num)))  # 分四块是（64，128，192，256）
+                block_shape = (shape_block[0], new_shape[1], new_shape[2], new_shape[
+                    3])  # m c k k 如果分成四块：第一次循环是（0~64，3，3，3）第二次（64~128，3，3，3） 第三次（128~192，3，3，3） 第四次（192~256，3，3，3）
+                daxiao_new.append(shape_block[shape_num] * new_shape[1] * new_shape[2] * new_shape[3])  # 分块的大小
+                # print(new_weight[:daxiao_new[shape_num], :, :, :], block_shape, weight[:daxiao_new[shape_num]])
+                if shape_num == 0:
+                    get_weight(new_weight[:daxiao_new[shape_num], :, :, :], block_shape, weight[:daxiao_new[shape_num]],
+                            inchannel)  # 分四块；开始0到64  shape_num=0
+                else:
+                    get_weight(new_weight[shape_block[shape_num - 1]:shape_block[shape_num], :, :, :], block_shape,
+                            weight[daxiao_new[shape_num - 1]:daxiao_new[shape_num]],
+                            inchannel)  # 分四块；64到128 shape_num=1;128到192 shape_num=2;192到256 shape_num=3
+            # print(weight.shape)
+            # exit()
+            for index in range(block):  # 写coe文件 每次写一块的weight+bias+SCALE+N_REAL
+                coe_name = coe_name + 'block' + str(index) + '.coe'
+                out = []
+                with open(weight_name, "a+") as fp:  # 写入权重
+                    for r in weight[index * daxiao_new[0]:daxiao_new[0] * (index + 1)]:
+                        out.append(r)
+                        if len(out) == 4:  # 每次写入四个数，一个数是两位十六进制,一个十六进制的数是4bit，一行32bit
+                            out.reverse()
+                            fp.write('0x')
+                            for m in out:
+                                m = m.item()
+                                fp.write('%02x' % m)
+                            fp.write('\n')
+                            out = []
+                with open(weight_name, "a+") as fp:  # 写入bias   #bias是一维 每块有shape_block[0]个
+                    for r in bias[
+                            index * shape_block[0]:shape_block[0] * (index + 1)]:  # 分量块 第一次是[0,128]  第二次是[128,256]
+                        out.append(r)
+                        fp.write('0x')
+                        if len(out) == 1:  # bias是一个8位十六进制的数，32bit
+                            out.reverse()
+                            for m in out:
+                                fp.write('%08x' % int(m))
+                            fp.write('\n')
+                            out = []
+                with open(weight_name, "a+") as fp:  # 写入SCALE
+                    for r in SCALE[index * shape_block[0]:shape_block[0] * (index + 1)]:
+                        out.append(r)
+                        fp.write('0x')
+                        if len(out) == 1:  # SCALE是一个8位十六进制的数，32bit
+                            out.reverse()
+                            for m in out:
+                                m = m.item()
+                                fp.write('%08x' % m)
+                            fp.write('\n')
+                            out = []
+                with open(weight_name, "a+") as fp:  # 写入N_REAL
+                    for r in N_REAL[index * shape_block[0]:shape_block[0] * (index + 1)]:
+                        out.append(r)
+                        fp.write('0x')
+                        if len(out) == 1:  # N_REAL是一个8位十六进制的数，32bit
+                            out.reverse()
+                            for m in out:
+                                m = m.item()
+                                fp.write('%08x' % m)
+                            fp.write('\n')
+                            out = []
+                coe_name = self.coe_name
+        else:  # 如果不分块
+            get_weight(new_weight, new_shape, weight, inchannel)  # 做8入8出
+        if new_weight.shape[0] != shape[0]:  # bias SCALE NREAL进行补0操作
+            new_dimen_bias = np.zeros(kernel_num, dtype=np.uint32)
+            new_dimen_SCALE = np.zeros(kernel_num, dtype=np.uint32)
+            new_dimen_NREAL = np.zeros(kernel_num, dtype=np.uint32)
+            bias = get_add_bias(new_dimen_bias, shape[0], bias)  # 覆盖
+            SCALE = get_add_SCALE(new_dimen_SCALE, shape[0], SCALE)
+            N_REAL = get_add_NREAL(new_dimen_NREAL, shape[0], N_REAL)
+        coe_name = self.coe_name
+        if block == 0 and coee == 1:  # 不分块就直接写coe文件
+            out = []
+            with open(weight_name, "a+") as fp:  # 写入权重
+                for r in weight:
+                    out.append(r)
+                    if len(out) == 4:
+                        out.reverse()
+                        fp.write('0x')
+                        for m in out:
+                            m = m.item()
+                            fp.write('%02x' % m)
+                        fp.write('\n')
+                        out = []
+            with open(weight_name, "a+") as fp:  # 写入bias
+                for r in bias:
+                    # for index in range(len(bias)):
+                    out.append(r)
+                    fp.write('0x')
+                    if len(out) == 1:
+                        out.reverse()
+                        for m in out:
+                            fp.write('%08x' % int(m))
+                        fp.write('\n')
+                        out = []
+            # print(bias)
+            with open(weight_name, "a+") as fp:  # 写入SCALE
+                for r in SCALE:
+                    fp.write('0x')
+                    out.append(r)
+                    if len(out) == 1:
+                        out.reverse()
+                        for m in out:
+                            m = m.item()
+                            fp.write('%08x' % m)
+                        fp.write('\n')
+                        out = []
+            # fp.write('==========================')
+            with open(weight_name, "a+") as fp:  # 写入N_REAL
+                for r in N_REAL:
+                    fp.write('0x')
+                    out.append(r)
+                    if len(out) == 1:
+                        out.reverse()
+                        for m in out:
+                            m = m.item()
+                            fp.write('%08x' % m)
+                        fp.write('\n')
+                        out = []
