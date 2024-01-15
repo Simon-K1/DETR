@@ -115,26 +115,8 @@ class QConv2d(nn.Conv2d):
             Cq=(F.conv2d(Xq, Wq.round(), ((self.bias/S3+Z3)*torch.pow(2,Shift_Num)).round(), self.stride, self.padding,
                         self.dilation, self.groups))/torch.pow(2,Shift_Num)
             
-            #获取量化后的权重和激活值==================================================================================
-            if False:
-                with open (r'E:\Transformer\Transformer_Arithmatic\Transformer_Main\TxT\Weight.txt','w') as ff:
-                    #Wq的维度：[OC,IC,K,K]
-                    for OC in range(Wq.shape[0]):#遍历全部输出通道
-                        for K_Row in range(Wq.shape[2]):#遍历行
-                            for K_Col in range(Wq.shape[3]):#遍历列
-                                for IC in range(0,Wq.shape[1],8):#遍历通道
-                                    Hex0=Wq[OC,IC,K_Row,K_Col].item()&0xff
-                                    Hex1=Wq[OC,IC+1,K_Row,K_Col].item()&0xff
-                                    Hex2=Wq[OC,IC+2,K_Row,K_Col].item()&0xff
-                                    Hex3=Wq[OC,IC+3,K_Row,K_Col].item()&0xff
-                                    Hex4=Wq[OC,IC+4,K_Row,K_Col].item()&0xff
-                                    Hex5=Wq[OC,IC+5,K_Row,K_Col].item()&0xff
-                                    Hex6=Wq[OC,IC+6,K_Row,K_Col].item()&0xff
-                                    Hex7=Wq[OC,IC+7,K_Row,K_Col].item()&0xff
-                                    #print('%02x%02x%02x%02x%02x%02x%02x%02x'%(Hex7,Hex6,Hex5,Hex4,Hex3,Hex2,Hex1,Hex0))
-                                    ff.write('%02x%02x%02x%02x%02x%02x%02x%02x'%(Hex7,Hex6,Hex5,Hex4,Hex3,Hex2,Hex1,Hex0))
-                                    ff.write("\n")
-                    ff.close()
+            
+
 
             return (Cq.round()-Z3)*S3
         else:
@@ -150,12 +132,35 @@ class QConv2d(nn.Conv2d):
                 #目前可以暂时认为输入输出的S，Z的维度都是1。
             
 
-            #第一步：获取Shift
-                SCALE, N_REAL = gen_M_N(S1, S2, S3)
-                bias = new_bias(Z1, weight, self.bias)
-
-
-
+            #第一步：获取Scale，Shift和Bias
+                #先加Bias，再乘Scale，然后Shfit回去，最后加ZP
+                SCALE, N_REAL = gen_M_N(S1, S2, S3)#Scale就是Scale，N_Real其实就是Shift
+                Bias_Tmp=gen_int_bias(S1,S2,self.bias)#获取bias/(S1S2)
+                Bias = new_bias(Z1, weight, Bias_Tmp)#Bias也需要被放大
+                #获取量化后的权重和激活值==================================================================================
+                if False:
+                    with open (r'E:\Transformer\Transformer_Arithmatic\Transformer_Main\TxT\Weight.txt','w') as ff:
+                        #Wq的维度：[OC,IC,K,K]
+                        for OC in range(Wq.shape[0]):#遍历全部输出通道
+                            for K_Row in range(Wq.shape[2]):#遍历行
+                                for K_Col in range(Wq.shape[3]):#遍历列
+                                    for IC in range(0,Wq.shape[1],8):#遍历通道
+                                        Hex0=Wq[OC,IC,K_Row,K_Col].item()&0xff
+                                        Hex1=Wq[OC,IC+1,K_Row,K_Col].item()&0xff
+                                        Hex2=Wq[OC,IC+2,K_Row,K_Col].item()&0xff
+                                        Hex3=Wq[OC,IC+3,K_Row,K_Col].item()&0xff
+                                        Hex4=Wq[OC,IC+4,K_Row,K_Col].item()&0xff
+                                        Hex5=Wq[OC,IC+5,K_Row,K_Col].item()&0xff
+                                        Hex6=Wq[OC,IC+6,K_Row,K_Col].item()&0xff
+                                        Hex7=Wq[OC,IC+7,K_Row,K_Col].item()&0xff
+                                        #print('%02x%02x%02x%02x%02x%02x%02x%02x'%(Hex7,Hex6,Hex5,Hex4,Hex3,Hex2,Hex1,Hex0))
+                                        ff.write('%02x%02x%02x%02x%02x%02x%02x%02x'%(Hex7,Hex6,Hex5,Hex4,Hex3,Hex2,Hex1,Hex0))
+                                        ff.write("\n")
+                        ff.close()
+                #开始模拟硬件定点计算
+                # 先获取Bias_Shift
+                Bias_Shift=Bias()
+                
                 return (F.conv2d(x, weight, self.bias, self.stride, self.padding,
                             self.dilation, self.groups))
             else:
@@ -984,3 +989,10 @@ class Gene_OnBoard_Test_Files:
                             fp.write('%08x' % m)
                         fp.write('\n')
                         out = []
+
+
+
+
+# def WeightOnSystolic():
+#     #生成脉动阵列上的权重bin文件
+                            
