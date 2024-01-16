@@ -94,6 +94,7 @@ def new_bias(z1, q2, bias):  # 求最终的bias=bias/s1s2-q2z1
         N_REAL.append(index)
         SCALE[i] = round(ii)
     out_bias = []
+    out_bias_bin=[]
     for index in range(shape[0]):
         data_integer_old = ('{:024b}'.format(int(SCALE[index]) & 0xffffff))  # {:024b} 24位2二进制不足补0；& 0xffffff按位与
         n = N_REAL[index]
@@ -107,9 +108,10 @@ def new_bias(z1, q2, bias):  # 求最终的bias=bias/s1s2-q2z1
         out_bias1 = symbol + str(data_decimal) + str(data_integer_old)  # 1bit+7bit+24bit
         a = int(out_bias1, 2)  # 转成int型 out_bias1为二进制 ；a是十进制
         out_bias.append(a)  # 一个一个写入out_bias
+        out_bias_bin.append(out_bias1)
     # print(out_bias)
     # exit()
-    return out_bias
+    return out_bias,out_bias_bin
 
 
 def get_add_bias(new, shape, old):  # 补0
@@ -207,19 +209,26 @@ if __name__ == '__main__':
         S1=torch.rand(1)*0.499+0.001
         S2=torch.rand(OC)*0.499+0.001
         S3=torch.rand(1)*0.499+0.001
+        Zero=torch.randint(0,255,(1,))
+        weight=torch.randint(0, 6, (OC,8,3,3))
+
         # print("[",i,"]",S1,S2,S3)
         SCALE, N_REAL = gen_M_N(S1, S2, S3)
-
         bias=torch.rand(OC)*0.499+0.001
         Z1=torch.rand(1)*0.499+0.001
         Bias_Tmp=gen_int_bias(S1,S2,bias)#获取bias/(S1S2)
-        weight=torch.rand(OC,8,3,3)
-        Bias = new_bias(Z1, weight, Bias_Tmp)#Bias也需要被放大
+        
+        [Bias,out_bias_bin] = new_bias(Z1, weight, Bias_Tmp)#Bias也需要被放大
+        BiasAdd=torch.zeros(OC)
+        for i in range(OC):#计算Bias_Add
+            Bias_Bin = bin(Bias[i])[2:].zfill(32)#需要注意的是，这里直接用bin函数，会包含0b这种字符
+            #↑这里直接截取2：end而不考虑“-0b”这种情况是因为我们自己再new_bias里面重新定义了Bias的格式，仔细看看就明白了
+            #当然这里也能直接用out_bias_bin
+            #zfill好像只会补零
 
-        for i in range(OC):#遍历输出通道
-            Bias_Bin = bin(Bias[i])[2:].zfill(32)
-            assert(len(Bias_Bin)==32)
+            # assert(len(Bias_Bin)==32)
             Sign=Bias_Bin[0]
+            print(Sign)
             Bias_Shift=int(Bias_Bin[1:7],2)#二进制转化为十进制
             Bias_Tmp=Sign*(8+Bias_Shift)+Bias_Bin[9:31]
             # 补码转十进制
@@ -229,7 +238,31 @@ if __name__ == '__main__':
             else:
                 # 直接将二进制字符串作为无符号整数解释
                 Bias_Tmp = int(Bias_Tmp, 2)
-            BiasAdd=Bias_Tmp+Q1Q2*2^16
-        print(Bias_Bin,Bias_Shift,Bias_Tmp,BiasAdd)
+            BiasAdd[i]=Bias_Tmp+Q1Q2*2^16
+        
+
+
+        #接下来开始计算Scale*Bias_Add
+        ScaleMul=torch.mul(torch.tensor(SCALE.astype(np.float32)),BiasAdd)
+
+        #乘完SCALE后再Shift
+        DataShift_Result=torch.zeros(OC)
+        negnum=0;
+        for i in range(OC):
+            #先获取二进制值
+            ScaleMul_Bin=bin(int(ScaleMul[i]))#python的bin函数可以记录正数还是负数
+            length=len(ScaleMul_Bin)
+            if ScaleMul_Bin[0]=='-':#如果是负数
+                DataShift_Result[i]=int('-0b'+ScaleMul_Bin[3:length-N_REAL[i]][0:15],2)+int(ScaleMul_Bin[3:length-N_REAL[i]][15],2)#取高15位
+                print("Detect negative","[",i,"]:",DataShift_Result[i])
+                negnum+=1#负数有多少个
+            else:
+                DataShift_Result[i]=int(ScaleMul_Bin[2:length-N_REAL[i]][0:15],2)+int(ScaleMul_Bin[2:length-N_REAL[i]][15],2)#取高15位，并且四舍五入，看要不要加一
+        #shift完后拿得到的16bit继续和zeropoint相加并且做clip(0,255)
+        AddZero=[]
+        for i in range(OC):
+            AddZero.append(torch.clamp(DataShift_Result[i]+Zero,0,255))
+        # exit()
+        print(AddZero)
 
 
