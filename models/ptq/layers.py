@@ -121,7 +121,8 @@ class QConv2d(nn.Conv2d):
             return (Cq.round()-Z3)*S3
         else:
             if True:
-                #移植祖传代码的量化
+
+                #移植祖传代码的量化========================================================================
                 S1 = in_quantizer.scale #ScaleIn 
                 Z1   =in_quantizer.zero_point
                 S2=torch.reshape(self.quantizer.scale,[-1,1,1,1])
@@ -130,13 +131,88 @@ class QConv2d(nn.Conv2d):
                 S3= out_quantizer.scale #ScaleOut
                 Z3=out_quantizer.zero_point
                 #目前可以暂时认为输入输出的S，Z的维度都是1。
-            
-
             #第一步：获取Scale，Shift和Bias
                 #先加Bias，再乘Scale，然后Shfit回去，最后加ZP
                 SCALE, N_REAL = gen_M_N(S1, S2, S3)#Scale就是Scale，N_Real其实就是Shift
-                Bias_Tmp=gen_int_bias(S1,S2,self.bias)#获取bias/(S1S2)
-                Bias = new_bias(Z1, weight, Bias_Tmp)#Bias也需要被放大
+                Bias_Int=gen_int_bias(S1,S2.squeeze(),self.bias)#获取bias/(S1S2)
+                [Bias,out_bias_bin] = new_bias(Z1, weight, Bias_Int)#Bias也需要被放大
+                OC=len(Bias)
+
+                Bias_Tmp_All=torch.zeros(OC)
+                for i in range(OC):#计算Bias_Add
+                    Bias_Bin = bin(Bias[i])[2:].zfill(32)#需要注意的是，这里直接用bin函数，会包含0b这种字符
+                    #↑这里直接截取2：end而不考虑“-0b”这种情况是因为我们自己再new_bias里面重新定义了Bias的格式，仔细看看就明白了
+                    #当然这里也能直接用out_bias_bin
+                    #zfill好像只会补零
+
+                    # assert(len(Bias_Bin)==32)
+                    Sign=Bias_Bin[0]
+                    print(Sign)
+                    Bias_Shift=int(Bias_Bin[1:7],2)#二进制转化为十进制
+                    Bias_Tmp=Sign*(8+Bias_Shift)+Bias_Bin[9:31]
+                    # 补码转十进制
+                    if Bias_Tmp[0] == "1":
+                        # 将二进制字符串作为无符号整数解释，然后减去2的补码位数次方
+                        Bias_Tmp = int(Bias_Tmp, 2) - (1 << len(Bias_Tmp))
+                    else:
+                        # 直接将二进制字符串作为无符号整数解释
+                        Bias_Tmp = int(Bias_Tmp, 2)
+                    Bias_Tmp_All[i]=Bias_Tmp
+                
+                
+                #第二步；计算BiasAdd
+                #先重新取得所有量化为8bit的q1
+                q1=x/S1+Z1
+                weight_quanted=self.quantizer.quant(weight)#量化回去
+                q1q2=F.conv2d(q1, weight_quanted, stride=self.stride, padding=self.padding,
+                            dilation=self.dilation, groups=self.groups)#这里不再计算Bias
+                BiasAdd=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3])
+                ScaleMul=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3])
+                DataShift_Result=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3])
+                AddZero=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3])
+                # q1q2=q1q2.flatten(2).transpose(1, 2)
+                for B in range(q1q2.shape[0]):
+                    for H in range(q1q2.shape[2]):
+                        for W in range(q1q2.shape[3]):
+                            for C in range(q1q2.shape[1]):
+                                BiasAdd[B,C,H,W]=Bias_Tmp_All[C]+q1q2[B,C,H,W]*65536#左移16位
+                            #BiasAdd完后开始乘Scale
+                            ScaleMul[B,:,H,W]=torch.mul(BiasAdd[B,:,H,W],torch.tensor(SCALE.astype(np.float32)))
+                            #乘完Scale后做Shift
+                            for i in range(OC):
+                                ScaleMul_Bin=bin(int(ScaleMul[B,i,H,W]))
+                                length=len(ScaleMul_Bin)
+                                if ScaleMul_Bin[0]=='-':#如果是负数
+                                    DataShift_Result[B,i,H,W]=int('-0b'+ScaleMul_Bin[3:length-N_REAL[i]][0:15],2)+int(ScaleMul_Bin[3:length-N_REAL[i]][15],2)#取高15位
+                                    # print("Detect negative","[",i,"]:",DataShift_Result[i])
+                                    # negnum+=1#负数有多少个
+                                else:
+                                    DataShift_Result[B,i,H,W]=int(ScaleMul_Bin[2:length-N_REAL[i]][0:15],2)+int(ScaleMul_Bin[2:length-N_REAL[i]][15],2)#取高15位，并且四舍五入，看要不要加一
+                            #Shift完后就AddZero
+                                AddZero[B,i,H,W]=torch.clamp(DataShift_Result[i]+self.Z3,0,255)
+                                    
+                # #接下来开始计算Scale*Bias_Add
+                # ScaleMul=torch.mul(torch.tensor(SCALE.astype(np.float32)),BiasAdd)
+
+                # #乘完SCALE后再Shift
+                # DataShift_Result=torch.zeros(OC)
+                # negnum=0;
+                # for i in range(OC):
+                #     #先获取二进制值
+                #     ScaleMul_Bin=bin(int(ScaleMul[i]))#python的bin函数可以记录正数还是负数
+                #     length=len(ScaleMul_Bin)
+                #     if ScaleMul_Bin[0]=='-':#如果是负数
+                #         DataShift_Result[i]=int('-0b'+ScaleMul_Bin[3:length-N_REAL[i]][0:15],2)+int(ScaleMul_Bin[3:length-N_REAL[i]][15],2)#取高15位
+                #         print("Detect negative","[",i,"]:",DataShift_Result[i])
+                #         negnum+=1#负数有多少个
+                #     else:
+                #         DataShift_Result[i]=int(ScaleMul_Bin[2:length-N_REAL[i]][0:15],2)+int(ScaleMul_Bin[2:length-N_REAL[i]][15],2)#取高15位，并且四舍五入，看要不要加一
+                # #shift完后拿得到的16bit继续和zeropoint相加并且做clip(0,255)
+                # AddZero=[]
+                # for i in range(OC):
+                #     AddZero.append(torch.clamp(DataShift_Result[i]+Zero,0,255))
+                # # exit()
+                # print(AddZero)
                 #获取量化后的权重和激活值==================================================================================
                 if False:
                     with open (r'E:\Transformer\Transformer_Arithmatic\Transformer_Main\TxT\Weight.txt','w') as ff:
@@ -157,9 +233,6 @@ class QConv2d(nn.Conv2d):
                                         ff.write('%02x%02x%02x%02x%02x%02x%02x%02x'%(Hex7,Hex6,Hex5,Hex4,Hex3,Hex2,Hex1,Hex0))
                                         ff.write("\n")
                         ff.close()
-                #开始模拟硬件定点计算
-                # 先获取Bias_Shift
-                Bias_Shift=Bias()
                 
                 return (F.conv2d(x, weight, self.bias, self.stride, self.padding,
                             self.dilation, self.groups))
@@ -717,6 +790,7 @@ def new_bias(z1, q2, bias):  # 求最终的bias=bias/s1s2-q2z1
         N_REAL.append(index)
         SCALE[i] = round(ii)
     out_bias = []
+    out_bias_bin=[]
     for index in range(shape[0]):
         data_integer_old = ('{:024b}'.format(int(SCALE[index]) & 0xffffff))  # {:024b} 24位2二进制不足补0；& 0xffffff按位与
         n = N_REAL[index]
@@ -730,9 +804,10 @@ def new_bias(z1, q2, bias):  # 求最终的bias=bias/s1s2-q2z1
         out_bias1 = symbol + str(data_decimal) + str(data_integer_old)  # 1bit+7bit+24bit
         a = int(out_bias1, 2)  # 转成int型 out_bias1为二进制 ；a是十进制
         out_bias.append(a)  # 一个一个写入out_bias
+        out_bias_bin.append(out_bias1)
     # print(out_bias)
     # exit()
-    return out_bias
+    return out_bias,out_bias_bin
 
 
 def get_add_bias(new, shape, old):  # 补0
