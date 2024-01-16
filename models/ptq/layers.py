@@ -121,7 +121,7 @@ class QConv2d(nn.Conv2d):
             return (Cq.round()-Z3)*S3
         else:
             if True:
-
+                device="cuda"
                 #移植祖传代码的量化========================================================================
                 S1 = in_quantizer.scale #ScaleIn 
                 Z1   =in_quantizer.zero_point
@@ -166,10 +166,10 @@ class QConv2d(nn.Conv2d):
                 weight_quanted=self.quantizer.quant(weight)#量化回去
                 q1q2=F.conv2d(q1, weight_quanted, stride=self.stride, padding=self.padding,
                             dilation=self.dilation, groups=self.groups)#这里不再计算Bias
-                BiasAdd=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3])
-                ScaleMul=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3])
-                DataShift_Result=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3])
-                AddZero=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3])
+                BiasAdd=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3]).to(device)
+                ScaleMul=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3]).to(device)
+                DataShift_Result=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3]).to(device)
+                AddZero=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3]).to(device)
                 # q1q2=q1q2.flatten(2).transpose(1, 2)
                 for B in range(q1q2.shape[0]):
                     for H in range(q1q2.shape[2]):
@@ -177,7 +177,7 @@ class QConv2d(nn.Conv2d):
                             for C in range(q1q2.shape[1]):
                                 BiasAdd[B,C,H,W]=Bias_Tmp_All[C]+q1q2[B,C,H,W]*65536#左移16位
                             #BiasAdd完后开始乘Scale
-                            ScaleMul[B,:,H,W]=torch.mul(BiasAdd[B,:,H,W],torch.tensor(SCALE.astype(np.float32)))
+                            ScaleMul[B,:,H,W]=torch.mul(BiasAdd[B,:,H,W],torch.tensor(SCALE.astype(np.float32)).to(device))
                             #乘完Scale后做Shift
                             for i in range(OC):
                                 ScaleMul_Bin=bin(int(ScaleMul[B,i,H,W]))
@@ -189,7 +189,7 @@ class QConv2d(nn.Conv2d):
                                 else:
                                     DataShift_Result[B,i,H,W]=int(ScaleMul_Bin[2:length-N_REAL[i]][0:15],2)+int(ScaleMul_Bin[2:length-N_REAL[i]][15],2)#取高15位，并且四舍五入，看要不要加一
                             #Shift完后就AddZero
-                                AddZero[B,i,H,W]=torch.clamp(DataShift_Result[i]+self.Z3,0,255)
+                                AddZero[B,i,H,W]=torch.clamp(DataShift_Result[B,i,H,W]+Z3,0,255)
                                     
                 # #接下来开始计算Scale*Bias_Add
                 # ScaleMul=torch.mul(torch.tensor(SCALE.astype(np.float32)),BiasAdd)
@@ -703,43 +703,43 @@ tensor3 = torch.randn(197, 768)
 #移植祖传代码中的量化============================================
 def gen_B(S1, S2, S3):  # 第一组  β即N_REAL  +++++求shitf++++
     M = (S1 * S2) / S3
-    M.squeeze()
+    
+    M=M.squeeze()
     M=M.cpu()#先将tensor放到cpu上
     M = M.numpy()
     
     daxiao = S2.shape[0]  # 第一层权重的shape[0]是32 shape[0]表示行数 是一维大小位32的列向量
     SCALE = np.zeros(daxiao, dtype=np.uint32, order='C')  # 相当于32个输出通道 每个对应一组shift
     N_REAL = np.zeros(daxiao, dtype=np.uint32, order='C')
-    for i, ii in enumerate(M):  # enumerate() 函数用于将一个可遍历的数据对象(如列表、元组或字符串)组合为一个索引序列，同时列出数据和数据下标
-
+    for i,data in enumerate(M):  # enumerate() 函数用于将一个可遍历的数据对象(如列表、元组或字符串)组合为一个索引序列，同时列出数据和数据下标
+        ii=M[i]
         while not (ii >= 0.5 and ii <= 1.0):  # 左移到（0.5，1） 左移一次相当于*2
             ii *= 2
         pass
-        mmmm = ii * (2 ** 32)  # 乘2^32
+        mmmm = ii * (2 ** 32)  # 乘2^32  
 
-        SCALE[i] = mmmm.astype(np.int32)
+        SCALE[i] = mmmm.astype(np.uint32) #师兄埋下的一个一个远古bug，这里应该是uint32，不然会出现严重错误
 
-    for i, ii in enumerate(M):
-        N_REAL[i] = round(math.log(SCALE[i] / ii, 2)) - 32   # fpga加了1这里要减1,  β值也是m维 相当于存的mmmm
+    for i,data in enumerate(M):
+        N_REAL[i] = round(math.log(SCALE[i] / M[i], 2)) - 32   # fpga加了1这里要减1,  β值也是m维 相当于存的mmmm
         if N_REAL[i] !=0:
             N_REAL[i]=N_REAL[i]-1
 
-    return N_REAL
+    return SCALE,N_REAL
 
 
 def gen_M_N(S1, S2, S3):  # 第二组求M'即M  ++++++返回scale和shift+++++
     daxiao = S2.shape[0]
-    M = np.zeros(daxiao, dtype=np.uint32, order='C')
-    N_REAL = gen_B(S1, S2, S3)
-    M = np.zeros(S2.shape[0])
+    SCALE,N_REAL = gen_B(S1, S2, S3)
+
     
-    for i, ii in enumerate(M):
-        Scale=(S1*S2[i]/S3).cpu()
-        # Scale=Scale.numpy
-        M[i] = (torch.round(Scale * (2 ** (32 + N_REAL[i] + 1)))).numpy()  # s1s2/s3 *2^(32+β+1)
-    M = M.astype(np.uint32)
+    # for i, ii in enumerate(M):
+    #     Scale=(S1*S2[i]/S3).cpu()
+    #     # Scale=Scale.numpy
+    #     M[i] = (torch.round(Scale * (2 ** (32 + N_REAL[i] + 1)))).numpy()  # s1s2/s3 *2^(32+β+1)
+    # M = M.astype(np.uint32)
     # exit()
-    return M, N_REAL
+    return SCALE, N_REAL
 
 
 # r_b=s1*s2*q_b
