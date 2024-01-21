@@ -130,12 +130,16 @@ class QConv2d(nn.Conv2d):
 
                 S3= out_quantizer.scale #ScaleOut
                 Z3=out_quantizer.zero_point
+
+                #先重新取得所有量化为8bit的q1
+                q1=x/S1+Z1
+                weight_quanted=self.quantizer.quant(weight)#量化回去
                 #目前可以暂时认为输入输出的S，Z的维度都是1。
             #第一步：获取Scale，Shift和Bias
                 #先加Bias，再乘Scale，然后Shfit回去，最后加ZP
                 SCALE, N_REAL = gen_M_N(S1, S2, S3)#Scale就是Scale，N_Real其实就是Shift
                 Bias_Int=gen_int_bias(S1,S2.squeeze(),self.bias)#获取bias/(S1S2)
-                [Bias,out_bias_bin] = new_bias(Z1, weight, Bias_Int)#Bias也需要被放大
+                [Bias,out_bias_bin] = new_bias(Z1, weight_quanted, Bias_Int)#Bias也需要被放大
                 OC=len(Bias)
 
                 Bias_Tmp_All=torch.zeros(OC)
@@ -148,28 +152,30 @@ class QConv2d(nn.Conv2d):
                     # assert(len(Bias_Bin)==32)
                     Sign=Bias_Bin[0]
                     print(Sign)
-                    Bias_Shift=int(Bias_Bin[1:7],2)#二进制转化为十进制
-                    Bias_Tmp=Sign*(8+Bias_Shift)+Bias_Bin[9:31]
+                    Bias_Shift=int(Bias_Bin[1:8],2)#二进制转化为十进制
+                    Bias_Tmp=Sign*(8+Bias_Shift)+Bias_Bin[8:32]+'0'*(16-Bias_Shift)#带符号移位
                     # 补码转十进制
-                    if Bias_Tmp[0] == "1":
-                        # 将二进制字符串作为无符号整数解释，然后减去2的补码位数次方
-                        Bias_Tmp = int(Bias_Tmp, 2) - (1 << len(Bias_Tmp))
-                    else:
-                        # 直接将二进制字符串作为无符号整数解释
-                        Bias_Tmp = int(Bias_Tmp, 2)
-                    Bias_Tmp_All[i]=Bias_Tmp
+                    # Bias_Tmp=compbin2hex(Bias_Tmp)
+                    # if Bias_Tmp[0] == "1":
+                    #     # 将二进制字符串作为无符号整数解释，然后减去2的补码位数次方
+                    #     Bias_Tmp = int('-0b'+Bias_Tmp, 2)
+                    # else:
+                    #     # 直接将二进制字符串作为无符号整数解释
+                    #     Bias_Tmp = int(Bias_Tmp, 2)
+                    Bias_Tmp_All[i]=compbin2hex(Bias_Tmp)
                 
                 
                 #第二步；计算BiasAdd
-                #先重新取得所有量化为8bit的q1
-                q1=x/S1+Z1
-                weight_quanted=self.quantizer.quant(weight)#量化回去
+
+                
+                
                 q1q2=F.conv2d(q1, weight_quanted, stride=self.stride, padding=self.padding,
                             dilation=self.dilation, groups=self.groups)#这里不再计算Bias
                 BiasAdd=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3]).to(device)
                 ScaleMul=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3]).to(device)
                 DataShift_Result=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3]).to(device)
                 AddZero=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3]).to(device)
+                X3=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3]).to(device)
                 # q1q2=q1q2.flatten(2).transpose(1, 2)
                 for B in range(q1q2.shape[0]):
                     for H in range(q1q2.shape[2]):
@@ -178,19 +184,26 @@ class QConv2d(nn.Conv2d):
                                 BiasAdd[B,C,H,W]=Bias_Tmp_All[C]+q1q2[B,C,H,W]*65536#左移16位
                             #BiasAdd完后开始乘Scale
                             ScaleMul[B,:,H,W]=torch.mul(BiasAdd[B,:,H,W],torch.tensor(SCALE.astype(np.float32)).to(device))
+                            
+                            
                             #乘完Scale后做Shift
                             for i in range(OC):
-                                ScaleMul_Bin=bin(int(ScaleMul[B,i,H,W]))
+                                ScaleMul_Bin=convert_to_binary(int(ScaleMul[B,i,H,W]), 80)#应该是补成80bit后的高32位
+                                ScaleMul_Bin=ScaleMul_Bin[0:32]
                                 length=len(ScaleMul_Bin)
-                                if ScaleMul_Bin[0]=='-':#如果是负数
-                                    DataShift_Result[B,i,H,W]=int('-0b'+ScaleMul_Bin[3:length-N_REAL[i]][0:15],2)+int(ScaleMul_Bin[3:length-N_REAL[i]][15],2)#取高15位
+                                
+                                if ScaleMul[B,i,H,W]<0:#如果是负数
+                                    # ScaleMul_Bin=ScaleMul_Bin[2:].zfill(80)
+                                    DataShift_Result[B,i,H,W]=compbin2hex(ScaleMul_Bin[0:32-N_REAL[i]])+int(ScaleMul_Bin[0:32-N_REAL[i]][16],2)#取高15位
                                     # print("Detect negative","[",i,"]:",DataShift_Result[i])
                                     # negnum+=1#负数有多少个
                                 else:
-                                    DataShift_Result[B,i,H,W]=int(ScaleMul_Bin[2:length-N_REAL[i]][0:15],2)+int(ScaleMul_Bin[2:length-N_REAL[i]][15],2)#取高15位，并且四舍五入，看要不要加一
+                                    DataShift_Result[B,i,H,W]=int(ScaleMul_Bin[0:32-N_REAL[i]],2)+int(ScaleMul_Bin[0:32-N_REAL[i]][16],2)#取高15位，并且四舍五入，看要不要加一
                             #Shift完后就AddZero
                                 AddZero[B,i,H,W]=torch.clamp(DataShift_Result[B,i,H,W]+Z3,0,255)
-                                    
+                                #现在AddZero=q3，然后再反量化回去
+                                X3[B,i,H,W]=(AddZero[B,i,H,W]-Z3)*S3
+                return X3                    
                 # #接下来开始计算Scale*Bias_Add
                 # ScaleMul=torch.mul(torch.tensor(SCALE.astype(np.float32)),BiasAdd)
 
@@ -1065,9 +1078,30 @@ class Gene_OnBoard_Test_Files:
                         fp.write('\n')
                         out = []
 
+def convert_to_binary(number, num_bits):#这转换后是补码
+    binary = bin(number & int("1" * num_bits, 2))[2:]
+    return '0' * (num_bits - len(binary)) + binary
+#test
+    number = -1024
+    num_bits = 80
 
+    binary_representation = convert_to_binary(number, num_bits)
+    print(binary_representation)
 
-
-# def WeightOnSystolic():
-#     #生成脉动阵列上的权重bin文件
-                            
+def fliplr(string):
+    # string = "Hello, World!"
+    reversed_string = string[::-1]
+    return reversed_string
+    # print(reversed_string)
+    # 运行以上代码，将输出反转后的字符串："!dlroW ,olleH"。通过使用切片操作符[::-1]，可以从字符串的末尾开始，每次递减一个索引，从而实现字符串的反转。
+def compbin2hex(binary):
+    #二进制补码转十进制
+    output=0
+    if binary[0]=='1':#如果为负数
+        inverted_binary = ''.join('1' if bit == '0' else '0' for bit in binary[1:])
+        output=-(int(inverted_binary,2)+1)
+    else:
+        binary=fliplr(binary)
+        for i in range(len(binary)):
+            output=output+(ord(binary[i])-48)*pow(2,i)
+    return output
