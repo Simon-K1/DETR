@@ -151,7 +151,7 @@ class QConv2d(nn.Conv2d):
 
                     # assert(len(Bias_Bin)==32)
                     Sign=Bias_Bin[0]
-                    print(Sign)
+                    # print(Sign)
                     Bias_Shift=int(Bias_Bin[1:8],2)#二进制转化为十进制
                     Bias_Tmp=Sign*(8+Bias_Shift)+Bias_Bin[8:32]+'0'*(16-Bias_Shift)#带符号移位
                     # 补码转十进制
@@ -177,6 +177,15 @@ class QConv2d(nn.Conv2d):
                 AddZero=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3]).to(device)
                 X3=torch.zeros(q1q2.shape[0],q1q2.shape[1],q1q2.shape[2],q1q2.shape[3]).to(device)
                 # q1q2=q1q2.flatten(2).transpose(1, 2)
+                
+
+                #第一步：先加Bias
+                # BiasAdd=Bias_Tmp_All+q1q2.permute(0,3,2,1)*65536
+                # BiasAdd=BiasAdd.permute(0,3,2,1)
+
+                # ScaleMul=torch.mul(BiasAdd.permute(0,3,2,1),torch.tensor(SCALE.astype(np.float32)).to(device))
+                # ScaleMul=ScaleMul.permute(0,3,2,1)
+
                 for B in range(q1q2.shape[0]):
                     for H in range(q1q2.shape[2]):
                         for W in range(q1q2.shape[3]):
@@ -192,13 +201,16 @@ class QConv2d(nn.Conv2d):
                                 ScaleMul_Bin=ScaleMul_Bin[0:32]
                                 length=len(ScaleMul_Bin)
                                 
-                                if ScaleMul[B,i,H,W]<0:#如果是负数
-                                    # ScaleMul_Bin=ScaleMul_Bin[2:].zfill(80)
-                                    DataShift_Result[B,i,H,W]=compbin2hex(ScaleMul_Bin[0:32-N_REAL[i]])+int(ScaleMul_Bin[0:32-N_REAL[i]][16],2)#取高15位
-                                    # print("Detect negative","[",i,"]:",DataShift_Result[i])
-                                    # negnum+=1#负数有多少个
-                                else:
-                                    DataShift_Result[B,i,H,W]=int(ScaleMul_Bin[0:32-N_REAL[i]],2)+int(ScaleMul_Bin[0:32-N_REAL[i]][16],2)#取高15位，并且四舍五入，看要不要加一
+                                # if ScaleMul[B,i,H,W]<0:#如果是负数
+                                # ScaleMul_Bin=ScaleMul_Bin[2:].zfill(80)
+                                #先移位再取高十五位做四舍五入
+                                ScaleMul_Bin=ScaleMul_Bin[0]*(N_REAL[i])+ScaleMul_Bin[0:32-N_REAL[i]]#带符号移位
+                                ScaleMul_Bin=ScaleMul_Bin[-16:]#取低16位
+                                DataShift_Result[B,i,H,W]=compbin2hex(ScaleMul_Bin[0:15])+int(ScaleMul_Bin[15],2)
+                                # print("Detect negative","[",i,"]:",DataShift_Result[i])
+                                # negnum+=1#负数有多少个
+                                # else:
+                                #     DataShift_Result[B,i,H,W]=int(ScaleMul_Bin[0:32-N_REAL[i]],2)+int(ScaleMul_Bin[0:32-N_REAL[i]][16],2)#取高15位，并且四舍五入，看要不要加一
                             #Shift完后就AddZero
                                 AddZero[B,i,H,W]=torch.clamp(DataShift_Result[B,i,H,W]+Z3,0,255)
                                 #现在AddZero=q3，然后再反量化回去
