@@ -191,10 +191,13 @@ def get_weight2(new_weight, shape, weight):  # 四维权重写成一维
                     j += 1
     return weight
 
-
+from OnBoard import Generate_Bin
 if __name__ == '__main__':
 
-
+    Image=torch.randint(0,255,[1,3,224,224])
+    print(Image[0,:,0,0])
+    print(Image[0,:,0,1])
+    Generate_Bin(Image,"Image","BinPath")
     # 创建一个示例矩阵
     # matrix = torch.randn(197, 768)
     # # 使用plt.imshow()显示热度图
@@ -203,6 +206,8 @@ if __name__ == '__main__':
     # plt.colorbar()
     # # 显示图像
     # plt.show()
+    
+    exit()
     OC=768
     Q1Q2=123
     for i in range(1):
