@@ -10,6 +10,7 @@ from .observer import build_observer
 from .quantizer import build_quantizer
 import struct
 import scipy.io as sio
+from OnBoard import Generate_Bin
 class QConv2d(nn.Conv2d):
 
     def __init__(self,
@@ -99,15 +100,17 @@ class QConv2d(nn.Conv2d):
             Z3=out_quantizer.zero_point
             #先重新取得所有量化为8bit的q1
             q1=x/S1+Z1
+            #图片也要补通道,补成8通道
+            q1=torch.cat((torch.zeros(q1.shape[0],5,q1.shape[2],q1.shape[3]).to(device)+Z1,q1),dim=1)
             weight_quanted=self.quantizer.quant(self.weight)#量化回去
             
             
             Scale, Shift = gen_M_N(S1, S2, S3)#Scale就是Scale，N_Real其实就是Shift
             Bias_Int=gen_int_bias(S1,S2.squeeze(),self.bias)#获取bias/(S1S2)
             [Bias,out_bias_bin] = new_bias(Z1, weight_quanted, Bias_Int)#Bias也需要被放大
-            weight_quanted=weight_quanted.permute(0,2,3,1).reshape(weight_quanted.shape[0],-1)
+            # weight_quanted=weight_quanted.permute(0,2,3,1)
             # 通道补零
-            weight_quanted=torch.cat((torch.zeros(weight.shape[0],1280).to(device),weight_quanted),dim=1)
+            weight_quanted=torch.cat((torch.zeros(weight.shape[0],5,weight.shape[2],weight.shape[3]).to(device),weight_quanted),dim=1)
             if weight_quanted.device.type=="cuda":
                 weight_quanted=weight_quanted.to("cpu")
             Tensors = [Scale,Shift,Bias,weight_quanted.numpy()]
@@ -117,6 +120,16 @@ class QConv2d(nn.Conv2d):
                 data[var_name[i]] = array
             # 保存为 .mat 文件
             sio.savemat(r'matlab\Embedding_Conv.mat', data)
+
+            #生成权重bin文件
+            Generate_Bin(weight_quanted,"ConvWeight","BinPath")
+            #生成量化参数bin文件--Bias(32 bit),Scale(32 bit),Shift(16 bit)
+            Generate_Bin([np.array(Bias),Scale,Shift],"ConvQuant","BinPath")
+            Generate_Bin(q1,"ImageIn","BinPath")
+            Generate_Bin(out_quantizer.quant((F.conv2d(x, weight, self.bias, self.stride, self.padding,self.dilation, self.groups))),"ImageOut","BinPath")
+            
+            # #将权重Bin文件和量化参数bin文件拼起来
+            # Generate_Bin([self.quantizer.quant(self.weight),Scale,Shift,Bias],"ConvQuant","BinPath")
         if False:#模拟硬件量化计算，重写整形前向传播公式，
             Shift_Num=torch.tensor(32)#放大移位
             # print("输入激活的维度:",x.shape)
