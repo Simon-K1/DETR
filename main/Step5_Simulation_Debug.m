@@ -1,7 +1,7 @@
 %% 用于上板测试失败，需要仿真或者上板前需要仿真
 %% 将上板的bin文件转换为txt仿真文件
 if 0
-    PreFix="OnBoardTest";
+    PreFix="ImageOut_Fpga_第四次启动";
 
     fid=fopen(PreFix+".bin","r");
     data=fread(fid);
@@ -38,3 +38,12 @@ if 1
     end
     fclose all
 end
+
+%% 单独仿真一个卷积核
+%检查一个卷积核的计算,也就是一个PE在任何时间的计算结果
+    %因为发现PE的输入都和matlab一样,但是结果却不一样,很奇怪
+    nums=2048%代表需要计算前多少个点
+
+A=reshape(Feature_In(1:16,1:16*8)',1,[]);
+B=WeightMatrix(:,1);
+A(1:nums)*B(1:nums)

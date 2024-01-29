@@ -5,16 +5,16 @@ Cfg=[
 "(1,8,8)"  
 "(2,8,8)"   
 "(3,8,8)"   
-"(3,8,64)"  
 "(4,8,32)"
+"(3,8,64)" 
 "(4,8,64)"
 ] 
 Data=[
     [7,1,4,26,8];
     [9,1,5,41,11];
     [11,1,6,55,13];
-    [47,3,24,55,66];
     [33,2,17,56,46];
+    [47,3,24,55,66];
     [62,4,30,70,87];
     ]
 %用Struct创建一个有序字典
@@ -42,51 +42,67 @@ grid on;
 % 创建折线图
 hold on;
 Dly_Tiny=[
-    97.320
-    49.543
+    97.351
+    49.540
     33.637
-    7.457
     9.288
+    7.457
     6.725
 ]
 Dly_Small=[
-   346.670
-    175.010
+    346.367
+    174.739
     117.837
-    21.111
     26.146
+    21.111
     16.776
 ]
 Dly_Base=[
-    1301.488
-    654.045
+    1300.594
+    653.159
     438.319
-    67.379
     90.181
+    67.379
     52.170
 ]
-Gops=[25.144
+Gops_Base=[
+    25.161
     50.034
     74.659
-    485.679
     362.873
+    485.679
     626.884
+    ]%就是每个加速器在Vit-Base下的Gops
+Gops_Small=[
+    25.098
+    49.750
+    73.774
+    332.101
+    411.790
+    480.702
+    ]%就是每个加速器在Vit-Base下的Gops
+Gops_Tiny=[
+    24.955
+    49.039
+    72.224
+    261.556
+    325.805
+    360.338
     ]%就是每个加速器在Vit-Base下的Gops
 Power=[
   4.509
   5.002 
   5.398 
-  10.881 
   8.5 
-  13.225%12.0250
+  10.881 
+  12%12.0250
 ];
-Power=Power-1.2;
-Eff=Gops./(Power-2.2)
+Eff=Gops_Base./(Power)
 yyaxis right;  % 使用右边坐标轴
 ylabel('Energy efficiency(Gops/w)');
 color = rand(1,3);  % 随机生成RGB颜色
 plot(Eff, '-.o', 'LineWidth', 3,'Color',color);
-legend('LUT', 'LUTRAM', 'FF', 'BRAM', 'DSP',"Gops/w");
+legend('LUT', 'LUTRAM', 'FF', 'BRAM', 'DSP',"GOPs/w");
 
 
 subplot(1, 2, 2);
@@ -106,11 +122,16 @@ xticklabels(Cfg);
 ylabel('Latency(ms)');
 
 yyaxis right;  % 使用右边坐标轴
-ylabel('Throughput（Gop/s)');
+ylabel('Throughput（GOP/s)');
 hold on
 color = rand(1,3);  % 随机生成RGB颜色
-plot(Gops, '-.p', 'LineWidth', 3,'Color',color);
-legend("Vit-Base","Vit-Small","Vit-Tiny","Throughput")
+plot(Gops_Base, '-.p', 'LineWidth', 3,'Color',color);
+color = rand(1,3);  % 随机生成RGB颜色
+plot(Gops_Small, '-.p', 'LineWidth', 3,'Color',color);
+color = rand(1,3);  % 随机生成RGB颜色
+plot(Gops_Tiny, '-.p', 'LineWidth', 3,'Color',color);
+legend("Vit-Tiny","Vit-Small","Vit-Base","Throughput(Vit-B)","Throughput(Vit-S)","Throughput(Vit-T)")
+
 title("B:Performance of accelerator with different sizes")
 %% 卷积3*3~16*16的计算时间统计
 
@@ -156,7 +177,7 @@ for i = 1:14
     subplot(4, 4, i);
     KernelSize=i+2;
     times=[];
-    Gops=[];
+    Gops_Base=[];
     OutSize=[];
     Feature_Channel=8;
     Out_Channel=768;
@@ -176,7 +197,7 @@ for i = 1:14
         Total_Macs=Conv_MACS;
 
         times = [times,Conv_Gops];
-        Gops=[Gops,Total_Macs];
+        Gops_Base=[Gops_Base,Total_Macs];
     end
     color = rand(1,3);  % 随机生成RGB颜色
     plot(1:KernelSize, times,'-p','LineWidth',1,'Color',color);
@@ -188,7 +209,7 @@ for i = 1:14
 %     hold on
 
 %     gca.YAxis(2).Scale = 'log';  % 设置右边坐标轴为对数刻度
-    plot(1:KernelSize, Gops,'-o','LineWidth',1,'Color',color);
+    plot(1:KernelSize, Gops_Base,'-o','LineWidth',1,'Color',color);
     %xlabel("kernelsize");
     ylabel("Macs")
     title("KernelSize="+string(KernelSize)+";Stride=1~"+string(KernelSize),'FontWeight','bold')

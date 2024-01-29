@@ -14,7 +14,7 @@ fid=fopen("Scale_Bias_Shift.txt","w");
 
 %创建随机的Scale
 for i=1:MatrixCol
-    Scale_bin=Fixed_Length_Bin(randi([1,2^24-1],1),32);
+    Scale_bin=Fixed_Length_Bin(randi([1,2^24-1],1),32);%需要注意Scale永远是正数
     Scale(i)=bin2dec(Scale_bin);
 end
 %创建随机的Bias
@@ -48,7 +48,7 @@ end
 
 %% 模拟卷积量化计算
 function Quat_Out=ConvQuant_Compute(Scale,Bias,Shift,Matrix,ZeroPoint)
-    
+    %输入的Scale，Bias，Shift都是定点好的值，uint32表示
     Sz_Matrix=size(Matrix);
     assert(Sz_Matrix(1)==1);%输入一个向量
     

@@ -126,7 +126,7 @@ WEIGHT_BASE_ADDR		=(MEM_BASE_ADDR + 0x00100000);
 QUANT_BASE_ADDR         =(WEIGHT_BASE_ADDR + SendWeight_Len);
 PICTURE_BASE_ADDR		=(QUANT_BASE_ADDR + SendQuantFactor_Len);
 CONV_RESULT_BASE_ADDR	=(MEM_BASE_ADDR + 0x10000000);
-fprintf("bin文件写入地址:%d bin文件大小：%d\n",WEIGHT_BASE_ADDR,SendPicture_Len+SendWeight_Len+SendQuantFactor_Len);
+fprintf("//bin文件写入地址:%d bin文件大小：%d\n",WEIGHT_BASE_ADDR,SendPicture_Len+SendWeight_Len+SendQuantFactor_Len);
 
 %% 仿真switch时间控制
 SendWeight_Len/8;

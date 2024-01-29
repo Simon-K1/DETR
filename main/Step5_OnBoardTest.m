@@ -4,7 +4,7 @@ load("matlab.mat")
 Picture_Flattened=reshape(Feature_In',1,[]);
 if WEIGHT_VERSION==1
     WeightMatrix_Flattened=reshape(WeightMatrix,1,[]);
-    if ~exist("Scale","var"),
+    if ~exist("Scale","var")
     warning("如果还没有生成量化参数，需要先生成随机的量化参数，更新matlab.mat后再重新生成上板bin文件\n开始生成随机量化参数\n");
     [Bias,Scale,Shift]=Step8_ConvQuant().Gen_Rand_Data(OutFeatureSize^2,Out_Channel);
     save("matlab.mat");
@@ -43,7 +43,7 @@ if 0
 end
 %% 也可以将图片和权重拼起来（前期测试的方案，权重放图片前面)
 fid=fopen("OnBoardTest.bin",'w');
-fwrite(fid,WeightMatrix_Flattened,"uint8");
+fwrite(fid,WeightMatrix_Flattened,"int8");
 fwrite(fid,Bias_Flattened,"uint32");%uint8和int8生成的bin文件还有区别，存在一种可能，2341694147用int32无法表示，因为int32还要1bit的符号位。。。
 fwrite(fid,Scale_Flattened,"uint32");
 fwrite(fid,Shift_Flattened,"uint32");

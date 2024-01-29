@@ -3,9 +3,9 @@
 InChannel=256;
 OutChannel=512;
 Kernelsize=3;
-MatrixB=rand([InChannel*Kernelsize,OutChannel]);
-Method=Split_Method(MatrixB,1024,4,8,64)
-Method.Section
+MatrixB=rand([InChannel*Kernelsize^2,OutChannel]);
+Method=Split_Method(MatrixB,1024*8,1,8,8);
+Method.Section%Method即拆分策略，
 
 %矩阵计算通道拆分
 
