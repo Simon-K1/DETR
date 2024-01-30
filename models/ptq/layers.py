@@ -328,7 +328,8 @@ class QLinear(nn.Linear):
                  bit_type=BIT_TYPE_DICT['int8'],
                  calibration_mode='layer_wise',
                  observer_str='minmax',
-                 quantizer_str='uniform'):
+                 quantizer_str='uniform',
+                 NumStr="Linear0"):
         super(QLinear, self).__init__(in_features, out_features, bias)
 
         self.quant = quant
@@ -338,12 +339,40 @@ class QLinear(nn.Linear):
         self.calibration_mode = calibration_mode
         self.observer_str = observer_str
         self.quantizer_str = quantizer_str
+        self.NumStr=NumStr
 
         self.module_type = 'linear_weight'
         self.observer = build_observer(self.observer_str, self.module_type,
                                        self.bit_type, self.calibration_mode)
         self.quantizer = build_quantizer(self.quantizer_str, self.bit_type,
                                          self.observer, self.module_type)
+        self.GenerateBin=True
+
+    def Linear_Bin(self, x,in_quantizer,out_quantizer,Path):#这个path按照Block+num进行编号
+        
+        if self.quant and self.GenerateBin:
+            device="cuda"
+            #激活行优先输入，权重列优先
+            self.GenerateBin=False
+            #更新完量化参数后，开始生成量化参数
+            S1 = in_quantizer.scale #ScaleIn 
+            Z1   =in_quantizer.zero_point
+            S2=self.quantizer.scale
+            Z2=0#self.quantizer.zero_point
+            S3= out_quantizer.scale #ScaleOut
+            Z3=out_quantizer.zero_point
+            #先重新取得所有量化为8bit的q1
+            q1=in_quantizer.quant(x)#量化成定点
+            weight_quanted=self.quantizer.quant(self.weight)#量化回去
+            #需要注意的是，Linear算的是x*Q^T，所以这里的权重维度是[2304，768]
+            # weight_quanted=weight_quanted.permute(1,0)
+            Scale, Shift = gen_M_N(S1, S2, S3)#Scale就是Scale，N_Real其实就是Shift
+
+            Bias_Int=gen_int_bias(S1,S2.squeeze(),self.bias)#获取bias/(S1S2)
+            [Bias,out_bias_bin] = new_bias_ForMM(Z1, weight_quanted, Bias_Int)#Bias也需要被放大
+            
+            Generate_Bin(weight_quanted,"LinearWeight","BinPath/"+Path)
+            Generate_Bin([np.array(Bias),Scale,Shift],"ConvQuant","BinPath/"+Path)
 
     def forward(self, x):
         if self.calibrate:
@@ -840,6 +869,55 @@ def new_bias(z1, q2, bias):  # 求最终的bias=bias/s1s2-q2z1
     n_bias = np.zeros(shape[0], dtype=np.float64, order='C')
     for m in range(shape[0]):  # bias1的维度是M C K K 将C K K 做累加 变成M维
         n_bias[m] = bias1[m, :, :, :].sum()  # 从第一组开始一直有m组，m是输出通道数
+        # print()
+        n_bias[m] = (bias[m] - n_bias[m])  # 做减法
+    # print(n_bias) 第一层n_bias是一维32个
+    # exit()
+    daxiao = shape[0]  # 第一层是32
+    SCALE = np.zeros(daxiao, dtype=np.float64, order='C')
+    # N_REAL = np.zeros(daxiao, dtype=np.float32, order='C')
+    N_REAL = []
+    for i, ii in enumerate(n_bias):  # i和ii就是从n_bias中取值
+        index = 0
+
+        while not (abs(ii) >= (2 ** 23) and abs(ii) <= (2 ** 24)):
+            if index >= 16:  # fpga里面最多移动16位,所有成到16就停止了,这样精度也够了
+                break
+            else:
+                ii *= 2
+                index = index + 1
+
+        N_REAL.append(index)
+        SCALE[i] = round(ii)
+    out_bias = []
+    out_bias_bin=[]
+    for index in range(shape[0]):
+        data_integer_old = ('{:024b}'.format(int(SCALE[index]) & 0xffffff))  # {:024b} 24位2二进制不足补0；& 0xffffff按位与
+        n = N_REAL[index]
+        symbol = '0'
+        if n_bias[index] < 0:  # 符号位
+            symbol = '1'#这里也不是多此一举，因为如果你给一个uint24，MSB=1，那么你在FPGA那边如何分辨这是正数还是负数，所以还是需要1bit的符号位来帮助fpga做判断的
+        elif n_bias[index] > 0:
+            symbol = '0'
+        data_integer = data_integer_old[8:]
+        data_decimal = '{:07b}'.format(int(n))
+        out_bias1 = symbol + str(data_decimal) + str(data_integer_old)  # 1bit+7bit+24bit
+        a = int(out_bias1, 2)  # 转成int型 out_bias1为二进制 ；a是十进制
+        out_bias.append(a)  # 一个一个写入out_bias
+        out_bias_bin.append(out_bias1)
+    # print(out_bias)
+    # exit()
+    return out_bias,out_bias_bin
+
+def new_bias_ForMM(z1, q2, bias):  #这里是针对矩阵计算的量化
+    #输入数据格式：q2：二维矩阵，如果是一个展开的卷积权重，那么q2的列数就是卷积核的个数
+
+    q2 = q2.type(torch.float64)
+    bias1 = z1 * q2
+    shape = bias1.shape
+    n_bias = np.zeros(shape[0], dtype=np.float64, order='C')#遍历全部通道，权重矩阵的列数也就是通道数
+    for m in range(shape[0]):  # bias1的维度是M C K K 将C K K 做累加 变成M维
+        n_bias[m] = bias1[m,:].sum()  # 从第一组开始一直有m组，m是输出通道数
         # print()
         n_bias[m] = (bias[m] - n_bias[m])  # 做减法
     # print(n_bias) 第一层n_bias是一维32个

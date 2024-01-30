@@ -33,13 +33,14 @@ class Attention(nn.Module):
                  proj_drop=0.0,
                  quant=False,
                  calibrate=False,
-                 cfg=None):
+                 cfg=None,
+                 Block_Num=0):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
         # NOTE scale factor was wrong in my original version, can set manually to be compat with prev weights
         self.scale = qk_scale or head_dim**-0.5
-
+        self.Block_Num=Block_Num
         self.qkv = QLinear(dim,
                            dim * 3,
                            bias=qkv_bias,
@@ -48,7 +49,8 @@ class Attention(nn.Module):
                            bit_type=cfg.BIT_TYPE_W,
                            calibration_mode=cfg.CALIBRATION_MODE_W,
                            observer_str=cfg.OBSERVER_W,
-                           quantizer_str=cfg.QUANTIZER_W)
+                           quantizer_str=cfg.QUANTIZER_W,
+                           NumStr=str(Block_Num)+"_0")
         self.qact1 = QAct(quant=quant,
                           calibrate=calibrate,
                           bit_type=cfg.BIT_TYPE_A,
@@ -68,7 +70,8 @@ class Attention(nn.Module):
                             bit_type=cfg.BIT_TYPE_W,
                             calibration_mode=cfg.CALIBRATION_MODE_W,
                             observer_str=cfg.OBSERVER_W,
-                            quantizer_str=cfg.QUANTIZER_W)
+                            quantizer_str=cfg.QUANTIZER_W,
+                            NumStr=str(Block_Num)+"_1")
         self.qact3 = QAct(quant=quant,
                           calibrate=calibrate,
                           bit_type=cfg.BIT_TYPE_A,
@@ -91,9 +94,10 @@ class Attention(nn.Module):
             calibration_mode=cfg.CALIBRATION_MODE_S,
             observer_str=cfg.OBSERVER_S,
             quantizer_str=cfg.QUANTIZER_S)
-
-    def forward(self, x):
+        self.Generate=True
+    def forward(self, x,in_quantizer):
         B, N, C = x.shape#获取维度
+        self.qkv.Linear_Bin(x,in_quantizer,self.qact1.quantizer,str(self.Block_Num)+"_0")#第一层Linear量化
         x = self.qkv(x)
         x = self.qact1(x)
         qkv = x.reshape(B, N, 3, self.num_heads,
@@ -130,8 +134,10 @@ class Block(nn.Module):
                  norm_layer=nn.LayerNorm,
                  quant=False,
                  calibrate=False,
-                 cfg=None):
+                 cfg=None,
+                 Block_Num=0):#Block的编号，最后逐一生成量化数据的时候用
         super().__init__()
+        self.Block_Num=Block_Num
         self.norm1 = norm_layer(dim)
         self.qact1 = QAct(quant=quant,
                           calibrate=calibrate,
@@ -145,7 +151,8 @@ class Block(nn.Module):
                               qk_scale=qk_scale,
                               attn_drop=attn_drop,
                               proj_drop=drop,
-                              cfg=cfg)
+                              cfg=cfg,
+                              Block_Num=self.Block_Num)
         # self.attn=torch.nn.MultiheadAttention(embed_dim=dim,num_heads=num_heads,add_bias_kv=True,batch_first=True)
         # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
         self.drop_path = DropPath(
@@ -183,7 +190,7 @@ class Block(nn.Module):
         
         QKV=self.qact1(Norm_Out)
         # Attn_Out,_=self.attn(QKV,QKV,QKV)
-        Attn_Out=self.attn(self.qact1(Norm_Out))
+        Attn_Out=self.attn(self.qact1(Norm_Out),self.qact1.quantizer)
         x=x + self.drop_path(Attn_Out)
         x = self.qact2(x)
         x = self.qact4(x + self.drop_path(
@@ -293,7 +300,8 @@ class VisionTransformer(nn.Module):
                   norm_layer=norm_layer,
                   quant=quant,
                   calibrate=calibrate,
-                  cfg=cfg) for i in range(depth)
+                  cfg=cfg,
+                  Block_Num=str(i)) for i in range(depth)
         ])
         self.norm = norm_layer(embed_dim)
         self.qact2 = QAct(quant=quant,
