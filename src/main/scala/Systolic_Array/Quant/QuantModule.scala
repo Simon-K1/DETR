@@ -3,9 +3,11 @@ import spinal.core._
 import spinal.lib._
 import xip.{AddSub, AddSubConfig, Mul, MulConfig}
 import  utils.TopConfig
+import xip.xil_ila
 //实现量化算子
 
 class Quan(convConfig: TopConfig) extends Component {
+    val Config=TopConfig()
     val io = new Bundle {
         val dataIn = in Vec(SInt(convConfig.addChannelTimesWidth bits),convConfig.SA_ROW)
         val biasIn = in UInt (convConfig.QUANT_FACTOR_WIDTH bits)
@@ -43,7 +45,21 @@ class Quan(convConfig: TopConfig) extends Component {
         
     // }
     io.dataOut.subdivideIn(convConfig.SA_ROW slices) <> zero.io.dataOut
-
+    if(Config.ila){
+        val Debug_Signals=Array[Bits](
+            bias.port.dataOut.asBits,
+            scale.port.dataOut.asBits,
+            shift.port.dataOut.asBits,
+            io.dataOut.asBits
+        )
+        
+        val Debug_Name=Array[String]("Bias","Scale","Shift","DataOut")
+        val ila=new xil_ila(Debug_Signals,true,"ila_BiasScaleShift")
+        for(i<-0 to Debug_Signals.length-1){
+            ila.probe(i):=Debug_Signals(i)
+            Debug_Signals(i).setName("Debug_"+Debug_Name(i))
+        }
+    }
 
 }
 //object Quan extends App {

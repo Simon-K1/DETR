@@ -7,9 +7,9 @@ import spinal.lib.Delay
 class dsp_marco(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int) extends BlackBox {
   val io = new Bundle{
     val CLK = in Bool()
-    val A = in SInt(A_WIDTH bits)
+    val A = in SInt(9 bits)
     val B = in SInt(B_WIDTH bits)
-    val P =out SInt(OUT_WIDTH bits)
+    val P =out SInt(17 bits)
     
 }
 noIoPrefix()
@@ -39,7 +39,7 @@ class PE(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int) extends Component{
   }elsewhen(RegNext(io.valid)){//这里dsp计算延时为1，todo：可能存在一个雷
     reg1:=dsp.io.P+reg1
   }
-  io.activate <> dsp.io.A   //根据valid将dsp输入改变
+  S(B"1'b0")@@io.activate <> dsp.io.A   ////根据vaild将dsp输入改变
   io.weight <> dsp.io.B
   io.acount <> RegNext(io.activate)
   io.bcount <> RegNext(io.weight)

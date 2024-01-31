@@ -129,8 +129,8 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
 
     }
     val Gemm_Instru=new Bundle{
-        val Gemm_Height=in UInt(16 bits)
-        val Gemm_Width=in UInt(16 bits)
+        val Height=in UInt(16 bits)
+        val Width=in UInt(16 bits)
     }
     Img2Col_Instru.setName("Img2Col")
     // val Fsm=TopCtrl_Fsm(Control.start)
@@ -212,8 +212,8 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     SubModule_Img2Col.io.OutFeature_Channel_Count_Times<>Img2Col_Instru.OutFeature_Channel_Count_Times
     SubModule_Img2Col.io.Sliding_Size                  <>Img2Col_Instru.Sliding_Size  
 
-    SubModule_GEMM.io.HIGHT                             <>Gemm_Instru.Gemm_Height.resized
-    SubModule_GEMM.io.WIDTH                             <>Gemm_Instru.Gemm_Width.resized
+    SubModule_GEMM.io.HIGHT                             <>Gemm_Instru.Height.resized
+    SubModule_GEMM.io.WIDTH                             <>Gemm_Instru.Width.resized
     SubModule_GEMM.io.WEIGHTCOL                         <>Img2Col_Instru.OutFeature_Channel.resized//这里矩阵计算的列位宽暂时先设置为最大就12bit
     val GemmStart=Control.start&Control.Switch(SWITCH_GEMM)
     SubModule_GEMM.io.start                             :=RegNext(~GemmStart)&GemmStart
@@ -232,7 +232,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     SubModule_WeightCache.io.Matrix_Col :=Img2Col_Instru.OutFeature_Channel
     SubModule_WeightCache.io.start      :=Control.Switch(SWITCH_WEIGHT)&Control.start
     // SubModule_WeightCache.io.Raddr_Valid:=SubModule_Img2Col.io.Raddr_Valid//||LH_Gemm.io.bvalid---todo，重点关注
-    SubModule_WeightCache.io.Raddr_Valid            :=SubModule_Img2Col.io.Raddr_Valid
+    SubModule_WeightCache.io.Raddr_Valid            :=Control.Switch(SWITCH_IMG2COL)?SubModule_Img2Col.io.Raddr_Valid|SubModule_GEMM.io.bvalid
     SubModule_WeightCache.io.LayerEnd   :=LayerEnd
     // Fsm.WeightCached          :=SubModule_WeightCache.io.Weight_Cached//(ConvQuant.io.QuantPara_Cached)---todo,重点关注
 
@@ -363,7 +363,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
 
 object SA_3D_Switch extends App { //
     val verilog_path="./verilog/SA_3D" //(1,8,64,32,4)
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(3,8,64,32,4))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(3,8,8,32,5,768))
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D_SwitchVersion(8,8,16,32,4))
     
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)

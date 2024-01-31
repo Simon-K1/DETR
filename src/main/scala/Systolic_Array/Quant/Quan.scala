@@ -9,6 +9,7 @@ import spinal.lib.Delay
 import spinal.lib.StreamFifo
 // import spinal.core.internals.Operator
 import xip.xil_SimpleDualBram
+import xip.xil_ila
 //实现卷积和权重的量化
     //先存bias，再存Scale，再存shift
 object ConvQuan_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
@@ -154,6 +155,22 @@ class ConvQuant extends Component{
     Quant_Module.io.shiftIn:=ShiftCache.io.doutb
     Quant_Module.io.zeroIn:=io.zeroIn
     io.dataOut:=Quant_Module.io.dataOut
+
+
+
+    if(Config.ila){
+        val Debug_Signals=Array[Bits](
+            Quant_Module.io.dataOut.asBits,
+            io.SAOutput_Valid.asBits
+        )
+        
+        val Debug_Name=Array[String]("dataOut","SAOutput_Valid")
+        val ila=new xil_ila(Debug_Signals,true,"ila_QuantModule")
+        for(i<-0 to Debug_Signals.length-1){
+            ila.probe(i):=Debug_Signals(i)
+            Debug_Signals(i).setName("Debug_"+Debug_Name(i))
+        }
+    }
 }
 
 object QuantGen extends App { 

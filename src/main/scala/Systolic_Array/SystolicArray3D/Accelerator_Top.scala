@@ -125,8 +125,8 @@ class Accelerator_TopV2(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODULE
 
     core.Img2Col_Instru.OutMatrix_Col                   :=Regs.OutMatrix_Col
     core.Img2Col_Instru.OutMatrix_Row                   :=Regs.OutMatrix_Row//输出矩阵的行数
-    core.Gemm_Instru.Gemm_Height                        :=Regs.Gemm_Height
-    core.Gemm_Instru.Gemm_Width                         :=Regs.Gemm_Width
+    core.Gemm_Instru.Height                        :=Regs.Gemm_Height
+    core.Gemm_Instru.Width                         :=Regs.Gemm_Width
 //   core.GemmInstru.HEIGHT                              :=Regs.Gemm_Height
 //   core.GemmInstru.WIDTH                               :=Regs.Gemm_Width
     core.QuantInstru.zeroIn                             :=Regs.Quant_ZeroPoint
@@ -177,18 +177,19 @@ object Top extends App { //
     
     
   def GenerateTop(Slice:Int,Height:Int,Width:Int,Accu_Width:Int,Nums:Int,WW_Depth:Int):Unit={
-    verilog_path="./OnBoard/"+Slice.toString+"_"+Height.toString+"_"+Width.toString+"_"+Accu_Width.toString+"_"+Nums.toString+"_"+WW_Depth.toString
+    verilog_path="./OnBoard/BlackGlod/"+Slice.toString+"_"+Height.toString+"_"+Width.toString+"_"+Accu_Width.toString+"_"+Nums.toString+"_"+WW_Depth.toString
     Tcl_Config.Tcl_File_Path=verilog_path
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Accelerator_TopV2(Slice,Height,Width,Accu_Width,Nums,WW_Depth))
   }
   //在Message_Conv那里看如何设置Bram深度
-  // GenerateTop(1,8,8,32,5,24576)
+  GenerateTop(1,8,8,32,5,24576)
   // GenerateTop(2,8,8,32,5,12288)  
   // GenerateTop(3,8,8,32,5,8192)  
   // GenerateTop(3,8,64,32,5,1024)  
   // GenerateTop(4,8,32,32,5,1536)  
   // GenerateTop(4,8,64,32,5,768)  
     
-  GenerateTop(1,8,8,32,5,288)  
+  //ZedBoard
+  // GenerateTop(1,8,8,32,5,288)  
     
 }
