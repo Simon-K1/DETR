@@ -174,8 +174,6 @@ object Top extends App { //
     if(OnBoard){
         verilog_path="./OnBoard"
     }
-    
-    
   def GenerateTop(Slice:Int,Height:Int,Width:Int,Accu_Width:Int,Nums:Int,WW_Depth:Int):Unit={
     verilog_path="./OnBoard/BlackGlod/"+Slice.toString+"_"+Height.toString+"_"+Width.toString+"_"+Accu_Width.toString+"_"+Nums.toString+"_"+WW_Depth.toString
     Tcl_Config.Tcl_File_Path=verilog_path
@@ -188,7 +186,6 @@ object Top extends App { //
   // GenerateTop(3,8,64,32,5,1024)  
   // GenerateTop(4,8,32,32,5,1536)  
   // GenerateTop(4,8,64,32,5,768)  
-    
   //ZedBoard
   // GenerateTop(1,8,8,32,5,288)  
     

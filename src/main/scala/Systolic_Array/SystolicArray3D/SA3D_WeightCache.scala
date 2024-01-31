@@ -102,9 +102,10 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int,W_Depth:Int=1024
     val In_Col_Cnt=ForLoopCounter(In_Row_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col-1)//
     //In_Row_Cnt.valid一次，代表完整的一列被输入了。
     //val Raddr=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,io.Matrix_Row-1)//Bram读地址
-    val Read_Row_Base_Addr=Reg(UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits))init(0)//读权重的基地址,一列一列读，
-    val Write_Row_Base_Addr=Reg(UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits))init(0)//写权重的基地址，一列一列存
-    
+    val Read_Row_Base_Addr=Reg(UInt(log2Up(W_Depth*8) bits))init(0)//读权重的基地址,一列一列读，
+    val Write_Row_Base_Addr=Reg(UInt(log2Up(W_Depth) bits))init(0)//写权重的基地址，一列一列存
+    //↑--2024、1、31修了一个非常严重的bug，16bit的位宽无法支持1*8*8阵列的VitBase计算
+
     //输出行计数器
     val OutRow_Cnt=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,(io.Matrix_Row)-1)//输出行计数器,（要求输出通道必须是8的倍数）
     //
