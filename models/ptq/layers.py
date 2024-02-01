@@ -1,5 +1,6 @@
 # Copyright (c) MEGVII Inc. and its affiliates. All Rights Reserved.
 import math
+import os
 import numpy as np
 import torch
 import torch.nn as nn
@@ -119,6 +120,8 @@ class QConv2d(nn.Conv2d):
             for i, array in enumerate(Tensors):
                 data[var_name[i]] = array
             # 保存为 .mat 文件
+            if not os.path.exists(r'matlab'):#如果文件夹不存在则创建
+                os.makedirs(r'matlab')
             sio.savemat(r'matlab\Embedding_Conv.mat', data)
 
             #生成权重bin文件
@@ -371,8 +374,11 @@ class QLinear(nn.Linear):
             Bias_Int=gen_int_bias(S1,S2.squeeze(),self.bias)#获取bias/(S1S2)
             [Bias,out_bias_bin] = new_bias_ForMM(Z1, weight_quanted, Bias_Int)#Bias也需要被放大
             
-            Generate_Bin(weight_quanted,"LinearWeight","BinPath/"+Path)
-            Generate_Bin([np.array(Bias),Scale,Shift],"ConvQuant","BinPath/"+Path)
+            Generate_Bin(weight_quanted,"LinearWeight","BinPath/"+Path)#生成权重bin文件
+            Generate_Bin([np.array(Bias),Scale,Shift],"ConvQuant","BinPath/"+Path)#生成量化参数
+            Generate_Bin(q1,"LinearIn","BinPath/"+Path)
+            LinearOut_Quanted=out_quantizer.quant(F.linear(x, self.quantizer(self.weight), self.bias))
+            Generate_Bin(LinearOut_Quanted,"LinearOut","BinPath/"+Path)
 
     def forward(self, x):
         if self.calibrate:

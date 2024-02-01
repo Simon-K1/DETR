@@ -10,7 +10,7 @@ def Generate_Bin(Tensor,Type,Path):
     #path:存储路径
     if not os.path.exists(Path):#如果文件夹不存在则创建
         os.makedirs(Path)
-    if Type=="ImageIn":
+    if Type=="ImageIn":#[H，W，C]
         if Tensor.device.type=="cuda":
             Tensor=Tensor.to("cpu")
         Output_Reshape1=torch.permute(Tensor,[0,2,3,1])
@@ -21,7 +21,7 @@ def Generate_Bin(Tensor,Type,Path):
         ff=open (Path+"/ImageIn.bin",'w')
         int_output.tofile(ff)
         ff.close()
-    elif Type=="ImageOut":
+    elif Type=="ImageOut":#[H,W,C]
         if Tensor.device.type=="cuda":
             Tensor=Tensor.to("cpu")
         Output_Reshape1=torch.permute(Tensor,[0,2,3,1])
@@ -32,7 +32,7 @@ def Generate_Bin(Tensor,Type,Path):
         ff=open (Path+"/ImageOut.bin",'w')
         int_output.tofile(ff)
         ff.close()
-    elif Type=="ConvWeight":
+    elif Type=="ConvWeight":#[B,H,W,C]
         if Tensor.device.type=="cuda":
             Tensor=Tensor.to("cpu")
         Output_Reshape1=torch.permute(Tensor,[0,2,3,1])
@@ -55,12 +55,32 @@ def Generate_Bin(Tensor,Type,Path):
         ff.close()
     elif Type=="LinearWeight":#矩阵乘法的权重数据
         #输入格式：二维矩阵，输出格式：列优先输出的bin文件
-        if Tensor.device.type=="cuda":
+        if Tensor.device.type=="cuda":#[H,W]
             Tensor=Tensor.to("cpu")
         # Output_Reshape1=torch.permute(Tensor,[1,0])#转置
         Output_Reshape1=Tensor.numpy()#转numpy
         int_output= Output_Reshape1.astype(np.uint8)#转为int，因为之前的tensor是float
-        ff=open (Path+"/LinearWeight.bin",'w')
+        ff=open (Path+"/MatrixB.bin",'w')
+        int_output.tofile(ff)
+        ff.close()
+    elif Type=="LinearIn":#矩阵乘法的权重数据
+        #输入格式：二维矩阵，输出格式：列优先输出的bin文件
+        if Tensor.device.type=="cuda":#[H,W]
+            Tensor=Tensor.to("cpu")
+        # Output_Reshape1=torch.permute(Tensor,[1,0])#转置
+        Output_Reshape1=Tensor.numpy()#转numpy
+        int_output= Output_Reshape1.astype(np.uint8)#转为int，因为之前的tensor是float
+        ff=open (Path+"/MatrixA.bin",'w')
+        int_output.tofile(ff)
+        ff.close()
+    elif Type=="LinearOut":#矩阵乘法的权重数据
+        #输入格式：二维矩阵，输出格式：列优先输出的bin文件
+        if Tensor.device.type=="cuda":#[H,W]
+            Tensor=Tensor.to("cpu")
+        # Output_Reshape1=torch.permute(Tensor,[1,0])#转置
+        Output_Reshape1=Tensor.numpy()#转numpy
+        int_output= Output_Reshape1.astype(np.uint8)#转为int，因为之前的tensor是float
+        ff=open (Path+"/MatrixC.bin",'w')
         int_output.tofile(ff)
         ff.close()
     # elif Type=="ImageIn":#图片
