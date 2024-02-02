@@ -7,6 +7,7 @@ import xip.xil_SimpleDualBram
 import spinal.core
 import scala.tools.reflect.FrontEnd
 import spinal.lib.Delay
+import xip.xil_ila
 //实现权重矩阵的缓存与输出计算
 //初步思路:在所有计算开始前应该先缓存所有权重,
     //如果片上资源不够,应该进行矩阵切块,这里将权重矩阵切4块,也就是需要调用计算模块4次
@@ -60,7 +61,7 @@ case class WeightCache_Fsm(start:Bool)extends Area{
     }
 }
 
-class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Component{
+class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int,W_Depth:Int=1024) extends Component{
     //应该创建8列缓存单元,卷积核循环填充到这8个缓存单元中
     val Config=TopConfig()
     val io=new Bundle{
@@ -101,9 +102,10 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     val In_Col_Cnt=ForLoopCounter(In_Row_Cnt.valid,Config.WEIGHT_CACHE_MATRIX_COL_WIDTH,io.Matrix_Col-1)//
     //In_Row_Cnt.valid一次，代表完整的一列被输入了。
     //val Raddr=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,io.Matrix_Row-1)//Bram读地址
-    val Read_Row_Base_Addr=Reg(UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits))init(0)//读权重的基地址,一列一列读，
-    val Write_Row_Base_Addr=Reg(UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits))init(0)//写权重的基地址，一列一列存
-    
+    val Read_Row_Base_Addr=Reg(UInt(log2Up(W_Depth*8) bits))init(0)//读权重的基地址,一列一列读，
+    val Write_Row_Base_Addr=Reg(UInt(log2Up(W_Depth) bits))init(0)//写权重的基地址，一列一列存
+    //↑--2024、1、31修了一个非常严重的bug，16bit的位宽无法支持1*8*8阵列的VitBase计算
+
     //输出行计数器
     val OutRow_Cnt=ForLoopCounter(io.Raddr_Valid&&Fsm.currentState===WEIGHT_CACHE_STATUS.SA_COMPUTE,Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH,(io.Matrix_Row)-1)//输出行计数器,（要求输出通道必须是8的倍数）
     //
@@ -146,7 +148,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
     val Weight_Cache=Array.tabulate(WIDTH*SLICE){//所需要的权重缓存buf
         i=>def gen()={//这里用了8个4KB的Bram
             //4096*64bit是一个Bram资源，32K
-            val Weight_Bram=new xil_SimpleDualBram(DMA_WIDTH,2048,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
+            val Weight_Bram=new xil_SimpleDualBram(DMA_WIDTH,W_Depth,8,"Weight_Bram",i==0)//bram的深度必须正确配置,只能大不能小
             Weight_Bram.io.addra:=(In_Row_Cnt.count+Write_Row_Base_Addr).resized
             Weight_Bram.io.addrb:=(Read_Row_Base_Addr+OutRow_Cnt.count).resized
             // Weight_Bram.io.doutb:=0
@@ -178,8 +180,30 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Compone
         }
     }
     io.MatrixCol_Switch:=RegNext(MatrixCol_Switch)
+    
+    if(true){
+        val Debug_Signals=Array[Bits](
+            MatrixCol_Switch.asBits,
+            OutCol_Cnt.count.asBits,
+            Col_In_8_Cnt.count.asBits,
+            In_Row_Cnt.count.asBits,
+            In_Col_Cnt.count.asBits,
+            InData_Switch.asBits,
+            io.sData.ready.asBits,
+            io.sData.valid.asBits,
+            Fsm.currentState.asBits
+        )
+        
+        val Debug_Name=Array[String]("MatrixCol_Switch","OutCol_Cnt","Col_In_8_Cnt","In_Row_Cnt","In_Col_Cnt","InData_Switch","sready","svalid","fsm")
+        val ila=new xil_ila(Debug_Signals,true,"ila_Weightcache")
+        for(i<-0 to Debug_Signals.length-1){
+            ila.probe(i):=Debug_Signals(i)
+            Debug_Signals(i).setName("Debug_"+Debug_Name(i))
+        }
+    }
 }
-class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends Component{
+class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int,W_Depth:Int=1024) extends Component{
+    //Write Depth :权重缓存模块的写深度,默认可以支持VIT-BASE
     val Config=new TopConfig
     val io=new Bundle{
         // def DATA_IN_WIDTH=64
@@ -200,7 +224,7 @@ class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends C
         val MatrixCol_Switch=out UInt(SLICE*WIDTH bits)
     }
     noIoPrefix()
-    val WeightCache=new Weight_Cache(SLICE,HEIGHT,WIDTH,DMA_WIDTH)
+    val WeightCache=new Weight_Cache(SLICE,HEIGHT,WIDTH,DMA_WIDTH,W_Depth)
     WeightCache.io.start:=io.start
     WeightCache.io.Matrix_Col:=io.Matrix_Col
     WeightCache.io.Matrix_Row:=io.Matrix_Row
@@ -213,6 +237,8 @@ class WeightCache_Stream(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int) extends C
     WeightCache.io.sData.payload<>io.s_axis_s2mm_tdata
     WeightCache.io.sData.valid<>io.s_axis_s2mm_tvalid
     WeightCache.io.sData.ready<>io.s_axis_s2mm_tready
+    
+
 }
 
 object Weight_Gen extends App { 

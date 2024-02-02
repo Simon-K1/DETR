@@ -1,4 +1,4 @@
-package Systolic_Array
+package Systolic_Array.BackUp
 //实现卷积结果的整理，2023/3/14
 import spinal.core._
 import spinal.lib.slave
@@ -10,6 +10,8 @@ import spinal.lib.master
 import utils.ForLoopCounter
 import utils.AxisDataConverter
 import utils.SubstractLoopCounter
+import Systolic_Array.SystolicArray3D.{CONVOUTPUT_ENUM, ConvOutput_Fsm}
+
 //实现思路：构建SA_Row个Fifo缓存8行完整的数据后依次输出第一行，第二行...第8行的数据
 class ConvArrangeV3 extends Component{//卷积输出数据的数据排列，排列成通道优先的格式
     val Config=TopConfig()

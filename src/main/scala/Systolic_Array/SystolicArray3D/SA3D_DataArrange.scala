@@ -57,7 +57,7 @@ case class ConvOutput_Fsm(start:Bool)extends Area{
 }
 //实现思路：构建SA_Row个Fifo缓存8行完整的数据后依次输出第一行，第二行...第8行的数据
 class ConvArrangeV3(SLICE:Int,HEIGHT:Int,WIDTH:Int) extends Component{//卷积输出数据的数据排列，排列成通道优先的格式
-    val Config=TopConfig()
+    val Config=TopConfig()//#todo：这个模块的名字要改
     val io=new Bundle{
         val sData=in Vec(UInt(8*SLICE bits),HEIGHT)//前提：输入的数据已经对齐
         val sReady=out Bool()

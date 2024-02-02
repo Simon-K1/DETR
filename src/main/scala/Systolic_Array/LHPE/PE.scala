@@ -7,7 +7,7 @@ import utils.ForLoopCounter
 class dsp_marco(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int) extends BlackBox {
   val io = new Bundle{
     val CLK = in Bool()
-    val A = in SInt(A_WIDTH bits)
+    val A = in SInt(9 bits)//代尧修改
     val B = in SInt(B_WIDTH bits)
     val P =out SInt(OUT_WIDTH bits)
   }
@@ -53,8 +53,8 @@ class PE(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int,peConfig:PEConfig) extends Com
   }otherwise{
     io.PE_OUT:=0
   }
-
-  io.activate <> dsp.io.A   ////根据vaild将dsp输入改变
+  //代尧修改↓
+  S(B"1'b0")@@io.activate <> dsp.io.A   ////根据vaild将dsp输入改变
   io.weight <> dsp.io.B
   io.acount <> RegNext(io.activate)
   io.bcount <> RegNext(io.weight)

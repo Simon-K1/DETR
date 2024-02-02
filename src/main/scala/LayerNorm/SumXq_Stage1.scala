@@ -8,7 +8,6 @@ import xip.Mul
 import Systolic_Array.Quant.Quan
 import xip.xil_SimpleDualBram
 import javax.xml.transform.OutputKeys
-import Systolic_Array.ConvOutput_Ctrl
 //实现8并行度的累加计算
 object SUM_XQ_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
     val IDLE, INIT, LOAD_FIRST_ROW,ACCUMU,FINISH_LAST_ROW = newElement

@@ -1,4 +1,4 @@
-package Systolic_Array
+package Systolic_Array.SystolicArray3D
 import spinal.core._
 import spinal.lib._
 import utils._
@@ -555,9 +555,11 @@ class  Img2Col_OutPut extends Component{
         //ila===============================================================================================
     if(Config.ila){
         val Debug_Signals=Array[Bits](Fsm.currentState.asBits,io.SA_Idle.asBits,io.SA_End.asBits)
+        val Debug_Name=Array[String]("Fsm_currentState","SA_Idle","SA_End")
         val ila=new xil_ila(Debug_Signals,true,"ila_Img2Col")
         for(i<-0 to Debug_Signals.length-1){
             ila.probe(i):=Debug_Signals(i)
+            Debug_Signals(i).setName("Debug_"+Debug_Name(i))
         }
     }
 

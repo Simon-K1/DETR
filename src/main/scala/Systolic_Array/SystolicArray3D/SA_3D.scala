@@ -7,9 +7,9 @@ import spinal.lib.Delay
 class dsp_marco(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int) extends BlackBox {
   val io = new Bundle{
     val CLK = in Bool()
-    val A = in SInt(A_WIDTH bits)
+    val A = in SInt(9 bits)
     val B = in SInt(B_WIDTH bits)
-    val P =out SInt(OUT_WIDTH bits)
+    val P =out SInt(17 bits)
     
 }
 noIoPrefix()
@@ -39,7 +39,7 @@ class PE(A_WIDTH: Int, B_WIDTH: Int,OUT_WIDTH:Int) extends Component{
   }elsewhen(RegNext(io.valid)){//这里dsp计算延时为1，todo：可能存在一个雷
     reg1:=dsp.io.P+reg1
   }
-  io.activate <> dsp.io.A   //根据valid将dsp输入改变
+  S(B"1'b0")@@io.activate <> dsp.io.A   ////根据vaild将dsp输入改变
   io.weight <> dsp.io.B
   io.acount <> RegNext(io.activate)
   io.bcount <> RegNext(io.weight)
@@ -101,6 +101,16 @@ class SA_2D(HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,CVALID:Boolean) extends Componen
       }
     }
 
+    //跑200M时发现这个地方的Cvalid时序有问题，想了一个新办法，让数据流水输出而不是switch输出
+    
+    // for(i<-0 to HEIGHT-1){
+    //   val Output_Pipeline=Vec(Reg(SInt(32 bits))init(0),WIDTH)
+    //   MatrixC(i)=PEArry(i)(0).io.finish?RegNext(PEArry(i)(0).io.PE_OUT)|
+    //   C_Valid(i):=RegNext()
+    //   for(j<-0 to WIDTH-1){
+        
+    //   }
+    // }
     
 
     for(row<-0 to HEIGHT-1){
@@ -176,7 +186,7 @@ class SA_3D(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int) extends Component{
 //具体查看当前文件夹下的pic2.png
 object ConvOutput extends App { //
     val verilog_path="./verilog/SA_3D/verilog" 
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D(1,8,64,32))
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_3D(1,8,8,32))
     SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new SA_2D(8,8,32,false))//
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)

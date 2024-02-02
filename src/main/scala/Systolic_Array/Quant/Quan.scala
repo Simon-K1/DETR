@@ -9,6 +9,7 @@ import spinal.lib.Delay
 import spinal.lib.StreamFifo
 // import spinal.core.internals.Operator
 import xip.xil_SimpleDualBram
+import xip.xil_ila
 //实现卷积和权重的量化
     //先存bias，再存Scale，再存shift
 object ConvQuan_ENUM extends SpinalEnum(defaultEncoding = binaryOneHot) {//读取一个矩阵数据并且计算累加和状态
@@ -97,12 +98,13 @@ class ConvQuant extends Component{
         val zeroIn   =in UInt(8 bits)
         val SAOutput_Valid=in Bool()//脉动阵列输出的数据有效标志，用于将量化参数从
 
-
+        val Quant_State=out Bool()//2023.11.20添加这个信号是为了给外面一个ready信号
         
     }
     
     noIoPrefix()
     val Fsm=ConvQuan_Fsm(io.start&&(~RegNext(io.start)))
+    io.Quant_State:=Fsm.currentState===ConvQuan_ENUM.QUANT
     val Init_Count=WaCounter(Fsm.currentState===ConvQuan_ENUM.INIT,3,5)//数5下进行初始化
     Fsm.Init_End:=Init_Count.valid
     Fsm.LayerEnd:=io.LayerEnd//结束信号由外层给到
@@ -153,6 +155,22 @@ class ConvQuant extends Component{
     Quant_Module.io.shiftIn:=ShiftCache.io.doutb
     Quant_Module.io.zeroIn:=io.zeroIn
     io.dataOut:=Quant_Module.io.dataOut
+
+
+
+    if(Config.ila){
+        val Debug_Signals=Array[Bits](
+            Quant_Module.io.dataOut.asBits,
+            io.SAOutput_Valid.asBits
+        )
+        
+        val Debug_Name=Array[String]("dataOut","SAOutput_Valid")
+        val ila=new xil_ila(Debug_Signals,true,"ila_QuantModule")
+        for(i<-0 to Debug_Signals.length-1){
+            ila.probe(i):=Debug_Signals(i)
+            Debug_Signals(i).setName("Debug_"+Debug_Name(i))
+        }
+    }
 }
 
 object QuantGen extends App { 

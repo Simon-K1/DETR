@@ -12,7 +12,7 @@ object AddSubConfig {
     val add = "Add"
 }
 
-class AddSub(A_WIDTH: Int, B_WIDTH: Int, S_WIDTH: Int, A_TYPE: String, B_TYPE: String, clockDomain: ClockDomain, componentName: String)
+class AddSub(A_WIDTH: Int, B_WIDTH: Int, S_WIDTH: Int, A_TYPE: String, B_TYPE: String, clockDomain: ClockDomain, componentName: String,File_Path:String=Tcl_File_Path)
     extends BlackBox {
     val io = new Bundle {
         val A = if (A_TYPE == AddSubConfig.signed) {
@@ -39,14 +39,14 @@ class AddSub(A_WIDTH: Int, B_WIDTH: Int, S_WIDTH: Int, A_TYPE: String, B_TYPE: S
 }
 
 object AddSub {
-    private def genTcl(A_WIDTH: Int, B_WIDTH: Int, P_WIDTH: Int, A_TYPE: String, B_TYPE: String, PIPELINE_STAGE: Int, RESOURCES_TYPE: String, ADD_MODE: String, componentName: String): Unit = {
+    private def genTcl(A_WIDTH: Int, B_WIDTH: Int, P_WIDTH: Int, A_TYPE: String, B_TYPE: String, PIPELINE_STAGE: Int, RESOURCES_TYPE: String, ADD_MODE: String, componentName: String,File_Path:String): Unit = {
         import java.io._
         val createAddCmd = s"set addSubExit [lsearch -exact [get_ips $componentName] $componentName]\n" +
             s"if { $$addSubExit <0} {\n" +
             s"create_ip -name c_addsub -vendor xilinx.com -library ip -version 12.0 -module_name $componentName\n" +
             s"}\n"
-        FileUtils.forceMkdir(new File(Tcl_File_Path + File.separator + "tcl"))
-        val tclHeader = new PrintWriter(new File(Tcl_File_Path + File.separator + "tcl" + File.separator + s"generate$componentName.tcl"))
+        FileUtils.forceMkdir(new File(File_Path + File.separator + "tcl"))
+        val tclHeader = new PrintWriter(new File(File_Path + File.separator + "tcl" + File.separator + s"generate$componentName.tcl"))
         tclHeader.write(createAddCmd)
         tclHeader.write(s"set_property -dict [list ")
         tclHeader.write(s"CONFIG.A_Width {$A_WIDTH} ")
@@ -72,9 +72,9 @@ object AddSub {
 
     }
 
-    def apply(A_WIDTH: Int, B_WIDTH: Int, S_WIDTH: Int, A_TYPE: String, B_TYPE: String, PIPELINE_STAGE: Int, RESOURCES_TYPE: String, clockDomain: ClockDomain, ADD_MODE: String, componentName: String, genTclScript: Boolean = true) = {
+    def apply(A_WIDTH: Int, B_WIDTH: Int, S_WIDTH: Int, A_TYPE: String, B_TYPE: String, PIPELINE_STAGE: Int, RESOURCES_TYPE: String, clockDomain: ClockDomain, ADD_MODE: String, componentName: String, genTclScript: Boolean = true,File_Path:String=Tcl_File_Path) = {
         if (genTclScript) {
-            genTcl(A_WIDTH, B_WIDTH, S_WIDTH, A_TYPE, B_TYPE, PIPELINE_STAGE, RESOURCES_TYPE, ADD_MODE, componentName)
+            genTcl(A_WIDTH, B_WIDTH, S_WIDTH, A_TYPE, B_TYPE, PIPELINE_STAGE, RESOURCES_TYPE, ADD_MODE, componentName,File_Path)
         }
         val addSub = new AddSub(A_WIDTH, B_WIDTH, S_WIDTH, A_TYPE, B_TYPE, clockDomain, componentName)
         addSub

@@ -10,8 +10,9 @@ import spinal.lib.bus.misc.SizeMapping
 import spinal.lib.slave
 import xip.xil_ila
 import utils.TopConfig
+import utils.Tcl_Config
 
-class Accelerator_Top extends Component{
+class Accelerator_Top extends Component{//此版本已失效（此版本用的是一个大状态机做全局控制，现在已经不那样用了）
   val Config=TopConfig()
   val regSData = slave(AxiLite4(log2Up(1 MiB), 32))//地址位宽-数据位宽
   AxiLite4SpecRenamer(regSData)
@@ -70,12 +71,13 @@ class Accelerator_Top extends Component{
 
 
 
-class Accelerator_TopV2 extends Component{
+class Accelerator_TopV2(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODULE_NUM:Int=5,WW_Detpth:Int=1024) extends Component{
+  //WW_Detpth 代表的是权重缓存模块Weight cache 的write depth 
   val Config=TopConfig()
   val regSData = slave(AxiLite4(log2Up(1 MiB), 32))//地址位宽-数据位宽
   AxiLite4SpecRenamer(regSData)
   val Regs=new RegTable
-  val core=new SA_3D_SwitchVersion(1,8,64,32,4)//采用上位机手动switch的方法
+  val core=new SA_3D_SwitchVersion(SLICE,HEIGHT,WIDTH,ACCU_WITDH,MODULE_NUM,WW_Detpth)//(1,8,64,32,4)//采用上位机手动switch的方法
   val s_axis_s2mm=new Bundle{
     val Data_Width=64
     val tdata=in UInt(Data_Width bits)
@@ -123,7 +125,8 @@ class Accelerator_TopV2 extends Component{
 
     core.Img2Col_Instru.OutMatrix_Col                   :=Regs.OutMatrix_Col
     core.Img2Col_Instru.OutMatrix_Row                   :=Regs.OutMatrix_Row//输出矩阵的行数
-
+    core.Gemm_Instru.Height                        :=Regs.Gemm_Height
+    core.Gemm_Instru.Width                         :=Regs.Gemm_Width
 //   core.GemmInstru.HEIGHT                              :=Regs.Gemm_Height
 //   core.GemmInstru.WIDTH                               :=Regs.Gemm_Width
     core.QuantInstru.zeroIn                             :=Regs.Quant_ZeroPoint
@@ -153,7 +156,9 @@ class Accelerator_TopV2 extends Component{
       core.Img2Col_Instru.WeightMatrix_Row.asBits,              
       core.Img2Col_Instru.OutMatrix_Col.asBits,                 
       core.Img2Col_Instru.OutMatrix_Row.asBits,
-      core.QuantInstru.zeroIn.asBits                 
+      core.QuantInstru.zeroIn.asBits       
+
+             
   )
     val ila=new xil_ila(Debug_Signals,true,"ila_Accelerator_Top")
     for(i<-0 to Debug_Signals.length-1){
@@ -163,15 +168,25 @@ class Accelerator_TopV2 extends Component{
   }
 
 
-
-object Top extends App { 
-    val OnBoard=false
+object Top extends App { //
+    val OnBoard=true
     var verilog_path="./verilog/SA_3D" 
     if(OnBoard){
         verilog_path="./OnBoard"
     }
-    
-  
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Accelerator_TopV2)
+  def GenerateTop(Slice:Int,Height:Int,Width:Int,Accu_Width:Int,Nums:Int,WW_Depth:Int):Unit={
+    verilog_path="./OnBoard/BlackGlod/"+Slice.toString+"_"+Height.toString+"_"+Width.toString+"_"+Accu_Width.toString+"_"+Nums.toString+"_"+WW_Depth.toString
+    Tcl_Config.Tcl_File_Path=verilog_path
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Accelerator_TopV2(Slice,Height,Width,Accu_Width,Nums,WW_Depth))
+  }
+  //在Message_Conv那里看如何设置Bram深度
+  GenerateTop(1,8,8,32,5,24576)
+  // GenerateTop(2,8,8,32,5,12288)  
+  // GenerateTop(3,8,8,32,5,8192)  
+  // GenerateTop(3,8,64,32,5,1024)  
+  // GenerateTop(4,8,32,32,5,1536)  
+  // GenerateTop(4,8,64,32,5,768)  
+  //ZedBoard
+  // GenerateTop(1,8,8,32,5,288)  
     
 }

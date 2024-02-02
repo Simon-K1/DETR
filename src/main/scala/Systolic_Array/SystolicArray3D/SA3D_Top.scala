@@ -3,7 +3,6 @@ package Systolic_Array.SystolicArray3D
 import spinal.core._
 import spinal.lib.slave
 import utils._
-import Systolic_Array.Img2ColStreamV2
 import spinal.lib.Delay
 import Systolic_Array.Quant.ConvQuant
 import LayerNorm.LayerNorm_Top
