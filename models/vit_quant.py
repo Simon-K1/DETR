@@ -109,7 +109,7 @@ class Attention(nn.Module):
         )  # make torchscript happy (cannot use tensor as tuple)
         attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = self.qact_attn1(attn)
-        attn = self.log_int_softmax(attn, self.qact_attn1.quantizer.scale)
+        attn = self.log_int_softmax(attn, self.qact_attn1.quantizer.scale,self.qact_attn1.quantizer.zero_point)
         attn = self.attn_drop(attn)
         x = (attn @ v).transpose(1, 2).reshape(B, N, C)
         x = self.qact2(x)

@@ -666,20 +666,38 @@ class QIntSoftmax(nn.Module):
             return z, scaling_factor
 
         def int_exp(x_int, scaling_factor):
-            x0 = -0.6931  # -ln2
-            n = 30  # sufficiently large integer
-            x0_int = torch.floor(x0 / scaling_factor)
-            x_int = torch.max(x_int, n * x0_int)
-            q = torch.floor(x_int / x0_int)
-            r = x_int - x0_int * q
-            exp_int, exp_scaling_factor = int_polynomial(r, scaling_factor)
-            exp_int = torch.clamp(torch.floor(exp_int * 2**(n - q)), min=0)
-            scaling_factor = exp_scaling_factor / 2**n
-            return exp_int, scaling_factor
+            if True:
+                x0 = -0.6931  # -ln2
+                n = 30  # sufficiently large integer
+                x0_int = torch.floor(x0 / scaling_factor)
+                x_int = torch.max(x_int, n * x0_int)
+                q = torch.floor(x_int / x0_int)#这个q就是公式中的z，z=xq*s/(-ln2)
+                r = x_int - x0_int * q
+                exp_int, exp_scaling_factor = int_polynomial(r, scaling_factor)
+                exp_int = torch.clamp(torch.floor(exp_int * 2**(n - q)), min=0)
+                scaling_factor = exp_scaling_factor / 2**n
+                return exp_int, scaling_factor
+            else:
+                #下面是自己写得，有问题
+                ln2 = -0.6931  # -ln2
+                n = 30  # sufficiently large integer
+                # x0_int = torch.floor(scaling_factor/ln2)
+                x_int = torch.max(x_int, n)
+                z=torch.floor(x_int*torch.floor((scaling_factor/(ln2)*pow(2,32))*x_int/pow(2,32)))
+
+                r = x_int - scaling_factor/ln2 *z
+                exp_int, exp_scaling_factor = int_polynomial(r, scaling_factor)
+                exp_int = torch.clamp(torch.floor(exp_int * 2**(n - q)), min=0)
+                scaling_factor = exp_scaling_factor / 2**n
+                return exp_int, scaling_factor                
 
         x_int = x / scaling_factor
         x_int_max, _ = x_int.max(dim=-1, keepdim=True)
         x_int = x_int - x_int_max
+        Generate_Bin(x_int[0,0,:,:],"LinearIn","BinPath/Soft")
+        # matrices = [Correct.squeeze().to('cpu')]
+        # if True: #将tensor转化为matlab格式
+        #     tensors_to_mat(matrices, 'Softmax_tensors.mat')
         exp_int, exp_scaling_factor = int_exp(x_int, scaling_factor)
         exp_int_sum = exp_int.sum(dim=-1, keepdim=True)
         return exp_int, exp_int_sum
@@ -709,15 +727,19 @@ class QIntSoftmax(nn.Module):
             exp_int = torch.clamp(torch.floor(exp_int * 2**(n - q)), min=0)
             scaling_factor = exp_scaling_factor / 2**n
             return exp_int, scaling_factor
+
         x_int = x / scaling_factor
+        Generate_Bin(x_int,"LinearIn","BinPath/Soft")
         x_int_max, _ = x_int.max(dim=-1, keepdim=True)
         x_int = x_int - x_int_max
         exp_int, exp_scaling_factor = int_exp(x_int, scaling_factor)
         exp_int_sum = exp_int.sum(dim=-1, keepdim=True)
+
+        
         return exp_int, exp_int_sum         
     
           
-    def forward(self, x, scale):
+    def forward(self, x, scale,zero_point):
         Pow2=False
         if self.log_i_softmax and scale is not None:
             if not Pow2:
@@ -730,10 +752,10 @@ class QIntSoftmax(nn.Module):
                 deq_softmax[mask] = 0
                 Correct=x.softmax(dim=-1)
                 matrices = [Correct.squeeze().to('cpu'), deq_softmax.squeeze().to('cpu')]
-                if False: #将tensor转化为matlab格式
+                if True: #将tensor转化为matlab格式
                     tensors_to_mat(matrices, 'Softmax_tensors.mat')
 
-
+            
                 return deq_softmax#这里返回的也是反量化后的浮点值，下层模块拿到这些浮点值后再用一下量化就又变成定点了
             else:
                 Row_Sum=(torch.pow(2,x-x.max(-1).values.unsqueeze(-1))).sum(-1).unsqueeze(-1)#先算一下每一行的指数累加和作为分母                
