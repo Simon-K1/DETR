@@ -651,7 +651,7 @@ class QIntSoftmax(nn.Module):
         return big
 
     @staticmethod
-    def int_softmax(x, scaling_factor):
+    def int_softmax(x, scaling_factor,zero_point):
 
         def int_polynomial(x_int, scaling_factor):
             coef = [0.35815147, 0.96963238, 1.]  # ax**2 + bx + c
@@ -672,6 +672,8 @@ class QIntSoftmax(nn.Module):
                 x0_int = torch.floor(x0 / scaling_factor)
                 x_int = torch.max(x_int, n * x0_int)
                 q = torch.floor(x_int / x0_int)#这个q就是公式中的z，z=xq*s/(-ln2)
+                Z_Scaling=torch.floor(scaling_factor/x0*pow(2,16))
+                q = torch.floor(x_int*Z_Scaling/pow(2,16))#这个q就是公式中的z，z=xq*s/(-ln2)
                 r = x_int - x0_int * q
                 exp_int, exp_scaling_factor = int_polynomial(r, scaling_factor)
                 exp_int = torch.clamp(torch.floor(exp_int * 2**(n - q)), min=0)
@@ -692,9 +694,10 @@ class QIntSoftmax(nn.Module):
                 return exp_int, scaling_factor                
 
         x_int = x / scaling_factor
+        Generate_Bin(x_int[0,0,:,:]+zero_point,"LinearIn","BinPath/Soft")
         x_int_max, _ = x_int.max(dim=-1, keepdim=True)
         x_int = x_int - x_int_max
-        Generate_Bin(x_int[0,0,:,:],"LinearIn","BinPath/Soft")
+        
         # matrices = [Correct.squeeze().to('cpu')]
         # if True: #将tensor转化为matlab格式
         #     tensors_to_mat(matrices, 'Softmax_tensors.mat')
@@ -743,7 +746,7 @@ class QIntSoftmax(nn.Module):
         Pow2=False
         if self.log_i_softmax and scale is not None:
             if not Pow2:
-                exp_int, exp_int_sum = self.int_softmax(x, scale)
+                exp_int, exp_int_sum = self.int_softmax(x, scale,zero_point)
                 softmax_out = torch.round(exp_int_sum / exp_int)
                 rounds = self.log_round(softmax_out)
                 mask = rounds >= 2**self.bit_type.bits#这里的bits为4，不是8，需要注意
