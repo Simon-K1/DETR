@@ -5,12 +5,9 @@ FromPytorch=1;
 PytorchPath="E:\Transformer\Matlab\main\Tests\SA_3D\Pytorch\2_Linear"%修改成Pytorch生成的bin文件地址
 if(~exist("matlab.mat","file"))
     MatrixA_Size=[197,768];%修改
-    MatrixB_Size=[MatrixA_Size(2),640];%修改
-    Out_Channel=MatrixB_Size(2);%不修改
+    MatrixB_Size=[MatrixA_Size(2),7];%修改
     BinFile_Channel=2304;%一般不修改，修改的时候必须和bin文件的Channel对应，主要用来仿真的
-    if mod(MatrixB_Size(2),8)
-         error('Error:B的列数必须为8的倍数\n');%目前要求卷积输出通道必须是8的倍数，但是GEMM的话还不知道需不需要8的倍数
-    end
+
     if ~FromPytorch
         Matrix_A=randi(50,MatrixA_Size);
         Matrix_B=randi(50,MatrixB_Size);
@@ -35,18 +32,29 @@ if(~exist("matlab.mat","file"))
         Bias=Bias_Scale_Shift(1:BinFile_Channel);
         Scale=Bias_Scale_Shift(BinFile_Channel+1:2*BinFile_Channel);
         Shift=Bias_Scale_Shift(2*BinFile_Channel+1:3*BinFile_Channel);
-        Bias=Bias(1:Out_Channel);
-        Scale=Scale(1:Out_Channel);
-        Shift=Shift(1:Out_Channel);
+        Bias=Bias(1:MatrixB_Size(2));
+        Scale=Scale(1:MatrixB_Size(2));
+        Shift=Shift(1:MatrixB_Size(2));
         
         Matrix_C=Matrix_A*Matrix_B;
     %     %再读图片
     %     fid=fopen(PytorchPath+"ImageIn.bin","r")
     %     Feature_In=fread(fid,fliplr(size(Feature_In)),"uint8")'%如果图片大小为[224*224*16]图片被展平成二维矩阵，前8个点代表图片第一行第一个点的前8通道，后8个点可就是第一个点的后8通道
     %     fclose(fid);
-         save("matlab.mat")
-    end
 
+    end
+    if mod(MatrixB_Size(2),8)
+         warning('Error:B的列数必须为8的倍数,开始补零\n');%目前要求卷积输出通道必须是8的倍数，但是GEMM的话还不知道需不需要8的倍数
+         %先计算权重矩阵和量化参数需要被补多少列0
+         
+        Padding_Cols=ceil(MatrixB_Size(2)/8)*8-MatrixB_Size(2);
+        Matrix_B=[Matrix_B,zeros(MatrixB_Size(1),Padding_Cols)];
+        Bias=[Bias',zeros(1,Padding_Cols)];
+        Shift=[Shift',zeros(1,Padding_Cols)];
+        Scale=[Scale',zeros(1,Padding_Cols)];
+        MatrixB_Size=[MatrixB_Size(1),ceil(MatrixB_Size(2)/8)*8];
+    end
+    save("matlab.mat")
 else
     load("matlab.mat");
 end

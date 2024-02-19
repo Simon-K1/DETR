@@ -2,7 +2,8 @@
     % 图片大小，步长等相关信息需要手动配置
 clear
 
-ProjDir="E:\Transformer\Matlab\main\Tests\SA_3D\SA_3_8_64\Pytorch_Base";%修改
+ProjDir="E:\Transformer\Matlab\main\Tests\SA_3D\SA_3_8_64\Pytorch_base";%修改
+PytorchPath="E:\Transformer\Transformer_Arithmatic\Transformer_Main\BinPath\"
 if exist(ProjDir,'dir')
     warning("文件夹已经存在！！")
     cd(ProjDir)
@@ -15,7 +16,7 @@ Drop_Message=1;%将图片继续补零以匹配卷积不丢失信息
 WEIGHT_VERSION=1;%权重缓存模块的版本，可选1（V1），2（V2，已失效）
 Feature_Size=224;%图片大小224*224
 Feature_Channel=8;%图片通道
-Out_Channel=8;%输出图片通道，要修改
+Out_Channel=768;%输出图片通道，要修改
 BinFile_Channel=768;%一般来说binfile_channel和Out_Channel一样
 
 Stride=16;%要修改
@@ -151,7 +152,7 @@ if FromPytorch
         %有时候OnBoardTest.bin文件的channel是768，但是仿真的时候缓存768这么多数据很耗时间
         %所以只提取Bin文件里的前8通道进行仿真
     end
-    PytorchPath="Pytorch/"
+    
     fid=fopen(PytorchPath+"ConvWeight.bin")
     WeightMatrix=fread(fid,size(WeightMatrix),"int8")
     fclose(fid);

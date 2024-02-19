@@ -48,6 +48,7 @@ if exist("matlab.mat",'file')
     fprintf(fid,"QK^T：Mac:%.3f,Delay:%.3f,Gops:%.3f\n",QK_MACs*HeadNums,QK_Compute,QK_Gops);
     %SoftMax
     SoftMax_Time=(ceil(A_Size(1)/LayerNorm_Parall)+1)*(A_Size(1)+randi([10,33],1,1))*CLK_CYCLE;
+    SoftMax_Time=SoftMax_Time*1;
     Encoder_Time=Encoder_Time+SoftMax_Time;
     fprintf(fid,"Softmax%.3f\n",SoftMax_Time);
     %QKV

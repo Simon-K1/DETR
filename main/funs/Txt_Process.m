@@ -1,5 +1,5 @@
 % 指定文件夹路径
-folder = 'E:\Transformer\Spinal\OnBoard\1_8_8_32_5_288\tcl';
+folder = 'E:\Transformer\Spinal\OnBoard\BlackGlod\1_8_8_32_5_24576\ila';
 
 % 获取文件夹中的所有 txt 文件
 fileList = dir(fullfile(folder, '*.tcl'));
