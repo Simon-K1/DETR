@@ -128,7 +128,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int,W_Depth:Int=1024
         Col_In_8_Cnt.clear
         Read_Row_Base_Addr:=0//输出全部数据后，也就是一个完整的输出通道都算完了，读数据基地址移归位
     }elsewhen(OutRow_Cnt.valid){
-        Read_Row_Base_Addr:=Read_Row_Base_Addr+io.Matrix_Row
+        Read_Row_Base_Addr:=Read_Row_Base_Addr+io.Matrix_Row.resized
     }
     when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
         InData_Switch:=1
@@ -138,7 +138,7 @@ class Weight_Cache(SLICE:Int,HEIGHT:Int,WIDTH:Int,DMA_WIDTH:Int,W_Depth:Int=1024
     when(Fsm.currentState===WEIGHT_CACHE_STATUS.INIT){
         Write_Row_Base_Addr:=0
     }elsewhen(Col_In_8_Cnt.valid){
-        Write_Row_Base_Addr:=Write_Row_Base_Addr+Matrix_In_MaxCnt
+        Write_Row_Base_Addr:=Write_Row_Base_Addr+Matrix_In_MaxCnt.resized
     }
     Fsm.Weight_All_Cached:=In_Col_Cnt.valid
     io.Weight_Cached:=In_Col_Cnt.valid

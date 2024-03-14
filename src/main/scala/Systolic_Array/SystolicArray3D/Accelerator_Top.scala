@@ -190,6 +190,16 @@ object Top extends App { //
   // GenerateTop(1,8,8,32,5,288)  
 
   //设计空间探索
-  GenerateTop(64,8,1,32,5,24576)
+  // GenerateTop(64,8,1,32,5,24576)
     
+
+  //卢浩的配置
+  GenerateTop(1,8,8,32,5,24576)
+ // GenerateTop(2,8,8,32,5,12288) 
+  GenerateTop(3,8,8,32,5,8192) 
+
+ GenerateTop(4,8,32,32,5,1536) 
+
+ GenerateTop(3,8,64,32,5,1024) 
+ GenerateTop(4,8,64,32,5,768)
 }
