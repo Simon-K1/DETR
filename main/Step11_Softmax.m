@@ -38,10 +38,19 @@ fclose(fid);
 
 %开始模拟论文的计算
 Max=max(data,[],2);
-data_sub_Max=data-Max;
+Xq_Sub_Max=data-Max;
 ln2=0.6931;
 Scaling_Factor=0.2550701201
-data_sub_Max=max(data_sub_Max,30*floor(-1*ln2/Scaling_Factor))
+Xq_Sub_Max=max(Xq_Sub_Max,30*floor(-1*ln2/Scaling_Factor))
 Z_Scale=floor(-1*(Scaling_Factor/0.6931)*2^16)
-Z_Tmp=data_sub_Max*Z_Scale
-Z=floor(Z_Tmp/2616)
+Z_Tmp=Xq_Sub_Max*Z_Scale
+Z=floor(Z_Tmp/2^16)%计算得到Z的结果
+
+%拿到Z后，继续计算P以及用计算I-Exp
+P=Xq_Sub_Max-Z*floor(-1*ln2/Scaling_Factor)
+%接下来开始计算I-Exp
+f1=1527.0942;
+f2=10;
+f3=42;
+Mul_1=(P+f2).*P
+Mul_1=Mul_1+f3
