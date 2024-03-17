@@ -5,9 +5,9 @@ jobId=[1 1 1 1 1,2 2 2 2 2,3 3 3 3 3,4 4 4 4 4,5 5 5 5 5,6 6 6 6 6 6];
 % GTC=ganttChart(startT,durationT,jobId);
 % GTC=ganttChart(startT,durationT,jobId,'Curvature',.4);
 
-startT=[T_Img2Col.startT,T_A.startT,T_B.startT,T_C.startT,T_Concat.startT,T_LayerNorm.startT,T_Gemm.startT,T_Softmax.startT,T_Add.startT]
-durationT=[T_Img2Col.durationT,T_A.durationT,T_B.durationT,T_C.durationT,T_Concat.durationT,T_LayerNorm.durationT,T_Gemm.durationT,T_Softmax.durationT,T_Add.durationT]
-jobId=[T_Img2Col.jobId,T_A.jobId,T_B.jobId,T_C.jobId,T_Concat.jobId,T_LayerNorm.jobId,T_Gemm.jobId,T_Softmax.jobId,T_Add.jobId]
+startT=[T_Img2Col.startT,T_A.startT,T_B.startT,T_C.startT,T_Concat.startT,T_LayerNorm.startT,T_Softmax.startT,T_Add.startT]
+durationT=[T_Img2Col.durationT,T_A.durationT,T_B.durationT,T_C.durationT,T_Concat.durationT,T_LayerNorm.durationT,T_Softmax.durationT,T_Add.durationT]
+jobId=[T_Img2Col.jobId,T_A.jobId,T_B.jobId,T_C.jobId,T_Concat.jobId,T_LayerNorm.jobId,T_Softmax.jobId,T_Add.jobId]
 GTC=ganttChart(startT,durationT,jobId);
 %卷积
 %1     Img2Col
@@ -39,14 +39,14 @@ if exist("matlab.mat",'file')
     B_Size=[KernelSize^2*Feature_Channel,Out_Channel];
     %% 卷积计算
     T_Img2Col=GantTime(1);
-    T_Gemm=GantTime(2);
-    T_A=GantTime(3);
-    T_B=GantTime(4);
-    T_C=GantTime(5);
-    T_LayerNorm=GantTime(6);
-    T_Softmax=GantTime(7);
-    T_Concat=GantTime(8);
-    T_Add=GantTime(9);
+    T_A=GantTime(2);
+    T_A=GantTime(2);
+    T_B=GantTime(3);
+    T_C=GantTime(4);
+    T_LayerNorm=GantTime(5);
+    T_Softmax=GantTime(6);
+    T_Concat=GantTime(7);
+    T_Add=GantTime(8);
     Fixed_Latency=0.001%特定时间延时0.001ms
 
     [Conv_Cache,Conv_Compute,Conv_MACS]=GemmTime(A_Size,B_Size,[Slice,Height,Width],Freq,DMA_WDITH);
@@ -89,16 +89,16 @@ if exist("matlab.mat",'file')
 
     for j=1:3
         for i=1:HeadNums
-            if i==1
+            if i==1&&j==1
                 [Linear1_Cache,Linear1_Compute,Linear1_MACs]=GemmTime(C_Size,[C_Size(2),C_Size(2)/HeadNums],[Slice,Height,Width],Freq,DMA_WDITH);
                 T_B.AddTime(T_LayerNorm.LastEnd,Linear1_Cache);
-                T_Gemm.AddTime(T_LayerNorm.LastEnd,Linear1_Compute)
-                T_C.AddTime(T_Gemm.LastStart+0.01,Linear1_Compute);
+                T_A.AddTime(T_LayerNorm.LastEnd,Linear1_Compute)
+                T_C.AddTime(T_A.LastStart+0.01,Linear1_Compute);
             else
                 [Linear1_Cache,Linear1_Compute,Linear1_MACs]=GemmTime(C_Size,[C_Size(2),C_Size(2)/HeadNums],[Slice,Height,Width],Freq,DMA_WDITH);
                 T_B.AddTime(T_C.LastEnd,Linear1_Cache);
-                T_Gemm.AddTime(T_C.LastEnd,Linear1_Compute)
-                T_C.AddTime(T_Gemm.LastStart+0.01,Linear1_Compute);
+                T_A.AddTime(T_C.LastEnd,Linear1_Compute)
+                T_C.AddTime(T_A.LastStart+0.01,Linear1_Compute);
             end
         end
     end
@@ -231,6 +231,7 @@ if exist("matlab.mat",'file')
     T_A.AddTime(T_LayerNorm.LastEnd,FCN_Compute);
     T_B.AddTime(T_C.LastEnd,FCN_Cache);
     T_C.AddTime(T_A.LastStart+0.005,FCN_Compute)
+    
     
     fclose all;
 else

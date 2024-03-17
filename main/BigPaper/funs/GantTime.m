@@ -34,5 +34,17 @@ classdef GantTime < handle
         function [Last]=LastEnd(obj)
             Last=LastStart(obj)+LastDuration(obj);
         end
+        function [Time_All]=LayerAdd(obj,Data_Size,InPara,Freq)
+            %UNTITLED7 此处提供此函数的摘要
+            %Data1,Data2--两个要拼接的矩阵的大小，InPara/OutPara：输入/输出并行度，一下能得到多少个点
+            CLK_CYCLE=((1/(Freq*10^6))*10^9)/10^6;
+            CLK_Nums=ceil(Data_Size(2)/InPara)*Data_Size(1)%边进边计算即可
+            Time_All=CLK_Nums*CLK_CYCLE;
+        end
+        function [Time_All]=LayerSoftmax(obj,MatrixSize,Freq)
+            CLK_CYCLE=((1/(Freq*10^6))*10^9)/10^6;
+            Time_All=(MatrixSize(1)+3)*ceil(MatrixSize(1)/8)*CLK_CYCLE;
+            
+        end
     end
 end
