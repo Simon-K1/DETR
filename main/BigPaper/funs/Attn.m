@@ -3,11 +3,11 @@ classdef Attn<GantTime
     %   此处提供详细说明
 
     properties
-        T_A=GantTime(1);
-        T_B=GantTime(2);
-        T_C=GantTime(3);
-        T_Softmax=GantTime(4)
-        T_Concat=GantTime(5)
+        T_A         
+        T_B         
+        T_C         
+        T_Softmax   
+        T_Concat    
 
         C_Size
         Slice
@@ -31,12 +31,30 @@ classdef Attn<GantTime
             obj.Freq=Freq
             obj.DMA_WDITH=DMA_WDITH
             obj.HeadNums=HeadNums
-            obj.LayerAttn
-            for i = 1:numel(varargin)
-                arg = varargin{i};
-                if i==1
-                    obj.T_Start=arg;
+            
+
+            obj.T_A = GantTime(1);
+            obj.T_B = GantTime(2);
+            obj.T_C = GantTime(3);
+            obj.T_Softmax = GantTime(4);
+            obj.T_Concat = GantTime(5);
+
+            Optimized_Attn_Flag=0;
+            if ~isempty(varargin)
+                for i = 1:numel(varargin)
+                    arg = varargin{i};
+                    if i==1
+                        obj.T_Start=arg;
+                    end
+                    if i==2
+                        Optimized_Attn_Flag=varargin{2};
+                    end
                 end
+            end
+            if Optimized_Attn_Flag
+                obj.Optimized_Attn
+            else
+                obj.LayerAttn
             end
         end
 
@@ -46,8 +64,22 @@ classdef Attn<GantTime
             jobId=[obj.T_A.jobId,obj.T_B.jobId,obj.T_C.jobId,obj.T_Concat.jobId,obj.T_Softmax.jobId]
             figure
             GTC=ganttChart(startT,durationT,jobId);
-            figure
-             GTC=ganttChart(obj.startT,obj.durationT,obj.jobId); 
+            % 定义新的 Y 轴坐标标签
+            newYLabels = {'矩阵A缓存', '矩阵B缓存', '脉动阵列计算', 'SoftMax','Concat'};
+            % 获取当前的 Y 轴刻度位置
+            yticks = get(gca, 'YTick');
+            % 设置新的 Y 轴坐标标签
+            set(gca, 'yticklabel', newYLabels);
+            ylabel('操作');
+            
+            % 设置 X 轴标签
+            xlabel('时间(ms)');
+            set(gca, 'FontSize', 12, 'FontWeight', 'bold');
+            % 刷新图形
+            drawnow;
+
+%             figure%这幅图可有可无
+%             GTC=ganttChart(obj.startT,obj.durationT,obj.jobId); 
        end
     end
 
@@ -60,12 +92,12 @@ classdef Attn<GantTime
                         [Linear1_Cache,Linear1_Compute,Linear1_MACs]=GemmTime(obj.C_Size,[obj.C_Size(2),obj.C_Size(2)/obj.HeadNums],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
                         obj.T_B.AddTime(obj.T_Start,Linear1_Cache);
                         obj.T_A.AddTime(obj.T_Start,Linear1_Compute)
-                        obj.T_C.AddTime(obj.T_A.LastStart+0.01,Linear1_Compute);
+                        obj.T_C.AddTime(obj.T_A.LastStart+0.005,Linear1_Compute);
                     else
                         [Linear1_Cache,Linear1_Compute,Linear1_MACs]=GemmTime(obj.C_Size,[obj.C_Size(2),obj.C_Size(2)/obj.HeadNums],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
                         obj.T_B.AddTime(obj.T_C.LastEnd,Linear1_Cache);
                         obj.T_A.AddTime(obj.T_C.LastEnd,Linear1_Compute)
-                        obj.T_C.AddTime(obj.T_A.LastStart+0.01,Linear1_Compute);
+                        obj.T_C.AddTime(obj.T_A.LastStart+0.005,Linear1_Compute);
                     end
                 end
             end
@@ -73,40 +105,109 @@ classdef Attn<GantTime
             for i=1:obj.HeadNums
                 if i==1
                     [QK_Cache,QK_Compute,QK_MACs]=GemmTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(2)/obj.HeadNums,obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
-                    obj.T_A.AddTime(obj.T_C.LastEnd+0.01,QK_Compute)
-                    obj.T_B.AddTime(obj.T_C.LastEnd+0.01,QK_Cache)
+                    obj.T_A.AddTime(obj.T_C.LastEnd+0.005,QK_Compute)
+                    obj.T_B.AddTime(obj.T_C.LastEnd+0.005,QK_Cache)
                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,QK_Compute)
-                    obj.T_Softmax.AddTime(obj.T_C.LastEnd,obj.LayerSoftmax(obj.C_Size,200))
+                    obj.T_Softmax.AddTime(obj.T_C.LastStart+obj.T_C.LastDuration*0.1,obj.T_C.LastEnd-obj.T_C.LastStart+obj.T_C.LastDuration*0.1+0.005)
                 else
                     [QK_Cache,QK_Compute,QK_MACs]=GemmTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(2)/obj.HeadNums,obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
-                    obj.T_A.AddTime(obj.T_Softmax.LastEnd+0.01,QK_Compute)
-                    obj.T_B.AddTime(obj.T_Softmax.LastEnd+0.01,QK_Cache)
+                    obj.T_A.AddTime(obj.T_Softmax.LastEnd+0.005,QK_Compute)
+                    obj.T_B.AddTime(obj.T_Softmax.LastEnd+0.005,QK_Cache)
                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,QK_Compute)
-                    obj.T_Softmax.AddTime(obj.T_C.LastEnd,obj.LayerSoftmax(obj.C_Size,200))
+                    obj.T_Softmax.AddTime(obj.T_C.LastStart+obj.T_C.LastDuration*0.1,obj.T_C.LastEnd-obj.T_C.LastStart+obj.T_C.LastDuration*0.1+0.005)
                 end
             end
-            for i=1:obj.HeadNums
-                [QKV_Cache,QKV_Compute,QKV_MACs]=GemmTime([obj.C_Size(2)/obj.HeadNums,obj.C_Size(1)],[obj.C_Size(1),obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
-                if i==1
-                    obj.T_A.AddTime(obj.T_Softmax.LastEnd,QKV_Compute)
-                    obj.T_B.AddTime(obj.T_Softmax.LastEnd,QKV_Cache)
-                    obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
 
-                else
-                    obj.T_A.AddTime(obj.T_C.LastEnd,QKV_Compute)
-                    obj.T_B.AddTime(obj.T_C.LastEnd,QKV_Cache)
-                    obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
-                    %边乘边Concat
-                    if i==2
-                        obj.T_Concat.AddTime(obj.T_C.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
-                    else
-                        obj.T_Concat.AddTime(obj.T_Concat.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
-                    end
-                end
-            end%Endfor
+%             for i=1:obj.HeadNums
+%                 [QKV_Cache,QKV_Compute,QKV_MACs]=GemmTime([obj.C_Size(2)/obj.HeadNums,obj.C_Size(1)],[obj.C_Size(1),obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
+%                 if i==1
+%                     obj.T_A.AddTime(obj.T_Softmax.LastEnd,QKV_Compute)
+%                     obj.T_B.AddTime(obj.T_Softmax.LastEnd,QKV_Cache)
+%                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
+% 
+%                 else
+%                     obj.T_A.AddTime(obj.T_C.LastEnd,QKV_Compute)
+%                     obj.T_B.AddTime(obj.T_C.LastEnd,QKV_Cache)
+%                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
+%                     %边乘边Concat
+%                     if i==2
+%                         obj.T_Concat.AddTime(obj.T_C.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
+%                     else
+%                         obj.T_Concat.AddTime(obj.T_Concat.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
+%                     end
+%                 end
+%             end%Endfor
 
-            obj.AddTime(obj.T_Start,obj.T_Concat.LastEnd)
+            obj.AddTime(obj.T_Start,obj.T_Softmax.LastEnd)
         end%End LayerAttn
+
+
+
+
+        function Optimized_Attn(obj)%优化后的Attn
+            CLK_CYCLE=((1/(obj.Freq*10^6))*10^9)/10^6;
+            %首先算A*W_Fused
+            %循环HeadNums次数
+            for i=1:obj.HeadNums
+                if i==1
+                    [Linear1_Cache,Linear1_Compute,Linear1_MACs]=GemmTime(obj.C_Size,[obj.C_Size(2),obj.C_Size(2)+1],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
+                    obj.T_B.AddTime(obj.T_Start,Linear1_Cache);
+                    obj.T_A.AddTime(obj.T_Start,Linear1_Compute)
+                    obj.T_C.AddTime(obj.T_A.LastStart+0.005,Linear1_Compute);
+                    
+                else
+                    [Linear1_Cache,Linear1_Compute,Linear1_MACs]=GemmTime(obj.C_Size,[obj.C_Size(2),obj.C_Size(2)+1],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
+                    obj.T_B.AddTime(obj.T_C.LastEnd,Linear1_Cache);
+                    obj.T_A.AddTime(obj.T_C.LastEnd,Linear1_Compute)
+                    obj.T_C.AddTime(obj.T_A.LastStart+0.005,Linear1_Compute);
+                end
+            end
+            %完成了融合计算，然后继续计算乘以A的转置
+            for i=1:obj.HeadNums
+                if i==1
+                    [Linear1_Cache,Linear1_Compute,Linear1_MACs]=GemmTime([obj.C_Size(1),obj.C_Size(2)+1],[obj.C_Size(2)+1,obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
+                    obj.T_B.AddTime(obj.T_C.LastEnd,Linear1_Cache);
+                    obj.T_A.AddTime(obj.T_C.LastEnd,Linear1_Compute)
+                    obj.T_C.AddTime(obj.T_A.LastStart+0.005,Linear1_Compute);%算完了再执行SoftMax操作
+                    obj.T_Softmax.AddTime(obj.T_C.LastStart+obj.T_C.LastDuration*0.1,obj.T_C.LastEnd-obj.T_C.LastStart+obj.T_C.LastDuration*0.1+0.01)
+                else
+                    [Linear1_Cache,Linear1_Compute,Linear1_MACs]=GemmTime([obj.C_Size(1),obj.C_Size(2)+1],[obj.C_Size(2)+1,obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
+                    obj.T_B.AddTime(obj.T_C.LastEnd,Linear1_Cache);
+                    obj.T_A.AddTime(obj.T_C.LastEnd,Linear1_Compute)
+                    obj.T_C.AddTime(obj.T_A.LastStart+0.005,Linear1_Compute);%算完了再执行SoftMax操作
+                    obj.T_Softmax.AddTime(obj.T_C.LastStart+obj.T_C.LastDuration*0.1,obj.T_C.LastEnd-obj.T_C.LastStart+obj.T_C.LastDuration*0.1+0.01)
+                end
+            end
+%             %然后还要算V
+%             for i=1:obj.HeadNums
+%                     [Linear1_Cache,Linear1_Compute,Linear1_MACs]=GemmTime([obj.C_Size(2)/obj.HeadNums,obj.C_Size(2)],[obj.C_Size(2),obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
+%                     obj.T_B.AddTime(obj.T_C.LastEnd,Linear1_Cache);
+%                     obj.T_A.AddTime(obj.T_C.LastEnd,Linear1_Compute)
+%                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,Linear1_Compute);%算完了再执行SoftMax操作
+%             end
+% 
+%             for i=1:obj.HeadNums
+%                 [QKV_Cache,QKV_Compute,QKV_MACs]=GemmTime([obj.C_Size(2)/obj.HeadNums,obj.C_Size(1)],[obj.C_Size(1),obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
+%                 if i==1
+%                     obj.T_A.AddTime(obj.T_C.LastEnd,QKV_Compute)
+%                     obj.T_B.AddTime(obj.T_C.LastEnd,QKV_Cache)
+%                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
+% 
+%                 else
+%                     obj.T_A.AddTime(obj.T_C.LastEnd,QKV_Compute)
+%                     obj.T_B.AddTime(obj.T_C.LastEnd,QKV_Cache)
+%                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
+%                     %边乘边Concat
+%                     if i==2
+%                         obj.T_Concat.AddTime(obj.T_C.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
+%                     else
+%                         obj.T_Concat.AddTime(obj.T_Concat.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
+%                     end
+%                 end
+%             end%Endfor
+
+            obj.AddTime(obj.T_Start,obj.T_Softmax.LastEnd)
+        end
     end
 end
 

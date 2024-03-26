@@ -70,11 +70,43 @@ A_Size=[1,1];
 B_Size=[1,1];%初始大小为1*1的计算
 SA_Size=[1,8,8]%脉动阵列大小
 Matrix_Max=4096;%设置最大的矩阵乘法尺寸
-Utilization_Map=zeros(Matrix_Max);
-for i=1:Matrix_Max
-    for j=1:Matrix_Max
-        for p=1:Matrix_Max
-            Utilization_Map(i,j)=PE_Utilization(rand(i,j),rand(j,j),MatrixB,j,8,(i==0)+i);
+Utilization_Map=zeros(8);
+for i=0:512:Matrix_Max
+    for j=0:512:Matrix_Max
+        if i>1&&j>1
+            Utilization_Map(i/512,j/512)=PE_Utilization(rand(i,j),rand(j,j),4,8,32);
+            GemmTime(size(MatrixA),size(MatrixB),[tile,8,width],200,8);
         end
     end
 end
+
+
+
+
+A=[
+    512,1024
+    512,1024
+    1024,1024
+    1024,1024
+    1024,1024
+    1024,1024
+    ]
+B=[
+    1024,128
+    1024,192
+    1024,256
+    1024,257
+    1024,513
+    1024,1025
+    ]
+rst=[]
+PE_U=[]
+for i=1:size(A,1)
+    [WeightCache_Time,Compute_Time,MACs]=GemmTime(A(i,:),B(i,:),[4,8,64],200,8)
+    rst=[rst;WeightCache_Time,Compute_Time,MACs];
+    PE_U=[PE_U;PE_Utilization(rand(A(i,:)),rand(B(i,:)),4,8,64)]
+end
+Gops=rst(:,3)./(rst(:,2)+rst(:,1))*1000
+Latency=(rst(:,2)+rst(:,1))
+[rst(:,3),Latency,Gops]
+

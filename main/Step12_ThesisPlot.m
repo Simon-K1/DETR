@@ -104,6 +104,18 @@ color = rand(1,3);  % 随机生成RGB颜色
 plot(Eff, '-.o', 'LineWidth', 3,'Color',color);
 legend('LUT', 'LUTRAM', 'FF', 'BRAM', 'DSP',"GOPs/w");
 
+%画Power曲线
+Power=(Power)
+yyaxis right;  % 使用右边坐标轴
+ylabel('Energy efficiency(Gops/w)');
+color = rand(1,3);  % 随机生成RGB颜色
+plot(Power, '-.o', 'LineWidth', 3,'Color',color);
+legend('LUT', 'LUTRAM', 'FF', 'BRAM', 'DSP',"GOPs/w");
+
+
+
+
+
 
 subplot(1, 2, 2);
 

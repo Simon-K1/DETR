@@ -44,7 +44,11 @@ classdef GantTime < handle
         function [Time_All]=LayerSoftmax(obj,MatrixSize,Freq)
             CLK_CYCLE=((1/(Freq*10^6))*10^9)/10^6;
             Time_All=(MatrixSize(1)+3)*ceil(MatrixSize(1)/8)*CLK_CYCLE;
-            
+        end
+
+        function [Time_All]=Layer_LayerNorm(obj,MatrixSize,Freq)
+            CLK_CYCLE=((1/(Freq*10^6))*10^9)/10^6;
+            Time_All=MatrixSize(1)*MatrixSize(2)/8*CLK_CYCLE;%最慢的那种layerNorm
         end
     end
 end
