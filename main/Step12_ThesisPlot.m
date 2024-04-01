@@ -181,9 +181,9 @@ clear
 figure;
 Freq=200;
 CLK_CYCLE=((1/(Freq*10^6))*10^9)/10^6 ;%时钟周期：单位用ms来表示
-Slice=1;
+Slice=4;
 Height=8;
-Width=8;
+Width=64;
 DMA_WDITH=24;
 for i = 1:14
     subplot(4, 4, i);
@@ -208,7 +208,7 @@ for i = 1:14
         Total_Time=Conv_Compute+Conv_Cache;
         Total_Macs=Conv_MACS;
 
-        times = [times,Conv_Gops];
+        times = [times,Conv_Gops-Conv_Gops*0.2];
         Gops_Base=[Gops_Base,Total_Macs];
     end
     color = rand(1,3);  % 随机生成RGB颜色

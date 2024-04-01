@@ -118,27 +118,27 @@ classdef Attn<GantTime
                 end
             end
 
-%             for i=1:obj.HeadNums
-%                 [QKV_Cache,QKV_Compute,QKV_MACs]=GemmTime([obj.C_Size(2)/obj.HeadNums,obj.C_Size(1)],[obj.C_Size(1),obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
-%                 if i==1
-%                     obj.T_A.AddTime(obj.T_Softmax.LastEnd,QKV_Compute)
-%                     obj.T_B.AddTime(obj.T_Softmax.LastEnd,QKV_Cache)
-%                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
-% 
-%                 else
-%                     obj.T_A.AddTime(obj.T_C.LastEnd,QKV_Compute)
-%                     obj.T_B.AddTime(obj.T_C.LastEnd,QKV_Cache)
-%                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
-%                     %边乘边Concat
-%                     if i==2
-%                         obj.T_Concat.AddTime(obj.T_C.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
-%                     else
-%                         obj.T_Concat.AddTime(obj.T_Concat.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
-%                     end
-%                 end
-%             end%Endfor
+            for i=1:obj.HeadNums
+                [QKV_Cache,QKV_Compute,QKV_MACs]=GemmTime([obj.C_Size(2)/obj.HeadNums,obj.C_Size(1)],[obj.C_Size(1),obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
+                if i==1
+                    obj.T_A.AddTime(obj.T_Softmax.LastEnd,QKV_Compute)
+                    obj.T_B.AddTime(obj.T_Softmax.LastEnd,QKV_Cache)
+                    obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
 
-            obj.AddTime(obj.T_Start,obj.T_Softmax.LastEnd)
+                else
+                    obj.T_A.AddTime(obj.T_C.LastEnd,QKV_Compute)
+                    obj.T_B.AddTime(obj.T_C.LastEnd,QKV_Cache)
+                    obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
+                    %边乘边Concat
+                    if i==2
+                        obj.T_Concat.AddTime(obj.T_C.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
+                    else
+                        obj.T_Concat.AddTime(obj.T_Concat.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
+                    end
+                end
+            end%Endfor
+
+            obj.AddTime(obj.T_Start,obj.T_Concat.LastEnd)
         end%End LayerAttn
 
 
@@ -179,34 +179,34 @@ classdef Attn<GantTime
                 end
             end
 %             %然后还要算V
-%             for i=1:obj.HeadNums
-%                     [Linear1_Cache,Linear1_Compute,Linear1_MACs]=GemmTime([obj.C_Size(2)/obj.HeadNums,obj.C_Size(2)],[obj.C_Size(2),obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
-%                     obj.T_B.AddTime(obj.T_C.LastEnd,Linear1_Cache);
-%                     obj.T_A.AddTime(obj.T_C.LastEnd,Linear1_Compute)
-%                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,Linear1_Compute);%算完了再执行SoftMax操作
-%             end
-% 
-%             for i=1:obj.HeadNums
-%                 [QKV_Cache,QKV_Compute,QKV_MACs]=GemmTime([obj.C_Size(2)/obj.HeadNums,obj.C_Size(1)],[obj.C_Size(1),obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
-%                 if i==1
-%                     obj.T_A.AddTime(obj.T_C.LastEnd,QKV_Compute)
-%                     obj.T_B.AddTime(obj.T_C.LastEnd,QKV_Cache)
-%                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
-% 
-%                 else
-%                     obj.T_A.AddTime(obj.T_C.LastEnd,QKV_Compute)
-%                     obj.T_B.AddTime(obj.T_C.LastEnd,QKV_Cache)
-%                     obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
-%                     %边乘边Concat
-%                     if i==2
-%                         obj.T_Concat.AddTime(obj.T_C.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
-%                     else
-%                         obj.T_Concat.AddTime(obj.T_Concat.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
-%                     end
-%                 end
-%             end%Endfor
+            for i=1:obj.HeadNums
+                    [Linear1_Cache,Linear1_Compute,Linear1_MACs]=GemmTime([obj.C_Size(2)/obj.HeadNums,obj.C_Size(2)],[obj.C_Size(2),obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
+                    obj.T_B.AddTime(obj.T_C.LastEnd,Linear1_Cache);
+                    obj.T_A.AddTime(obj.T_C.LastEnd,Linear1_Compute)
+                    obj.T_C.AddTime(obj.T_A.LastStart+0.005,Linear1_Compute);%算完了再执行SoftMax操作
+            end
 
-            obj.AddTime(obj.T_Start,obj.T_Softmax.LastEnd)
+            for i=1:obj.HeadNums
+                [QKV_Cache,QKV_Compute,QKV_MACs]=GemmTime([obj.C_Size(2)/obj.HeadNums,obj.C_Size(1)],[obj.C_Size(1),obj.C_Size(1)],[obj.Slice,obj.Height,obj.Width],obj.Freq,obj.DMA_WDITH);
+                if i==1
+                    obj.T_A.AddTime(obj.T_C.LastEnd,QKV_Compute)
+                    obj.T_B.AddTime(obj.T_C.LastEnd,QKV_Cache)
+                    obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
+
+                else
+                    obj.T_A.AddTime(obj.T_C.LastEnd,QKV_Compute)
+                    obj.T_B.AddTime(obj.T_C.LastEnd,QKV_Cache)
+                    obj.T_C.AddTime(obj.T_A.LastStart+0.005,QKV_Compute)
+                    %边乘边Concat
+                    if i==2
+                        obj.T_Concat.AddTime(obj.T_C.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
+                    else
+                        obj.T_Concat.AddTime(obj.T_Concat.LastEnd+0.005,ConcatTime([obj.C_Size(1),obj.C_Size(2)/obj.HeadNums],[obj.C_Size(1),obj.C_Size(2)/obj.HeadNums*(i-1)],8,16,200));
+                    end
+                end
+            end%Endfor
+
+            obj.AddTime(obj.T_Start,obj.T_Concat.LastEnd)
         end
     end
 end

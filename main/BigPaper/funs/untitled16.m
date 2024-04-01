@@ -41,7 +41,7 @@ Vit_Base_Attn=Attn(1,[197,768],12,4,8,64,200,32,0,0)
 Vit_Base_Encoder=Encoder(1,[197,768],12,4,8,64,200,16,0,0)
 %% small
 Embed=Embedding(1,8,384,14,16,200,16,4,8,64)
-Vit_Small_Attn=Attn(1,[197,384],6,4,8,64,200,16,0,1)
+Vit_Small_Attn=Attn(1,[197,384],6,4,8,64,200,16,0,0)
 Vit_Small_Encoder=Encoder(1,[197,384],6,4,8,64,200,16,0,0)
 
 

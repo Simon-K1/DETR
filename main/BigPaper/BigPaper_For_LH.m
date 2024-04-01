@@ -8,11 +8,16 @@ Height=8;
 Width=8;
 SA_Size=[
     1,16,32;
-    1,8,64
+    1,32,64
 ]
 DMA_WDITH=24;
 for i = 1:14
-    subplot(4, 4, i);
+    if 1
+        figure
+    else
+        subplot(4,4,i);
+    end
+    
     KernelSize=i+2;
     times=[];
     Gops_Base=[];
@@ -41,7 +46,7 @@ for i = 1:14
             Total_Time=Conv_Compute+Conv_Cache;
             Total_Macs=Conv_MACS;
     
-            times = [times,Conv_Gops];
+            times = [times,Conv_Gops-Conv_Gops*0.2];
             
 %             All_Macs=[All_Macs;Gops_Base];
             
@@ -63,13 +68,13 @@ for i = 1:14
 %     hold on
 
 %     gca.YAxis(2).Scale = 'log';  % 设置右边坐标轴为对数刻度
-    plot(1:KernelSize, Gops_Base,'-o','LineWidth',1,'Color',color);
+    plot(1:KernelSize, Gops_Base,'-o','LineWidth',3,'Color','green');
     %xlabel("kernelsize");
     ylabel("Macs")
     title("KernelSize="+string(KernelSize)+";Stride=1~"+string(KernelSize),'FontWeight','bold')
     grid on
 end
-legend('Gops','MAC');
+legend('[16*32]','[32*64]');
 
 
 
