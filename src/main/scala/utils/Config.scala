@@ -1,7 +1,7 @@
 package utils
 
 import spinal.core.log2Up
-
+import Systolic_Array.SystolicArray3D.PaddingConfig
 case class TopConfig(){
 //layernorm config============================================================
     val MAX_CHANNEL_NUMS=1024//用于控制片上存储的使用
@@ -14,7 +14,6 @@ case class TopConfig(){
     val XQ_DATA_WIDTH=19//Xq-Zp，也就是处理了Ptf之后可以直接参与计算的Xq-Zp，因为数据需要移位0，1，2，3，8bit<<3-->所以最终的量化数据位宽是11bit
     //2023/5/51修正：因为(Xq-Zp)为16bit，不能用8bit来表示
     // val IN_DATA_WIDTH=PIPELINE*XQ_DATA_WIDTH//输入数据位宽64bit,上层输入的是8bit定点，之后才使用PTF因子进行移位操作变成11bit然后参与接下来的计算
-
     //乘法器相关配置
         //Xq*C--P=A*B
     val XQC_A_WIDTH=XQ_DATA_WIDTH//19
