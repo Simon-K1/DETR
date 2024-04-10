@@ -117,7 +117,9 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
         val InCol_Count_Times               =in UInt(16 bits)//这玩意又是啥？
         val OutRow_Count_Times              =in UInt(16 bits)
         val OutFeature_Channel_Count_Times  =in UInt(16 bits)
-        
+        val enPadding                       = in Bool()
+        val zeroDara                        = in Bits (8 bits)
+        val zeroNum                         = in UInt (2 bits)
 
         val WeightMatrix_Row                =in UInt(Config.WEIGHT_CACHE_MATRIX_ROW_WIDTH bits)
 
@@ -210,7 +212,10 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     SubModule_Img2Col.io.InCol_Count_Times             <>Img2Col_Instru.InCol_Count_Times             
     SubModule_Img2Col.io.OutRow_Count_Times            <>Img2Col_Instru.OutRow_Count_Times            
     SubModule_Img2Col.io.OutFeature_Channel_Count_Times<>Img2Col_Instru.OutFeature_Channel_Count_Times
-    SubModule_Img2Col.io.Sliding_Size                  <>Img2Col_Instru.Sliding_Size  
+    SubModule_Img2Col.io.Sliding_Size                  <>Img2Col_Instru.Sliding_Size
+    SubModule_Img2Col.io.enPadding                     <>Img2Col_Instru.enPadding
+    SubModule_Img2Col.io.zeroDara                      <>Img2Col_Instru.zeroDara
+    SubModule_Img2Col.io.zeroNum                       <>Img2Col_Instru.zeroNum
 
     SubModule_GEMM.io.HIGHT                             <>Gemm_Instru.Height.resized
     SubModule_GEMM.io.WIDTH                             <>Gemm_Instru.Width.resized

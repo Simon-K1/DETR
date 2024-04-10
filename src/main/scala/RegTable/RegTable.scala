@@ -22,17 +22,20 @@ class RegTable extends Component{
 
 	val Control_Reg=bus.newReg(doc="Img2Col_Start")
 	val Start=Control_Reg.field(Bool(),WO,doc="Ps Start Img2Col_Start(only for test)").asOutput()
-	val SwitchConv=Control_Reg.field(Bool(),WO,doc="1:Start Conv Compute\n").asOutput()
-	val Matrix2Img=Control_Reg.field(Bool(),WO,doc="reshape Matrix into 3D Feature\n").asOutput()
+	val SwitchConv=Control_Reg.field(Bool(),WO,doc="disable\n").asOutput()
+	val Matrix2Img=Control_Reg.field(Bool(),WO,doc="disable\n").asOutput()
 	val SwitchCtrl=Control_Reg.field(Bits(5 bits),WO,doc="Switch Control of Input Data").asOutput()
 	val QuantSwitch=Control_Reg.field(Bits(4 bits),WO,doc="Switch Control of Quant Data").asOutput
 	val OutSwitchCtrl=Control_Reg.field(Bits(4 bits),WO,doc="Switch Control of Output Data").asOutput()
 	//val OutSwitch=Control_Reg.field(Bits(2 bits),WO,doc="ConvOutput Switch").asOutput()
 
 
-	val Img2Col_Instru1	=bus.newReg(doc="[Kernel_Size,Stride]")
+	val Img2Col_Instru1	=bus.newReg(doc="[Kernel_Size,Stride,Padding]")
 	val Stride			=Img2Col_Instru1.field(UInt(Config.DATA_GENERATE_CONV_STRIDE_WIDTH bits),WO).asOutput()
-	val Kernel_Size		=Img2Col_Instru1.field(UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits),WO).asOutput()
+	val Kernel_Size	=Img2Col_Instru1.field(UInt(Config.DATA_GENERATE_CONV_KERNELSIZE_WIDTH bits),WO).asOutput()
+	val enPadding		=Img2Col_Instru1.field(Bool(),WO,doc="1 enPadding\n").asOutput()
+	val zeroDara		=Img2Col_Instru1.field(Bits(8 bits),WO,doc="Padding Data\n").asOutput()
+	val zeroNum 	  =Img2Col_Instru1.field(UInt(2 bits),WO,doc="Padding Number\n").asOutput()
 
 	val Img2Col_Instru2	=bus.newReg(doc="[InFeature_Size,Window_Size]")
 	val Window_Size		=Img2Col_Instru2.field(UInt(16 bits),WO).asOutput()

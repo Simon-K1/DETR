@@ -603,8 +603,8 @@ class Img2ColStreamV2 extends Component{
         val Sliding_Size                    =in UInt(16-3 bits)
 
         val enPadding                       =in Bool()
-        val zeroDara = in Bits (paddingConfig.DATA_WIDTH bits)
-        val zeroNum = in UInt (paddingConfig.ZERO_NUM_WIDTH bits)
+        val zeroDara                        = in Bits (paddingConfig.DATA_WIDTH bits)
+        val zeroNum                         = in UInt (paddingConfig.ZERO_NUM_WIDTH bits)
     }
     noIoPrefix()
     val SubModule=new Img2Col_Top
