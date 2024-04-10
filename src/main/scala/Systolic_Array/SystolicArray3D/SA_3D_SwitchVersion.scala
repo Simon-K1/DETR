@@ -170,7 +170,7 @@ class SA_3D_SwitchVersion(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODU
     val SubModule_Flatten       =new Flatten(SLICE,HEIGHT,WIDTH,ACCU_WITDH)
     val SubModule_DataArrange   =new ConvArrangeV3(1,HEIGHT,WIDTH)//由于前面已经有一个Flatten模块，所以后面的数据都是2维的矩阵
     val SubModule_GEMM          =new GemmCache
-    
+
     //#todo---这里以后如果添加了矩阵计算模块要重新switch
     when(Control.Switch(SWITCH_GEMM)){
         for(i<-0 to HEIGHT-1){
