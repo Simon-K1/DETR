@@ -44,8 +44,7 @@ case class MaxPoolingFix(maxPoolingFixConfig: MaxPoolingConfig)extends Component
     val start = in Bool()
     val last = out Bool()
     val channelIn = in UInt (maxPoolingFixConfig.CHANNEL_WIDTH bits)
-    val rowNumIn = in UInt (maxPoolingFixConfig.FEATURE_WIDTH bits)
-    val colNumIn = in UInt (maxPoolingFixConfig.FEATURE_WIDTH bits)
+    val row_colNumIn = in UInt (maxPoolingFixConfig.FEATURE_WIDTH bits)
     val kernelNum = in UInt (3 bits)//最大支持3bits。这个数据线给出的数如果大于原本kernelSize的最大值得到的结果是错误的。
     val strideNum = if(maxPoolingFixConfig.enStride) in UInt (3 bits) else null
   }
@@ -57,7 +56,7 @@ case class MaxPoolingFix(maxPoolingFixConfig: MaxPoolingConfig)extends Component
 
   val computeChannelTimes = io.channelIn >> log2Up(maxPoolingFixConfig.COMPUTE_CHANNEL_NUM)
 
-  val RowEndNum = computeChannelTimes * io.colNumIn//todo 一行结束
+  val RowEndNum = computeChannelTimes * io.row_colNumIn//todo 一行结束
   //行MEM地址和列MEM地址
   /***********************地址控制模块模块*/
   val rdRowAddrCnt = WaAddrIncCtr(log2Up(maxPoolingFixConfig.rowMemDepth), fire(0), RowEndNum);
@@ -87,8 +86,8 @@ case class MaxPoolingFix(maxPoolingFixConfig: MaxPoolingConfig)extends Component
     val END = new State
 
     val channelCnt = WaCounter(fire(4), maxPoolingFixConfig.CHANNEL_WIDTH, computeChannelTimes - 1, (1 << maxPoolingFixConfig.CHANNEL_WIDTH) - 1)
-    val colCnt = WaCounter(channelCnt.valid && fire(4), maxPoolingFixConfig.FEATURE_WIDTH, io.colNumIn - 1)
-    val rowCnt = WaCounter(colCnt.valid && channelCnt.valid && fire(4), maxPoolingFixConfig.FEATURE_WIDTH, io.rowNumIn - 1)
+    val colCnt = WaCounter(channelCnt.valid && fire(4), maxPoolingFixConfig.FEATURE_WIDTH, io.row_colNumIn - 1)
+    val rowCnt = WaCounter(colCnt.valid && channelCnt.valid && fire(4), maxPoolingFixConfig.FEATURE_WIDTH, io.row_colNumIn - 1)
     //流水线最后一个数据接收到的位置，根据这个位置判断当前计算结果是否满足需求
 
     IDLE
