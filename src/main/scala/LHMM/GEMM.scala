@@ -1,4 +1,4 @@
-package Systolic_Array.LHMM
+package LHMM
 
 import spinal.core._
 import spinal.core.internals.Operator

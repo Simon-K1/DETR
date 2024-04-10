@@ -1,4 +1,4 @@
-package Systolic_Array.SystolicArray3D
+package SystolicArray3D
 //重构权重缓存模块，以适配三维脉动阵列的计算
 import spinal.core._
 import spinal.lib.{slave,master}

@@ -1,4 +1,4 @@
-package Systolic_Array.SystolicArray3D
+package SystolicArray3D
 import spinal.core._
 import spinal.lib._
 import utils._

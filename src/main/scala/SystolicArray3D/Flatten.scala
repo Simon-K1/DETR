@@ -1,4 +1,4 @@
-package Systolic_Array.SystolicArray3D
+package SystolicArray3D
 
 //维度展平，将三维的脉动阵列输出转化为二维的矩阵输出
 import spinal.core._
