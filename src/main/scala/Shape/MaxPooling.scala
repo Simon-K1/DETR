@@ -67,8 +67,7 @@ class MaxPooling(maxPoolingConfig: MaxPoolingConfig) extends Component {
     val start = in Bool()
     val sData = slave Stream UInt(maxPoolingConfig.STREAM_DATA_WIDTH bits)
     val mData = master Stream UInt(maxPoolingConfig.STREAM_DATA_WIDTH bits)
-    val rowNumIn = in UInt (maxPoolingConfig.FEATURE_WIDTH bits)
-    val colNumIn = in UInt (maxPoolingConfig.FEATURE_WIDTH bits)
+    val row_colNumIn = in UInt (maxPoolingConfig.FEATURE_WIDTH bits)
     val channelIn = in UInt (maxPoolingConfig.CHANNEL_WIDTH bits)
     val enPadding = in Bool()
     val zeroDara = in Bits (maxPoolingConfig.DATA_WIDTH bits)
@@ -83,8 +82,7 @@ class MaxPooling(maxPoolingConfig: MaxPoolingConfig) extends Component {
   io.enPadding <> padding.io.enPadding
   io.channelIn <> padding.io.channelIn
   io.start <> padding.io.start
-  io.rowNumIn <> padding.io.rowNumIn
-  io.colNumIn <> padding.io.colNumIn
+  io.row_colNumIn <> padding.io.row_colNumIn
   io.zeroDara <> padding.io.zeroDara
   io.zeroNum <> padding.io.zeroNum
 
@@ -94,8 +92,7 @@ class MaxPooling(maxPoolingConfig: MaxPoolingConfig) extends Component {
   maxPooling.io.mData <> io.mData
   maxPooling.io.start <> Delay(io.start,3)
   io.channelIn <> maxPooling.io.channelIn
-  padding.io.rowNumOut <> maxPooling.io.rowNumIn
-  padding.io.colNumOut <> maxPooling.io.colNumIn
+  padding.io.row_colNumOut <> maxPooling.io.row_colNumIn
   maxPooling.io.kernelNum <> io.kernelNum
   io.last <> maxPooling.io.last
   if(maxPoolingConfig.enStride){
