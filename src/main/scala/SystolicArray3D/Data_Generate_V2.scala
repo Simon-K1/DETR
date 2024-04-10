@@ -567,7 +567,7 @@ class  Img2Col_OutPut extends Component{
 
 class Img2ColStreamV2 extends Component{
     val Config=TopConfig()
-    val paddingConfig = PaddingConfig(8, 12, 8, 12, 3)
+    val paddingConfig = PaddingConfig(8, 16, 8, 16, 3)
     val io=new Bundle{
         
         val mData=out UInt(64 bits)//out UInt(64 bits)//Vec(UInt(8 bits),8)
@@ -642,21 +642,11 @@ class Img2ColStreamV2 extends Component{
     //，，，，，很难改，
     
     io.Raddr_Valid:=Converter(0).outStream.valid
-    // val WeightCached_Flag=Bool
-//    SubModule.io.sData.payload<>io.s_axis_s2mm_tdata
-//    SubModule.io.sData.valid<>io.s_axis_s2mm_tvalid
-//    SubModule.io.sData.ready<>io.s_axis_s2mm_tready
-
-    //SubModule.io.start:=io.start
-    //SubModule.io.InFeature_Size                 <>io.InFeature_Size
-    //SubModule.io.InFeature_Channel              <>io.InFeature_Channel
-    //SubModule.io.OutFeature_Channel             <>io.OutFeature_Channel
-    //SubModule.io.OutFeature_Size                <>io.OutFeature_Size
-
 
     SubModule.io.Stride                         <>io.Stride                         
     SubModule.io.Kernel_Size                    <>io.Kernel_Size                    
     SubModule.io.Window_Size                    <>io.Window_Size
+    SubModule.io.OutFeature_Size                <>io.OutFeature_Size
     SubModule.io.OutCol_Count_Times             <>io.OutCol_Count_Times             
     SubModule.io.InCol_Count_Times              <>io.InCol_Count_Times              
     SubModule.io.OutRow_Count_Times             <>io.OutRow_Count_Times             
@@ -675,8 +665,7 @@ class Img2ColStreamV2 extends Component{
     padding.io.sData.ready<>io.s_axis_s2mm_tready
     padding.io.enPadding <> io.enPadding
     padding.io.channelIn <> io.InFeature_Channel
-    padding.io.rowNumIn <> io.InFeature_Size
-    padding.io.colNumIn <> io.InFeature_Size
+    padding.io.row_colNumIn <> io.InFeature_Size
     padding.io.zeroNum <> io.zeroNum
     padding.io.zeroDara <> io.zeroDara
 
@@ -685,7 +674,7 @@ class Img2ColStreamV2 extends Component{
 
 object Img2ColGen extends App { 
     val verilog_path="./verilog/SimImg2Col" 
-    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Img2Col_Top)
+    SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Img2ColStreamV2)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new DataGenerate_Top)
     //SpinalConfig(targetDirectory=verilog_path, defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)).generateVerilog(new Dynamic_Shift)
 }

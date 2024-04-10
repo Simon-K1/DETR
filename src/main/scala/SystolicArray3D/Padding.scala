@@ -109,10 +109,8 @@ class Padding(paddingConfig: PaddingConfig) extends Component {
     val enPadding = in Bool()
     val channelIn = in UInt (paddingConfig.CHANNEL_WIDTH bits)
     val start = in Bool()
-    val rowNumIn = in UInt (paddingConfig.FEATURE_WIDTH bits)
-    val rowNumOut = out UInt (paddingConfig.FEATURE_WIDTH bits)
-    val colNumIn = in UInt (paddingConfig.FEATURE_WIDTH bits)
-    val colNumOut = out UInt (paddingConfig.FEATURE_WIDTH bits)
+    val row_colNumIn = in UInt (paddingConfig.FEATURE_WIDTH bits)
+    val row_colNumOut = out UInt (paddingConfig.FEATURE_WIDTH bits)
     val zeroDara = in Bits (paddingConfig.DATA_WIDTH bits)
     val zeroNum = in UInt (paddingConfig.ZERO_NUM_WIDTH bits)
     val last = out Bool()
@@ -120,11 +118,10 @@ class Padding(paddingConfig: PaddingConfig) extends Component {
   }
   noIoPrefix()
   when(io.enPadding) {
-    io.rowNumOut := (io.zeroNum << 1) + io.rowNumIn
-    io.colNumOut := (io.zeroNum << 1) + io.colNumIn
+    io.row_colNumOut := (io.zeroNum << 1) + io.row_colNumIn
   } otherwise {
-    io.rowNumOut := io.rowNumIn
-    io.colNumOut := io.colNumIn
+    io.row_colNumOut := io.row_colNumIn
+
   }
 
   val channelTimes: UInt = RegNext(io.channelIn >> log2Up(paddingConfig.COMPUTE_CHANNEL_NUM), 0)
@@ -172,26 +169,25 @@ class Padding(paddingConfig: PaddingConfig) extends Component {
   when(fsm.currentState === PaddingEnum.IDLE) {
     channelCnt.clear
   }
-  val colCnt = WaCounter(channelCnt.valid && (fifo.io.push.fire), paddingConfig.FEATURE_WIDTH, io.colNumOut - 1)
+  val colCnt = WaCounter(channelCnt.valid && (fifo.io.push.fire), paddingConfig.FEATURE_WIDTH, io.row_colNumOut - 1)
   when(fsm.currentState === PaddingEnum.IDLE) {
     colCnt.clear
   }
-  val rowCnt = WaCounter(fsm.nextState === PaddingEnum.END, paddingConfig.FEATURE_WIDTH, io.rowNumOut - 1)
+  val rowCnt = WaCounter(fsm.nextState === PaddingEnum.END, paddingConfig.FEATURE_WIDTH, io.row_colNumOut - 1)
   when(fsm.currentState === PaddingEnum.IDLE) {
     rowCnt.clear
   }
   selfClear(zeroValid, fsm.currentState === PaddingEnum.LEFT || fsm.currentState === PaddingEnum.RIGHT || fsm.currentState === PaddingEnum.UPDOWN)
   selfClear(fsm.leftEnd, colCnt.count === io.zeroNum - 1 && channelCnt.valid && fifo.io.push.fire)
-  selfClear(fsm.rightEnd, colCnt.count === io.colNumOut - 1 && channelCnt.valid && fifo.io.push.fire)
-  selfClear(fsm.endEnd, rowCnt.count === io.rowNumOut - 1)
-  selfClear(fsm.upDownEnd, colCnt.count === io.colNumOut - io.zeroNum - 1 && channelCnt.valid && fifo.io.push.fire)
-  selfClear(fsm.centerEnd, colCnt.count === io.colNumOut - io.zeroNum - 1 && channelCnt.valid && fifo.io.push.fire)
-  selfClear(fsm.enUpDown, rowCnt.count < io.zeroNum || rowCnt.count > io.rowNumOut - io.zeroNum - 1)
+  selfClear(fsm.rightEnd, colCnt.count === io.row_colNumOut - 1 && channelCnt.valid && fifo.io.push.fire)
+  selfClear(fsm.endEnd, rowCnt.count === io.row_colNumOut - 1)
+  selfClear(fsm.upDownEnd, colCnt.count === io.row_colNumOut - io.zeroNum - 1 && channelCnt.valid && fifo.io.push.fire)
+  selfClear(fsm.centerEnd, colCnt.count === io.row_colNumOut - io.zeroNum - 1 && channelCnt.valid && fifo.io.push.fire)
+  selfClear(fsm.enUpDown, rowCnt.count < io.zeroNum || rowCnt.count > io.row_colNumOut - io.zeroNum - 1)
   selfClear(io.last, fsm.currentState === PaddingEnum.END && fsm.nextState === PaddingEnum.IDLE)
 
   def >>(img2col_top: Img2Col_Top): Unit = {
-    io.rowNumOut <> img2col_top.io.InFeature_Size
-    io.colNumOut <> img2col_top.io.InFeature_Size
+    io.row_colNumOut <> img2col_top.io.InFeature_Size
     img2col_top.io.InFeature_Channel := io.channelIn
     io.mData <> img2col_top.io.sData
     img2col_top.io.start := io.start
