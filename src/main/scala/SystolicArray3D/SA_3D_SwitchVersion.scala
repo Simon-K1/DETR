@@ -1,22 +1,22 @@
-package Systolic_Array.SystolicArray3D
+package SystolicArray3D
 
 //2023/10/12  实在不知道怎么办了，数据流先不管他了，直接把计算完的数据收回来放DDR里，之后再重新发回去得了
 import spinal.core._
 import utils._
 import spinal.lib.Delay
-import Systolic_Array.Quant.ConvQuant
+import Quant.ConvQuant
 import LayerNorm.LayerNorm_Top
 import spinal.lib.StreamWidthAdapter
-import Systolic_Array.Quant.Quan
+import Quant.Quan
 import xip.xil_ila
-import Systolic_Array.LHMM.GEMM_Fsm
-import Systolic_Array.LHMM.GemmCache
+import LHMM.GEMM_Fsm
+import LHMM.GemmCache
 //Switch模块是不是得添加一些组合逻辑，不然可能时序过不去
 class Axis_Switch_M2S(Slave_Port_Num:Int,Data_Width:Int) extends Component{
     val io=new Bundle{//master to Slave,一个master口转成多个Slave口
         val Switch=in Bits(Slave_Port_Num bits)
     }
-    noIoPrefix()
+    noIoPrefix()//
     val m0_axis_mm2s=new Bundle{//一个主接口，多个从接口
         val tdata=out UInt(Data_Width bits)
         val tkeep=out Bits(Data_Width/8 bits)

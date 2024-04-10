@@ -1,4 +1,4 @@
-package Systolic_Array.SystolicArray3D
+package SystolicArray3D
 
 //用来控制switch
 import spinal.core._

@@ -5,7 +5,7 @@ import utils._
 import spinal.lib.Delay
 import spinal.lib.StreamFifo
 import xip.Mul
-import Systolic_Array.Quant.Quan
+import Quant.Quan
 import xip.xil_SimpleDualBram
 import javax.xml.transform.OutputKeys
 //实现8并行度的累加计算

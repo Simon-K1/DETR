@@ -1,4 +1,4 @@
-package Systolic_Array.Quant
+package Quant
 import spinal.core._
 import spinal.lib._
 import xip.{AddSub, AddSubConfig, Mul, MulConfig}

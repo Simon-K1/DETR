@@ -1,7 +1,7 @@
 //这里的量化用于全部的矩阵计算
 //量化计算：
 
-package Systolic_Array.Quant
+package Quant
 import spinal.core._
 import spinal.lib._
 import utils._
