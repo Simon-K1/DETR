@@ -22,8 +22,9 @@ Feature_Channel=8;%图片通道
 Out_Channel=32;%输出图片通道，要修改
 BinFile_Channel=Out_Channel;%一般来说binfile_channel和Out_Channel一样
 
-Padding=1;%要修改--要不要padding
-PaddingNum=1;%要修改--Padding补零的圈数，如果是1的话，图片的行和高都会加2
+enPadding=1;%要修改--要不要padding
+zeroNum=1;%要修改--Padding补零的圈数，如果是1的话，图片的行和高都会加2
+zeroData=123;%要修改，根据Pytorch量化结果来吧，没真实数据就用随机数
 
 Stride=1;%要修改
 KernelSize=3;%要修改
@@ -39,8 +40,8 @@ HeadNums=12;%注意力头的数量，记得修改HeadNums，Tiny=3,Small=6,base=
 
 
 %-----------------------------下面的都不要改-----------------------------------------
-if Padding%如果要Padding，重新计算Padding后图片的大小
-    Feature_Size=Feature_Size+PaddingNum*2
+if enPadding%如果要Padding，重新计算Padding后图片的大小
+    Feature_Size=Feature_Size+zeroNum*2
 end
 
 OutFeatureSize=75;%无需修改，在后面自动推理出来

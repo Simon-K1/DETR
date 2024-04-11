@@ -31,8 +31,8 @@ io_Sliding_Size=Feature_Channel*Stride/Height;
 io_OutRow_Count_Times=OutFeatureSize;
 QuantInstru_zeroIn=59;%待修改
 
-if Padding
-    io_InFeature_Size=Feature_Size-PaddingNum*2;%这个参数单独给Padding模块，应该给原始图片大小
+if enPadding
+    io_InFeature_Size=Feature_Size-zeroNum*2;%这个参数单独给Padding模块，应该给原始图片大小
 else
     io_InFeature_Size=Feature_Size;
 end
@@ -51,6 +51,10 @@ fprintf(".Img2Col_OutCol_Count_Times            (%d),\n",io_OutCol_Count_Times  
 fprintf(".Img2Col_InCol_Count_Times             (%d),\n",io_InCol_Count_Times             )
 fprintf(".Img2Col_OutRow_Count_Times            (%d),\n",io_OutRow_Count_Times            )
 fprintf(".Img2Col_OutFeature_Channel_Count_Times(%d),\n",ceil(io_OutFeature_Channel_Count_Times))
+
+fprintf("enPadding(%d),\n",enPadding);
+fprintf("zeroData(%d),\n",zeroData);
+fprintf("zeroNum(%d),\n",zeroNum);
 fprintf("===================================================\n")
 
 %% 权重对应指令,全部统一用矩阵表示
@@ -71,7 +75,10 @@ fprintf("===================================================\n")
 if ConvTest
 Stride_Bin=sprintf("%05s",dec2bin(io_Stride));
 KernelSize_Bin=sprintf("%05s",dec2bin(io_KernelSize));
-fprintf("Write_Lite(REG_Table_BASE_ADDR,0x8,0x%s);\n",dec2hex(bin2dec([KernelSize_Bin+Stride_Bin])))
+enPadding=sprintf("%1s",dec2bin(enPadding));
+zeroData=sprintf("%08s",dec2bin(zeroData));
+zeroNum=sprintf("%02s",dec2bin(zeroNum));
+fprintf("Write_Lite(REG_Table_BASE_ADDR,0x8,0x%s);\n",dec2hex(bin2dec([zeroNum+zeroData+enPadding+KernelSize_Bin+Stride_Bin])))
 
 %Instru2：两个16bit拼起来
 fprintf("Write_Lite(REG_Table_BASE_ADDR,0xc,0x%s%04s);\n",dec2hex(io_InFeature_Size),dec2hex(io_Window_Size))
