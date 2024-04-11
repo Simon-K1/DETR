@@ -2,7 +2,7 @@
     % 图片大小，步长等相关信息需要手动配置
 clear
 
-ProjDir="E:\Transformer\Matlab\main\Tests\SA_3D\SA_3_8_64\Pytorch_base";%修改
+ProjDir="E:\Transformer\Matlab\main\Tests\SA_3D\SA_1_8_8\Padding";%修改
 PytorchPath="E:\Transformer\Transformer_Arithmatic\Transformer_Main\BinPath\"
 if exist(ProjDir,'dir')
     warning("文件夹已经存在！！")
@@ -12,24 +12,36 @@ else
     cd(ProjDir)
 end
 FromPytorch=1;%是否采用pytorch生成的真实数据
-Drop_Message=1;%将图片继续补零以匹配卷积不丢失信息
-WEIGHT_VERSION=1;%权重缓存模块的版本，可选1（V1），2（V2，已失效）
-Feature_Size=224;%图片大小224*224
-Feature_Channel=8;%图片通道
-Out_Channel=768;%输出图片通道，要修改
-BinFile_Channel=768;%一般来说binfile_channel和Out_Channel一样
+Drop_Message=1;%决定卷积完后图片大小要不要变化
+                %默认为1，0选项在加入padding模块后已经没啥用了
 
-Stride=16;%要修改
-KernelSize=16;%要修改
+
+WEIGHT_VERSION=1;%权重缓存模块的版本，可选1（V1），2（V2，已失效）
+Feature_Size=32;%图片大小224*224（未Padding的图片大小）
+Feature_Channel=8;%图片通道
+Out_Channel=32;%输出图片通道，要修改
+BinFile_Channel=Out_Channel;%一般来说binfile_channel和Out_Channel一样
+
+Padding=1;%要修改--要不要padding
+PaddingNum=1;%要修改--Padding补零的圈数，如果是1的话，图片的行和高都会加2
+
+Stride=1;%要修改
+KernelSize=3;%要修改
 assert(Stride<=KernelSize,"Stride must be less than kernelSize");
 %脉动阵列配置
 Slice=3;
 Height=8;%不要改
 Width=64;
-HeadNums=12;%记得修改HeadNums，Tiny=3,Small=6,base=12
+HeadNums=12;%注意力头的数量，记得修改HeadNums，Tiny=3,Small=6,base=12
 
 %Compute_InChannel=Height;%每次计算的输出通道，
 %Compute_OutChannel=Slice*Width;%每次计算的输出列数，先别动
+
+
+%-----------------------------下面的都不要改-----------------------------------------
+if Padding%如果要Padding，重新计算Padding后图片的大小
+    Feature_Size=Feature_Size+PaddingNum*2
+end
 
 OutFeatureSize=75;%无需修改，在后面自动推理出来
 assert(mod(Feature_Channel,8)==0,"输入通道必须是8的倍数");

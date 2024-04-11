@@ -15,7 +15,7 @@ if io_Window_Size<1
 else
     io_Window_Size=ceil(io_Window_Size);
 end
-io_InFeature_Size=Feature_Size;
+
 io_InFeature_Channel=Feature_Channel;
 io_OutFeature_Channel=Out_Channel;
 io_OutFeature_Size=OutFeatureSize;
@@ -30,6 +30,12 @@ io_OutFeature_Channel_Count_Times=ceil(Out_Channel/(Slice*Width));
 io_Sliding_Size=Feature_Channel*Stride/Height;
 io_OutRow_Count_Times=OutFeatureSize;
 QuantInstru_zeroIn=59;%待修改
+
+if Padding
+    io_InFeature_Size=Feature_Size-PaddingNum*2;%这个参数单独给Padding模块，应该给原始图片大小
+else
+    io_InFeature_Size=Feature_Size;
+end
 %% io输入参数
 fprintf(".QuantInstru_zeroIn            (%d),\n",QuantInstru_zeroIn                         )
 

@@ -181,9 +181,9 @@ clear
 figure;
 Freq=200;
 CLK_CYCLE=((1/(Freq*10^6))*10^9)/10^6 ;%时钟周期：单位用ms来表示
-Slice=4;
+Slice=1;
 Height=8;
-Width=64;
+Width=8;
 DMA_WDITH=24;
 for i = 1:14
     subplot(4, 4, i);

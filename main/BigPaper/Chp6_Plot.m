@@ -109,3 +109,45 @@ ylabel('Power','FontWeight','bold');
 color = rand(1,3);  % 随机生成RGB颜色
 plot(Power, '-.o', 'LineWidth', 3,'Color',color);
 legend('LUT', 'LUTRAM', 'FF', 'BRAM', 'DSP',"Power(W)",'FontWeight','bold');
+
+
+%% 开始画CPU和GPU之间的比较图
+Energy_Eff=[0.0756,0.2044,0.5178;
+       0.4104,0.4887,0.5261;
+       1.1269,3.5515,9.1083
+]
+Energy_Eff=Energy_Eff'
+Power=[45,115,10.28]
+FPS=Energy_Eff.*Power
+
+%第一步：画能效曲线
+barchat=bar(Energy_Eff,'FaceColor','flat')
+    %g改柱子颜色
+
+% for i=1:3
+%     barchat(i).CData=rand(1,3)
+% end
+barchat(1).CData=[0.6892    0.7482    0.4505];
+barchat(2).CData=[0.0838    0.2290    0.9133];
+barchat(2).CData=[0.1524    0.8258    0.5383];
+
+ylabel("能效(FPS/W)","FontSize",13,FontWeight="bold");
+xticklabels(["Vit-Base","Vit-Small","Vit-Tiny"])
+
+legend("CPU","GPU","FPGA")
+
+
+yyaxis right
+%第二步：画FPS曲线
+color=[0.2785    0.5469    0.9575]%rand(1,3)%
+
+plot(FPS(:,1),'--p','LineWidth',2,"MarkerSize",10,'Color',color)
+
+hold on
+plot(FPS(:,2),'--^','LineWidth',2,"MarkerSize",10,'Color',color)
+
+hold on
+plot(FPS(:,3),'--o','LineWidth',2,"MarkerSize",10,'Color',color)
+legend("CPU(FPS/W)","GPU(FPS/W)","FPGA(FPS/W)","CPU(FPS)","GPU(FPS)","FPGA(FPS)")
+
+ylabel("FPS",'FontSize',13,'FontWeight','bold')
