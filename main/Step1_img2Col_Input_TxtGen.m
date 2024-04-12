@@ -67,6 +67,14 @@ Out_Col_Lefted=Out_Col;
 In_Col=Feature_Size;
 In_Row=Feature_Size;
 
+Feature_In_pre=zeros(Feature_Size,Feature_Size*Feature_Channel);
+for row=1:Feature_Size
+    Row_Data=rand(1,Feature_Size*Feature_Channel)*100;
+    Feature_In_pre(row,:)=round(Row_Data);
+end
+
+
+
 Feature_Size_padding=Feature_Size+padding*2;
 Feature_In=zeros(Feature_Size_padding,Feature_Size_padding*Feature_Channel);
 Feature_Row=zeros(1,Feature_Size);
@@ -82,11 +90,17 @@ for row=1:Feature_Size_padding
             Row_Data =zeroData;
             Feature_In(row,col)=Row_Data;
         else
-            Row_Data=randi([1,255]);
-            Feature_In(row,col)=Row_Data;%Feature_Size*Feature_Channel个Row_Data
+
         end
     end
 end
+start_row = ceil((size(Feature_In, 1) - size(Feature_In_pre, 1)) / 2) + 1;
+end_row = start_row + size(Feature_In_pre, 1) - 1;
+start_col = ceil((size(Feature_In, 2) - size(Feature_In_pre, 2)) / 2) + 1;
+end_col = start_col + size(Feature_In_pre, 2) - 1;
+
+Feature_In(start_row:end_row, start_col:end_col) = Feature_In_pre;
+
 
 %% 开始构建权重数据
 WeightMatrix=zeros(Feature_Channel*KernelSize*KernelSize,Out_Channel);%%构建权重矩阵

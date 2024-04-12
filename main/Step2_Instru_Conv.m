@@ -19,7 +19,7 @@ end
 io_InFeature_Channel=Feature_Channel;
 io_OutFeature_Channel=Out_Channel;
 io_OutFeature_Size=OutFeatureSize;
-io_OutCol_Count_Times=OutFeatureSize/(Height);%输出列计数器：比如输出8*8*8阵列，可以同时处理8个输出点的64通道
+io_OutCol_Count_Times=OutFeatureSize/(Height);%比如输出特征图的大小是14列，但是我们的输出并行度是8（8个滑窗），所以这里应该是ceil(14/8)=2
 if io_OutCol_Count_Times<1
     io_OutCol_Count_Times=0;
 else
@@ -30,31 +30,28 @@ io_OutFeature_Channel_Count_Times=ceil(Out_Channel/(Slice*Width));
 io_Sliding_Size=Feature_Channel*Stride/Height;
 io_OutRow_Count_Times=OutFeatureSize;
 QuantInstru_zeroIn=59;%待修改
+io_InFeature_Size=Feature_Size;
 
-if enPadding
-    io_InFeature_Size=Feature_Size-zeroNum*2;%这个参数单独给Padding模块，应该给原始图片大小
-else
-    io_InFeature_Size=Feature_Size;
-end
 %% io输入参数
-fprintf(".QuantInstru_zeroIn            (%d),\n",QuantInstru_zeroIn                         )
+fprintf(".QuantInstru_zeroIn                    (%d),\n",QuantInstru_zeroIn               )
 
+fprintf(".Img2Col_Sliding_Size                  (%d),\n",io_Sliding_Size                  )
 fprintf(".Img2Col_Stride                        (%d),\n",io_Stride                        )
 fprintf(".Img2Col_Kernel_Size                   (%d),\n",io_KernelSize                    )
 fprintf(".Img2Col_Window_Size                   (%d),\n",io_Window_Size                   )
 fprintf(".Img2Col_InFeature_Size                (%d),\n",io_InFeature_Size                )
 fprintf(".Img2Col_InFeature_Channel             (%d),\n",io_InFeature_Channel             )
-fprintf(".Img2Col_OutFeature_Channel            (%d),\n",io_OutFeature_Channel            )
-fprintf(".Img2Col_OutFeature_Size               (%d),\n",io_OutFeature_Size               )
-fprintf(".Img2Col_Sliding_Size                  (%d),\n",io_Sliding_Size)
-fprintf(".Img2Col_OutCol_Count_Times            (%d),\n",io_OutCol_Count_Times            )
 fprintf(".Img2Col_InCol_Count_Times             (%d),\n",io_InCol_Count_Times             )
+
+fprintf(".Img2Col_OutFeature_Size               (%d),\n",io_OutFeature_Size               )
+fprintf(".Img2Col_OutFeature_Channel            (%d),\n",io_OutFeature_Channel            )
+fprintf(".Img2Col_OutCol_Count_Times            (%d),\n",io_OutCol_Count_Times            )
 fprintf(".Img2Col_OutRow_Count_Times            (%d),\n",io_OutRow_Count_Times            )
 fprintf(".Img2Col_OutFeature_Channel_Count_Times(%d),\n",ceil(io_OutFeature_Channel_Count_Times))
 
-fprintf("enPadding(%d),\n",enPadding);
-fprintf("zeroData(%d),\n",zeroData);
-fprintf("zeroNum(%d),\n",zeroNum);
+fprintf(".enPadding                             (%d),\n",enPadding);
+fprintf(".zeroData                              (%d),\n",zeroData);
+fprintf(".zeroNum                               (%d),\n",zeroNum);
 fprintf("===================================================\n")
 
 %% 权重对应指令,全部统一用矩阵表示
