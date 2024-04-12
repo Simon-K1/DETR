@@ -1,0 +1,5 @@
+全部模块集成到了Accelerator_Top里，现在可以一键生成各种乱七八糟的脉动阵列了
+Data_Generator_V2:算卷积的，Img2Col
+Flatten:位宽转换，接在脉动阵列后面
+Data_Arrange:数据排列，对脉动阵列出来的数据进行排列，按行优先输出
+weight_Cahce:B矩阵缓存

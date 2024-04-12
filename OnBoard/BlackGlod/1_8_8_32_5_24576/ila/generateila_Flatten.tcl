@@ -1,0 +1,5 @@
+set mulExit [lsearch -exact [get_ips ila_Flatten] ila_Flatten]
+if { $mulExit <0} {
+create_ip -name ila -vendor xilinx.com -library ip -module_name ila_Flatten
+}
+set_property -dict [list CONFIG.C_NUM_OF_PROBES {16} CONFIG.C_PROBE0_WIDTH {32} CONFIG.C_PROBE1_WIDTH {32} CONFIG.C_PROBE2_WIDTH {32} CONFIG.C_PROBE3_WIDTH {32} CONFIG.C_PROBE4_WIDTH {32} CONFIG.C_PROBE5_WIDTH {32} CONFIG.C_PROBE6_WIDTH {32} CONFIG.C_PROBE7_WIDTH {32} CONFIG.C_PROBE8_WIDTH {1} CONFIG.C_PROBE9_WIDTH {1} CONFIG.C_PROBE10_WIDTH {1} CONFIG.C_PROBE11_WIDTH {1} CONFIG.C_PROBE12_WIDTH {1} CONFIG.C_PROBE13_WIDTH {1} CONFIG.C_PROBE14_WIDTH {1} CONFIG.C_PROBE15_WIDTH {1}  CONFIG.Component_Name {ila_Flatten}] [get_ips ila_Flatten]
