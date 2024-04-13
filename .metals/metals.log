@@ -30,3 +30,40 @@
 2024.04.12 17:38:49 INFO  Shutting down server
 2024.04.12 17:38:49 INFO  shutting down Metals
 2024.04.12 17:38:49 INFO  Exiting server
+2024.04.13 00:17:45 INFO  Started: Metals version 0.11.12 in workspace 'E:\Transformer\Matlab' for client Visual Studio Code 1.88.1.
+4月 13, 2024 12:17:45 上午 org.flywaydb.core.internal.license.VersionPrinter printVersionOnly
+信息: Flyway Community Edition 9.16.3 by Redgate
+4月 13, 2024 12:17:45 上午 org.flywaydb.core.internal.license.VersionPrinter printVersion
+信息: See release notes here: https://rd.gt/416ObMi
+4月 13, 2024 12:17:45 上午 org.flywaydb.core.internal.license.VersionPrinter printVersion
+信息: 
+4月 13, 2024 12:17:46 上午 org.flywaydb.core.internal.database.base.BaseDatabaseType createDatabase
+信息: Database: jdbc:h2:file:E:\Transformer\Matlab\.metals\metals (H2 2.1)
+4月 13, 2024 12:17:46 上午 org.flywaydb.core.internal.command.DbValidate validate
+信息: Successfully validated 4 migrations (execution time 00:00.026s)
+4月 13, 2024 12:17:46 上午 org.flywaydb.core.internal.command.DbMigrate migrateGroup
+信息: Current version of schema "PUBLIC": 4
+4月 13, 2024 12:17:46 上午 org.flywaydb.core.internal.command.DbMigrate logSummary
+信息: Schema "PUBLIC" is up to date. No migration necessary.
+2024.04.13 00:17:46 INFO  time: initialize in 0.77s
+2024.04.13 00:17:48 WARN  Build server is not auto-connectable.
+2024.04.13 00:18:45 INFO  Shutting down server
+2024.04.13 00:18:45 INFO  shutting down Metals
+2024.04.13 00:18:45 INFO  Exiting server
+2024.04.13 13:20:51 INFO  Started: Metals version 0.11.12 in workspace 'E:\Transformer\Matlab' for client Visual Studio Code 1.88.1.
+4月 13, 2024 1:20:51 下午 org.flywaydb.core.internal.license.VersionPrinter printVersionOnly
+信息: Flyway Community Edition 9.16.3 by Redgate
+4月 13, 2024 1:20:51 下午 org.flywaydb.core.internal.license.VersionPrinter printVersion
+信息: See release notes here: https://rd.gt/416ObMi
+4月 13, 2024 1:20:51 下午 org.flywaydb.core.internal.license.VersionPrinter printVersion
+信息: 
+4月 13, 2024 1:20:52 下午 org.flywaydb.core.internal.database.base.BaseDatabaseType createDatabase
+信息: Database: jdbc:h2:file:E:\Transformer\Matlab\.metals\metals (H2 2.1)
+4月 13, 2024 1:20:52 下午 org.flywaydb.core.internal.command.DbValidate validate
+信息: Successfully validated 4 migrations (execution time 00:00.037s)
+4月 13, 2024 1:20:52 下午 org.flywaydb.core.internal.command.DbMigrate migrateGroup
+信息: Current version of schema "PUBLIC": 4
+4月 13, 2024 1:20:52 下午 org.flywaydb.core.internal.command.DbMigrate logSummary
+信息: Schema "PUBLIC" is up to date. No migration necessary.
+2024.04.13 13:20:52 INFO  time: initialize in 1.05s
+2024.04.13 13:20:55 WARN  Build server is not auto-connectable.
