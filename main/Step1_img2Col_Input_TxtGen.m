@@ -40,11 +40,6 @@ HeadNums=12;%注意力头的数量，记得修改HeadNums，Tiny=3,Small=6,base=
 
 
 %-----------------------------下面的都不要改-----------------------------------------
-if enPadding==1 %Feature_Size=Feature_Size+zeroNum*2
-  padding=zeroNum;
-else
-  padding=0;
-end
 
 OutFeatureSize=75;%无需修改，在后面自动推理出来
 assert(mod(Feature_Channel,8)==0,"输入通道必须是8的倍数");
@@ -56,7 +51,7 @@ if Stride==KernelSize
         error('Error:kernelSize必须和FeatureSize匹配\n')
     end
 else
-    OutFeatureSize =floor((Feature_Size+padding*2-KernelSize)/Stride)+1;
+    OutFeatureSize =floor((Feature_Size+zeroNum*2-KernelSize)/Stride)+1;
 end
 
 Out_Col=OutFeatureSize;
@@ -67,40 +62,39 @@ Out_Col_Lefted=Out_Col;
 In_Col=Feature_Size;
 In_Row=Feature_Size;
 
-Feature_In_pre=zeros(Feature_Size,Feature_Size*Feature_Channel);
+Feature_In=zeros(Feature_Size,Feature_Size*Feature_Channel);
 for row=1:Feature_Size
     Row_Data=rand(1,Feature_Size*Feature_Channel)*100;
-    Feature_In_pre(row,:)=round(Row_Data);
+    Feature_In(row,:)=round(Row_Data);
 end
 
 
 
-Feature_Size_padding=Feature_Size+padding*2;
-Feature_In=zeros(Feature_Size_padding,Feature_Size_padding*Feature_Channel);
+Feature_Size_padding=Feature_Size+zeroNum*2;
+Feature_In_padding=zeros(Feature_Size_padding,Feature_Size_padding*Feature_Channel);
 Feature_Row=zeros(1,Feature_Size);
 
 
 
 for row=1:Feature_Size_padding
     for col=1:Feature_Size_padding*Feature_Channel%注意列数包含通道 每个row都是特征图的一层（包含通道）
-        if row <=padding || row >Feature_Size_padding-padding
+        if row <=zeroNum || row >Feature_Size_padding-zeroNum
             Row_Data =zeroData;
-            Feature_In(row,col)=Row_Data;
-        elseif (padding < row && row <= Feature_Size_padding - padding) && (col <= padding*Feature_Channel || ((Feature_Size_padding - padding)*Feature_Channel < col ))
+            Feature_In_padding(row,col)=Row_Data;
+        elseif (zeroNum < row && row <= Feature_Size_padding - zeroNum) && (col <= zeroNum*Feature_Channel || ((Feature_Size_padding - zeroNum)*Feature_Channel < col ))
             Row_Data =zeroData;
-            Feature_In(row,col)=Row_Data;
+            Feature_In_padding(row,col)=Row_Data;
         else
 
         end
     end
 end
-start_row = ceil((size(Feature_In, 1) - size(Feature_In_pre, 1)) / 2) + 1;
-end_row = start_row + size(Feature_In_pre, 1) - 1;
-start_col = ceil((size(Feature_In, 2) - size(Feature_In_pre, 2)) / 2) + 1;
-end_col = start_col + size(Feature_In_pre, 2) - 1;
 
-Feature_In(start_row:end_row, start_col:end_col) = Feature_In_pre;
-
+start_row = ceil((size(Feature_In_padding, 1) - size(Feature_In, 1)) / 2) + 1;
+end_row = start_row + size(Feature_In, 1) - 1;
+start_col = ceil((size(Feature_In_padding, 2) - size(Feature_In, 2)) / 2) + 1;
+end_col = start_col + size(Feature_In, 2) - 1;
+Feature_In_padding(start_row:end_row,start_col:end_col)= Feature_In;
 
 %% 开始构建权重数据
 WeightMatrix=zeros(Feature_Channel*KernelSize*KernelSize,Out_Channel);%%构建权重矩阵
@@ -119,7 +113,7 @@ save('matlab')
 %% 生成txt文件
 if ~FromPytorch
     fid_raw_W=fopen('Rand_ImageIn.txt','w');
-    Matrix_Flattened=reshape(Feature_In',1,[]);%转置 展平成一行
+    Matrix_Flattened=reshape(Feature_In_padding',1,[]);%转置 展平成一行
     Shape=size(Matrix_Flattened);%取行数 列数
     %fprintf("shape2 %d\n ",Shape(2))
      for i=8:8:Shape(2)% 行数*列数(展平了) 一个是8bit
