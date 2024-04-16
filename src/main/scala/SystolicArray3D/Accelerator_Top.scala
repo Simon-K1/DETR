@@ -65,7 +65,7 @@ class Accelerator_TopV2(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODULE
     core.Img2Col_Instru.OutMatrix_Col                   :=Regs.OutMatrix_Col
     core.Img2Col_Instru.OutMatrix_Row                   :=Regs.OutMatrix_Row//输出矩阵的行数
     core.Img2Col_Instru.enPadding                       :=Regs.enPadding
-    core.Img2Col_Instru.zeroDara                        :=Regs.zeroDara
+    core.Img2Col_Instru.zeroData                        :=Regs.zeroDara
     core.Img2Col_Instru.zeroNum                         :=Regs.zeroNum
 
     core.Gemm_Instru.Height                        :=Regs.Gemm_Height

@@ -83,7 +83,7 @@ class MaxPooling(maxPoolingConfig: MaxPoolingConfig) extends Component {
   io.channelIn <> padding.io.channelIn
   io.start <> padding.io.start
   io.row_colNumIn <> padding.io.row_colNumIn
-  io.zeroDara <> padding.io.zeroDara
+  io.zeroDara <> padding.io.zeroData
   io.zeroNum <> padding.io.zeroNum
 
   //maxPooling模块
