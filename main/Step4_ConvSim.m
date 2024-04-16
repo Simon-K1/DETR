@@ -4,6 +4,7 @@ load("matlab.mat")
 OutFeature=zeros(Out_Row,Out_Col*Out_Channel);
 i=1;
 j=1;
+
 %% 硬件卷积输出（标准的图片格式），数据未量化
 for row=1:Stride:In_Row-KernelSize+1%遍历行
     for col=1:Stride:In_Col-KernelSize+1%遍历列
@@ -41,13 +42,13 @@ end
 
 %获取量化后的卷积输出数据
     %阶段一：简单截位,只用于上板测试
-for i=1:size(OutFeature_3D_Arranged,1)%遍历行
-    OriginData=OutFeature_3D_Arranged{i};
-    OriginData_Cut=fliplr(dec2hex(OriginData));
-    OriginData_Cut=fliplr(OriginData_Cut(:,1:2));%直接截位取低8bit
-    OriginData_Cut=reshape(hex2dec(OriginData_Cut),size(OutFeature_3D_Arranged{1}));
-    OutFeature_3D_Quan{i}=OriginData_Cut;
-end
+% for i=1:size(OutFeature_3D_Arranged,1)%遍历行
+%     OriginData=OutFeature_3D_Arranged{i};
+%     OriginData_Cut=fliplr(dec2hex(OriginData));
+%     OriginData_Cut=fliplr(OriginData_Cut(:,1:2));%直接截位取低8bit
+%     OriginData_Cut=reshape(hex2dec(OriginData_Cut),size(OutFeature_3D_Arranged{1}));
+%     OutFeature_3D_Quan{i}=OriginData_Cut;
+% end
 if 0
     Valid_Sign=1;%数据Valid有效信号
     Valid_Sign=['FF','7F','3F','1F','0F','07','03','01'];

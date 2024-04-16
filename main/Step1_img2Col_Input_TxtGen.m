@@ -2,7 +2,7 @@
     % 图片大小，步长等相关信息需要手动配置
 clear
 
-ProjDir="E:\Transformer\Matlab\main\Tests\SA_3D\SA_1_8_8\Padding";%修改
+ProjDir="E:\Transformer\Matlab\main\Tests\SA_3D\SA_1_8_8\PaddingNew";%修改
 PytorchPath="E:\Transformer\Transformer_Arithmatic\Transformer_Main\BinPath\"
 if exist(ProjDir,'dir')
     warning("文件夹已经存在！！")
@@ -73,22 +73,22 @@ Feature_Row=zeros(1,Feature_Size);
 
 
 
-% for row=1:Feature_Size_padding
-%     for col=1:Feature_Size_padding*Feature_Channel%注意列数包含通道 每个row都是特征图的一层（包含通道）
-%         if row <=padding || row >Feature_Size_padding-padding
-%             Row_Data =zeroData;
-%             Feature_In(row,col)=Row_Data;
-%         elseif (padding < row && row <= Feature_Size_padding - padding) && (col <= padding*Feature_Channel || ((Feature_Size_padding - padding)*Feature_Channel < col ))
-%             Row_Data =zeroData;
-%             Feature_In(row,col)=Row_Data;
-%         else
-%             Row_Data=randi([1,255]);
-%             Feature_In(row,col)=Row_Data;%Feature_Size*Feature_Channel个Row_Data
-%         end
-%     end
-% end
-Feature_In=reshape(randi([0,255],[Feature_Size,Feature_Size,Feature_Channel]),Feature_Size,[])
-Feature_No_Padding=Feature_In(zeroNum+1:end-zeroNum,zeroNum+1:end-zeroNum);
+for row=1:Feature_Size_padding
+    for col=1:Feature_Size_padding*Feature_Channel%注意列数包含通道 每个row都是特征图的一层（包含通道）
+        if row <=padding || row >Feature_Size_padding-padding
+            Row_Data =zeroData;
+            Feature_In(row,col)=Row_Data;
+        elseif (padding < row && row <= Feature_Size_padding - padding) && (col <= padding*Feature_Channel || ((Feature_Size_padding - padding)*Feature_Channel < col ))
+            Row_Data =zeroData;
+            Feature_In(row,col)=Row_Data;
+        else
+            Row_Data=randi([1,255]);
+            Feature_In(row,col)=Row_Data;%Feature_Size*Feature_Channel个Row_Data
+        end
+    end
+end
+% Feature_In=reshape(randi([0,255],[Feature_Size,Feature_Size,Feature_Channel]),Feature_Size,[])
+Feature_No_Padding=Feature_In(zeroNum+1:end-zeroNum,zeroNum*Feature_Channel+1:end-zeroNum*Feature_Channel);
 %% 开始构建权重数据
 WeightMatrix=zeros(Feature_Channel*KernelSize*KernelSize,Out_Channel);%%构建权重矩阵
 WeightMatrix_Row=zeros(1,Out_Channel);
