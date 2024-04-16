@@ -4,7 +4,8 @@ load("matlab.mat")
 OutFeature=zeros(Out_Row,Out_Col*Out_Channel);
 i=1;
 j=1;
-
+In_Row=Feature_Size_padding;
+In_Col=Feature_Size_padding;
 %% 硬件卷积输出（标准的图片格式），数据未量化
 for row=1:Stride:In_Row-KernelSize+1%遍历行
     for col=1:Stride:In_Col-KernelSize+1%遍历列
@@ -37,31 +38,10 @@ for Row=1:size(OutFeature,1)%遍历行
             SA_OutPut_Row=[SA_OutPut_Row;Temp_Block];
         end
     end
-    OutFeature_3D_Arranged(Row)={SA_OutPut_Row};
+    OutFeature_3D_Arranged(Row)={SA_OutPut_Row'};
 end
 
-%获取量化后的卷积输出数据
-if 0
-    Valid_Sign=1;%数据Valid有效信号
-    Valid_Sign=['FF','7F','3F','1F','0F','07','03','01'];
-    fid=fopen("阵列输出仿真数据.txt","w");
-    for i=1:size(OutFeature_3D_Arranged,1)%遍历行
-        BlockData=OutFeature_3D_Arranged{i};
-        for j=1:size(OutFeature_3D_Arranged{1,1},1)
-            QuanData=fliplr(dec2hex(BlockData(j,:)));
-            QuanData=fliplr(QuanData(:,1:2));
-            for Print_Times=1:8
-                if Print_Times==8
-                    fprintf(fid,"%02s\n",QuanData(8-Print_Times+1,:));
-                else
-                    fprintf(fid,"%02s",QuanData(8-Print_Times+1,:));
-                end
-            end
 
-        end
-    end
-    fclose(fid);
-end
 %生成输出对比文件
     %第一步：将矩阵展平，得到连续的数据，模拟连续的数据流
 %     for i=1:size(OutFeature_3D_Quan,1)%遍历行
@@ -101,9 +81,9 @@ end
 %% 检查中间数据
 %需要输入连续的三个数据，输出这三个数据对应的行列
 if 0
-    data1=12826;
-    data2=12782;
-    data3=13425;
+    data1=28519;
+    data2=27458;
+    data3=29533;
     for i=1:size(OutFeature,1)
         for j=1:size(OutFeature,2)-2
             if OutFeature(i,j)==data1&&OutFeature(i,j+1)==data2&&OutFeature(i,j+2)==data3

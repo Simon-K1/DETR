@@ -1,7 +1,7 @@
 %% 拿到第三步生成的指令和此步骤生成的标准输入bin文件上板验证，最后和标准输出进行逐字节对比
 clear 
 load("matlab.mat")
-Picture_Flattened=reshape(Feature_No_Padding',1,[]);
+Picture_Flattened=reshape(Feature_In',1,[]);
 if WEIGHT_VERSION==1
     WeightMatrix_Flattened=reshape(WeightMatrix,1,[]);
     if ~exist("Scale","var")

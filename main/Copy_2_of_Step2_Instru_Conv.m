@@ -1,14 +1,19 @@
+function []=Step2_Instru_Conv( ...
+    enPadding,zeroData,zeroNum, ...
+    Feature_Size,Feature_Channel, ...
+    Out_Channel,OutFeatureSize, ...
+    Stride,KernelSize,SA_t,SA_h,SA_w)
 %% 第二步：生成对应的指令(用于仿真)
-clear
+
 % addpath("funs\");
     %开关-------------------------------------------
 Matrix2Img=1;%将矩阵转化为通道优先的3D图片
 ConvTest=1;%如果测试卷积，则生成卷积指令，否则生成MM指令
     %-----------------------------------------------
-load("matlab.mat")
+
 io_Stride=Stride;
 io_KernelSize=KernelSize;
-io_Window_Size=KernelSize*Feature_Channel/(Height);
+io_Window_Size=KernelSize*Feature_Channel/(SA_h);
 if io_Window_Size<1
     io_Window_Size=0;%这里考虑的情况是：存在计算输出通道大于网络输出通道的可能
                         %比如8*8*8的脉动阵列，一下能算64个输出通道
@@ -19,14 +24,14 @@ end
 io_InFeature_Channel=Feature_Channel;
 io_OutFeature_Channel=Out_Channel;
 io_OutFeature_Size=OutFeatureSize;
-io_OutCol_Count_Times=OutFeatureSize/(Height);%比如输出特征图的大小是14列，但是我们的输出并行度是8（8个滑窗），所以这里应该是ceil(14/8)=2
+io_OutCol_Count_Times=OutFeatureSize/(SA_h);%比如输出特征图的大小是14列，但是我们的输出并行度是8（8个滑窗），所以这里应该是ceil(14/8)=2
 if io_OutCol_Count_Times<1
     io_OutCol_Count_Times=0;
 else
     io_OutCol_Count_Times=ceil(io_OutCol_Count_Times);
 end
-io_InCol_Count_Times=Feature_Channel*(Feature_Size+enPadding*2*zeroNum)/Height;%目前还是要求输入通道必须是8的倍数
-io_OutFeature_Channel_Count_Times=ceil(Out_Channel/(Slice*Width));
+io_InCol_Count_Times=Feature_Channel*Feature_Size/Height;%目前还是要求输入通道必须是8的倍数
+io_OutFeature_Channel_Count_Times=ceil(Out_Channel/(SA_t*Width));
 io_Sliding_Size=Feature_Channel*Stride/Height;
 io_OutRow_Count_Times=OutFeatureSize;
 QuantInstru_zeroIn=59;%待修改
@@ -210,4 +215,4 @@ Ctrl=[OutSwitchCtrl,QuantSwitch,SwitchCtrl,0,0,Start];
 fprintf("Write_Lite(REG_Table_BASE_ADDR,0x4,0x%s);//发送图片数据并接收计算结果\n",dec2hex(bin2dec(char(Ctrl+48))))
 ReadWrite_DMA(string(PICTURE_BASE_ADDR),SendPicture_Len,string(CONV_RESULT_BASE_ADDR),ReceivePicture_Len);
 
-
+end

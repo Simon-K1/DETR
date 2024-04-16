@@ -16,13 +16,13 @@
 
 #!Transformer_Txt_Gen/*.m    如果只想保留.m文件，必须这样写，因为如果父目录被排除，那么父目录下的文件也无法被跟踪
 !.gitignore
-.metals
-.vscode
-.idea
-.bsp
-project
-.target
-verilog
-tcls
+.metals/
+.vscode/
+.idea/
+.bsp/
+project/
+.target/
+verilog/
+tcls/
 
 Tests/
