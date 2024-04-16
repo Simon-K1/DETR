@@ -1,9 +1,16 @@
+
+
+
 /*
-!/src/
+!/main/
+
+#这个还有顺序,比如这个*.exe放最前面就不行
+
+!LayerNorm_Txt_Gen/
+!LayerNorm_Txt_Gen/**
+
+#!Transformer_Txt_Gen/*.m    如果只想保留.m文件，必须这样写，因为如果父目录被排除，那么父目录下的文件也无法被跟踪
 !.gitignore
-!build.sbt
-!*.ipynb
-!*.py
-!/Simulation/
-!/归档记录/
-!/上板调试备忘录
+<<<<<<< HEAD
+=======
+>>>>>>> ad709054bfa8175addfaeb893ce158207342e81b
