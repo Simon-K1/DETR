@@ -2,7 +2,7 @@
     % 图片大小，步长等相关信息需要手动配置
 clear
 
-ProjDir="E:\FPGA\Transformer\MATLAB\Matlab_Main\Transformer_Main\main\DETR";%修改
+ProjDir="E:\Transformer\Matlab\main\Tests\SA_3D\SA_1_8_8\PaddingNew";%修改
 PytorchPath="E:\Transformer\Transformer_Arithmatic\Transformer_Main\BinPath\"
 if exist(ProjDir,'dir')
     warning("文件夹已经存在！！")
@@ -96,6 +96,8 @@ start_col = ceil((size(Feature_In_padding, 2) - size(Feature_In, 2)) / 2) + 1;
 end_col = start_col + size(Feature_In, 2) - 1;
 Feature_In_padding(start_row:end_row,start_col:end_col)= Feature_In;
 
+% Feature_In=reshape(randi([0,255],[Feature_Size,Feature_Size,Feature_Channel]),Feature_Size,[])
+Feature_No_Padding=Feature_In(zeroNum+1:end-zeroNum,zeroNum*Feature_Channel+1:end-zeroNum*Feature_Channel);
 %% 开始构建权重数据
 WeightMatrix=zeros(Feature_Channel*KernelSize*KernelSize,Out_Channel);%%构建权重矩阵
 WeightMatrix_Row=zeros(1,Out_Channel);
@@ -113,7 +115,7 @@ save('matlab')
 %% 生成txt文件
 if ~FromPytorch
     fid_raw_W=fopen('Rand_ImageIn.txt','w');
-    Matrix_Flattened=reshape(Feature_In_padding',1,[]);%转置 展平成一行
+    Matrix_Flattened=reshape(Feature_No_Padding',1,[]);%转置 展平成一行,注意生成的是原始图片（未padding的）
     Shape=size(Matrix_Flattened);%取行数 列数
     %fprintf("shape2 %d\n ",Shape(2))
      for i=8:8:Shape(2)% 行数*列数(展平了) 一个是8bit
@@ -192,3 +194,8 @@ if FromPytorch
     fclose(fid);
     save("matlab.mat")
 end
+
+
+
+
+

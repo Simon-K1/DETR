@@ -49,9 +49,9 @@ fprintf(".Img2Col_OutCol_Count_Times            (%d),\n",io_OutCol_Count_Times  
 fprintf(".Img2Col_OutRow_Count_Times            (%d),\n",io_OutRow_Count_Times            )
 fprintf(".Img2Col_OutFeature_Channel_Count_Times(%d),\n",ceil(io_OutFeature_Channel_Count_Times))
 
-fprintf(".Img2Col_enPadding                     (%d),\n",enPadding);
-fprintf(".Img2Col_zeroData                      (%d),\n",zeroData);
-fprintf(".Img2Col_zeroNum                       (%d),\n",zeroNum);
+fprintf(".enPadding(%d),\n",enPadding);
+fprintf(".Img2Col_zeroData(%d),\n",zeroData);
+fprintf(".Img2Col_zeroNum(%d),\n",zeroNum);
 fprintf("===================================================\n")
 
 %% 权重对应指令,全部统一用矩阵表示
