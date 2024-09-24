@@ -61,12 +61,13 @@ class Accelerator_TopV2(SLICE:Int,HEIGHT:Int,WIDTH:Int,ACCU_WITDH:Int,val MODULE
     core.Img2Col_Instru.InCol_Count_Times               :=Regs.InCol_Count_Times.resized             
     core.Img2Col_Instru.OutRow_Count_Times              :=Regs.OutRow_Count_Times.resized            
     core.Img2Col_Instru.OutFeature_Channel_Count_Times  :=Regs.OutFeature_Channel_Count_Times.resized
-        
-
     core.Img2Col_Instru.WeightMatrix_Row                :=Regs.WeightMatrix_Row
-
     core.Img2Col_Instru.OutMatrix_Col                   :=Regs.OutMatrix_Col
     core.Img2Col_Instru.OutMatrix_Row                   :=Regs.OutMatrix_Row//输出矩阵的行数
+    core.Img2Col_Instru.enPadding                       :=Regs.enPadding
+    core.Img2Col_Instru.zeroData                        :=Regs.zeroDara
+    core.Img2Col_Instru.zeroNum                         :=Regs.zeroNum
+
     core.Gemm_Instru.Height                        :=Regs.Gemm_Height
     core.Gemm_Instru.Width                         :=Regs.Gemm_Width
 //   core.GemmInstru.HEIGHT                              :=Regs.Gemm_Height
@@ -123,25 +124,25 @@ object Top extends App { //
   }
   // 在Message_Conv那里看如何设置Bram深度
   GenerateTop(1,8,8,32,5,24576)
-  GenerateTop(2,8,8,32,5,12288)  
-  GenerateTop(3,8,8,32,5,8192)  
-  GenerateTop(3,8,64,32,5,1024)  
-  GenerateTop(4,8,32,32,5,1536)  
-  GenerateTop(4,8,64,32,5,768)  
-  // ZedBoard
-  GenerateTop(1,8,8,32,5,288)  
-
-  // 设计空间探索
-  GenerateTop(64,8,1,32,5,24576)
-    
-
-  //卢浩的配置
-  GenerateTop(1,8,8,32,5,24576)
- // GenerateTop(2,8,8,32,5,12288) 
-  GenerateTop(3,8,8,32,5,8192) 
-
- GenerateTop(4,8,32,32,5,1536) 
-
- GenerateTop(3,8,64,32,5,1024) 
- GenerateTop(4,8,64,32,5,768)
+//  GenerateTop(2,8,8,32,5,12288)
+//  GenerateTop(3,8,8,32,5,8192)
+//  GenerateTop(3,8,64,32,5,1024)
+//  GenerateTop(4,8,32,32,5,1536)
+//  GenerateTop(4,8,64,32,5,768)
+//  // ZedBoard
+//  GenerateTop(1,8,8,32,5,288)
+//
+//  // 设计空间探索
+//  GenerateTop(64,8,1,32,5,24576)
+//
+//
+//  //卢浩的配置
+//  GenerateTop(1,8,8,32,5,24576)
+// // GenerateTop(2,8,8,32,5,12288)
+//  GenerateTop(3,8,8,32,5,8192)
+//
+// GenerateTop(4,8,32,32,5,1536)
+//
+// GenerateTop(3,8,64,32,5,1024)
+// GenerateTop(4,8,64,32,5,768)
 }

@@ -111,7 +111,7 @@ class Padding(paddingConfig: PaddingConfig) extends Component {
     val start = in Bool()
     val row_colNumIn = in UInt (paddingConfig.FEATURE_WIDTH bits)
     val row_colNumOut = out UInt (paddingConfig.FEATURE_WIDTH bits)
-    val zeroDara = in Bits (paddingConfig.DATA_WIDTH bits)
+    val zeroData = in Bits (paddingConfig.DATA_WIDTH bits)
     val zeroNum = in UInt (paddingConfig.ZERO_NUM_WIDTH bits)
     val last = out Bool()
 
@@ -162,7 +162,7 @@ class Padding(paddingConfig: PaddingConfig) extends Component {
     fifo.io.push.payload := io.sData.payload
   } otherwise {
     fifo.io.push.valid := zeroValid
-    assign(fifo.io.push.payload, io.zeroDara.asUInt, paddingConfig.DATA_WIDTH)
+    assign(fifo.io.push.payload, io.zeroData.asUInt, paddingConfig.DATA_WIDTH)
   }
 
   val channelCnt = WaCounter(fifo.io.push.fire, paddingConfig.CHANNEL_WIDTH, channelTimes - 1)

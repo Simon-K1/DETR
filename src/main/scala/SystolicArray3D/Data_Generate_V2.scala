@@ -603,8 +603,8 @@ class Img2ColStreamV2 extends Component{
         val Sliding_Size                    =in UInt(16-3 bits)
 
         val enPadding                       =in Bool()
-        val zeroDara = in Bits (paddingConfig.DATA_WIDTH bits)
-        val zeroNum = in UInt (paddingConfig.ZERO_NUM_WIDTH bits)
+        val zeroData                        =in Bits (paddingConfig.DATA_WIDTH bits)
+        val zeroNum                         =in UInt (paddingConfig.ZERO_NUM_WIDTH bits)
     }
     noIoPrefix()
     val SubModule=new Img2Col_Top
@@ -667,7 +667,7 @@ class Img2ColStreamV2 extends Component{
     padding.io.channelIn <> io.InFeature_Channel
     padding.io.row_colNumIn <> io.InFeature_Size
     padding.io.zeroNum <> io.zeroNum
-    padding.io.zeroDara <> io.zeroDara
+    padding.io.zeroData <> io.zeroData
 
     padding >> SubModule
 }
